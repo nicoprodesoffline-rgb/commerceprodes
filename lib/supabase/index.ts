@@ -15,6 +15,7 @@ import type {
   Image,
   Menu,
   Page,
+  PriceTierDisplay,
   Product,
   ProductOption,
   ProductVariant,
@@ -24,12 +25,15 @@ import type {
 // HELPERS
 // ============================================================
 
-function buildImage(img: {
-  url: string;
-  alt_text?: string | null;
-  position?: number;
-  is_featured?: boolean;
-}, fallbackAlt: string): Image {
+function buildImage(
+  img: {
+    url: string;
+    alt_text?: string | null;
+    position?: number;
+    is_featured?: boolean;
+  },
+  fallbackAlt: string,
+): Image {
   return {
     url: img.url,
     altText: img.alt_text || fallbackAlt,
@@ -56,13 +60,38 @@ function emptyCart(id: string): Cart {
   };
 }
 
+/**
+ * Calcule la plage de prix réelle depuis les variants.
+ * Retourne [min, max] en nombre.
+ */
+function computePriceRange(
+  variants: any[],
+  fallbackPrice: number,
+): [number, number] {
+  const prices = variants
+    .map((v: any) => Number(v.regular_price))
+    .filter((p) => p > 0);
+  if (prices.length === 0) {
+    const base = fallbackPrice || 0;
+    return [base, base];
+  }
+  return [Math.min(...prices), Math.max(...prices)];
+}
+
 /** Build a lightweight Product for list views (no variant attributes). */
 function buildProductSummary(dbProduct: any): Product {
   const imgs: any[] = (dbProduct.product_images || []).sort(
     (a: any, b: any) => (a.position ?? 0) - (b.position ?? 0),
   );
   const featuredImg = imgs.find((i) => i.is_featured) ?? imgs[0];
-  const regularPrice = Number(dbProduct.regular_price) || 0;
+
+  const dbVariants: any[] = dbProduct.variants || [];
+  const fallback = Number(dbProduct.regular_price) || 0;
+  const [priceMin, priceMax] = computePriceRange(dbVariants, fallback);
+
+  // First category name (for card display)
+  const firstCat = dbProduct.product_categories?.[0]?.categories;
+  const categoryName: string | undefined = firstCat?.name;
 
   return {
     id: dbProduct.id,
@@ -73,24 +102,30 @@ function buildProductSummary(dbProduct: any): Product {
     descriptionHtml: dbProduct.description || "",
     options: [],
     priceRange: {
-      minVariantPrice: {
-        amount: regularPrice.toFixed(2),
-        currencyCode: "EUR",
-      },
-      maxVariantPrice: {
-        amount: regularPrice.toFixed(2),
-        currencyCode: "EUR",
-      },
+      minVariantPrice: { amount: priceMin.toFixed(2), currencyCode: "EUR" },
+      maxVariantPrice: { amount: priceMax.toFixed(2), currencyCode: "EUR" },
     },
-    variants: [
-      {
-        id: dbProduct.id + "-default",
-        title: "Default Title",
-        availableForSale: dbProduct.stock_status === "instock",
-        selectedOptions: [],
-        price: { amount: regularPrice.toFixed(2), currencyCode: "EUR" },
-      },
-    ],
+    variants:
+      dbVariants.length > 0
+        ? dbVariants.map((v: any) => ({
+            id: v.id,
+            title: v.name || "Default Title",
+            availableForSale: v.stock_status === "instock",
+            selectedOptions: [],
+            price: {
+              amount: (Number(v.regular_price) || fallback).toFixed(2),
+              currencyCode: "EUR",
+            },
+          }))
+        : [
+            {
+              id: dbProduct.id + "-default",
+              title: "Default Title",
+              availableForSale: dbProduct.stock_status === "instock",
+              selectedOptions: [],
+              price: { amount: priceMin.toFixed(2), currencyCode: "EUR" },
+            },
+          ],
     featuredImage: featuredImg
       ? buildImage(featuredImg, dbProduct.name)
       : emptyImage(dbProduct.name),
@@ -101,6 +136,14 @@ function buildProductSummary(dbProduct: any): Product {
     },
     tags: dbProduct.tags || [],
     updatedAt: dbProduct.updated_at,
+    // PRODES extensions
+    sku: dbProduct.sku,
+    ecoContribution: dbProduct.eco_contribution
+      ? Number(dbProduct.eco_contribution)
+      : null,
+    categoryName,
+    priceMin,
+    priceMax,
   };
 }
 
@@ -272,7 +315,6 @@ export async function addToCart(
   }
 
   for (const { merchandiseId, quantity } of lines) {
-    // Get variant + product info
     const { data: variant } = await supabase
       .from("variants")
       .select("id, regular_price, product_id, products(*)")
@@ -282,13 +324,10 @@ export async function addToCart(
     if (!variant) continue;
     const product = (variant as any).products;
 
-    // Get price tiers
     const { data: priceTiers } = await supabase
       .from("price_tiers")
       .select("*")
-      .or(
-        `product_id.eq.${product.id},variant_id.eq.${merchandiseId}`,
-      );
+      .or(`product_id.eq.${product.id},variant_id.eq.${merchandiseId}`);
 
     const unitPrice = calculatePrice(
       {
@@ -301,7 +340,6 @@ export async function addToCart(
       quantity,
     );
 
-    // Upsert cart item
     const { data: existing } = await supabase
       .from("cart_items")
       .select("id, quantity")
@@ -312,7 +350,10 @@ export async function addToCart(
     if (existing) {
       await supabase
         .from("cart_items")
-        .update({ quantity: existing.quantity + quantity, unit_price: unitPrice })
+        .update({
+          quantity: existing.quantity + quantity,
+          unit_price: unitPrice,
+        })
         .eq("id", existing.id);
     } else {
       await supabase.from("cart_items").insert({
@@ -388,7 +429,7 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
   const variants: any[] = dbProduct.variants || [];
   const variantIds: string[] = variants.map((v: any) => v.id);
 
-  // Step 2 — attribute terms (for readable option values)
+  // Step 2 — attribute terms
   const allAttrIds = [
     ...new Set(
       variants.flatMap((v: any) =>
@@ -410,15 +451,15 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
     });
   }
 
-  // Step 3 — product_attributes for VariantSelector options
+  // Step 3 — product_attributes for VariantSelector
   const { data: productAttrs } = await supabase
     .from("product_attributes")
     .select("attribute_id, terms, attributes (id, name, slug)")
     .eq("product_id", dbProduct.id)
     .eq("is_variation", true);
 
-  // Step 4 — price_tiers (product-level + variant-level)
-  let priceTiers: DbPriceTier[] = [];
+  // Step 4 — price_tiers
+  let priceTiersRaw: DbPriceTier[] = [];
   if (variantIds.length > 0) {
     const { data: tiers } = await supabase
       .from("price_tiers")
@@ -426,16 +467,24 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
       .or(
         `product_id.eq.${dbProduct.id},variant_id.in.(${variantIds.join(",")})`,
       );
-    priceTiers = (tiers || []) as DbPriceTier[];
+    priceTiersRaw = (tiers || []) as DbPriceTier[];
   } else {
     const { data: tiers } = await supabase
       .from("price_tiers")
       .select("*")
       .eq("product_id", dbProduct.id);
-    priceTiers = (tiers || []) as DbPriceTier[];
+    priceTiersRaw = (tiers || []) as DbPriceTier[];
   }
 
-  // Build options (for VariantSelector)
+  // Step 5 — first category name
+  const { data: catLink } = await supabase
+    .from("product_categories")
+    .select("categories (name, slug)")
+    .eq("product_id", dbProduct.id)
+    .limit(1)
+    .single();
+
+  // Build options
   const options: ProductOption[] = (productAttrs || []).map((pa: any) => ({
     id: pa.attribute_id,
     name: pa.attributes?.name || pa.attribute_id,
@@ -466,7 +515,6 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
     };
   });
 
-  // Fallback default variant for simple products
   if (productVariants.length === 0) {
     productVariants.push({
       id: dbProduct.id + "-default",
@@ -488,13 +536,22 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
     sortedImgs.find((i: any) => i.is_featured) ?? sortedImgs[0];
 
   // Price range
-  const prices = productVariants
-    .map((v) => Number(v.price.amount))
-    .filter((p) => p > 0);
   const base = Number(dbProduct.regular_price) || 0;
-  const allPrices = prices.length > 0 ? prices : [base];
-  const minPrice = Math.min(...allPrices);
-  const maxPrice = Math.max(...allPrices);
+  const [priceMin, priceMax] = computePriceRange(productVariants.map(v => ({
+    regular_price: Number(v.price.amount),
+  })), base);
+
+  // PBQ price tiers for display (product-level tiers sorted by min_quantity)
+  const displayTiers: PriceTierDisplay[] = priceTiersRaw
+    .filter((t) => t.product_id !== null && t.variant_id === null)
+    .sort((a, b) => a.min_quantity - b.min_quantity)
+    .map((t) => ({
+      minQuantity: t.min_quantity,
+      price: t.price != null ? Number(t.price) : null,
+      discountPercent:
+        t.discount_percent != null ? Number(t.discount_percent) : null,
+      position: t.position,
+    }));
 
   return {
     id: dbProduct.id,
@@ -505,8 +562,8 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
     descriptionHtml: dbProduct.description || "",
     options,
     priceRange: {
-      minVariantPrice: { amount: minPrice.toFixed(2), currencyCode: "EUR" },
-      maxVariantPrice: { amount: maxPrice.toFixed(2), currencyCode: "EUR" },
+      minVariantPrice: { amount: priceMin.toFixed(2), currencyCode: "EUR" },
+      maxVariantPrice: { amount: priceMax.toFixed(2), currencyCode: "EUR" },
     },
     variants: productVariants,
     featuredImage: featuredImg
@@ -522,8 +579,35 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
     },
     tags: dbProduct.tags || [],
     updatedAt: dbProduct.updated_at,
+    // PRODES extensions
+    sku: dbProduct.sku,
+    shortDescription: dbProduct.short_description,
+    ecoContribution:
+      dbProduct.eco_contribution != null
+        ? Number(dbProduct.eco_contribution)
+        : null,
+    pbqEnabled: dbProduct.pbq_enabled,
+    pbqPricingType: dbProduct.pbq_pricing_type,
+    pbqMinQuantity: dbProduct.pbq_min_quantity ?? 1,
+    priceTiers: displayTiers.length > 0 ? displayTiers : undefined,
+    weightKg: dbProduct.weight != null ? Number(dbProduct.weight) : null,
+    lengthCm: dbProduct.length != null ? Number(dbProduct.length) : null,
+    widthCm: dbProduct.width != null ? Number(dbProduct.width) : null,
+    heightCm: dbProduct.height != null ? Number(dbProduct.height) : null,
+    categoryName: (catLink as any)?.categories?.name,
+    priceMin,
+    priceMax,
   };
 }
+
+/** Select string used for list-view queries (includes variants + categories for cards). */
+const PRODUCT_LIST_SELECT = `
+  id, slug, name, description, regular_price, stock_status, sku, eco_contribution,
+  tags, seo_title, seo_description, updated_at,
+  product_images (url, alt_text, is_featured, position),
+  variants (id, regular_price, stock_status),
+  product_categories (categories (name, slug))
+`;
 
 export async function getProducts({
   query,
@@ -542,7 +626,7 @@ export async function getProducts({
   cacheTag(TAGS.products);
   cacheLife("days");
 
-  // Optional category filter via product_categories pivot
+  // Category filter via product_categories pivot
   let productIds: string[] | null = null;
   if (category) {
     const { data: cat } = await supabase
@@ -564,18 +648,10 @@ export async function getProducts({
 
   let dbQuery = supabase
     .from("products")
-    .select(
-      `
-      id, slug, name, description, regular_price, stock_status,
-      tags, seo_title, seo_description, updated_at,
-      product_images (url, alt_text, is_featured, position)
-    `,
-    )
+    .select(PRODUCT_LIST_SELECT)
     .eq("status", "publish");
 
-  if (query) {
-    dbQuery = dbQuery.ilike("name", `%${query}%`);
-  }
+  if (query) dbQuery = dbQuery.ilike("name", `%${query}%`);
 
   if (productIds !== null) {
     if (productIds.length === 0) return [];
@@ -599,9 +675,7 @@ export async function getProducts({
       dbQuery = dbQuery.order("created_at", { ascending: false });
   }
 
-  dbQuery = dbQuery.limit(limit);
-
-  const { data: products, error } = await dbQuery;
+  const { data: products, error } = await dbQuery.limit(limit);
   if (error || !products) return [];
 
   return products.map(buildProductSummary);
@@ -619,16 +693,10 @@ export async function getProductRecommendations(
     .select("category_id")
     .eq("product_id", productId);
 
-  const PRODUCT_SELECT = `
-    id, slug, name, description, regular_price, stock_status,
-    tags, seo_title, seo_description, updated_at,
-    product_images (url, alt_text, is_featured, position)
-  `;
-
   if (!productCats?.length) {
     const { data } = await supabase
       .from("products")
-      .select(PRODUCT_SELECT)
+      .select(PRODUCT_LIST_SELECT)
       .eq("status", "publish")
       .neq("id", productId)
       .limit(4);
@@ -652,7 +720,7 @@ export async function getProductRecommendations(
 
   const { data } = await supabase
     .from("products")
-    .select(PRODUCT_SELECT)
+    .select(PRODUCT_LIST_SELECT)
     .in("id", relatedIds)
     .eq("status", "publish");
 
@@ -660,7 +728,7 @@ export async function getProductRecommendations(
 }
 
 // ============================================================
-// COLLECTIONS (= Categories)
+// COLLECTIONS (= Categories) — supports subcategory filtering
 // ============================================================
 
 export async function getCollection(
@@ -688,8 +756,8 @@ export async function getCollections(): Promise<Collection[]> {
   const allColl: Collection = {
     handle: "",
     title: "All",
-    description: "All products",
-    seo: { title: "All", description: "All products" },
+    description: "Tous les produits",
+    seo: { title: "Tous les produits", description: "" },
     path: "/search",
     updatedAt: new Date().toISOString(),
   };
@@ -721,12 +789,61 @@ export async function getCollectionProducts({
   cacheTag(TAGS.collections, TAGS.products);
   cacheLife("days");
 
-  // Hidden collections fall back to featured/recent products
+  // Hidden collections → recent products fallback
   if (collection.startsWith("hidden-")) {
     return getProducts({ sortKey: "CREATED_AT", reverse: true, limit: 12 });
   }
 
-  return getProducts({ category: collection, sortKey, reverse });
+  // Get category + its subcategories (one level deep)
+  const { data: mainCat } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("slug", collection)
+    .single();
+
+  if (!mainCat) return [];
+
+  const { data: subCats } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("parent_id", mainCat.id);
+
+  const categoryIds = [
+    mainCat.id,
+    ...((subCats || []).map((c: any) => c.id)),
+  ];
+
+  const { data: catProducts } = await supabase
+    .from("product_categories")
+    .select("product_id")
+    .in("category_id", categoryIds);
+
+  const productIds = [
+    ...new Set((catProducts || []).map((cp: any) => cp.product_id)),
+  ] as string[];
+
+  if (productIds.length === 0) return [];
+
+  const ascending = !reverse;
+  let dbQuery = supabase
+    .from("products")
+    .select(PRODUCT_LIST_SELECT)
+    .in("id", productIds)
+    .eq("status", "publish");
+
+  switch (sortKey) {
+    case "PRICE":
+      dbQuery = dbQuery.order("regular_price", { ascending });
+      break;
+    case "CREATED_AT":
+      dbQuery = dbQuery.order("created_at", { ascending });
+      break;
+    default:
+      dbQuery = dbQuery.order("created_at", { ascending: false });
+  }
+
+  const { data: products } = await dbQuery.limit(250);
+  return (products || []).map(buildProductSummary);
 }
 
 // ============================================================
@@ -738,24 +855,39 @@ export async function getMenu(handle: string): Promise<Menu[]> {
   cacheTag(TAGS.collections);
   cacheLife("days");
 
-  const { data: menu, error } = await supabase
+  const { data: menu } = await supabase
     .from("menus")
     .select("id")
     .eq("handle", handle)
     .single();
 
-  if (error || !menu) return [];
+  if (menu) {
+    const { data: items } = await supabase
+      .from("menu_items")
+      .select("title, url, position")
+      .eq("menu_id", menu.id)
+      .is("parent_id", null)
+      .order("position");
 
-  const { data: items } = await supabase
-    .from("menu_items")
-    .select("title, url, position")
-    .eq("menu_id", menu.id)
+    if (items && items.length > 0) {
+      return items.map((item: any) => ({
+        title: item.title,
+        path: item.url,
+      }));
+    }
+  }
+
+  // Fallback: build menu from top-level categories (parent_id IS NULL)
+  const { data: topCats } = await supabase
+    .from("categories")
+    .select("name, slug")
     .is("parent_id", null)
-    .order("position");
+    .order("position")
+    .limit(12);
 
-  return (items || []).map((item: any) => ({
-    title: item.title,
-    path: item.url,
+  return (topCats || []).map((cat: any) => ({
+    title: cat.name,
+    path: `/search/${cat.slug}`,
   }));
 }
 
