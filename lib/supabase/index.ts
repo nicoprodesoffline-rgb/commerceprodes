@@ -171,8 +171,9 @@ async function fetchCartById(cartId: string): Promise<Cart> {
       .select("attribute_id, slug, name")
       .in("attribute_id", allAttrIds);
     terms?.forEach((term: any) => {
-      if (!termMap[term.attribute_id]) termMap[term.attribute_id] = {};
-      termMap[term.attribute_id][term.slug] = term.name;
+      const entry = termMap[term.attribute_id] ?? {};
+      termMap[term.attribute_id] = entry;
+      entry[term.slug] = term.name;
     });
   }
 
@@ -403,8 +404,9 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
       .select("attribute_id, slug, name")
       .in("attribute_id", allAttrIds);
     terms?.forEach((t: any) => {
-      if (!termMap[t.attribute_id]) termMap[t.attribute_id] = {};
-      termMap[t.attribute_id][t.slug] = t.name;
+      const entry = termMap[t.attribute_id] ?? {};
+      termMap[t.attribute_id] = entry;
+      entry[t.slug] = t.name;
     });
   }
 
