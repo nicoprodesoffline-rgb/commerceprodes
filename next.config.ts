@@ -9,6 +9,11 @@ export default {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "prodes.fr",
+        pathname: "/wp-content/uploads/**",
+      },
+      {
+        protocol: "https",
         hostname: "cdn.shopify.com",
         pathname: "/s/files/**",
       },
