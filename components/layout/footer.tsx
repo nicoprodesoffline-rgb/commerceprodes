@@ -1,76 +1,103 @@
+import Image from "next/image";
 import Link from "next/link";
 
-import FooterMenu from "components/layout/footer-menu";
-import LogoSquare from "components/logo-square";
-import { getMenu } from "lib/supabase";
-import { Suspense } from "react";
-
-const { COMPANY_NAME, SITE_NAME } = process.env;
-
-export default async function Footer() {
-  const currentYear = new Date().getFullYear();
-  const copyrightDate = 2023 + (currentYear > 2023 ? `-${currentYear}` : "");
-  const skeleton =
-    "w-full h-6 animate-pulse rounded-sm bg-neutral-200 dark:bg-neutral-700";
-  const menu = await getMenu("next-js-frontend-footer-menu");
-  const copyrightName = COMPANY_NAME || SITE_NAME || "";
-
+export default function Footer() {
   return (
-    <footer className="text-sm text-neutral-500 dark:text-neutral-400">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 border-t border-neutral-200 px-6 py-12 text-sm md:flex-row md:gap-12 md:px-4 min-[1320px]:px-0 dark:border-neutral-700">
-        <div>
-          <Link
-            className="flex items-center gap-2 text-black md:pt-1 dark:text-white"
-            href="/"
-          >
-            <LogoSquare size="sm" />
-            <span className="uppercase">{SITE_NAME}</span>
-          </Link>
-        </div>
-        <Suspense
-          fallback={
-            <div className="flex h-[188px] w-[200px] flex-col gap-2">
-              <div className={skeleton} />
-              <div className={skeleton} />
-              <div className={skeleton} />
-              <div className={skeleton} />
-              <div className={skeleton} />
-              <div className={skeleton} />
-            </div>
-          }
-        >
-          <FooterMenu menu={menu} />
-        </Suspense>
-        <div className="md:ml-auto">
-          <a
-            className="flex h-8 w-max flex-none items-center justify-center rounded-md border border-neutral-200 bg-white text-xs text-black dark:border-neutral-700 dark:bg-black dark:text-white"
-            aria-label="Deploy on Vercel"
-            href="https://vercel.com/templates/next.js/nextjs-commerce"
-          >
-            <span className="px-3">▲</span>
-            <hr className="h-full border-r border-neutral-200 dark:border-neutral-700" />
-            <span className="px-3">Deploy</span>
-          </a>
+    <footer className="bg-[#1f2937] text-white">
+      {/* Main footer grid */}
+      <div className="mx-auto max-w-(--breakpoint-2xl) px-6 py-12">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+          {/* Gauche — Logo + baseline */}
+          <div>
+            <Link href="/" aria-label="PRODES — Accueil">
+              <Image
+                src="/logo-prodes.png"
+                alt="PRODES"
+                width={130}
+                height={44}
+                style={{ objectFit: "contain", height: "44px", width: "auto", filter: "brightness(0) invert(1)" }}
+              />
+            </Link>
+            <p className="mt-3 text-sm text-neutral-300">
+              Au service des Collectivités
+            </p>
+            <p className="mt-2 text-xs text-neutral-500">
+              Mobilier, signalisation et équipements pour les organismes publics.
+            </p>
+          </div>
+
+          {/* Centre — Liens rapides */}
+          <div>
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-400">
+              Liens rapides
+            </h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/search" className="text-neutral-300 hover:text-white transition-colors">
+                  Boutique
+                </Link>
+              </li>
+              <li>
+                <Link href="/search/mobilier-urbain" className="text-neutral-300 hover:text-white transition-colors">
+                  Mobilier urbain
+                </Link>
+              </li>
+              <li>
+                <Link href="/search/affichage-et-signalisation" className="text-neutral-300 hover:text-white transition-colors">
+                  Signalisation
+                </Link>
+              </li>
+              <li>
+                <Link href="/a-propos" className="text-neutral-300 hover:text-white transition-colors">
+                  À propos
+                </Link>
+              </li>
+              <li>
+                <a href="mailto:contact@prodes.fr" className="text-neutral-300 hover:text-white transition-colors">
+                  Contact
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Droite — Contacts */}
+          <div>
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-400">
+              Nous contacter
+            </h3>
+            <ul className="space-y-3 text-sm text-neutral-300">
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5">📞</span>
+                <div>
+                  <a href="tel:+33467243034" className="hover:text-white transition-colors">
+                    04 67 24 30 34
+                  </a>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5">✉️</span>
+                <div>
+                  <a href="mailto:contact@prodes.fr" className="hover:text-white transition-colors">
+                    contact@prodes.fr
+                  </a>
+                </div>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5">🕐</span>
+                <div>
+                  <p>Lun–Sam 8h30–19h</p>
+                </div>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
-      <div className="border-t border-neutral-200 py-6 text-sm dark:border-neutral-700">
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-1 px-4 md:flex-row md:gap-0 md:px-4 min-[1320px]:px-0">
-          <p>
-            &copy; {copyrightDate} {copyrightName}
-            {copyrightName.length && !copyrightName.endsWith(".")
-              ? "."
-              : ""}{" "}
-            All rights reserved.
-          </p>
-          <hr className="mx-4 hidden h-4 w-[1px] border-l border-neutral-400 md:inline-block" />
-          <p>
-            <a href="https://github.com/vercel/commerce">View the source</a>
-          </p>
-          <p className="md:ml-auto">
-            <a href="https://vercel.com" className="text-black dark:text-white">
-              Created by ▲ Vercel
-            </a>
-          </p>
+
+      {/* Bottom bar */}
+      <div className="border-t border-neutral-700 py-5">
+        <div className="mx-auto flex max-w-(--breakpoint-2xl) flex-col items-center justify-between gap-2 px-6 text-xs text-neutral-500 md:flex-row">
+          <p>© 2026 PRODES — Tous droits réservés</p>
+          <p>Prix HT, TVA non incluse</p>
         </div>
       </div>
     </footer>
