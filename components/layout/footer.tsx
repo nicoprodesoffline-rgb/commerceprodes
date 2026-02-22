@@ -28,32 +28,32 @@ export default function Footer() {
 
           {/* Centre — Liens rapides */}
           <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-400">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#cc1818]">
               Liens rapides
             </h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/search" className="text-neutral-300 hover:text-white transition-colors">
+                <Link href="/search" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
                   Boutique
                 </Link>
               </li>
               <li>
-                <Link href="/search/mobilier-urbain" className="text-neutral-300 hover:text-white transition-colors">
+                <Link href="/search/mobilier-urbain" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
                   Mobilier urbain
                 </Link>
               </li>
               <li>
-                <Link href="/search/affichage-et-signalisation" className="text-neutral-300 hover:text-white transition-colors">
+                <Link href="/search/affichage-et-signalisation" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
                   Signalisation
                 </Link>
               </li>
               <li>
-                <Link href="/a-propos" className="text-neutral-300 hover:text-white transition-colors">
-                  À propos
+                <Link href="/cart" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
+                  Panier
                 </Link>
               </li>
               <li>
-                <a href="mailto:contact@prodes.fr" className="text-neutral-300 hover:text-white transition-colors">
+                <a href="mailto:contact@prodes.fr" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
                   Contact
                 </a>
               </li>
@@ -62,7 +62,7 @@ export default function Footer() {
 
           {/* Droite — Contacts */}
           <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-neutral-400">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#cc1818]">
               Nous contacter
             </h3>
             <ul className="space-y-3 text-sm text-neutral-300">
@@ -94,10 +94,10 @@ export default function Footer() {
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t border-neutral-700 py-5">
+      <div className="border-t border-neutral-800 bg-[#111827] py-5">
         <div className="mx-auto flex max-w-(--breakpoint-2xl) flex-col items-center justify-between gap-2 px-6 text-xs text-neutral-500 md:flex-row">
-          <p>© 2026 PRODES — Tous droits réservés</p>
-          <p>Prix HT, TVA non incluse</p>
+          <p>© 2026 PRODES — Prix HT — TVA non incluse — Tous droits réservés</p>
+          <p>Marque PRODES — France</p>
         </div>
       </div>
     </footer>

@@ -2,12 +2,12 @@ import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="bg-gradient-to-br from-white to-blue-50 border-b border-gray-100">
+    <section className="border-b border-gray-100 bg-gradient-to-br from-white to-[#fef9f9]">
       <div className="mx-auto max-w-screen-2xl px-4 py-14 lg:px-6 lg:py-20">
         <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-16">
           {/* Left — copy */}
           <div className="flex-1">
-            <span className="inline-block mb-4 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 tracking-wide uppercase">
+            <span className="inline-block mb-4 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-[#cc1818] tracking-wide uppercase">
               B2B · Prix HT · Devis gratuit
             </span>
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 lg:text-5xl">
@@ -20,13 +20,13 @@ export default function Hero() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="/search"
-                className="inline-flex items-center rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center rounded-lg bg-[#cc1818] px-6 py-3 text-sm font-semibold text-white hover:bg-[#aa1414] transition-colors"
               >
                 Voir le catalogue
               </Link>
               <Link
                 href="/search"
-                className="inline-flex items-center rounded-lg border border-blue-600 px-6 py-3 text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-colors"
+                className="inline-flex items-center rounded-lg border border-[#cc1818] px-6 py-3 text-sm font-semibold text-[#cc1818] hover:bg-red-50 transition-colors"
               >
                 Demander un devis
               </Link>
@@ -47,7 +47,7 @@ export default function Hero() {
               >
                 <div className="text-2xl mb-2">{item.icon}</div>
                 <p className="text-sm font-semibold text-gray-800">{item.title}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{item.sub}</p>
+                <p className="text-xs text-[#cc1818] mt-0.5">{item.sub}</p>
               </div>
             ))}
           </div>
