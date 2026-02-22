@@ -289,6 +289,23 @@ export function ProductDescription({ product }: { product: Product }) {
         </div>
       </div>
 
+      {/* Télécharger la fiche technique PDF */}
+      <div className="mt-4 mb-2">
+        <a
+          href={
+            selectedVariant?.sku
+              ? `/api/product-pdf/${product.handle}?sku=${encodeURIComponent(selectedVariant.sku)}`
+              : `/api/product-pdf/${product.handle}`
+          }
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 text-sm text-gray-500 underline underline-offset-2 hover:text-[#cc1818] transition-colors"
+        >
+          <span>📄</span>
+          <span>Télécharger la fiche technique (PDF)</span>
+        </a>
+      </div>
+
       {/* Tabs: Description / Caractéristiques */}
       <div className="mt-8">
         <div className="flex border-b border-gray-200">

@@ -53,6 +53,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/devis-express" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
+                  Devis express
+                </Link>
+              </li>
+              <li>
                 <a href="mailto:contact@prodes.fr" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
                   Contact
                 </a>
