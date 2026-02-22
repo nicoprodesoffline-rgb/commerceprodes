@@ -143,6 +143,8 @@ export type Product = {
   priceMin?: number;
   /** Prix maximum calculé sur les variants (number, pour format fr-FR). */
   priceMax?: number;
+  /** Prix de base du produit parent (avec fallback variant si 0). */
+  regularPrice?: number;
   /** Nom de la première catégorie du produit. */
   categoryName?: string;
 };

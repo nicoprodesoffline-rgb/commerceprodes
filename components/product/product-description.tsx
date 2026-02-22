@@ -104,11 +104,16 @@ export function ProductDescription({ product }: { product: Product }) {
         )}
       </div>
 
-      {/* Short description */}
+      {/* Short description — HTML rendu correctement */}
       {product.shortDescription && (
-        <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-          {product.shortDescription}
-        </p>
+        <div
+          className="product-prose mb-4 text-sm text-neutral-600 leading-relaxed"
+          dangerouslySetInnerHTML={{
+            __html: product.shortDescription
+              .replace(/&nbsp;/g, " ")
+              .replace(/\s{2,}/g, " "),
+          }}
+        />
       )}
 
       {/* Variant selector */}

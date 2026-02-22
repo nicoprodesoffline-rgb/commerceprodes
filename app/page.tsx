@@ -11,17 +11,20 @@ export const metadata = {
     "Large choix de tables, chaises, mobilier urbain, signalisation. Livraison rapide. Meilleurs prix HT pour les organismes publics.",
   openGraph: {
     type: "website",
-    title: "PRODES – Équipements pour collectivités",
-    description:
-      "Mobilier, signalisation et équipements au service des collectivités publiques.",
   },
 };
 
 export default async function HomePage() {
-  const [categories, featuredProducts] = await Promise.all([
-    getRootCategories(),
-    getFeaturedProducts(8),
-  ]);
+  let categories: Awaited<ReturnType<typeof getRootCategories>> = [];
+  let featuredProducts: Awaited<ReturnType<typeof getFeaturedProducts>> = [];
+  try {
+    [categories, featuredProducts] = await Promise.all([
+      getRootCategories(),
+      getFeaturedProducts(8),
+    ]);
+  } catch (e) {
+    console.error('Homepage data fetch error:', e);
+  }
 
   return (
     <main>
