@@ -28,6 +28,19 @@ export async function addItem(
   }
 }
 
+export async function addItemWithQuantity(
+  variantId: string,
+  quantity: number
+): Promise<{ ok: boolean }> {
+  try {
+    await addToCart([{ merchandiseId: variantId, quantity }]);
+    updateTag(TAGS.cart);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false };
+  }
+}
+
 export async function removeItem(prevState: any, merchandiseId: string) {
   try {
     const cart = await getCart();
