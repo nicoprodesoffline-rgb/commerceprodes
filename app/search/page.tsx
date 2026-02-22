@@ -4,8 +4,8 @@ import { defaultSort, sorting } from "lib/constants";
 import { getProducts } from "lib/supabase";
 
 export const metadata = {
-  title: "Search",
-  description: "Search for products in the store.",
+  title: "Recherche – PRODES",
+  description: "Recherchez parmi nos équipements pour collectivités.",
 };
 
 export default async function SearchPage(props: {
@@ -17,15 +17,15 @@ export default async function SearchPage(props: {
     sorting.find((item) => item.slug === sort) || defaultSort;
 
   const products = await getProducts({ sortKey, reverse, query: searchValue });
-  const resultsText = products.length > 1 ? "results" : "result";
+  const resultsText = products.length > 1 ? "résultats" : "résultat";
 
   return (
     <>
       {searchValue ? (
         <p className="mb-4">
           {products.length === 0
-            ? "There are no products that match "
-            : `Showing ${products.length} ${resultsText} for `}
+            ? "Aucun produit ne correspond à "
+            : `${products.length} ${resultsText} pour `}
           <span className="font-bold">&quot;{searchValue}&quot;</span>
         </p>
       ) : null}

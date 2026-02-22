@@ -15,11 +15,11 @@ export async function generateMetadata(props: {
   if (!collection) return notFound();
 
   return {
-    title: collection.seo?.title || collection.title,
+    title: `${collection.seo?.title || collection.title} – PRODES`,
     description:
       collection.seo?.description ||
       collection.description ||
-      `${collection.title} products`,
+      `Découvrez notre gamme ${collection.title} — équipements pour collectivités.`,
   };
 }
 
@@ -32,16 +32,23 @@ export default async function CategoryPage(props: {
   const { sort } = searchParams as { [key: string]: string };
   const { sortKey, reverse } =
     sorting.find((item) => item.slug === sort) || defaultSort;
-  const products = await getCollectionProducts({
-    collection: params.collection,
-    sortKey,
-    reverse,
-  });
+
+  const [collection, products] = await Promise.all([
+    getCollection(params.collection),
+    getCollectionProducts({ collection: params.collection, sortKey, reverse }),
+  ]);
+
+  if (!collection) return notFound();
 
   return (
     <section>
+      <h1 className="mb-6 text-2xl font-semibold text-neutral-900 dark:text-white">
+        {collection.title}
+      </h1>
       {products.length === 0 ? (
-        <p className="py-3 text-lg">{`No products found in this collection`}</p>
+        <p className="py-3 text-lg text-neutral-500">
+          Aucun produit trouvé dans cette catégorie.
+        </p>
       ) : (
         <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <ProductGridItems products={products} />
