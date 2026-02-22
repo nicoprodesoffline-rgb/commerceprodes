@@ -1,22 +1,36 @@
-"use client";
+'use client';
 
-export default function Error({ reset }: { reset: () => void }) {
+export default function GlobalError({
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center text-center px-4">
-      <p className="text-4xl">⚠️</p>
-      <h2 className="mt-4 text-xl font-bold text-gray-900">
-        Une erreur est survenue
-      </h2>
-      <p className="mt-2 text-gray-500 max-w-sm">
-        Une erreur inattendue s&apos;est produite. Vous pouvez réessayer ou
-        retourner à l&apos;accueil.
-      </p>
-      <button
-        onClick={() => reset()}
-        className="mt-6 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
-      >
-        Réessayer
-      </button>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+      <div className="text-center max-w-md px-4">
+        <div className="text-6xl mb-4">⚠️</div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          Une erreur est survenue
+        </h1>
+        <p className="text-gray-600 mb-6">
+          Nous avons été informés et allons corriger cela rapidement.
+        </p>
+        <div className="flex gap-3 justify-center">
+          <button
+            onClick={reset}
+            className="px-4 py-2 bg-[#cc1818] text-white rounded-lg hover:bg-[#aa1414]"
+          >
+            Réessayer
+          </button>
+          <a
+            href="/"
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+          >
+            Retour à l&apos;accueil
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

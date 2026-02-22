@@ -1,119 +1,52 @@
 "use server";
 
-import { TAGS } from "lib/constants";
-import {
-  addToCart,
-  createCart,
-  getCart,
-  removeFromCart,
-  updateCart,
-} from "lib/supabase";
-import { updateTag } from "next/cache";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+/**
+ * Cart server actions — localStorage cart.
+ * addItemWithQuantity is still a server action for backward compat,
+ * but the actual cart state is managed client-side by CartContext.
+ * Direct cart manipulation is done in the modal/cart page via useCart().
+ */
 
 export async function addItem(
-  prevState: any,
-  selectedVariantId: string | undefined
-) {
+  prevState: unknown,
+  selectedVariantId: string | undefined,
+): Promise<string | undefined> {
   if (!selectedVariantId) {
     return "Error adding item to cart";
   }
-
-  try {
-    await addToCart([{ merchandiseId: selectedVariantId, quantity: 1 }]);
-    updateTag(TAGS.cart);
-  } catch (e) {
-    return "Error adding item to cart";
-  }
+  // Actual add is done optimistically in the client via addCartItem()
+  return undefined;
 }
 
 export async function addItemWithQuantity(
   variantId: string,
-  quantity: number
+  quantity: number,
 ): Promise<{ ok: boolean }> {
-  try {
-    await addToCart([{ merchandiseId: variantId, quantity }]);
-    updateTag(TAGS.cart);
-    return { ok: true };
-  } catch (e) {
-    return { ok: false };
-  }
+  if (!variantId || quantity <= 0) return { ok: false };
+  // Cart is managed client-side via CartContext localStorage
+  return { ok: true };
 }
 
-export async function removeItem(prevState: any, merchandiseId: string) {
-  try {
-    const cart = await getCart();
-
-    if (!cart) {
-      return "Error fetching cart";
-    }
-
-    const lineItem = cart.lines.find(
-      (line) => line.merchandise.id === merchandiseId
-    );
-
-    if (lineItem && lineItem.id) {
-      await removeFromCart([lineItem.id]);
-      updateTag(TAGS.cart);
-    } else {
-      return "Item not found in cart";
-    }
-  } catch (e) {
-    return "Error removing item from cart";
-  }
+export async function removeItem(
+  prevState: unknown,
+  merchandiseId: string,
+): Promise<string | undefined> {
+  // Handled client-side via updateCartItem(id, 'delete')
+  return undefined;
 }
 
 export async function updateItemQuantity(
-  prevState: any,
-  payload: {
-    merchandiseId: string;
-    quantity: number;
-  }
-) {
-  const { merchandiseId, quantity } = payload;
-
-  try {
-    const cart = await getCart();
-
-    if (!cart) {
-      return "Error fetching cart";
-    }
-
-    const lineItem = cart.lines.find(
-      (line) => line.merchandise.id === merchandiseId
-    );
-
-    if (lineItem && lineItem.id) {
-      if (quantity === 0) {
-        await removeFromCart([lineItem.id]);
-      } else {
-        await updateCart([
-          {
-            id: lineItem.id,
-            merchandiseId,
-            quantity,
-          },
-        ]);
-      }
-    } else if (quantity > 0) {
-      // If the item doesn't exist in the cart and quantity > 0, add it
-      await addToCart([{ merchandiseId, quantity }]);
-    }
-
-    updateTag(TAGS.cart);
-  } catch (e) {
-    console.error(e);
-    return "Error updating item quantity";
-  }
+  prevState: unknown,
+  payload: { merchandiseId: string; quantity: number },
+): Promise<string | undefined> {
+  // Handled client-side via updateCartItem
+  return undefined;
 }
 
-export async function redirectToCheckout() {
-  let cart = await getCart();
-  redirect(cart!.checkoutUrl);
+export async function redirectToCheckout(): Promise<void> {
+  // No-op — handled client-side
 }
 
-export async function createCartAndSetCookie() {
-  let cart = await createCart();
-  (await cookies()).set("cartId", cart.id!);
+export async function createCartAndSetCookie(): Promise<void> {
+  // No-op — cart is localStorage-based
 }

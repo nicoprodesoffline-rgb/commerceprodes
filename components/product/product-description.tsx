@@ -7,7 +7,8 @@ import { VariantSelector } from "./variant-selector";
 import Prose from "components/prose";
 import { Product, ProductVariant } from "lib/supabase/types";
 import { useState, useCallback, useTransition } from "react";
-import { addItemWithQuantity } from "components/cart/actions";
+import { useCart } from "components/cart/cart-context";
+import { getEcoDisplay } from "lib/utils/eco";
 
 function formatPriceFR(price: number): string {
   return (
@@ -26,6 +27,7 @@ function AddedToast({ title, show }: { title: string; show: boolean }) {
 }
 
 export function ProductDescription({ product }: { product: Product }) {
+  const { addCartItem } = useCart();
   const [devisOpen, setDevisOpen] = useState(false);
   const [mandatOpen, setMandatOpen] = useState(false);
   const [quantity, setQuantity] = useState(product.pbqMinQuantity ?? 1);
@@ -38,10 +40,12 @@ export function ProductDescription({ product }: { product: Product }) {
   }, []);
 
   // Displayed SKU: variant SKU → product SKU
-  const displaySku = (() => {
-    // variants don't have sku in the type, so we use product.sku as fallback
-    return product.sku;
-  })();
+  const displaySku = selectedVariant?.sku ?? product.sku;
+
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
+    console.log('[VariantSelector] selectedVariant:', selectedVariant?.sku, 'displaySku:', displaySku);
+  }
 
   // Displayed price
   const displayPrice = (() => {
@@ -66,6 +70,13 @@ export function ProductDescription({ product }: { product: Product }) {
     product.widthCm != null ||
     product.heightCm != null;
 
+  // Eco-participation display logic
+  const hasLotsVariant = product.variants.some((v) =>
+    v.selectedOptions.some((o) => o.name === 'pa_les-lots'),
+  );
+  const ecoDisplay = getEcoDisplay(product.ecoContribution, hasLotsVariant);
+  const hasPriceTiers = product.pbqEnabled && product.priceTiers && product.priceTiers.length > 0;
+
   // Variant label for modals
   const variantLabel = selectedVariant
     ? selectedVariant.selectedOptions.map((o) => o.value).join(" — ")
@@ -74,15 +85,14 @@ export function ProductDescription({ product }: { product: Product }) {
     ? `${product.sku ?? ""} (${variantLabel})`.trim()
     : product.sku;
 
-  // Add to cart handler
+  // Add to cart handler — uses localStorage CartContext
   const handleAddToCart = () => {
-    const merchandiseId = selectedVariant?.id ?? (product.variants[0]?.id ?? product.id + "-default");
-    startTransition(async () => {
-      const result = await addItemWithQuantity(merchandiseId, quantity);
-      if (result.ok) {
-        setToastVisible(true);
-        setTimeout(() => setToastVisible(false), 3000);
-      }
+    const variant = selectedVariant ?? product.variants[0];
+    if (!variant) return;
+    startTransition(() => {
+      addCartItem(variant, product, quantity);
+      setToastVisible(true);
+      setTimeout(() => setToastVisible(false), 3000);
     });
   };
 
@@ -120,12 +130,17 @@ export function ProductDescription({ product }: { product: Product }) {
         )}
 
         {/* Eco-participation */}
-        {product.ecoContribution != null && product.ecoContribution > 0 && (
+        {ecoDisplay.show && ecoDisplay.type === 'included' && (
           <p className="mt-1 text-xs text-gray-500">
-            Dont éco-participation :{" "}
-            <span className="font-medium">
-              {formatPriceFR(product.ecoContribution)}
-            </span>
+            Éco-participation :{" "}
+            <span className="font-medium">{formatPriceFR(ecoDisplay.amount)}</span> incluse
+          </p>
+        )}
+        {ecoDisplay.show && ecoDisplay.type === 'per-unit' && (
+          <p className="mt-1 text-xs text-gray-500">
+            +{" "}
+            <span className="font-medium">{formatPriceFR(ecoDisplay.amount)}</span>{" "}
+            éco-participation / unité
           </p>
         )}
       </div>
@@ -174,6 +189,35 @@ export function ProductDescription({ product }: { product: Product }) {
         )}
       </div>
 
+      {/* Bloc récapitulatif dynamique (sans lots, avec éco-participation) */}
+      {!hasPriceTiers && ecoDisplay.show && ecoDisplay.type === 'per-unit' && quantity > 0 && (
+        <div className="mb-5 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm">
+          <div className="mb-2 font-medium text-gray-900">
+            Pour {quantity} unité{quantity > 1 ? 's' : ''} :
+          </div>
+          <div className="space-y-1 text-gray-600">
+            <div className="flex justify-between">
+              <span>Sous-total HT</span>
+              <span>
+                {formatPriceFR(basePrice)} × {quantity} ={' '}
+                <strong>{formatPriceFR(basePrice * quantity)}</strong>
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Éco-participation</span>
+              <span>
+                {formatPriceFR(ecoDisplay.amount)} × {quantity} ={' '}
+                <strong>{formatPriceFR(ecoDisplay.amount * quantity)}</strong>
+              </span>
+            </div>
+            <div className="mt-2 flex justify-between border-t border-gray-300 pt-2 font-medium text-gray-900">
+              <span>Total avant TVA</span>
+              <span>{formatPriceFR((basePrice + ecoDisplay.amount) * quantity)} HT</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PBQ Price grid */}
       {product.pbqEnabled && product.priceTiers && product.priceTiers.length > 0 && (
         <PriceGrid
@@ -182,6 +226,18 @@ export function ProductDescription({ product }: { product: Product }) {
           basePrice={basePrice}
         />
       )}
+
+      {/* Livraison */}
+      <div className="mb-4">
+        {product.isFreeshipping ? (
+          <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700">
+            <span>🚚</span>
+            <span>Livraison offerte sur ce produit</span>
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500">🚚 Livraison incluse</p>
+        )}
+      </div>
 
       {/* Ajouter au panier */}
       <div className="mt-6 space-y-3">

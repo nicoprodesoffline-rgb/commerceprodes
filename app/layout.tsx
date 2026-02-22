@@ -2,7 +2,6 @@ import { CartProvider } from "components/cart/cart-context";
 import { Navbar } from "components/layout/navbar";
 import { WelcomeToast } from "components/welcome-toast";
 import { GeistSans } from "geist/font/sans";
-import { getCart } from "lib/supabase";
 import { ReactNode } from "react";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -22,18 +21,11 @@ export const metadata = {
   },
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  // Don't await the fetch, pass the Promise to the context provider
-  const cart = getCart();
-
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr" className={GeistSans.variable} suppressHydrationWarning={true}>
       <body className="bg-white text-black selection:bg-red-100">
-        <CartProvider cartPromise={cart}>
+        <CartProvider>
           <Navbar />
           <main>
             {children}

@@ -51,14 +51,20 @@ export function PriceGrid({
             {tiers.map((tier, i) => {
               let unitPrice: number | null = null;
               if (pricingType === "fixed" && tier.price != null) {
-                unitPrice = tier.price;
+                // tier.price = discount amount, not final price
+                unitPrice = basePrice - tier.price;
               } else if (pricingType === "percentage" && tier.discountPercent != null) {
                 unitPrice = basePrice * (1 - tier.discountPercent / 100);
               }
 
+              // Guard against corrupt data
+              if (unitPrice !== null && (unitPrice <= 0 || unitPrice >= basePrice)) {
+                unitPrice = null;
+              }
+
               const savings =
                 unitPrice != null && basePrice > 0
-                  ? Math.round((1 - unitPrice / basePrice) * 100)
+                  ? Math.round(((basePrice - unitPrice) / basePrice) * 100)
                   : null;
 
               return (

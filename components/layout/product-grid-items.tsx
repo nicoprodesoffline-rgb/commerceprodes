@@ -53,6 +53,13 @@ export default function ProductGridItems({ products }: { products: Product[] }) 
                 </div>
               )}
 
+              {/* Badge livraison offerte */}
+              {product.isFreeshipping && (
+                <span className="absolute bottom-2 left-2 rounded-full bg-green-600 px-2 py-0.5 text-xs font-medium text-white">
+                  Livraison offerte
+                </span>
+              )}
+
               {/* Badge "Voir le produit" au hover */}
               <div className="absolute inset-0 flex items-center justify-center bg-[#cc1818]/0 group-hover:bg-[#cc1818]/10 transition-colors duration-200">
                 <span className="translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-200 rounded-md bg-[#cc1818] px-4 py-1.5 text-xs font-semibold text-white shadow">

@@ -37,6 +37,8 @@ export type ProductVariant = {
     value: string;
   }[];
   price: Money;
+  /** SKU de la variante (PRODES extension) */
+  sku?: string;
 };
 
 export type CartProduct = {
@@ -147,6 +149,8 @@ export type Product = {
   regularPrice?: number;
   /** Nom de la première catégorie du produit. */
   categoryName?: string;
+  /** Livraison offerte (catégorie PUB26). */
+  isFreeshipping?: boolean;
 };
 
 // ── Homepage / Backoffice types ───────────────────────────────
@@ -157,6 +161,8 @@ export type CategoryWithCount = {
   slug: string;
   description?: string | null;
   product_count: number;
+  parent_id?: string | null;
+  children?: CategoryWithCount[];
 };
 
 export type DevisRequest = {

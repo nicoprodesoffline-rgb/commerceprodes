@@ -519,13 +519,14 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
   });
 
   if (productVariants.length === 0) {
+    const defaultPrice = Number(dbProduct.regular_price) || 0;
     productVariants.push({
       id: dbProduct.id + "-default",
       title: "Default Title",
       availableForSale: dbProduct.stock_status === "instock",
       selectedOptions: [],
       price: {
-        amount: (Number(dbProduct.regular_price) || 0).toFixed(2),
+        amount: defaultPrice.toFixed(2),
         currencyCode: "EUR",
       },
     });
@@ -538,11 +539,14 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
   const featuredImg =
     sortedImgs.find((i: any) => i.is_featured) ?? sortedImgs[0];
 
-  // Price range
+  // Price range — fallback: si le produit parent a prix 0, prendre le min des variants
   const base = Number(dbProduct.regular_price) || 0;
   const [priceMin, priceMax] = computePriceRange(productVariants.map(v => ({
     regular_price: Number(v.price.amount),
   })), base);
+
+  // Si le prix de base est 0 ou null, utiliser le prix minimum des variants
+  const effectiveBase = base > 0 ? base : (priceMin > 0 ? priceMin : 0);
 
   // PBQ price tiers for display (product-level tiers sorted by min_quantity)
   const displayTiers: PriceTierDisplay[] = priceTiersRaw
@@ -598,8 +602,9 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
     widthCm: dbProduct.width != null ? Number(dbProduct.width) : null,
     heightCm: dbProduct.height != null ? Number(dbProduct.height) : null,
     categoryName: (catLink as any)?.categories?.name,
-    priceMin,
-    priceMax,
+    priceMin: priceMin > 0 ? priceMin : effectiveBase,
+    priceMax: priceMax > 0 ? priceMax : effectiveBase,
+    regularPrice: effectiveBase,
   };
 }
 

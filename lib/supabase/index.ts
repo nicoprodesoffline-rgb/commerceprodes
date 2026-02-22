@@ -479,13 +479,17 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
     priceTiersRaw = (tiers || []) as DbPriceTier[];
   }
 
-  // Step 5 — first category name
-  const { data: catLink } = await supabase
+  // Step 5 — categories (name, slug, freeshipping)
+  const { data: catLinks } = await supabase
     .from("product_categories")
     .select("categories (name, slug)")
     .eq("product_id", dbProduct.id)
-    .limit(1)
-    .single();
+    .limit(5);
+
+  const catLink = catLinks?.[0] ?? null;
+  const isFreeshipping = (catLinks ?? []).some(
+    (pc: any) => (pc.categories as any)?.slug?.includes("pub26"),
+  );
 
   // Build options
   const options: ProductOption[] = (productAttrs || []).map((pa: any) => ({
@@ -515,6 +519,7 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
       availableForSale: v.stock_status === "instock",
       selectedOptions,
       price: { amount: price.toFixed(2), currencyCode: "EUR" },
+      sku: v.sku ?? undefined,
     };
   });
 
@@ -605,6 +610,7 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
     priceMin: priceMin > 0 ? priceMin : effectiveBase,
     priceMax: priceMax > 0 ? priceMax : effectiveBase,
     regularPrice: effectiveBase,
+    isFreeshipping,
   };
 }
 
@@ -966,33 +972,55 @@ export async function getPages(): Promise<Page[]> {
 // ============================================================
 
 export async function getRootCategories(): Promise<CategoryWithCount[]> {
-  // Fetch root categories
-  const { data: cats, error } = await supabase
+  // Fetch ALL categories (root + children) at once
+  const { data: allCats, error } = await supabase
     .from("categories")
-    .select("id, name, slug, description")
-    .is("parent_id", null)
+    .select("id, name, slug, description, parent_id")
     .order("position", { ascending: true });
 
-  if (error || !cats) return [];
+  if (error || !allCats) return [];
 
-  // Fetch product counts per category
+  // Fetch product counts per category (direct)
   const { data: counts } = await supabase
     .from("product_categories")
     .select("category_id");
 
-  const countMap: Record<string, number> = {};
+  const directCount: Record<string, number> = {};
   if (counts) {
     for (const row of counts as { category_id: string }[]) {
-      countMap[row.category_id] = (countMap[row.category_id] ?? 0) + 1;
+      directCount[row.category_id] = (directCount[row.category_id] ?? 0) + 1;
     }
   }
 
-  return cats.map((c: any) => ({
-    id: c.id,
-    name: c.name,
-    slug: c.slug,
-    description: c.description,
-    product_count: countMap[c.id] ?? 0,
+  // Propagate child counts to parents (one level — PRODES has max 2 levels)
+  const totalCount = { ...directCount };
+  for (const cat of allCats as any[]) {
+    if (cat.parent_id && directCount[cat.id]) {
+      totalCount[cat.parent_id] = (totalCount[cat.parent_id] ?? 0) + (directCount[cat.id] ?? 0);
+    }
+  }
+
+  const rootCats = (allCats as any[]).filter((c) => !c.parent_id);
+  const childCats = (allCats as any[]).filter((c) => c.parent_id);
+
+  return rootCats.map((root) => ({
+    id: root.id,
+    name: root.name,
+    slug: root.slug,
+    description: root.description,
+    parent_id: null,
+    product_count: totalCount[root.id] ?? 0,
+    children: childCats
+      .filter((c) => c.parent_id === root.id)
+      .map((child) => ({
+        id: child.id,
+        name: child.name,
+        slug: child.slug,
+        description: child.description,
+        parent_id: child.parent_id,
+        product_count: directCount[child.id] ?? 0,
+        children: [],
+      })),
   }));
 }
 
