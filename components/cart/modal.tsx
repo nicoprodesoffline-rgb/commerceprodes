@@ -11,7 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { createCartAndSetCookie, redirectToCheckout } from "./actions";
+import { createCartAndSetCookie } from "./actions";
 import { useCart } from "./cart-context";
 import { DeleteItemButton } from "./delete-item-button";
 import { EditItemQuantityButton } from "./edit-item-quantity-button";
@@ -76,18 +76,21 @@ export default function CartModal() {
           >
             <Dialog.Panel className="fixed bottom-0 right-0 top-0 flex h-full w-full flex-col border-l border-neutral-200 bg-white/80 p-6 text-black backdrop-blur-xl md:w-[390px] dark:border-neutral-700 dark:bg-black/80 dark:text-white">
               <div className="flex items-center justify-between">
-                <p className="text-lg font-semibold">My Cart</p>
-                <button aria-label="Close cart" onClick={closeCart}>
+                <p className="text-lg font-semibold">Mon panier</p>
+                <button aria-label="Fermer le panier" onClick={closeCart}>
                   <CloseCart />
                 </button>
               </div>
 
               {!cart || cart.lines.length === 0 ? (
                 <div className="mt-20 flex w-full flex-col items-center justify-center overflow-hidden">
-                  <ShoppingCartIcon className="h-16" />
-                  <p className="mt-6 text-center text-2xl font-bold">
-                    Your cart is empty.
+                  <ShoppingCartIcon className="h-16 text-gray-300" />
+                  <p className="mt-6 text-center text-xl font-semibold text-gray-700">
+                    Votre panier est vide
                   </p>
+                  <Link href="/search" onClick={closeCart} className="mt-4 text-sm text-[#cc1818] hover:underline">
+                    Voir le catalogue →
+                  </Link>
                 </div>
               ) : (
                 <div className="flex h-full flex-col justify-between overflow-hidden p-1">
@@ -193,31 +196,42 @@ export default function CartModal() {
                         );
                       })}
                   </ul>
-                  <div className="py-4 text-sm text-neutral-500 dark:text-neutral-400">
-                    <div className="mb-3 flex items-center justify-between border-b border-neutral-200 pb-1 dark:border-neutral-700">
-                      <p>Taxes</p>
+                  <div className="py-4 text-sm text-gray-500">
+                    <div className="mb-2 flex items-center justify-between border-b border-gray-100 pb-2">
+                      <p>Total HT</p>
                       <Price
-                        className="text-right text-base text-black dark:text-white"
-                        amount={cart.cost.totalTaxAmount.amount}
-                        currencyCode={cart.cost.totalTaxAmount.currencyCode}
+                        className="text-right text-base font-semibold text-gray-900"
+                        amount={cart.cost.subtotalAmount.amount}
+                        currencyCode={cart.cost.subtotalAmount.currencyCode}
                       />
                     </div>
-                    <div className="mb-3 flex items-center justify-between border-b border-neutral-200 pb-1 pt-1 dark:border-neutral-700">
-                      <p>Shipping</p>
-                      <p className="text-right">Calculated at checkout</p>
+                    <div className="mb-2 flex items-center justify-between border-b border-gray-100 pb-2">
+                      <p>Livraison</p>
+                      <p className="text-right text-gray-700">À calculer</p>
                     </div>
-                    <div className="mb-3 flex items-center justify-between border-b border-neutral-200 pb-1 pt-1 dark:border-neutral-700">
-                      <p>Total</p>
-                      <Price
-                        className="text-right text-base text-black dark:text-white"
-                        amount={cart.cost.totalAmount.amount}
-                        currencyCode={cart.cost.totalAmount.currencyCode}
-                      />
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="font-semibold text-gray-800">Total TTC (TVA 20%)</p>
+                      <p className="text-right font-bold text-gray-900">
+                        {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(
+                          Number(cart.cost.totalAmount.amount) * 1.2
+                        )} €
+                      </p>
                     </div>
                   </div>
-                  <form action={redirectToCheckout}>
-                    <CheckoutButton />
-                  </form>
+                  <Link
+                    href="/checkout"
+                    onClick={closeCart}
+                    className="block w-full rounded-md bg-[#cc1818] p-3 text-center text-sm font-semibold text-white hover:bg-[#aa1414] transition-colors"
+                  >
+                    Finaliser la commande →
+                  </Link>
+                  <Link
+                    href="/cart"
+                    onClick={closeCart}
+                    className="mt-2 block w-full rounded-md border border-gray-300 p-2.5 text-center text-sm text-gray-600 hover:border-gray-400 transition-colors"
+                  >
+                    Voir le panier complet
+                  </Link>
                 </div>
               )}
             </Dialog.Panel>
@@ -246,11 +260,11 @@ function CheckoutButton() {
 
   return (
     <button
-      className="block w-full rounded-full bg-blue-600 p-3 text-center text-sm font-medium text-white opacity-90 hover:opacity-100"
+      className="block w-full rounded-md bg-[#cc1818] p-3 text-center text-sm font-semibold text-white hover:bg-[#aa1414] transition-colors"
       type="submit"
       disabled={pending}
     >
-      {pending ? <LoadingDots className="bg-white" /> : "Proceed to Checkout"}
+      {pending ? <LoadingDots className="bg-white" /> : "Finaliser la commande →"}
     </button>
   );
 }
