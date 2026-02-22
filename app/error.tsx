@@ -2,17 +2,20 @@
 
 export default function Error({ reset }: { reset: () => void }) {
   return (
-    <div className="mx-auto my-4 flex max-w-xl flex-col rounded-lg border border-neutral-200 bg-white p-8 md:p-12 dark:border-neutral-800 dark:bg-black">
-      <h2 className="text-xl font-bold">Oh no!</h2>
-      <p className="my-2">
-        There was an issue with our storefront. This could be a temporary issue,
-        please try your action again.
+    <div className="flex min-h-[60vh] flex-col items-center justify-center text-center px-4">
+      <p className="text-4xl">⚠️</p>
+      <h2 className="mt-4 text-xl font-bold text-gray-900">
+        Une erreur est survenue
+      </h2>
+      <p className="mt-2 text-gray-500 max-w-sm">
+        Une erreur inattendue s&apos;est produite. Vous pouvez réessayer ou
+        retourner à l&apos;accueil.
       </p>
       <button
-        className="mx-auto mt-4 flex w-full items-center justify-center rounded-full bg-blue-600 p-4 tracking-wide text-white hover:opacity-90"
         onClick={() => reset()}
+        className="mt-6 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
       >
-        Try Again
+        Réessayer
       </button>
     </div>
   );

@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   validateEnvironmentVariables();
 
-  const routesMap = [""].map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date().toISOString(),
-  }));
+  const routesMap: Route[] = [
+    { url: `${baseUrl}/`, lastModified: new Date().toISOString() },
+    { url: `${baseUrl}/search`, lastModified: new Date().toISOString() },
+  ];
 
   const collectionsPromise = getCollections().then((collections) =>
     collections.map((collection) => ({
@@ -24,7 +24,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   );
 
-  const productsPromise = getProducts({}).then((products) =>
+  // Limite à 100 produits pour éviter timeout Vercel
+  const productsPromise = getProducts({ limit: 100 }).then((products) =>
     products.map((product) => ({
       url: `${baseUrl}/product/${product.handle}`,
       lastModified: product.updatedAt,
