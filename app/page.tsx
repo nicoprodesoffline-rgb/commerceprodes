@@ -3,10 +3,14 @@ import { ThreeItemGrid } from "components/grid/three-items";
 import Footer from "components/layout/footer";
 
 export const metadata = {
+  title: "PRODES – Équipements pour collectivités",
   description:
-    "High-performance ecommerce store built with Next.js, Vercel, and Shopify.",
+    "Large choix de tables, chaises, mobilier urbain, signalisation. Livraison rapide. Meilleurs prix HT pour les organismes publics.",
   openGraph: {
     type: "website",
+    title: "PRODES – Équipements pour collectivités",
+    description:
+      "Mobilier, signalisation et équipements au service des collectivités publiques.",
   },
 };
 

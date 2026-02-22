@@ -21,9 +21,14 @@ export async function generateMetadata(props: {
   const { url, width, height, altText: alt } = product.featuredImage || {};
   const indexable = !product.tags.includes(HIDDEN_PRODUCT_TAG);
 
+  const rawDescription = product.shortDescription || product.seo.description || product.description || "";
+  const metaDescription = rawDescription.length > 160
+    ? rawDescription.slice(0, 157) + "…"
+    : rawDescription;
+
   return {
-    title: product.seo.title || product.title,
-    description: product.seo.description || product.description,
+    title: `${product.seo.title || product.title} – PRODES`,
+    description: metaDescription,
     robots: {
       index: indexable,
       follow: indexable,
@@ -34,14 +39,9 @@ export async function generateMetadata(props: {
     },
     openGraph: url
       ? {
-          images: [
-            {
-              url,
-              width,
-              height,
-              alt,
-            },
-          ],
+          title: `${product.title} – PRODES`,
+          description: metaDescription,
+          images: [{ url, width, height, alt }],
         }
       : null,
   };
