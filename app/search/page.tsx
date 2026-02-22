@@ -4,7 +4,7 @@ import { defaultSort, sorting } from "lib/constants";
 import { getProducts } from "lib/supabase";
 
 export const metadata = {
-  title: "Recherche – PRODES",
+  title: "Catalogue – PRODES",
   description: "Recherchez parmi nos équipements pour collectivités.",
 };
 
@@ -21,14 +21,22 @@ export default async function SearchPage(props: {
 
   return (
     <>
+      <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-white">
+        {searchValue
+          ? `Résultats pour « ${searchValue} »`
+          : "Tout le catalogue"}
+      </h1>
       {searchValue ? (
-        <p className="mb-4">
+        <p className="mb-6 text-sm text-gray-500">
           {products.length === 0
-            ? "Aucun produit ne correspond à "
-            : `${products.length} ${resultsText} pour `}
-          <span className="font-bold">&quot;{searchValue}&quot;</span>
+            ? "Aucun produit ne correspond à cette recherche."
+            : `${products.length} ${resultsText}`}
         </p>
-      ) : null}
+      ) : (
+        <p className="mb-6 text-sm text-gray-500">
+          {products.length} produit{products.length !== 1 ? "s" : ""}
+        </p>
+      )}
       {products.length > 0 ? (
         <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <ProductGridItems products={products} />

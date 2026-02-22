@@ -42,9 +42,12 @@ export default async function CategoryPage(props: {
 
   return (
     <section>
-      <h1 className="mb-6 text-2xl font-semibold text-neutral-900 dark:text-white">
+      <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-white">
         {collection.title}
       </h1>
+      <p className="mb-6 text-sm text-gray-500">
+        {products.length} produit{products.length !== 1 ? "s" : ""} dans cette catégorie
+      </p>
       {products.length === 0 ? (
         <p className="py-3 text-lg text-neutral-500">
           Aucun produit trouvé dans cette catégorie.

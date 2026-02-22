@@ -139,28 +139,39 @@ export function ProductDescription({ product }: { product: Product }) {
 
       {/* PBQ Price grid */}
       {product.pbqEnabled && product.priceTiers && product.priceTiers.length > 0 && (
-        <PriceGrid
-          tiers={product.priceTiers}
-          pricingType={product.pbqPricingType ?? null}
-          basePrice={basePrice}
-        />
+        <div>
+          <PriceGrid
+            tiers={product.priceTiers}
+            pricingType={product.pbqPricingType ?? null}
+            basePrice={basePrice}
+          />
+          <p className="mt-1 text-xs text-neutral-400">
+            Prix unitaire HT, hors taxes et hors livraison
+          </p>
+        </div>
       )}
 
       {/* 3 B2B action buttons */}
       <div className="mt-6 space-y-3">
-        <button
-          onClick={() => setDevisOpen(true)}
-          className="w-full rounded-md bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
-        >
-          Demander un devis
-        </button>
-        <button
-          onClick={() => setMandatOpen(true)}
-          className="w-full rounded-md border border-neutral-800 py-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 transition-colors dark:border-neutral-300 dark:text-neutral-200 dark:hover:bg-neutral-800"
-        >
-          Mandat administratif
-        </button>
-        <div className="flex justify-center pt-1">
+        <div>
+          <button
+            onClick={() => setDevisOpen(true)}
+            className="w-full rounded-md bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+          >
+            Demander un devis
+          </button>
+          <p className="mt-0.5 text-center text-xs text-neutral-400">Réponse sous 24h</p>
+        </div>
+        <div>
+          <button
+            onClick={() => setMandatOpen(true)}
+            className="w-full rounded-md border border-neutral-800 py-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 transition-colors dark:border-neutral-300 dark:text-neutral-200 dark:hover:bg-neutral-800"
+          >
+            Mandat administratif
+          </button>
+          <p className="mt-0.5 text-center text-xs text-neutral-400">Pour les collectivités</p>
+        </div>
+        <div className="flex flex-col items-center pt-1">
           <StripeButton
             productTitle={product.title}
             productSku={product.sku}
@@ -168,6 +179,7 @@ export function ProductDescription({ product }: { product: Product }) {
             quantity={quantity}
             unitPrice={displayPrice}
           />
+          <p className="mt-0.5 text-xs text-neutral-400">Disponible prochainement</p>
         </div>
       </div>
 

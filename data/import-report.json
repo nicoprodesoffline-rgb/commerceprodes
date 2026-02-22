@@ -1,0 +1,48 @@
+{
+  "startedAt": "2026-02-20T21:20:18.586Z",
+  "finishedAt": "2026-02-20T21:21:30.107Z",
+  "durationSec": 71.5,
+  "counts": {
+    "categories": 58,
+    "AttributeTerms": 702,
+    "attributes": 59,
+    "Products": 983,
+    "ProductCategories": 2165,
+    "ProductAttributes": 787,
+    "Variants": 6806,
+    "VariantAttributes": 17855,
+    "ProductImages": 4090,
+    "PriceTiers": 5634
+  },
+  "errors": [],
+  "warnings": [
+    {
+      "step": "variants",
+      "msg": "Parent SKU introuvable: \"PROCHJ\" pour variation \"PROCHJ-11\""
+    },
+    {
+      "step": "variants",
+      "msg": "Parent SKU introuvable: \"PROCHJ\" pour variation \"PROCHJ-12\""
+    },
+    {
+      "step": "variants",
+      "msg": "Parent SKU introuvable: \"PROCHJ\" pour variation \"PROCHJ-13\""
+    },
+    {
+      "step": "variants",
+      "msg": "Parent SKU introuvable: \"PROCHJ\" pour variation \"PROCHJ-14\""
+    },
+    {
+      "step": "variants",
+      "msg": "Parent SKU introuvable: \"PROCHJ\" pour variation \"PROCHJ-15\""
+    },
+    {
+      "step": "variants",
+      "msg": "Parent SKU introuvable: \"PROCHJ\" pour variation \"PROCHJ-16\""
+    },
+    {
+      "step": "variants",
+      "msg": "Parent SKU introuvable: \"PROCHJ\" pour variation \"PROCHJ-17\""
+    }
+  ]
+}

@@ -100,6 +100,14 @@ export type Page = {
   updatedAt: string;
 };
 
+/** Palier de prix affiché sur la fiche produit. */
+export type PriceTierDisplay = {
+  minQuantity: number;
+  price: number | null;
+  discountPercent: number | null;
+  position: number;
+};
+
 export type Product = {
   id: string;
   handle: string;
@@ -118,6 +126,59 @@ export type Product = {
   seo: SEO;
   tags: string[];
   updatedAt: string;
+
+  // ── PRODES B2B extensions (optional — backwards-compatible) ──
+  sku?: string;
+  shortDescription?: string | null;
+  ecoContribution?: number | null;
+  pbqEnabled?: boolean;
+  pbqPricingType?: "fixed" | "percentage" | null;
+  pbqMinQuantity?: number;
+  priceTiers?: PriceTierDisplay[];
+  weightKg?: number | null;
+  lengthCm?: number | null;
+  widthCm?: number | null;
+  heightCm?: number | null;
+  /** Prix minimum calculé sur les variants (number, pour format fr-FR). */
+  priceMin?: number;
+  /** Prix maximum calculé sur les variants (number, pour format fr-FR). */
+  priceMax?: number;
+  /** Nom de la première catégorie du produit. */
+  categoryName?: string;
+};
+
+// ── Homepage / Backoffice types ───────────────────────────────
+
+export type CategoryWithCount = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  product_count: number;
+};
+
+export type DevisRequest = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  nom: string;
+  email: string;
+  telephone?: string;
+  produit: string;
+  sku?: string;
+  quantite?: number;
+  message?: string;
+  status: "nouveau" | "en_cours" | "traite" | "archive" | "refuse";
+  notes_internes?: string;
+  assigned_to?: string;
+  ip_address?: string;
+};
+
+export type DevisRequestInsert = Omit<
+  DevisRequest,
+  "id" | "created_at" | "updated_at" | "status"
+> & {
+  status?: DevisRequest["status"];
 };
 
 // ============================================================
@@ -149,6 +210,12 @@ export type DbProduct = {
   stock_status: "instock" | "outofstock" | "onbackorder";
   pbq_enabled: boolean;
   pbq_pricing_type: "fixed" | "percentage" | null;
+  pbq_min_quantity: number;
+  eco_contribution: number | null;
+  weight: number | null;
+  length: number | null;
+  width: number | null;
+  height: number | null;
   seo_title: string | null;
   seo_description: string | null;
   tags: string[];

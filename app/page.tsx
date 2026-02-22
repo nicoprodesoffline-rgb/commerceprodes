@@ -1,6 +1,9 @@
-import { Carousel } from "components/carousel";
-import { ThreeItemGrid } from "components/grid/three-items";
-import Footer from "components/layout/footer";
+import { Suspense } from "react";
+import Hero from "components/home/hero";
+import TrustBar from "components/home/trust-bar";
+import CategoryGrid from "components/home/category-grid";
+import FeaturedProducts from "components/home/featured-products";
+import { getRootCategories, getFeaturedProducts } from "lib/supabase/index";
 
 export const metadata = {
   title: "PRODES – Équipements pour collectivités",
@@ -14,12 +17,24 @@ export const metadata = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [categories, featuredProducts] = await Promise.all([
+    getRootCategories(),
+    getFeaturedProducts(8),
+  ]);
+
   return (
-    <>
-      <ThreeItemGrid />
-      <Carousel />
-      <Footer />
-    </>
+    <main>
+      <Hero />
+      <TrustBar />
+      <Suspense>
+        <section className="mx-auto max-w-screen-2xl px-4 py-12 lg:px-6">
+          <CategoryGrid categories={categories} />
+        </section>
+        <section className="mx-auto max-w-screen-2xl px-4 pb-16 lg:px-6">
+          <FeaturedProducts products={featuredProducts} />
+        </section>
+      </Suspense>
+    </main>
   );
 }

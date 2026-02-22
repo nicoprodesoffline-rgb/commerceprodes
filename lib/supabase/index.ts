@@ -10,8 +10,11 @@ import { calculatePrice } from "./price";
 import type {
   Cart,
   CartItem,
+  CategoryWithCount,
   Collection,
   DbPriceTier,
+  DevisRequest,
+  DevisRequestInsert,
   Image,
   Menu,
   Page,
@@ -951,6 +954,222 @@ export async function getPages(): Promise<Page[]> {
     createdAt: page.created_at,
     updatedAt: page.updated_at,
   }));
+}
+
+// ============================================================
+// HOMEPAGE — catégories racines + produits vedette
+// ============================================================
+
+export async function getRootCategories(): Promise<CategoryWithCount[]> {
+  // Fetch root categories
+  const { data: cats, error } = await supabase
+    .from("categories")
+    .select("id, name, slug, description")
+    .is("parent_id", null)
+    .order("position", { ascending: true });
+
+  if (error || !cats) return [];
+
+  // Fetch product counts per category
+  const { data: counts } = await supabase
+    .from("product_categories")
+    .select("category_id");
+
+  const countMap: Record<string, number> = {};
+  if (counts) {
+    for (const row of counts as { category_id: string }[]) {
+      countMap[row.category_id] = (countMap[row.category_id] ?? 0) + 1;
+    }
+  }
+
+  return cats.map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    description: c.description,
+    product_count: countMap[c.id] ?? 0,
+  }));
+}
+
+export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
+  // Fetch recent published products with images
+  const { data: products, error } = await supabase
+    .from("products")
+    .select(
+      `
+      id, slug, name, description, short_description, type, status,
+      regular_price, sale_price, stock_status,
+      pbq_enabled, pbq_pricing_type, pbq_min_quantity,
+      eco_contribution, weight, length, width, height,
+      seo_title, seo_description, tags, created_at, updated_at,
+      product_images (id, url, alt_text, position, is_featured)
+    `,
+    )
+    .eq("status", "publish")
+    .order("created_at", { ascending: false })
+    .limit(limit * 3); // fetch more to filter those with images
+
+  if (error || !products) return [];
+
+  // Prefer products with images
+  const withImages = products.filter(
+    (p: any) => p.product_images && p.product_images.length > 0,
+  );
+  const selected = withImages.length >= limit
+    ? withImages.slice(0, limit)
+    : products.slice(0, limit);
+
+  return selected.map((p: any) => {
+    const imgs: any[] = (p.product_images || []).sort(
+      (a: any, b: any) => a.position - b.position,
+    );
+    const featuredImg = imgs.find((i) => i.is_featured) ?? imgs[0];
+    return {
+      id: p.id,
+      handle: p.slug,
+      title: p.name,
+      description: p.short_description || p.description || "",
+      descriptionHtml: p.description || "",
+      availableForSale: p.stock_status !== "outofstock",
+      options: [],
+      variants: [],
+      priceRange: {
+        minVariantPrice: {
+          amount: String(p.regular_price ?? 0),
+          currencyCode: "EUR",
+        },
+        maxVariantPrice: {
+          amount: String(p.regular_price ?? 0),
+          currencyCode: "EUR",
+        },
+      },
+      featuredImage: featuredImg
+        ? buildImage(featuredImg, p.name)
+        : emptyImage(p.name),
+      images: imgs.map((img) => buildImage(img, p.name)),
+      seo: {
+        title: p.seo_title || p.name,
+        description: p.seo_description || p.short_description || "",
+      },
+      tags: p.tags || [],
+      updatedAt: p.updated_at,
+      priceMin: p.regular_price ?? 0,
+      priceMax: p.regular_price ?? 0,
+    } satisfies Product;
+  });
+}
+
+// ============================================================
+// BACKOFFICE — devis_requests
+// ============================================================
+
+export async function createDevisRequest(
+  data: DevisRequestInsert,
+): Promise<void> {
+  const { supabaseServer } = await import("./client");
+  const client = supabaseServer();
+
+  await client.from("devis_requests").insert({
+    nom: data.nom,
+    email: data.email,
+    telephone: data.telephone ?? null,
+    produit: data.produit,
+    sku: data.sku ?? null,
+    quantite: data.quantite ?? null,
+    message: data.message ?? null,
+    status: data.status ?? "nouveau",
+    ip_address: data.ip_address ?? null,
+  });
+}
+
+export async function getDevisRequests(options?: {
+  status?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ data: DevisRequest[]; count: number }> {
+  const { supabaseServer } = await import("./client");
+  const client = supabaseServer();
+
+  const limit = options?.limit ?? 20;
+  const offset = options?.offset ?? 0;
+
+  let query = client
+    .from("devis_requests")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (options?.status && options.status !== "all") {
+    query = query.eq("status", options.status);
+  }
+
+  const { data, count, error } = await query;
+  if (error || !data) return { data: [], count: 0 };
+
+  return { data: data as DevisRequest[], count: count ?? 0 };
+}
+
+export async function updateDevisStatus(
+  id: string,
+  status: string,
+  notes?: string,
+): Promise<boolean> {
+  const { supabaseServer } = await import("./client");
+  const client = supabaseServer();
+
+  const update: Record<string, unknown> = { status };
+  if (notes !== undefined) update.notes_internes = notes;
+
+  const { error } = await client
+    .from("devis_requests")
+    .update(update)
+    .eq("id", id);
+
+  return !error;
+}
+
+export async function getAdminStats(): Promise<{
+  totalProducts: number;
+  totalCategories: number;
+  totalVariants: number;
+  devisThisMonth: number;
+  devisNew: number;
+}> {
+  const { supabaseServer } = await import("./client");
+  const client = supabaseServer();
+
+  const [products, categories, variants, devisNew, devisMonth] =
+    await Promise.all([
+      supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "publish"),
+      supabase
+        .from("categories")
+        .select("id", { count: "exact", head: true }),
+      supabase
+        .from("product_variants")
+        .select("id", { count: "exact", head: true }),
+      client
+        .from("devis_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "nouveau"),
+      client
+        .from("devis_requests")
+        .select("id", { count: "exact", head: true })
+        .gte(
+          "created_at",
+          new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
+        ),
+    ]);
+
+  return {
+    totalProducts: products.count ?? 0,
+    totalCategories: categories.count ?? 0,
+    totalVariants: variants.count ?? 0,
+    devisNew: devisNew.count ?? 0,
+    devisThisMonth: devisMonth.count ?? 0,
+  };
 }
 
 // ============================================================

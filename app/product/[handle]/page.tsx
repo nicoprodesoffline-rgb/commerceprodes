@@ -82,6 +82,25 @@ export default async function ProductPage(props: {
         }}
       />
       <div className="mx-auto max-w-(--breakpoint-2xl) px-4">
+        {/* Breadcrumb */}
+        <nav className="mb-3 flex items-center gap-1.5 text-sm text-gray-500 pt-4">
+          <Link href="/" className="hover:text-blue-600 transition-colors">Accueil</Link>
+          <span>/</span>
+          {product.categoryName ? (
+            <>
+              <Link href="/search" className="hover:text-blue-600 transition-colors">
+                {product.categoryName}
+              </Link>
+              <span>/</span>
+            </>
+          ) : (
+            <>
+              <Link href="/search" className="hover:text-blue-600 transition-colors">Catalogue</Link>
+              <span>/</span>
+            </>
+          )}
+          <span className="text-gray-800 line-clamp-1">{product.title}</span>
+        </nav>
         <div className="flex flex-col rounded-lg border border-neutral-200 bg-white p-8 md:p-12 lg:flex-row lg:gap-8 dark:border-neutral-800 dark:bg-black">
           <div className="h-full w-full basis-full lg:basis-4/6">
             <Suspense
@@ -106,6 +125,7 @@ export default async function ProductPage(props: {
         </div>
         <RelatedProducts id={product.id} />
       </div>
+
       <Footer />
     </>
   );
