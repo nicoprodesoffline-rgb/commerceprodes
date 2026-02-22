@@ -1,6 +1,6 @@
 import Grid from "components/grid";
+import { ProductCardImage } from "components/product-image";
 import { Product } from "lib/supabase/types";
-import Image from "next/image";
 import Link from "next/link";
 
 function formatPriceFR(price: number): string {
@@ -41,12 +41,10 @@ export default function ProductGridItems({ products }: { products: Product[] }) 
             {/* Image */}
             <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg border border-neutral-200 bg-white hover:border-blue-600 dark:border-neutral-800 dark:bg-black">
               {product.featuredImage?.url ? (
-                <Image
+                <ProductCardImage
                   src={product.featuredImage.url}
                   alt={product.featuredImage.altText || product.title}
-                  fill
                   sizes="(min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
-                  className="relative h-full w-full object-contain transition duration-300 ease-in-out group-hover:scale-105"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-neutral-300">
