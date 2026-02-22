@@ -10,6 +10,7 @@ import React, {
   useReducer,
   useState,
 } from "react";
+import { persistAbandonedCart } from "lib/cart/persist";
 
 const CART_KEY = "prodes_cart";
 
@@ -186,6 +187,30 @@ export function CartProvider({
     } catch {
       // Ignore storage errors
     }
+  }, [cart, mounted]);
+
+  // Persist abandoned cart on page close or after 30 min inactivity
+  useEffect(() => {
+    if (!mounted) return;
+
+    const handleUnload = () => {
+      if (cart.lines.length > 0) {
+        persistAbandonedCart(cart);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+
+    const inactivityTimer = setTimeout(() => {
+      if (cart.lines.length > 0) {
+        persistAbandonedCart(cart);
+      }
+    }, 30 * 60 * 1000);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      clearTimeout(inactivityTimer);
+    };
   }, [cart, mounted]);
 
   const updateCartItem = useCallback(

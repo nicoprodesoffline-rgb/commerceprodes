@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import MobileMenu from "./mobile-menu";
-import Search, { SearchSkeleton } from "./search";
+import { SearchSkeleton } from "./search";
+import { LiveSearch } from "components/search/live-search";
 
 export async function Navbar() {
   const menu = await getMenu("next-js-frontend-header-menu");
@@ -67,23 +68,20 @@ export async function Navbar() {
             />
           </Link>
 
-          {/* Search bar — centre */}
+          {/* Search bar — centre avec autocomplete */}
           <div className="flex-1 hidden md:block">
             <Suspense fallback={<SearchSkeleton />}>
-              <Search />
+              <LiveSearch placeholder="Rechercher un produit, une référence..." />
             </Suspense>
           </div>
 
           {/* Droite : liens + panier */}
           <div className="flex items-center gap-3 ml-auto md:ml-0">
             <Link
-              href="/search"
+              href="/devis-express"
               className="hidden lg:inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-[#cc1818] transition-colors"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-              </svg>
-              Mon compte
+              Devis express
             </Link>
             <CartModal />
           </div>

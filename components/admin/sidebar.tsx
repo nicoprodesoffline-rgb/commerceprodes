@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 const navLinks = [
   { href: "/admin", label: "Dashboard", icon: "📊", exact: true },
   { href: "/admin/devis", label: "Demandes de devis", icon: "📋" },
+  { href: "/admin/paniers-abandonnes", label: "Paniers abandonnés", icon: "🛒" },
   { href: "/admin/products", label: "Produits", icon: "📦" },
   { href: "/admin/categories", label: "Catégories", icon: "🗂️" },
 ];
