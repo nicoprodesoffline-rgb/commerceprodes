@@ -64,9 +64,11 @@
 - [x] generateMetadata enrichi /search/[collection] — OpenGraph + canonical
 
 ## Étape 7 — Deploy
-- Bloqué — `vercel login` requis (authentification interactive)
-- URL preview : voir `docs/blocked.md` pour instructions
-- vercel.json créé avec config Next.js
+- ✅ **Deploy production réussi**
+- **URL** : https://commerce-vert-sigma.vercel.app
+- Inspect : https://vercel.com/niximon-3150s-projects/commerce/EU53KwjeNQi6AiXwsoH7XG1WfqJS
+- Fix appliqué : `vercel.json` avec `installCommand: npm install --legacy-peer-deps` (pnpm-lock.yaml obsolète)
+- Env vars configurées manuellement via CLI (production + development)
 
 ---
 
