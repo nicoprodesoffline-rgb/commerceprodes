@@ -1,5 +1,39 @@
 # Éléments bloqués — à compléter par Nicolas
 
+## Session 6 — Deploy Vercel (Étape 7)
+
+**Statut** : Bloqué — authentification requise
+
+**Problème** : `vercel --yes` échoue avec "The specified token is not valid"
+
+**Action requise** :
+1. Ouvrir un terminal dans `~/Desktop/commerce`
+2. Exécuter : `npx vercel login`
+3. S'authentifier (GitHub / email)
+4. Ensuite : `npx vercel --yes` pour deploy preview
+5. Ou configurer un token dans `.env.local` : `VERCEL_TOKEN=xxx`
+
+**Variables d'environnement à vérifier sur Vercel** :
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `ADMIN_PASSWORD`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+---
+
+## Table abandoned_carts — SQL à exécuter manuellement
+
+**Statut** : SQL prêt, à exécuter dans Supabase
+
+**Action requise** :
+1. Ouvrir https://supabase.com/dashboard/project/mvnaeddtvyaqkdliivdk/sql
+2. Copier-coller le contenu de `docs/sql-migrations/001-abandoned-carts.sql`
+3. Exécuter
+
+**Optionnel** : `docs/sql-migrations/002-category-cover.sql` pour les images catégories
+
+---
+
 ## RESEND_API_KEY manquante — email devis inactif
 
 **Statut** : Mode dégradé actif (console.log uniquement)
