@@ -1,6 +1,7 @@
 import { getCollection, getCollectionProducts } from "lib/supabase";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { baseUrl } from "lib/utils";
 
 import Grid from "components/grid";
 import ProductGridItems from "components/layout/product-grid-items";
@@ -14,12 +15,23 @@ export async function generateMetadata(props: {
 
   if (!collection) return notFound();
 
+  const title = `${collection.seo?.title || collection.title} — Équipements collectivités | PRODES`;
+  const description =
+    collection.seo?.description ||
+    collection.description ||
+    `Découvrez notre gamme ${collection.title} — équipements pour mairies, écoles et collectivités. Devis gratuit sous 24h.`;
+
   return {
-    title: `${collection.seo?.title || collection.title} – PRODES`,
-    description:
-      collection.seo?.description ||
-      collection.description ||
-      `Découvrez notre gamme ${collection.title} — équipements pour collectivités.`,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+    },
+    alternates: {
+      canonical: `${baseUrl}/search/${params.collection}`,
+    },
   };
 }
 

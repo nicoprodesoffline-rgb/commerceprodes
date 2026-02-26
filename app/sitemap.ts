@@ -1,53 +1,60 @@
-import { getCollections, getPages, getProducts } from "lib/supabase";
-import { baseUrl, validateEnvironmentVariables } from "lib/utils";
-import { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
+import { supabase } from "lib/supabase/client";
+import { baseUrl } from "lib/utils";
 
-type Route = {
-  url: string;
-  lastModified: string;
-};
-
-export const dynamic = "force-dynamic";
+export const revalidate = 3600; // 1h
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  validateEnvironmentVariables();
-
-  const routesMap: Route[] = [
-    { url: `${baseUrl}/`, lastModified: new Date().toISOString() },
-    { url: `${baseUrl}/search`, lastModified: new Date().toISOString() },
+  const staticPages: MetadataRoute.Sitemap = [
+    { url: `${baseUrl}/`, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
+    { url: `${baseUrl}/search`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
+    { url: `${baseUrl}/devis-express`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
+    { url: `${baseUrl}/faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    { url: `${baseUrl}/contact`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    {
+      url: `${baseUrl}/mentions-legales`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
   ];
 
-  const collectionsPromise = getCollections().then((collections) =>
-    collections.map((collection) => ({
-      url: `${baseUrl}${collection.path}`,
-      lastModified: collection.updatedAt,
-    })),
-  );
-
-  // Limite à 100 produits pour éviter timeout Vercel
-  const productsPromise = getProducts({ limit: 100 }).then((products) =>
-    products.map((product) => ({
-      url: `${baseUrl}/product/${product.handle}`,
-      lastModified: product.updatedAt,
-    })),
-  );
-
-  const pagesPromise = getPages().then((pages) =>
-    pages.map((page) => ({
-      url: `${baseUrl}/${page.handle}`,
-      lastModified: page.updatedAt,
-    })),
-  );
-
-  let fetchedRoutes: Route[] = [];
-
   try {
-    fetchedRoutes = (
-      await Promise.all([collectionsPromise, productsPromise, pagesPromise])
-    ).flat();
-  } catch (error) {
-    throw JSON.stringify(error, null, 2);
-  }
+    const [catResult, prodResult] = await Promise.allSettled([
+      supabase
+        .from("categories")
+        .select("slug, updated_at")
+        .order("position", { ascending: true }),
+      supabase
+        .from("products")
+        .select("slug, updated_at")
+        .eq("status", "publish")
+        .order("updated_at", { ascending: false })
+        .limit(5000),
+    ]);
 
-  return [...routesMap, ...fetchedRoutes];
+    const categoryPages: MetadataRoute.Sitemap =
+      catResult.status === "fulfilled"
+        ? (catResult.value.data || []).map((cat: { slug: string; updated_at: string | null }) => ({
+            url: `${baseUrl}/search/${cat.slug}`,
+            lastModified: cat.updated_at ? new Date(cat.updated_at) : new Date(),
+            changeFrequency: "weekly" as const,
+            priority: 0.9,
+          }))
+        : [];
+
+    const productPages: MetadataRoute.Sitemap =
+      prodResult.status === "fulfilled"
+        ? (prodResult.value.data || []).map((p: { slug: string; updated_at: string | null }) => ({
+            url: `${baseUrl}/product/${p.slug}`,
+            lastModified: p.updated_at ? new Date(p.updated_at) : new Date(),
+            changeFrequency: "weekly" as const,
+            priority: 0.8,
+          }))
+        : [];
+
+    return [...staticPages, ...categoryPages, ...productPages];
+  } catch {
+    return staticPages;
+  }
 }

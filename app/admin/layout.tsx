@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import AdminSidebar from "components/admin/sidebar";
 
@@ -7,6 +7,12 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Middleware sets x-admin-public:1 for /admin/login — skip auth guard to avoid redirect loop
+  const headersList = await headers();
+  if (headersList.get("x-admin-public") === "1") {
+    return <>{children}</>;
+  }
+
   const cookieStore = await cookies();
   const session = cookieStore.get("admin_session")?.value;
 

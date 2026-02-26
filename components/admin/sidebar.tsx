@@ -4,12 +4,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-const navLinks = [
+interface NavLink {
+  href: string;
+  label: string;
+  icon: string;
+  exact?: boolean;
+  badge?: string;
+}
+
+const navLinks: NavLink[] = [
   { href: "/admin", label: "Dashboard", icon: "📊", exact: true },
   { href: "/admin/devis", label: "Demandes de devis", icon: "📋" },
   { href: "/admin/paniers-abandonnes", label: "Paniers abandonnés", icon: "🛒" },
-  { href: "/admin/products", label: "Produits", icon: "📦" },
+  { href: "/admin/produits", label: "Produits", icon: "📦" },
   { href: "/admin/categories", label: "Catégories", icon: "🗂️" },
+  { href: "/admin/ia", label: "Outils IA", icon: "🤖", badge: "Beta" },
 ];
 
 export default function AdminSidebar() {
@@ -52,7 +61,12 @@ export default function AdminSidebar() {
               }`}
             >
               <span className="text-base">{link.icon}</span>
-              {link.label}
+              <span className="flex-1">{link.label}</span>
+              {link.badge && (
+                <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                  {link.badge}
+                </span>
+              )}
             </Link>
           );
         })}

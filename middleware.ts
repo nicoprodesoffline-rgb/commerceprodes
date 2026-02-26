@@ -9,8 +9,11 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Exclude /admin/login explicitly — no auth check needed
+  // Pass a request header so the admin layout can skip its own auth check
   if (pathname === "/admin/login" || pathname.startsWith("/admin/login/")) {
-    return NextResponse.next();
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-admin-public", "1");
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   // Protect all /admin/* routes

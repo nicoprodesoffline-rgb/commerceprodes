@@ -1206,6 +1206,104 @@ export async function getAdminStats(): Promise<{
 }
 
 // ============================================================
+// HOMEPAGE — fonctions carousel
+// ============================================================
+
+/** Produits en promotion ou récents comme fallback */
+export async function getPromoProducts(limit = 12): Promise<Product[]> {
+  // Try products with sale_price < regular_price
+  const { data: saleProducts } = await supabase
+    .from("products")
+    .select(PRODUCT_LIST_SELECT)
+    .eq("status", "publish")
+    .not("sale_price", "is", null)
+    .gt("sale_price", 0)
+    .limit(limit * 2);
+
+  const withImages = (saleProducts || []).filter(
+    (p: any) => p.product_images && p.product_images.length > 0,
+  );
+
+  if (withImages.length >= limit) {
+    return withImages.slice(0, limit).map(buildProductSummary);
+  }
+
+  // Fallback: last products
+  const { data: fallback } = await supabase
+    .from("products")
+    .select(PRODUCT_LIST_SELECT)
+    .eq("status", "publish")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  return (fallback || []).map(buildProductSummary);
+}
+
+/** Derniers produits ajoutés au catalogue */
+export async function getNewProducts(limit = 12): Promise<Product[]> {
+  const { data: products } = await supabase
+    .from("products")
+    .select(PRODUCT_LIST_SELECT)
+    .eq("status", "publish")
+    .order("created_at", { ascending: false })
+    .limit(limit * 2);
+
+  const withImages = (products || []).filter(
+    (p: any) => p.product_images && p.product_images.length > 0,
+  );
+
+  const selected = withImages.length >= limit
+    ? withImages.slice(0, limit)
+    : (products || []).slice(0, limit);
+
+  return selected.map(buildProductSummary);
+}
+
+/** Catégories racines avec cover_image_url pour la homepage */
+export async function getHomepageCategories(): Promise<
+  Array<{
+    id: string;
+    name: string;
+    slug: string;
+    product_count: number;
+    cover_image_url: string | null;
+    image_url: string | null;
+  }>
+> {
+  const { data: cats, error } = await supabase
+    .from("categories")
+    .select("id, name, slug, cover_image_url, image_url")
+    .is("parent_id", null)
+    .order("position", { ascending: true })
+    .limit(8);
+
+  if (error || !cats) return [];
+
+  // Count products per root category
+  const { data: counts } = await supabase
+    .from("product_categories")
+    .select("category_id");
+
+  const directCount: Record<string, number> = {};
+  if (counts) {
+    for (const row of counts as { category_id: string }[]) {
+      directCount[row.category_id] = (directCount[row.category_id] ?? 0) + 1;
+    }
+  }
+
+  return cats
+    .map((cat: any) => ({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      product_count: directCount[cat.id] ?? 0,
+      cover_image_url: cat.cover_image_url ?? null,
+      image_url: cat.image_url ?? null,
+    }))
+    .filter((c) => c.product_count > 0);
+}
+
+// ============================================================
 // REVALIDATE (stub — no Shopify webhooks)
 // ============================================================
 

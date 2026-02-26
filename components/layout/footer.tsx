@@ -58,9 +58,19 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="mailto:contact@prodes.fr" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
+                <Link href="/contact" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
                   Contact
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link href="/faq" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
+                  FAQ
+                </Link>
+              </li>
+              <li>
+                <Link href="/mentions-legales" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
+                  Mentions légales
+                </Link>
               </li>
             </ul>
           </div>

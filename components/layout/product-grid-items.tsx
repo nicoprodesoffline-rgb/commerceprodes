@@ -1,5 +1,6 @@
 import Grid from "components/grid";
 import { ProductCardImage } from "components/product-image";
+import CompareButton from "components/product/compare-button";
 import { Product } from "lib/supabase/types";
 import Link from "next/link";
 
@@ -84,6 +85,7 @@ export default function ProductGridItems({ products }: { products: Product[] }) 
               <p className="mt-2 text-sm font-bold text-gray-900">
                 <PriceRange product={product} />
               </p>
+              <CompareButton handle={product.handle} title={product.title} />
             </div>
           </Link>
         </Grid.Item>

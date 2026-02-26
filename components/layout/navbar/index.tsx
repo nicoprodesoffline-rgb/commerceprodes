@@ -35,9 +35,13 @@ export async function Navbar() {
 
           {/* Droite : liens */}
           <div className="flex items-center gap-3">
-            <a href="mailto:contact@prodes.fr" className="hover:text-red-100 transition-colors">
+            <Link href="/faq" className="hover:text-red-100 transition-colors">
+              FAQ
+            </Link>
+            <span className="text-red-300">|</span>
+            <Link href="/contact" className="hover:text-red-100 transition-colors">
               Nous contacter
-            </a>
+            </Link>
             <span className="text-red-300">|</span>
             <Link href="/search" className="hover:text-red-100 transition-colors">
               Catalogue
