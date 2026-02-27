@@ -1,5 +1,6 @@
 import { GridTileImage } from "components/grid/tile";
 import Footer from "components/layout/footer";
+import { Breadcrumbs } from "components/layout/breadcrumbs";
 import { Gallery } from "components/product/gallery";
 import { ProductDescription } from "components/product/product-description";
 import { RecentlyViewed } from "components/product/recently-viewed";
@@ -97,25 +98,18 @@ export default async function ProductPage(props: {
         }}
       />
       <div className="mx-auto max-w-(--breakpoint-2xl) px-4">
-        {/* Breadcrumb */}
-        <nav className="mb-3 flex items-center gap-1.5 text-sm text-gray-500 pt-4">
-          <Link href="/" className="hover:text-blue-600 transition-colors">Accueil</Link>
-          <span>/</span>
-          {product.categoryName ? (
-            <>
-              <Link href="/search" className="hover:text-blue-600 transition-colors">
-                {product.categoryName}
-              </Link>
-              <span>/</span>
-            </>
-          ) : (
-            <>
-              <Link href="/search" className="hover:text-blue-600 transition-colors">Catalogue</Link>
-              <span>/</span>
-            </>
-          )}
-          <span className="text-gray-800 line-clamp-1">{product.title}</span>
-        </nav>
+        {/* Breadcrumbs SEO */}
+        <div className="pt-4 pb-3">
+          <Breadcrumbs
+            items={[
+              { label: "Accueil", href: "/" },
+              product.categoryName
+                ? { label: product.categoryName, href: "/search" }
+                : { label: "Catalogue", href: "/search" },
+              { label: product.title },
+            ]}
+          />
+        </div>
         <div className="flex flex-col rounded-lg border border-gray-200 bg-white p-8 md:p-12 lg:flex-row lg:gap-8">
           <div className="h-full w-full basis-full lg:basis-4/6">
             <Suspense
