@@ -44,6 +44,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr" className={GeistSans.variable} suppressHydrationWarning={true}>
+      <head>
+        <link rel="preconnect" href="https://mvnaeddtvyaqkdliivdk.supabase.co" />
+        <link rel="dns-prefetch" href="https://mvnaeddtvyaqkdliivdk.supabase.co" />
+      </head>
       <body className="bg-white text-black selection:bg-red-100">
         <CartProvider>
           <WishlistProvider>

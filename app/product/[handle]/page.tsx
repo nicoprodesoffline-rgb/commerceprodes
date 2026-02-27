@@ -30,6 +30,9 @@ export async function generateMetadata(props: {
   return {
     title: `${product.seo.title || product.title} – PRODES`,
     description: metaDescription,
+    alternates: {
+      canonical: `/product/${params.handle}`,
+    },
     robots: {
       index: indexable,
       follow: indexable,
@@ -43,6 +46,15 @@ export async function generateMetadata(props: {
           title: `${product.title} – PRODES`,
           description: metaDescription,
           images: [{ url, width, height, alt }],
+          type: "website",
+        }
+      : null,
+    twitter: url
+      ? {
+          card: "summary_large_image",
+          title: `${product.title} – PRODES`,
+          description: metaDescription,
+          images: [url],
         }
       : null,
   };
@@ -61,13 +73,15 @@ export default async function ProductPage(props: {
     "@type": "Product",
     name: product.title,
     description: product.description,
-    image: product.featuredImage.url,
+    image: product.featuredImage?.url,
+    ...(product.sku ? { sku: product.sku } : {}),
+    brand: { "@type": "Brand", name: "PRODES" },
+    ...(product.categoryName ? { category: product.categoryName } : {}),
     offers: {
       "@type": "AggregateOffer",
-      availability:
-        product.availableForSale
-          ? "https://schema.org/InStock"
-          : "https://schema.org/OutOfStock",
+      availability: product.availableForSale
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
       priceCurrency: product.priceRange.minVariantPrice.currencyCode,
       highPrice: product.priceRange.maxVariantPrice.amount,
       lowPrice: product.priceRange.minVariantPrice.amount,

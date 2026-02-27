@@ -7,15 +7,22 @@ export default {
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
+      // Supabase Storage (primary image source)
+      {
+        protocol: "https",
+        hostname: "mvnaeddtvyaqkdliivdk.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+      // WordPress import (prodes.fr migrated images)
       {
         protocol: "https",
         hostname: "prodes.fr",
         pathname: "/wp-content/uploads/**",
       },
+      // Admin-managed category images (any HTTPS source)
       {
         protocol: "https",
-        hostname: "cdn.shopify.com",
-        pathname: "/s/files/**",
+        hostname: "**",
       },
     ],
   },
