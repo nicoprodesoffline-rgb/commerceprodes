@@ -19,9 +19,11 @@ const navLinks: NavLink[] = [
   { href: "/admin/produits", label: "Produits", icon: "📦" },
   { href: "/admin/catalogue", label: "Vue Excel", icon: "📊" },
   { href: "/admin/categories", label: "Catégories", icon: "🗂️" },
+  { href: "/admin/import", label: "Import fournisseur", icon: "📤" },
   { href: "/admin/seo", label: "SEO", icon: "🔍" },
   { href: "/admin/veille", label: "Veille concurr.", icon: "👁️" },
   { href: "/admin/ia", label: "Outils IA", icon: "🤖", badge: "Beta" },
+  { href: "/admin/contenu", label: "Contenu & Édito", icon: "✏️" },
 ];
 
 export default function AdminSidebar() {

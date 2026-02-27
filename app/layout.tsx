@@ -5,6 +5,8 @@ import { CompareProvider } from "lib/compare/context";
 import CompareBar from "components/compare/compare-bar";
 import { WishlistProvider } from "lib/wishlist/context";
 import { WelcomeModal, BuyerBanner } from "components/onboarding/welcome-modal";
+import { PromoBanner } from "components/layout/promo-banner";
+import { MobileBottomNav } from "components/layout/mobile-bottom-nav";
 import { GeistSans } from "geist/font/sans";
 import { ReactNode } from "react";
 import { Toaster } from "sonner";
@@ -54,13 +56,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <CompareProvider>
             <Navbar />
             <BuyerBanner />
-            <main>
+            <PromoBanner
+              text="Livraison incluse sur tous nos produits · Devis gratuit sous 24h"
+              active={true}
+            />
+            <main className="pb-16 md:pb-0">
               {children}
               <Toaster closeButton />
               <WelcomeToast />
               <WelcomeModal />
             </main>
             <CompareBar />
+            <MobileBottomNav />
           </CompareProvider>
           </WishlistProvider>
         </CartProvider>

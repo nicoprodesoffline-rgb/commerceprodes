@@ -38,3 +38,24 @@ button {
 .product-prose li { margin: 0.25rem 0; }
 .product-prose p { margin: 0.5rem 0; }
 .product-prose a { color: #2563eb; text-decoration: underline; }
+
+/* Focus visible PRODES — cohérent rouge #cc1818 */
+*:focus-visible {
+  outline: 2px solid #cc1818;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* CSS @media print — fiche produit */
+@media print {
+  nav, footer, [data-hide-print],
+  .mobile-bottom-nav, .compare-bar, .wishlist-btn, .recently-viewed {
+    display: none !important;
+  }
+  body { font-size: 12pt; color: #000; }
+  .product-image { max-width: 250px; }
+  a::after { content: none !important; }
+}
