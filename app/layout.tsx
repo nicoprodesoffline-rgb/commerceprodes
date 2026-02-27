@@ -4,6 +4,7 @@ import { WelcomeToast } from "components/welcome-toast";
 import { CompareProvider } from "lib/compare/context";
 import CompareBar from "components/compare/compare-bar";
 import { WishlistProvider } from "lib/wishlist/context";
+import { QuoteProvider } from "lib/quote/context";
 import { WelcomeModal, BuyerBanner } from "components/onboarding/welcome-modal";
 import { PromoBanner } from "components/layout/promo-banner";
 import { MobileBottomNav } from "components/layout/mobile-bottom-nav";
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="bg-white text-black selection:bg-red-100">
         <CartProvider>
           <WishlistProvider>
+          <QuoteProvider>
           <CompareProvider>
             <Navbar />
             <BuyerBanner />
@@ -69,6 +71,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <CompareBar />
             <MobileBottomNav />
           </CompareProvider>
+          </QuoteProvider>
           </WishlistProvider>
         </CartProvider>
       </body>

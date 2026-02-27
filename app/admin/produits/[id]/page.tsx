@@ -14,8 +14,8 @@ interface ProductDetail {
   short_description: string | null;
   description: string | null;
   regular_price: number;
-  eco_participation: number | null;
-  featured_image_url: string | null;
+  eco_contribution: number | null;
+  featured_image_url: string | null; // computed from product_images join (read-only)
   seo_title: string | null;
   seo_description: string | null;
 }
@@ -29,11 +29,10 @@ interface PriceTier {
 
 function seoScore(p: Partial<ProductDetail>): number {
   let score = 0;
-  if (p.name && p.name.length >= 30 && p.name.length <= 70) score += 20;
-  if (p.short_description && p.short_description.length >= 80) score += 20;
-  if (p.featured_image_url) score += 20;
-  if (p.sku) score += 20;
-  if (p.regular_price && p.regular_price > 0) score += 20;
+  if (p.name && p.name.length >= 30 && p.name.length <= 70) score += 25;
+  if (p.short_description && p.short_description.length >= 80) score += 25;
+  if (p.sku) score += 25;
+  if (p.regular_price && p.regular_price > 0) score += 25;
   return score;
 }
 
@@ -126,7 +125,7 @@ export default function ProductEditPage() {
           short_description: product.short_description,
           description: product.description,
           regular_price: product.regular_price,
-          featured_image_url: product.featured_image_url,
+          eco_contribution: product.eco_contribution,
           seo_title: product.seo_title,
           seo_description: product.seo_description,
         }),
@@ -165,7 +164,6 @@ export default function ProductEditPage() {
     !product.short_description || product.short_description.length < 80
       ? "Description ≥ 80 caractères"
       : null,
-    !product.featured_image_url ? "Image principale manquante" : null,
     !product.sku ? "SKU manquant" : null,
     !product.regular_price ? "Prix non défini" : null,
   ].filter(Boolean);
@@ -256,8 +254,8 @@ export default function ProductEditPage() {
                 <input
                   type="number"
                   step="0.01"
-                  value={product.eco_participation ?? ""}
-                  onChange={(e) => setProduct({ ...product, eco_participation: parseFloat(e.target.value) || 0 })}
+                  value={product.eco_contribution ?? ""}
+                  onChange={(e) => setProduct({ ...product, eco_contribution: parseFloat(e.target.value) || 0 })}
                   className={inputClass}
                 />
               </div>

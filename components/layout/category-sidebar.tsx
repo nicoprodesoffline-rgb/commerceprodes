@@ -89,8 +89,8 @@ export default function CategorySidebar({
                         : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
-                    <span className="flex items-center gap-1.5 min-w-0">
-                      <span className="truncate">{cat.name}</span>
+                    <span className="flex items-start gap-1.5 min-w-0">
+                      <span className="text-left leading-snug">{cat.name}</span>
                       {cat.product_count > 0 && (
                         <span className="ml-1 text-xs text-gray-400 flex-none">
                           ({cat.product_count})
@@ -151,7 +151,7 @@ export default function CategorySidebar({
                       : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
-                  <span className="truncate">{cat.name}</span>
+                  <span className="text-left leading-snug">{cat.name}</span>
                   {cat.product_count > 0 && (
                     <span className="ml-1 text-xs text-gray-400 flex-none">
                       ({cat.product_count})

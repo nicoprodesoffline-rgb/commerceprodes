@@ -11,6 +11,7 @@ import { useCart } from "components/cart/cart-context";
 import { getEcoDisplay } from "lib/utils/eco";
 import { addRecentlyViewed } from "lib/recently-viewed";
 import { trackProductView } from "lib/analytics/tracker";
+import { AddToQuoteButton } from "components/quote/quote-bar";
 
 function formatPriceFR(price: number): string {
   return (
@@ -50,33 +51,18 @@ export function ProductDescription({ product }: { product: Product }) {
   // Displayed SKU: variant SKU → product SKU
   const displaySku = selectedVariant?.sku ?? product.sku;
 
-  if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line no-console
-    console.log('[VariantSelector] selectedVariant:', selectedVariant?.sku, 'displaySku:', displaySku);
-  }
-
   // Displayed price
   const displayPrice = (() => {
     if (selectedVariant) {
       const p = parseFloat(selectedVariant.price.amount);
       if (p > 0) return p;
     }
-    // Fallback: priceMin > 0, else regularPrice, else 0
     return product.priceMin && product.priceMin > 0
       ? product.priceMin
       : (product.regularPrice ?? parseFloat(product.priceRange.minVariantPrice.amount));
   })();
 
   const basePrice = displayPrice;
-
-  // Tabs
-  const [activeTab, setActiveTab] = useState<"description" | "specs">("description");
-
-  const hasSpecs =
-    product.weightKg != null ||
-    product.lengthCm != null ||
-    product.widthCm != null ||
-    product.heightCm != null;
 
   // Eco-participation display logic
   const hasLotsVariant = product.variants.some((v) =>
@@ -248,7 +234,7 @@ export function ProductDescription({ product }: { product: Product }) {
         )}
       </div>
 
-      {/* Ajouter au panier */}
+      {/* CTA principaux */}
       <div className="mt-6 space-y-3">
         <button
           type="button"
@@ -262,13 +248,6 @@ export function ProductDescription({ product }: { product: Product }) {
           Ajouter au panier
         </button>
 
-        <div className="flex items-center gap-3">
-          <div className="flex-1 border-t border-gray-200" />
-          <span className="text-xs text-gray-400">ou</span>
-          <div className="flex-1 border-t border-gray-200" />
-        </div>
-
-        {/* B2B buttons */}
         <div>
           <button
             onClick={() => setDevisOpen(true)}
@@ -278,24 +257,28 @@ export function ProductDescription({ product }: { product: Product }) {
           </button>
           <p className="mt-0.5 text-center text-xs text-gray-400">Réponse sous 24h</p>
         </div>
+
         <div>
           <button
             onClick={() => setMandatOpen(true)}
-            className="w-full rounded-md border border-[#cc1818] py-3 text-sm font-semibold text-[#cc1818] hover:bg-red-50 transition-colors"
+            className="w-full rounded-md border border-[#cc1818] py-2.5 text-sm font-semibold text-[#cc1818] hover:bg-red-50 transition-colors"
           >
             Mandat administratif
           </button>
           <p className="mt-0.5 text-center text-xs text-gray-400">Pour les collectivités</p>
         </div>
-        <div>
-          <button
-            disabled
-            className="w-full rounded-md border border-gray-300 py-3 text-sm font-medium text-gray-400 cursor-not-allowed"
-          >
-            Payer en ligne par carte
-          </button>
-          <p className="mt-0.5 text-center text-xs text-gray-400">Disponible prochainement</p>
-        </div>
+      </div>
+
+      {/* Devis groupé */}
+      <div className="mt-3">
+        <AddToQuoteButton
+          handle={product.handle}
+          title={product.title}
+          sku={displaySku}
+          price={displayPrice}
+          imageUrl={product.featuredImage?.url}
+          quantity={quantity}
+        />
       </div>
 
       {/* Télécharger la fiche technique PDF */}
@@ -313,79 +296,6 @@ export function ProductDescription({ product }: { product: Product }) {
           <span>📄</span>
           <span>Télécharger la fiche technique (PDF)</span>
         </a>
-      </div>
-
-      {/* Tabs: Description / Caractéristiques */}
-      <div className="mt-8">
-        <div className="flex border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab("description")}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === "description"
-                ? "border-b-2 border-[#cc1818] text-[#cc1818]"
-                : "text-gray-500 hover:text-gray-800"
-            }`}
-          >
-            Description
-          </button>
-          {hasSpecs && (
-            <button
-              onClick={() => setActiveTab("specs")}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === "specs"
-                  ? "border-b-2 border-[#cc1818] text-[#cc1818]"
-                  : "text-gray-500 hover:text-gray-800"
-              }`}
-            >
-              Caractéristiques
-            </button>
-          )}
-        </div>
-
-        <div className="pt-4">
-          {activeTab === "description" && (
-            <>
-              {product.descriptionHtml ? (
-                <Prose
-                  className="text-sm leading-relaxed text-gray-700"
-                  html={product.descriptionHtml}
-                />
-              ) : (
-                <p className="text-sm text-gray-500">Aucune description disponible.</p>
-              )}
-            </>
-          )}
-          {activeTab === "specs" && hasSpecs && (
-            <table className="w-full text-sm">
-              <tbody>
-                {product.weightKg != null && (
-                  <tr className="border-b border-gray-100">
-                    <td className="py-2 pr-4 font-medium text-gray-600">Poids</td>
-                    <td className="py-2 text-gray-800">{product.weightKg} kg</td>
-                  </tr>
-                )}
-                {product.lengthCm != null && (
-                  <tr className="border-b border-gray-100">
-                    <td className="py-2 pr-4 font-medium text-gray-600">Longueur</td>
-                    <td className="py-2 text-gray-800">{product.lengthCm} cm</td>
-                  </tr>
-                )}
-                {product.widthCm != null && (
-                  <tr className="border-b border-gray-100">
-                    <td className="py-2 pr-4 font-medium text-gray-600">Largeur</td>
-                    <td className="py-2 text-gray-800">{product.widthCm} cm</td>
-                  </tr>
-                )}
-                {product.heightCm != null && (
-                  <tr className="border-b border-gray-100">
-                    <td className="py-2 pr-4 font-medium text-gray-600">Hauteur</td>
-                    <td className="py-2 text-gray-800">{product.heightCm} cm</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
       </div>
 
       {/* Modals */}
@@ -406,5 +316,89 @@ export function ProductDescription({ product }: { product: Product }) {
       {/* Toast */}
       <AddedToast title={product.title} show={toastVisible} />
     </>
+  );
+}
+
+// Composant séparé pour les onglets Description / Caractéristiques
+// Utilisé en pleine largeur sous la zone image+form dans page.tsx
+export function ProductDescriptionTabs({ product }: { product: Product }) {
+  const [activeTab, setActiveTab] = useState<"description" | "specs">("description");
+
+  const hasSpecs =
+    product.weightKg != null ||
+    product.lengthCm != null ||
+    product.widthCm != null ||
+    product.heightCm != null;
+
+  if (!product.descriptionHtml && !hasSpecs) return null;
+
+  return (
+    <div className="mt-8 rounded-lg border border-gray-200 bg-white p-6">
+      <div className="flex border-b border-gray-200 mb-4">
+        {product.descriptionHtml && (
+          <button
+            onClick={() => setActiveTab("description")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "description"
+                ? "border-b-2 border-[#cc1818] text-[#cc1818]"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            Description complète
+          </button>
+        )}
+        {hasSpecs && (
+          <button
+            onClick={() => setActiveTab("specs")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "specs"
+                ? "border-b-2 border-[#cc1818] text-[#cc1818]"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            Caractéristiques techniques
+          </button>
+        )}
+      </div>
+
+      <div>
+        {activeTab === "description" && product.descriptionHtml && (
+          <Prose
+            className="text-sm leading-relaxed text-gray-700"
+            html={product.descriptionHtml}
+          />
+        )}
+        {activeTab === "specs" && hasSpecs && (
+          <table className="w-full text-sm">
+            <tbody>
+              {product.weightKg != null && (
+                <tr className="border-b border-gray-100">
+                  <td className="py-2 pr-4 font-medium text-gray-600 w-1/3">Poids</td>
+                  <td className="py-2 text-gray-800">{product.weightKg} kg</td>
+                </tr>
+              )}
+              {product.lengthCm != null && (
+                <tr className="border-b border-gray-100">
+                  <td className="py-2 pr-4 font-medium text-gray-600">Longueur</td>
+                  <td className="py-2 text-gray-800">{product.lengthCm} cm</td>
+                </tr>
+              )}
+              {product.widthCm != null && (
+                <tr className="border-b border-gray-100">
+                  <td className="py-2 pr-4 font-medium text-gray-600">Largeur</td>
+                  <td className="py-2 text-gray-800">{product.widthCm} cm</td>
+                </tr>
+              )}
+              {product.heightCm != null && (
+                <tr className="border-b border-gray-100">
+                  <td className="py-2 pr-4 font-medium text-gray-600">Hauteur</td>
+                  <td className="py-2 text-gray-800">{product.heightCm} cm</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
   );
 }

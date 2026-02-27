@@ -2,7 +2,7 @@ import { GridTileImage } from "components/grid/tile";
 import Footer from "components/layout/footer";
 import { Breadcrumbs } from "components/layout/breadcrumbs";
 import { Gallery } from "components/product/gallery";
-import { ProductDescription } from "components/product/product-description";
+import { ProductDescription, ProductDescriptionTabs } from "components/product/product-description";
 import { RecentlyViewed } from "components/product/recently-viewed";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
 import { getProduct, getProductRecommendations } from "lib/supabase";
@@ -132,6 +132,12 @@ export default async function ProductPage(props: {
             </Suspense>
           </div>
         </div>
+
+        {/* Description + Caractéristiques en pleine largeur */}
+        <Suspense fallback={null}>
+          <ProductDescriptionTabs product={product} />
+        </Suspense>
+
         <RelatedProducts id={product.id} />
         <Suspense fallback={null}>
           <RecentlyViewed currentHandle={product.handle} />

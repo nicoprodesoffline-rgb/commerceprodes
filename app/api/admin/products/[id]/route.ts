@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function checkAuth(req: NextRequest): boolean {
+  // Bearer token (admin catalogue / produits pages)
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.replace("Bearer ", "");
-  return token === (process.env.ADMIN_PASSWORD ?? "");
+  if (token && token === (process.env.ADMIN_PASSWORD ?? "")) return true;
+  // Cookie session (admin products [handle] editor)
+  const session = req.cookies.get("admin_session")?.value;
+  return !!session;
 }
 
 export async function GET(
@@ -19,17 +25,23 @@ export async function GET(
     const { supabaseServer } = await import("lib/supabase/client");
     const client = supabaseServer();
 
-    const { data, error } = await client
+    const query = client
       .from("products")
-      .select("id, name, slug, sku, status, short_description, description, regular_price, eco_participation, featured_image_url, seo_title, seo_description")
-      .eq("id", id)
-      .single();
+      .select("id, name, slug, sku, status, short_description, description, regular_price, eco_contribution, seo_title, seo_description, product_images(url, is_featured, position)");
+
+    const { data, error } = UUID_RE.test(id)
+      ? await query.eq("id", id).single()
+      : await query.eq("slug", id).single();
 
     if (error || !data) {
       return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
     }
 
-    return NextResponse.json({ product: data });
+    const imgs: any[] = ((data as any).product_images ?? []).sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0));
+    const featured = imgs.find((i: any) => i.is_featured) ?? imgs[0];
+    const product = { ...(data as any), featured_image_url: featured?.url ?? null };
+    delete product.product_images;
+    return NextResponse.json({ product });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
@@ -55,7 +67,7 @@ export async function PATCH(
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
 
-  const ALLOWED = ["name", "sku", "regular_price", "status", "short_description", "description", "featured_image_url", "seo_title", "seo_description"];
+  const ALLOWED = ["name", "sku", "regular_price", "status", "short_description", "description", "eco_contribution", "seo_title", "seo_description"];
   const updates: Record<string, unknown> = {};
   for (const key of ALLOWED) {
     if (key in body) {
@@ -71,11 +83,12 @@ export async function PATCH(
     const { supabaseServer } = await import("lib/supabase/client");
     const client = supabaseServer();
 
+    const isUuid = UUID_RE.test(id);
     const { data, error } = await client
       .from("products")
       .update(updates)
-      .eq("id", id)
-      .select("id, name, sku, regular_price, status, short_description, featured_image_url")
+      .eq(isUuid ? "id" : "slug", id)
+      .select("id, name, sku, regular_price, status, short_description")
       .single();
 
     if (error) {

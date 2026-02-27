@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import MobileMenu from "./mobile-menu";
 import { SearchSkeleton } from "./search";
 import { LiveSearch } from "components/search/live-search";
+import { QuoteButton } from "components/quote/quote-bar";
 
 export async function Navbar() {
   const menu = await getMenu("next-js-frontend-header-menu");
@@ -79,14 +80,15 @@ export async function Navbar() {
             </Suspense>
           </div>
 
-          {/* Droite : liens + panier */}
-          <div className="flex items-center gap-3 ml-auto md:ml-0">
+          {/* Droite : liens + devis groupé + panier */}
+          <div className="flex items-center gap-2 ml-auto md:ml-0">
             <Link
               href="/devis-express"
               className="hidden lg:inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-[#cc1818] transition-colors"
             >
               Devis express
             </Link>
+            <QuoteButton />
             <CartModal />
           </div>
         </div>

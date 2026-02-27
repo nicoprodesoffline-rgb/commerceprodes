@@ -1,5 +1,6 @@
 import Link from "next/link";
 import StatusBadge from "components/admin/status-badge";
+import { AnalyticsWidget } from "components/admin/analytics-widget";
 import type { DevisRequest } from "lib/supabase/types";
 
 function formatDate(iso: string) {
@@ -43,12 +44,12 @@ async function fetchDashboardStats() {
       .gt("created_at", new Date(Date.now() - 24 * 3600 * 1000).toISOString()),
     // 4 — catégories
     client.from("categories").select("id", { count: "exact", head: true }),
-    // 5 — produits sans image
+    // 5 — produits sans description courte
     client
       .from("products")
       .select("id", { count: "exact", head: true })
       .eq("status", "publish")
-      .or("featured_image_url.is.null,featured_image_url.eq."),
+      .or("short_description.is.null,short_description.eq."),
     // 6 — derniers devis
     client
       .from("devis_requests")
@@ -126,7 +127,7 @@ export default async function AdminDashboard() {
       href: "/admin/categories",
     },
     {
-      title: "Produits sans image",
+      title: "Sans description courte",
       value: stats.missingImages,
       icon: "⚠️",
       href: "/admin/produits",
@@ -217,6 +218,9 @@ export default async function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* Analytics */}
+      <AnalyticsWidget />
 
       {/* Quick links */}
       <div>
