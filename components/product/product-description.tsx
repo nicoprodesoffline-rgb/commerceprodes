@@ -10,6 +10,7 @@ import { useState, useCallback, useTransition, useEffect } from "react";
 import { useCart } from "components/cart/cart-context";
 import { getEcoDisplay } from "lib/utils/eco";
 import { addRecentlyViewed } from "lib/recently-viewed";
+import { trackProductView } from "lib/analytics/tracker";
 
 function formatPriceFR(price: number): string {
   return (
@@ -40,10 +41,11 @@ export function ProductDescription({ product }: { product: Product }) {
     setSelectedVariant(variant);
   }, []);
 
-  // Track recently viewed
+  // Track recently viewed + analytics view
   useEffect(() => {
     addRecentlyViewed(product.handle);
-  }, [product.handle]);
+    trackProductView(product.handle, product.id);
+  }, [product.handle, product.id]);
 
   // Displayed SKU: variant SKU → product SKU
   const displaySku = selectedVariant?.sku ?? product.sku;
