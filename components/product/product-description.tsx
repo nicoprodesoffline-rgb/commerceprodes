@@ -27,7 +27,7 @@ function AddedToast({ title, show }: { title: string; show: boolean }) {
 }
 
 export function ProductDescription({ product }: { product: Product }) {
-  const { addCartItem } = useCart();
+  const { addCartItem, openCart } = useCart();
   const [devisOpen, setDevisOpen] = useState(false);
   const [mandatOpen, setMandatOpen] = useState(false);
   const [quantity, setQuantity] = useState(product.pbqMinQuantity ?? 1);
@@ -91,8 +91,9 @@ export function ProductDescription({ product }: { product: Product }) {
     if (!variant) return;
     startTransition(() => {
       addCartItem(variant, product, quantity);
+      openCart();
       setToastVisible(true);
-      setTimeout(() => setToastVisible(false), 3000);
+      setTimeout(() => setToastVisible(false), 1500);
     });
   };
 

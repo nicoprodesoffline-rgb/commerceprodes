@@ -8,6 +8,7 @@ import React, {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
   useState,
 } from "react";
 import { persistAbandonedCart } from "lib/cart/persist";
@@ -28,12 +29,17 @@ type CartAction =
   | {
       type: "SET_CART";
       payload: Cart;
-    };
+    }
+  | { type: "CLEAR_CART" };
 
 type CartContextType = {
   cart: Cart;
   updateCartItem: (merchandiseId: string, updateType: UpdateType) => void;
   addCartItem: (variant: ProductVariant, product: Product, quantity?: number) => void;
+  clearCart: () => void;
+  isOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -109,6 +115,9 @@ function cartReducer(state: Cart, action: CartAction): Cart {
     case "SET_CART":
       return action.payload;
 
+    case "CLEAR_CART":
+      return createEmptyCart();
+
     case "UPDATE_ITEM": {
       const { merchandiseId, updateType } = action.payload;
       const updatedLines = state.lines
@@ -164,6 +173,8 @@ export function CartProvider({
 }) {
   const [cart, dispatch] = useReducer(cartReducer, createEmptyCart());
   const [mounted, setMounted] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const prevQuantityRef = useRef(0);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -189,7 +200,16 @@ export function CartProvider({
     }
   }, [cart, mounted]);
 
-  // Persist abandoned cart on page close or after 30 min inactivity
+  // Auto-open cart when item is added
+  useEffect(() => {
+    if (!mounted) return;
+    if (cart.totalQuantity > prevQuantityRef.current) {
+      setIsOpen(true);
+    }
+    prevQuantityRef.current = cart.totalQuantity;
+  }, [cart.totalQuantity, mounted]);
+
+  // Persist abandoned cart on page close or after 5 min inactivity
   useEffect(() => {
     if (!mounted) return;
 
@@ -199,16 +219,16 @@ export function CartProvider({
       }
     };
 
-    window.addEventListener('beforeunload', handleUnload);
+    window.addEventListener("beforeunload", handleUnload);
 
     const inactivityTimer = setTimeout(() => {
       if (cart.lines.length > 0) {
         persistAbandonedCart(cart);
       }
-    }, 30 * 60 * 1000);
+    }, 5 * 60 * 1000);
 
     return () => {
-      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener("beforeunload", handleUnload);
       clearTimeout(inactivityTimer);
     };
   }, [cart, mounted]);
@@ -227,9 +247,21 @@ export function CartProvider({
     [],
   );
 
+  const clearCart = useCallback(() => {
+    dispatch({ type: "CLEAR_CART" });
+    try {
+      localStorage.removeItem(CART_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const openCart = useCallback(() => setIsOpen(true), []);
+  const closeCart = useCallback(() => setIsOpen(false), []);
+
   const value = useMemo(
-    () => ({ cart, updateCartItem, addCartItem }),
-    [cart, updateCartItem, addCartItem],
+    () => ({ cart, updateCartItem, addCartItem, clearCart, isOpen, openCart, closeCart }),
+    [cart, updateCartItem, addCartItem, clearCart, isOpen, openCart, closeCart],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

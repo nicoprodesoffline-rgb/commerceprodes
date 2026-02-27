@@ -1,41 +1,48 @@
-import { getCart } from "lib/supabase";
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Footer from "components/layout/footer";
 import { CheckoutForm } from "./checkout-form";
+import { useCart } from "components/cart/cart-context";
 
-export const metadata = {
-  title: "Finaliser la commande — PRODES",
-};
+export default function CheckoutPage() {
+  const { cart } = useCart();
+  const router = useRouter();
 
-export default async function CheckoutPage() {
-  const cart = await getCart();
+  // Redirect to cart if empty (only after hydration)
+  useEffect(() => {
+    if (cart.totalQuantity === 0) {
+      router.replace("/cart");
+    }
+  }, [cart.totalQuantity, router]);
 
-  if (!cart || cart.lines.length === 0) {
-    redirect("/cart");
+  const cartSummary = useMemo(() => {
+    const subtotalHT = Number(cart.cost.subtotalAmount.amount);
+    const tva = subtotalHT * 0.2;
+    const totalTTC = subtotalHT + tva;
+    return {
+      lines: cart.lines.map((item) => ({
+        id: item.id,
+        title: item.merchandise.product.title,
+        variant: item.merchandise.selectedOptions
+          .filter((o) => o.value && o.value !== "Default Title")
+          .map((o) => o.value)
+          .join(" — "),
+        quantity: item.quantity,
+        unitPrice: Number(item.cost.totalAmount.amount) / item.quantity,
+        lineTotal: Number(item.cost.totalAmount.amount),
+        imageUrl: item.merchandise.product.featuredImage?.url ?? null,
+      })),
+      subtotalHT,
+      tva,
+      totalTTC,
+    };
+  }, [cart]);
+
+  if (cart.totalQuantity === 0) {
+    return null; // will redirect
   }
-
-  const subtotalHT = Number(cart.cost.subtotalAmount.amount);
-  const tva = subtotalHT * 0.2;
-  const totalTTC = subtotalHT + tva;
-
-  // Résumé des lignes du panier pour l'affichage côté client
-  const cartSummary = {
-    lines: cart.lines.map((item) => ({
-      id: item.id,
-      title: item.merchandise.product.title,
-      variant: item.merchandise.selectedOptions
-        .filter((o) => o.value && o.value !== "Default Title")
-        .map((o) => o.value)
-        .join(" — "),
-      quantity: item.quantity,
-      unitPrice: Number(item.cost.totalAmount.amount) / item.quantity,
-      lineTotal: Number(item.cost.totalAmount.amount),
-      imageUrl: item.merchandise.product.featuredImage?.url ?? null,
-    })),
-    subtotalHT,
-    tva,
-    totalTTC,
-  };
 
   return (
     <>

@@ -87,12 +87,12 @@ export function VariantSelector({
   variants: ProductVariant[];
   onVariantChange?: (variant: ProductVariant | null) => void;
 }) {
-  const hasNoOptionsOrJustOneOption =
-    !options.length ||
-    (options.length === 1 && options[0]?.values.length === 1);
+  // Only show axes that have ≥ 2 distinct values (single-value axes go to specs)
+  const multiValueOptions = options.filter((o) => o.values.length >= 2);
+  const hasNoOptionsOrJustOneOption = multiValueOptions.length === 0;
 
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
-    // Pre-select first value of each option
+    // Pre-select first value of each option (including single-value ones for matching)
     const initial: Record<string, string> = {};
     for (const option of options) {
       if (option.values.length > 0) {
@@ -121,7 +121,7 @@ export function VariantSelector({
 
   return (
     <div className="mb-6 space-y-5">
-      {options.map((option) => {
+      {multiValueOptions.map((option) => {
         const isColor = isColorOption(option.name);
         const selectedValue = selectedOptions[option.name];
 

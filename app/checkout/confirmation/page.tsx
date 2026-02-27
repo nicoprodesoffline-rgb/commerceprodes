@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Footer from "components/layout/footer";
+import { ClearCartOnMount } from "./clear-cart";
 
 export const metadata = {
   title: "Confirmation de commande — PRODES",
@@ -34,6 +35,7 @@ export default async function ConfirmationPage(props: {
 
   return (
     <>
+      <ClearCartOnMount />
       <div className="mx-auto max-w-screen-2xl px-4 py-16 text-center lg:px-6">
         <div className="mx-auto max-w-md">
           {/* Icône succès */}
