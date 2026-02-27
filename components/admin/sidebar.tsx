@@ -17,7 +17,10 @@ const navLinks: NavLink[] = [
   { href: "/admin/devis", label: "Demandes de devis", icon: "📋" },
   { href: "/admin/paniers-abandonnes", label: "Paniers abandonnés", icon: "🛒" },
   { href: "/admin/produits", label: "Produits", icon: "📦" },
+  { href: "/admin/catalogue", label: "Vue Excel", icon: "📊" },
   { href: "/admin/categories", label: "Catégories", icon: "🗂️" },
+  { href: "/admin/seo", label: "SEO", icon: "🔍" },
+  { href: "/admin/veille", label: "Veille concurr.", icon: "👁️" },
   { href: "/admin/ia", label: "Outils IA", icon: "🤖", badge: "Beta" },
 ];
 
