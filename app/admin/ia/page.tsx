@@ -1,6 +1,20 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import Image from "next/image";
+
+interface ThematicProduct {
+  id: string;
+  handle: string;
+  title: string;
+  image_url: string | null;
+}
+
+interface ThematicResult {
+  title: string;
+  intro: string;
+  products: ThematicProduct[];
+}
 
 interface AuditResult {
   noDescription: { count: number; items: Array<{ id: string; title: string; handle: string }> };
@@ -145,6 +159,48 @@ export default function AdminIAPage() {
     } finally {
       setPriceLoading(false);
       setPriceConfirm(false);
+    }
+  }
+
+  // MODULE 5 — CTA Thématique
+  const [themeInput, setThemeInput] = useState("");
+  const [themeLoading, setThemeLoading] = useState(false);
+  const [themeResult, setThemeResult] = useState<ThematicResult | null>(null);
+  const [publishing, setPublishing] = useState(false);
+
+  const CHIPS = ["rentrée scolaire", "fête nationale", "élections municipales", "marchés de Noël", "aménagement terrasse"];
+
+  async function generateThematic() {
+    if (!themeInput.trim()) return;
+    setThemeLoading(true);
+    setThemeResult(null);
+    try {
+      const res = await fetch("/api/admin/ia/thematic-cta", {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ theme: themeInput }),
+      });
+      if (res.ok) setThemeResult(await res.json());
+      else alert("Erreur génération — vérifiez ANTHROPIC_API_KEY");
+    } finally {
+      setThemeLoading(false);
+    }
+  }
+
+  async function publishSection() {
+    if (!themeResult) return;
+    setPublishing(true);
+    try {
+      const productIds = themeResult.products.map((p) => p.id);
+      const res = await fetch("/api/admin/homepage-sections", {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ title: themeResult.title, intro: themeResult.intro, product_ids: productIds, position: 0 }),
+      });
+      if (res.ok) alert("✅ Section publiée ! Elle apparaît en 1ère position sur la homepage.");
+      else alert("Erreur publication");
+    } finally {
+      setPublishing(false);
     }
   }
 
@@ -452,6 +508,79 @@ export default function AdminIAPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* MODULE 5 — CTA Thématique IA */}
+        <div className="col-span-full rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="font-semibold text-gray-900">✨ CTA Thématique IA</h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Tapez un thème → l&apos;IA sélectionne les produits et génère l&apos;accroche pour la homepage.
+          </p>
+
+          {/* Chips suggestions */}
+          <div className="mt-3 flex flex-wrap gap-2">
+            {CHIPS.map((chip) => (
+              <button
+                key={chip}
+                onClick={() => setThemeInput(chip)}
+                className="rounded-full border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:border-[#cc1818] hover:text-[#cc1818] transition-colors"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-3 flex gap-2">
+            <input
+              type="text"
+              value={themeInput}
+              onChange={(e) => setThemeInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && generateThematic()}
+              placeholder="Votre thème…"
+              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#cc1818] focus:outline-none"
+            />
+            <button
+              onClick={generateThematic}
+              disabled={themeLoading || !themeInput.trim()}
+              className="rounded-lg bg-[#cc1818] px-4 py-2 text-sm font-medium text-white hover:bg-[#b01414] disabled:opacity-40 transition-colors whitespace-nowrap"
+            >
+              {themeLoading ? "…" : "✨ Générer"}
+            </button>
+          </div>
+
+          {themeResult && (
+            <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <h3 className="font-semibold text-gray-900">{themeResult.title}</h3>
+              <p className="mt-1 text-sm text-gray-600">{themeResult.intro}</p>
+              <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-8">
+                {themeResult.products.map((p) => (
+                  <div key={p.id} className="flex flex-col items-center gap-1">
+                    <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-gray-200">
+                      {p.image_url && (
+                        <Image src={p.image_url} alt={p.title} fill className="object-cover" sizes="64px" />
+                      )}
+                    </div>
+                    <p className="line-clamp-2 text-center text-[10px] text-gray-500">{p.title}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={publishSection}
+                  disabled={publishing}
+                  className="rounded-lg bg-[#cc1818] px-4 py-2 text-sm font-medium text-white hover:bg-[#b01414] disabled:opacity-60 transition-colors"
+                >
+                  {publishing ? "Publication…" : "🚀 Publier sur la homepage"}
+                </button>
+                <button
+                  onClick={() => navigator.clipboard.writeText(JSON.stringify(themeResult, null, 2))}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                >
+                  📋 Copier le JSON
+                </button>
               </div>
             </div>
           )}
