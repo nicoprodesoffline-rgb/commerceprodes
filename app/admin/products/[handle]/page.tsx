@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 import { supabase } from "lib/supabase/client";
 import ProductDescriptionEditor from "./editor";
 

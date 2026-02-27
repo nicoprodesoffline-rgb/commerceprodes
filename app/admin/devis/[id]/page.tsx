@@ -4,6 +4,8 @@ import StatusBadge from "components/admin/status-badge";
 import DevisDetailActions from "./actions";
 import { getDevisRequests } from "lib/supabase/index";
 
+export const dynamic = "force-dynamic";
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("fr-FR", {
     weekday: "long",

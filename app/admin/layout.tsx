@@ -1,8 +1,8 @@
-import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import AdminSidebar from "components/admin/sidebar";
+import AdminLoginPage from "./login/page";
 
-// Force dynamic — admin pages read cookies/headers, never cache
+// Force dynamic — admin pages read cookies, never cache
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({
@@ -10,17 +10,13 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Middleware sets x-admin-public:1 for /admin/login — skip auth guard to avoid redirect loop
-  const headersList = await headers();
-  if (headersList.get("x-admin-public") === "1") {
-    return <>{children}</>;
-  }
-
   const cookieStore = await cookies();
   const session = cookieStore.get("admin_session")?.value;
 
+  // No session → render the login form in place (no redirect() = no exception)
+  // proxy.ts handles the primary redirect; this is the safety fallback
   if (!session) {
-    redirect("/admin/login");
+    return <AdminLoginPage />;
   }
 
   return (
