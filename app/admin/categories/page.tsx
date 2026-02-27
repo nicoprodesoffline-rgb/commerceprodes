@@ -1,141 +1,184 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase } from "lib/supabase/client";
+import Image from "next/image";
 
-export default async function AdminCategoriesPage() {
-  // Fetch all categories
-  const { data: allCatsRaw } = await supabase
-    .from("categories")
-    .select("id, name, slug, parent_id, position")
-    .order("position", { ascending: true });
+interface AdminCat {
+  id: string;
+  name: string;
+  slug: string;
+  parent_id: string | null;
+  cover_image_url: string | null;
+  product_count: number;
+}
 
-  const allCats = allCatsRaw ?? [];
+export default function AdminCategoriesPage() {
+  const [categories, setCategories] = useState<AdminCat[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftUrl, setDraftUrl] = useState("");
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const password = typeof window !== "undefined" ? sessionStorage.getItem("admin_password") ?? "" : "";
 
-  // Fetch product counts
-  const { data: pcRows } = await supabase
-    .from("product_categories")
-    .select("category_id");
+  useEffect(() => {
+    fetch("/api/admin/ia/categories-list", {
+      headers: { Authorization: `Bearer ${password}` },
+    })
+      .then((r) => r.json())
+      .then((data) => setCategories(data.categories ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [password]);
 
-  const countMap: Record<string, number> = {};
-  if (pcRows) {
-    for (const row of pcRows as { category_id: string }[]) {
-      countMap[row.category_id] = (countMap[row.category_id] ?? 0) + 1;
+  const handleSaveImage = async (catId: string) => {
+    setSavingId(catId);
+    try {
+      const res = await fetch(`/api/admin/categories/${catId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${password}`,
+        },
+        body: JSON.stringify({ cover_image_url: draftUrl }),
+      });
+      if (res.ok) {
+        setCategories((prev) =>
+          prev.map((c) =>
+            c.id === catId ? { ...c, cover_image_url: draftUrl } : c,
+          ),
+        );
+        setSavedId(catId);
+        setTimeout(() => setSavedId(null), 2000);
+        setEditingId(null);
+        setDraftUrl("");
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setSavingId(null);
     }
-  }
-
-  // Build hierarchy
-  type Cat = {
-    id: string;
-    name: string;
-    slug: string;
-    parent_id: string | null;
-    position: number;
-    directCount: number;
-    children: Cat[];
   };
 
-  const catMap: Record<string, Cat> = {};
-  const roots: Cat[] = [];
-
-  for (const c of allCats as any[]) {
-    catMap[c.id] = {
-      id: c.id,
-      name: c.name,
-      slug: c.slug,
-      parent_id: c.parent_id,
-      position: c.position,
-      directCount: countMap[c.id] ?? 0,
-      children: [],
-    };
-  }
-
-  for (const cat of Object.values(catMap)) {
-    if (cat.parent_id && catMap[cat.parent_id]) {
-      catMap[cat.parent_id]!.children.push(cat);
-    } else {
-      roots.push(cat);
-    }
-  }
-
-  // Compute total (direct + children)
-  function totalCount(cat: Cat): number {
-    return cat.directCount + cat.children.reduce((acc, c) => acc + totalCount(c), 0);
+  if (loading) {
+    return <div className="py-12 text-center text-gray-400">Chargement…</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">
-        Catégories
-        <span className="ml-2 text-lg font-normal text-gray-500">
-          ({allCats.length})
-        </span>
-      </h1>
+    <div>
+      <div className="mb-5 flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-900">
+          Catégories <span className="text-base font-normal text-gray-400">({categories.length})</span>
+        </h1>
+      </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
             <tr>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">Nom</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">Slug</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-500">Directs</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-500">Total</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">Actions</th>
+              <th className="px-4 py-3 text-left">Nom</th>
+              <th className="px-4 py-3 text-left">Slug</th>
+              <th className="w-24 px-4 py-3 text-center">Image</th>
+              <th className="w-20 px-4 py-3 text-right">Produits</th>
+              <th className="px-4 py-3 text-left">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
-            {roots.map((cat) => (
-              <>
-                {/* Catégorie racine */}
-                <tr key={cat.id} className="bg-gray-50">
-                  <td className="px-4 py-3 font-semibold text-gray-800">
-                    {cat.name}
-                  </td>
-                  <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden md:table-cell">
-                    {cat.slug}
-                  </td>
-                  <td className="px-4 py-3 text-right text-gray-600">
-                    {cat.directCount}
-                  </td>
-                  <td className="px-4 py-3 text-right font-medium text-gray-800">
-                    {totalCount(cat)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/search/${cat.slug}`}
-                      target="_blank"
-                      className="text-xs text-blue-600 hover:underline"
-                    >
-                      ↗ Voir
-                    </Link>
-                  </td>
-                </tr>
-
-                {/* Sous-catégories */}
-                {cat.children.map((child) => (
-                  <tr key={child.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-700 pl-8">
-                      └ {child.name}
-                    </td>
-                    <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden md:table-cell">
-                      {child.slug}
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-500">
-                      {child.directCount}
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-600">
-                      {totalCount(child)}
-                    </td>
-                    <td className="px-4 py-3">
+          <tbody className="divide-y divide-gray-50">
+            {categories.map((cat) => (
+              <tr key={cat.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3">
+                  <p className="font-medium text-gray-900">{cat.name}</p>
+                  {cat.parent_id && (
+                    <p className="text-xs text-gray-400">Sous-catégorie</p>
+                  )}
+                </td>
+                <td className="px-4 py-3 font-mono text-xs text-gray-400">{cat.slug}</td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-center">
+                    {cat.cover_image_url ? (
+                      <div className="relative h-12 w-20 overflow-hidden rounded border border-gray-200 bg-gray-50">
+                        <Image
+                          src={cat.cover_image_url}
+                          alt={cat.name}
+                          fill
+                          className="object-cover"
+                          sizes="80px"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-12 w-20 rounded border border-dashed border-gray-200 bg-gray-50" />
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-right text-gray-600">{cat.product_count}</td>
+                <td className="px-4 py-3">
+                  {editingId === cat.id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="url"
+                        value={draftUrl}
+                        onChange={(e) => setDraftUrl(e.target.value)}
+                        placeholder="https://…"
+                        autoFocus
+                        className="w-52 rounded border border-gray-300 px-2 py-1 text-xs focus:border-[#cc1818] focus:outline-none focus:ring-1 focus:ring-[#cc1818]"
+                      />
+                      {draftUrl && (
+                        <div className="relative h-8 w-12 overflow-hidden rounded border border-gray-200 bg-gray-50">
+                          <Image
+                            src={draftUrl}
+                            alt="preview"
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = "none";
+                            }}
+                          />
+                        </div>
+                      )}
+                      <button
+                        onClick={() => handleSaveImage(cat.id)}
+                        disabled={savingId === cat.id || !draftUrl}
+                        className="rounded bg-green-600 px-2 py-1 text-xs font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {savingId === cat.id ? "…" : "✓"}
+                      </button>
+                      <button
+                        onClick={() => { setEditingId(null); setDraftUrl(""); }}
+                        className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-500 hover:bg-gray-50"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {savedId === cat.id && (
+                        <span className="text-xs font-medium text-green-600">✓ Sauvegardé</span>
+                      )}
+                      <button
+                        onClick={() => {
+                          setEditingId(cat.id);
+                          setDraftUrl(cat.cover_image_url ?? "");
+                        }}
+                        className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                      >
+                        🖼 Modifier l&apos;image
+                      </button>
                       <Link
-                        href={`/search/${child.slug}`}
+                        href={`/search/${cat.slug}`}
                         target="_blank"
-                        className="text-xs text-blue-600 hover:underline"
+                        className="text-xs text-blue-500 hover:underline"
                       >
                         ↗ Voir
                       </Link>
-                    </td>
-                  </tr>
-                ))}
-              </>
+                    </div>
+                  )}
+                </td>
+              </tr>
             ))}
           </tbody>
         </table>

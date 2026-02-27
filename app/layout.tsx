@@ -4,6 +4,7 @@ import { WelcomeToast } from "components/welcome-toast";
 import { CompareProvider } from "lib/compare/context";
 import CompareBar from "components/compare/compare-bar";
 import { WishlistProvider } from "lib/wishlist/context";
+import { WelcomeModal, BuyerBanner } from "components/onboarding/welcome-modal";
 import { GeistSans } from "geist/font/sans";
 import { ReactNode } from "react";
 import { Toaster } from "sonner";
@@ -48,10 +49,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <WishlistProvider>
           <CompareProvider>
             <Navbar />
+            <BuyerBanner />
             <main>
               {children}
               <Toaster closeButton />
               <WelcomeToast />
+              <WelcomeModal />
             </main>
             <CompareBar />
           </CompareProvider>
