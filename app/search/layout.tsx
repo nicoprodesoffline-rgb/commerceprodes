@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Footer from "components/layout/footer";
 import FilterList from "components/layout/search/filter";
 import CategorySidebar from "components/layout/category-sidebar";
+import { CatalogFilters } from "components/layout/search/catalog-filters";
 import { QuickOrderBar } from "components/quick-order/quick-order-bar";
 import { sorting } from "lib/constants";
 import { getRootCategories } from "lib/supabase/index";
@@ -21,6 +22,9 @@ export default async function SearchLayout({
         <aside className="order-first w-full flex-none md:w-56 md:pt-4 flex flex-col">
           <Suspense fallback={null}>
             <CategorySidebar categories={categories} />
+          </Suspense>
+          <Suspense fallback={null}>
+            <CatalogFilters />
           </Suspense>
           <QuickOrderBar />
         </aside>

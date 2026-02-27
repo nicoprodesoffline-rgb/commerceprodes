@@ -629,12 +629,18 @@ export async function getProducts({
   sortKey = "RELEVANCE",
   reverse = false,
   limit = 250,
+  minPrice,
+  maxPrice,
+  inStockOnly = false,
 }: {
   query?: string;
   category?: string;
   sortKey?: string;
   reverse?: boolean;
   limit?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  inStockOnly?: boolean;
 } = {}): Promise<Product[]> {
   "use cache";
   cacheTag(TAGS.products);
@@ -671,6 +677,10 @@ export async function getProducts({
     if (productIds.length === 0) return [];
     dbQuery = dbQuery.in("id", productIds);
   }
+
+  if (minPrice != null) dbQuery = dbQuery.gte("regular_price", minPrice);
+  if (maxPrice != null) dbQuery = dbQuery.lte("regular_price", maxPrice);
+  if (inStockOnly) dbQuery = dbQuery.eq("stock_status", "instock");
 
   const ascending = !reverse;
   switch (sortKey) {
@@ -794,10 +804,16 @@ export async function getCollectionProducts({
   collection,
   reverse = false,
   sortKey = "RELEVANCE",
+  minPrice,
+  maxPrice,
+  inStockOnly = false,
 }: {
   collection: string;
   reverse?: boolean;
   sortKey?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStockOnly?: boolean;
 }): Promise<Product[]> {
   "use cache";
   cacheTag(TAGS.collections, TAGS.products);
@@ -844,6 +860,10 @@ export async function getCollectionProducts({
     .select(PRODUCT_LIST_SELECT)
     .in("id", productIds)
     .eq("status", "publish");
+
+  if (minPrice != null) dbQuery = dbQuery.gte("regular_price", minPrice);
+  if (maxPrice != null) dbQuery = dbQuery.lte("regular_price", maxPrice);
+  if (inStockOnly) dbQuery = dbQuery.eq("stock_status", "instock");
 
   switch (sortKey) {
     case "PRICE":

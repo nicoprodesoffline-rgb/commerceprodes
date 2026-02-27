@@ -12,11 +12,18 @@ export default async function SearchPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const searchParams = await props.searchParams;
-  const { sort, q: searchValue } = searchParams as { [key: string]: string };
+  const { sort, q: searchValue, minPrice, maxPrice, inStock } = searchParams as { [key: string]: string };
   const { sortKey, reverse } =
     sorting.find((item) => item.slug === sort) || defaultSort;
 
-  const products = await getProducts({ sortKey, reverse, query: searchValue });
+  const products = await getProducts({
+    sortKey,
+    reverse,
+    query: searchValue,
+    minPrice: minPrice ? parseFloat(minPrice) : undefined,
+    maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+    inStockOnly: inStock === "1",
+  });
   const resultsText = products.length > 1 ? "résultats" : "résultat";
 
   return (

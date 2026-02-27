@@ -4,12 +4,14 @@ import CategoryGrid from "components/home/category-grid";
 import FeaturedProducts from "components/home/featured-products";
 import ProductCarousel from "components/home/product-carousel";
 import Link from "next/link";
+import Image from "next/image";
 import {
   getRootCategories,
   getFeaturedProducts,
   getPromoProducts,
   getNewProducts,
   getHomepageCategories,
+  getProducts,
 } from "lib/supabase/index";
 
 export const metadata = {
@@ -27,16 +29,22 @@ export default async function HomePage() {
   let promoProducts: Awaited<ReturnType<typeof getPromoProducts>> = [];
   let newProducts: Awaited<ReturnType<typeof getNewProducts>> = [];
   let homepageCategories: Awaited<ReturnType<typeof getHomepageCategories>> = [];
+  let proIntensProducts: Awaited<ReturnType<typeof getProducts>> = [];
 
   try {
-    [categories, featuredProducts, promoProducts, newProducts, homepageCategories] =
+    [categories, featuredProducts, promoProducts, newProducts, homepageCategories, proIntensProducts] =
       await Promise.all([
         getRootCategories(),
         getFeaturedProducts(12),
         getPromoProducts(12),
         getNewProducts(12),
         getHomepageCategories(),
+        getProducts({ query: "pro-intens", limit: 8 }),
       ]);
+    // Fallback PRO-INTENS avec espace
+    if (proIntensProducts.length === 0) {
+      proIntensProducts = await getProducts({ query: "pro intens", limit: 8 });
+    }
   } catch (e) {
     console.error("Homepage data fetch error:", e);
   }
@@ -140,7 +148,70 @@ export default async function HomePage() {
           />
         </section>
 
-        {/* Section 6 — Bandeau CTA devis express */}
+        {/* Section 6 — Carousel PRO-INTENS */}
+        {proIntensProducts.length > 0 && (
+          <section className="mx-auto max-w-screen-2xl px-4 pb-12 lg:px-6">
+            <div className="rounded-xl overflow-hidden bg-gradient-to-r from-[#1f2937] to-[#374151]">
+              <div className="flex flex-col gap-1 px-6 pt-6 pb-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-0.5 text-xs font-bold text-white">
+                    ★ Gamme exclusive
+                  </div>
+                  <h2 className="text-xl font-bold text-white">PRO-INTENS</h2>
+                  <p className="text-sm text-gray-300 mt-0.5">
+                    Mobilier haute résistance pour collectivités — Garantie 10 ans
+                  </p>
+                </div>
+                <Link
+                  href="/gamme-pro-intens"
+                  className="self-start rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors whitespace-nowrap mt-2 md:mt-0"
+                >
+                  Voir la gamme →
+                </Link>
+              </div>
+              <div className="px-4 pb-4">
+                <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-hide">
+                  {proIntensProducts.map((product) => (
+                    <Link
+                      key={product.handle}
+                      href={`/product/${product.handle}`}
+                      className="group flex-none w-48 snap-start rounded-lg bg-white/10 hover:bg-white/20 p-3 transition-colors"
+                    >
+                      <div className="relative mb-2 aspect-square overflow-hidden rounded bg-white/5">
+                        {product.featuredImage?.url ? (
+                          <Image
+                            src={product.featuredImage.url}
+                            alt={product.title}
+                            fill
+                            sizes="192px"
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-amber-400 opacity-40 text-3xl">
+                            ★
+                          </div>
+                        )}
+                        <div className="absolute left-1.5 top-1.5 rounded bg-amber-500 px-1 py-0.5 text-[10px] font-bold text-white">
+                          PRO-INTENS
+                        </div>
+                      </div>
+                      <p className="line-clamp-2 text-xs font-medium text-white leading-tight">
+                        {product.title}
+                      </p>
+                      {(product.priceMin ?? 0) > 0 && (
+                        <p className="mt-1 text-xs font-bold text-amber-400">
+                          {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(product.priceMin!)} € HT
+                        </p>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Section 7 — Bandeau CTA devis express */}
         <section className="mx-auto max-w-screen-2xl px-4 pb-12 lg:px-6">
           <div className="rounded-xl bg-[#cc1818] px-6 py-8 md:px-10">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -162,7 +233,117 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Section 7 — Carousel nouveautés */}
+        {/* Section 8 — Trouver le bon produit — IA CTA 3 étapes */}
+        <section className="mx-auto max-w-screen-2xl px-4 pb-12 lg:px-6">
+          <div className="rounded-xl border border-gray-200 bg-white px-6 py-8 md:px-10">
+            <div className="mb-6 text-center">
+              <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-sm font-semibold text-blue-700">
+                🤖 Assistance intelligente
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">
+                Trouvez le produit idéal en 3 étapes
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Décrivez votre besoin, nous suggérons les produits adaptés à votre collectivité
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {[
+                {
+                  step: "1",
+                  icon: "🏛️",
+                  title: "Identifiez votre contexte",
+                  desc: "Mairie, école, parc, espace sportif… Précisez votre type de collectivité et le lieu d'installation.",
+                  color: "bg-blue-50 border-blue-200",
+                  badge: "bg-blue-600",
+                },
+                {
+                  step: "2",
+                  icon: "🔍",
+                  title: "Décrivez votre besoin",
+                  desc: "Usage prévu, quantité, contraintes (résistance, accessibilité PMR, entretien)… Le détail permet une suggestion précise.",
+                  color: "bg-amber-50 border-amber-200",
+                  badge: "bg-amber-500",
+                },
+                {
+                  step: "3",
+                  icon: "📋",
+                  title: "Recevez votre devis",
+                  desc: "Sélection personnalisée de références, tarifs dégressifs, livraison incluse. Réponse sous 24h.",
+                  color: "bg-green-50 border-green-200",
+                  badge: "bg-green-600",
+                },
+              ].map((item) => (
+                <div key={item.step} className={`rounded-xl border p-5 ${item.color}`}>
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white ${item.badge}`}>
+                      {item.step}
+                    </div>
+                    <span className="text-xl">{item.icon}</span>
+                  </div>
+                  <h3 className="mb-1 text-sm font-semibold text-gray-900">{item.title}</h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 text-center">
+              <Link
+                href="/devis-express"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#cc1818] px-8 py-3 text-sm font-semibold text-white hover:bg-[#aa1414] transition-colors"
+              >
+                Commencer ma demande →
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 9 — Témoignages clients */}
+        <section className="mx-auto max-w-screen-2xl px-4 pb-12 lg:px-6">
+          <h2 className="mb-6 text-xl font-bold text-gray-900 text-center">Ils nous font confiance</h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {[
+              {
+                name: "Marie-Claire B.",
+                role: "Directrice des services techniques",
+                org: "Mairie de Montpellier",
+                text: "Excellent service, livraison rapide et produits conformes à nos attentes. Le devis a été traité en quelques heures. Je recommande PRODES pour tout achat de mobilier urbain.",
+                stars: 5,
+              },
+              {
+                name: "Jean-Pierre L.",
+                role: "Responsable achats",
+                org: "Communauté de communes du Pays de Sommières",
+                text: "Nous utilisons PRODES depuis 3 ans pour nos équipements d'espaces verts. Qualité constante, prix compétitifs avec les tarifs dégressifs et un interlocuteur dédié réactif.",
+                stars: 5,
+              },
+              {
+                name: "Sophie M.",
+                role: "Gestionnaire de patrimoine",
+                org: "Conseil Régional Occitanie",
+                text: "Le mandat administratif simplifie nos procédures d'achat. Produits robustes, compatibles Chorus Pro. Un partenaire fiable pour nos collectivités.",
+                stars: 5,
+              },
+            ].map((t) => (
+              <div key={t.name} className="rounded-xl border border-gray-200 bg-white p-5">
+                <div className="mb-3 flex gap-0.5">
+                  {Array.from({ length: t.stars }).map((_, i) => (
+                    <span key={i} className="text-amber-400 text-sm">★</span>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed italic mb-4">
+                  &ldquo;{t.text}&rdquo;
+                </p>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{t.name}</p>
+                  <p className="text-xs text-gray-500">{t.role}</p>
+                  <p className="text-xs font-medium text-[#cc1818]">{t.org}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Section 10 — Carousel nouveautés */}
         {newProducts.length > 0 && (
           <section className="mx-auto max-w-screen-2xl px-4 pb-16 lg:px-6">
             <ProductCarousel

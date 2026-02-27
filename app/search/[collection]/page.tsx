@@ -41,13 +41,20 @@ export default async function CategoryPage(props: {
 }) {
   const searchParams = await props.searchParams;
   const params = await props.params;
-  const { sort } = searchParams as { [key: string]: string };
+  const { sort, minPrice, maxPrice, inStock } = searchParams as { [key: string]: string };
   const { sortKey, reverse } =
     sorting.find((item) => item.slug === sort) || defaultSort;
 
   const [collection, products] = await Promise.all([
     getCollection(params.collection),
-    getCollectionProducts({ collection: params.collection, sortKey, reverse }),
+    getCollectionProducts({
+      collection: params.collection,
+      sortKey,
+      reverse,
+      minPrice: minPrice ? parseFloat(minPrice) : undefined,
+      maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+      inStockOnly: inStock === "1",
+    }),
   ]);
 
   if (!collection) return notFound();
