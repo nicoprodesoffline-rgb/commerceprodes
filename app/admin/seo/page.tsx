@@ -5,7 +5,7 @@ import Link from "next/link";
 
 interface SeoProductRow {
   id: string;
-  name: string;
+  title: string;
   slug: string;
   sku: string | null;
   short_description: string | null;
@@ -15,15 +15,15 @@ interface SeoProductRow {
 }
 
 function computeScore(p: {
-  name: string;
+  title: string;
   short_description: string | null;
   featured_image_url: string | null;
   sku: string | null;
 }): { score: number; suggestions: string[] } {
   const suggestions: string[] = [];
   let score = 0;
-  if (p.name && p.name.length >= 30 && p.name.length <= 70) score += 20;
-  else suggestions.push(p.name.length < 30 ? "Titre trop court" : "Titre trop long");
+  if (p.title && p.title.length >= 30 && p.title.length <= 70) score += 20;
+  else suggestions.push((p.title?.length ?? 0) < 30 ? "Titre trop court" : "Titre trop long");
   const descLen = (p.short_description ?? "").replace(/<[^>]*>/g, "").length;
   if (descLen >= 80 && descLen <= 300) score += 20;
   else suggestions.push(descLen < 80 ? "Description trop courte ou absente" : "Description trop longue");
@@ -130,7 +130,7 @@ export default function SeoPage() {
                       href={`/admin/produits/${r.id}`}
                       className="block text-sm font-medium text-gray-800 hover:text-[#cc1818] truncate transition-colors"
                     >
-                      {r.name}
+                      {r.title}
                     </Link>
                     {r.suggestions[0] && (
                       <p className="text-xs text-orange-600">{r.suggestions[0]}</p>

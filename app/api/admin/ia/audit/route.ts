@@ -26,11 +26,12 @@ export async function GET(req: NextRequest) {
         .select("id, name, slug", { count: "exact" })
         .eq("status", "publish")
         .or("regular_price.is.null,regular_price.eq.0"),
+      // featured_image_url n'existe pas sur products — LEFT JOIN product_images pour détecter l'absence
       client
         .from("products")
-        .select("id, name, slug", { count: "exact" })
+        .select("id, name, slug, product_images!left(id)", { count: "exact" })
         .eq("status", "publish")
-        .or("featured_image_url.is.null,featured_image_url.eq."),
+        .is("product_images.id", null),
       client
         .from("products")
         .select("id, name, slug", { count: "exact" })

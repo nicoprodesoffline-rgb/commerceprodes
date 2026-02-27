@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
   }
 
   const data = body as Record<string, unknown>;
+  const productId = data.productId ? sanitizeString(String(data.productId), 36) : null;
   const categorySlug = sanitizeString(String(data.categorySlug ?? ""), 100);
   const limit = sanitizeNumber(Number(data.limit ?? 5), 1, 20);
 
@@ -33,38 +34,50 @@ export async function POST(req: NextRequest) {
     const { supabaseServer } = await import("lib/supabase/client");
     const client = supabaseServer();
 
-    // Fetch category id
-    let categoryId: string | null = null;
-    if (categorySlug) {
-      const { data: cat } = await client
-        .from("categories")
-        .select("id")
-        .eq("slug", categorySlug)
+    let products: any[] | null = null;
+
+    if (productId) {
+      // Mode single-product : génère pour un produit spécifique quel que soit son statut description
+      const { data: single } = await client
+        .from("products")
+        .select("id, name, sku, product_categories(categories(name))")
+        .eq("id", productId)
         .single();
-      if (cat) categoryId = cat.id;
-    }
-
-    // Fetch products with missing descriptions
-    let query = client
-      .from("products")
-      .select("id, name, sku, product_categories(categories(name))")
-      .eq("status", "publish")
-      .or("short_description.is.null,short_description.eq.")
-      .limit(limit);
-
-    if (categoryId) {
-      // Get product IDs in category
-      const { data: catProducts } = await client
-        .from("product_categories")
-        .select("product_id")
-        .eq("category_id", categoryId);
-      const ids = (catProducts || []).map((cp: any) => cp.product_id);
-      if (ids.length > 0) {
-        query = query.in("id", ids);
+      products = single ? [single] : [];
+    } else {
+      // Mode batch : produits sans description dans la catégorie
+      let categoryId: string | null = null;
+      if (categorySlug) {
+        const { data: cat } = await client
+          .from("categories")
+          .select("id")
+          .eq("slug", categorySlug)
+          .single();
+        if (cat) categoryId = cat.id;
       }
+
+      let query = client
+        .from("products")
+        .select("id, name, sku, product_categories(categories(name))")
+        .eq("status", "publish")
+        .or("short_description.is.null,short_description.eq.")
+        .limit(limit);
+
+      if (categoryId) {
+        const { data: catProducts } = await client
+          .from("product_categories")
+          .select("product_id")
+          .eq("category_id", categoryId);
+        const ids = (catProducts || []).map((cp: any) => cp.product_id);
+        if (ids.length > 0) {
+          query = query.in("id", ids);
+        }
+      }
+
+      const { data: batchProducts } = await query;
+      products = batchProducts;
     }
 
-    const { data: products } = await query;
     if (!products || products.length === 0) {
       return NextResponse.json({ generated: 0, errors: [], products: [] });
     }
@@ -81,7 +94,7 @@ export async function POST(req: NextRequest) {
           (product as any).product_categories?.[0]?.categories?.name ?? "équipement collectivité";
 
         const message = await anthropic.messages.create({
-          model: "claude-sonnet-4-5",
+          model: "claude-sonnet-4-6",
           max_tokens: 300,
           messages: [
             {

@@ -93,12 +93,12 @@ export default function ProductEditPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${password}`,
         },
-        body: JSON.stringify({ productIds: [id], dryRun: false }),
+        body: JSON.stringify({ productId: id }),
       });
       const data = await res.json();
-      if (data.results?.[0]?.description) {
+      if (data.products?.[0]?.description) {
         setProduct((prev) =>
-          prev ? { ...prev, short_description: data.results[0].description } : prev,
+          prev ? { ...prev, short_description: data.products[0].description } : prev,
         );
       }
     } catch {

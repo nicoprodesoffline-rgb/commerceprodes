@@ -7,8 +7,9 @@ export async function GET(req: NextRequest) {
   const search = sanitizeString(searchParams.get("search") ?? "", 200);
   const status = sanitizeString(searchParams.get("status") ?? "publish", 20);
   const sortParam = sanitizeString(searchParams.get("sort") ?? "created_at-desc", 50);
+  const limitParam = sanitizeNumber(Number(searchParams.get("limit") ?? 0), 0, 1000);
 
-  const PAGE_SIZE = 50;
+  const PAGE_SIZE = limitParam > 0 ? Math.min(limitParam, 1000) : 50;
 
   const [sortField, sortDir] = sortParam.split("-");
   const ascending = sortDir === "asc";
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
       .order(sortField || "created_at", { ascending });
 
-    if (status) {
+    if (status && status !== "all") {
       query = query.eq("status", status);
     }
     if (search) {
