@@ -2,6 +2,9 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import AdminSidebar from "components/admin/sidebar";
 
+// Force dynamic — admin pages read cookies/headers, never cache
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({
   children,
 }: {

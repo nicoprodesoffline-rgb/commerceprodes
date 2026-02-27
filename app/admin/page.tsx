@@ -79,6 +79,8 @@ async function fetchDashboardStats() {
   };
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboard() {
   const today = new Date().toLocaleDateString("fr-FR", {
     weekday: "long",
@@ -87,7 +89,20 @@ export default async function AdminDashboard() {
     year: "numeric",
   });
 
-  const stats = await fetchDashboardStats();
+  let stats = {
+    totalProducts: 0,
+    devisPending: 0,
+    abandonedCarts: 0,
+    newRequests24h: 0,
+    totalCategories: 0,
+    missingImages: 0,
+    recentDevis: [] as DevisRequest[],
+  };
+  try {
+    stats = await fetchDashboardStats();
+  } catch {
+    // DB error — show zeros rather than crashing
+  }
 
   const statBlocks: StatBlock[] = [
     {
