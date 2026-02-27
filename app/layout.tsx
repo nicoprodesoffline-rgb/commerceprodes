@@ -3,6 +3,7 @@ import { Navbar } from "components/layout/navbar";
 import { WelcomeToast } from "components/welcome-toast";
 import { CompareProvider } from "lib/compare/context";
 import CompareBar from "components/compare/compare-bar";
+import { WishlistProvider } from "lib/wishlist/context";
 import { GeistSans } from "geist/font/sans";
 import { ReactNode } from "react";
 import { Toaster } from "sonner";
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="fr" className={GeistSans.variable} suppressHydrationWarning={true}>
       <body className="bg-white text-black selection:bg-red-100">
         <CartProvider>
+          <WishlistProvider>
           <CompareProvider>
             <Navbar />
             <main>
@@ -53,6 +55,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </main>
             <CompareBar />
           </CompareProvider>
+          </WishlistProvider>
         </CartProvider>
       </body>
     </html>

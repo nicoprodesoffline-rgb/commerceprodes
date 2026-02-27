@@ -2,6 +2,7 @@ import { GridTileImage } from "components/grid/tile";
 import Footer from "components/layout/footer";
 import { Gallery } from "components/product/gallery";
 import { ProductDescription } from "components/product/product-description";
+import { RecentlyViewed } from "components/product/recently-viewed";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
 import { getProduct, getProductRecommendations } from "lib/supabase";
 import type { Image } from "lib/supabase/types";
@@ -124,6 +125,9 @@ export default async function ProductPage(props: {
           </div>
         </div>
         <RelatedProducts id={product.id} />
+        <Suspense fallback={null}>
+          <RecentlyViewed currentHandle={product.handle} />
+        </Suspense>
       </div>
 
       <Footer />

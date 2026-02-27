@@ -12,6 +12,7 @@ import Link from "next/link";
 import { Fragment } from "react";
 import { useFormStatus } from "react-dom";
 import { useCart } from "./cart-context";
+import { ShareCartButton } from "./share-cart-button";
 import { DeleteItemButton } from "./delete-item-button";
 import { EditItemQuantityButton } from "./edit-item-quantity-button";
 import OpenCart from "./open-cart";
@@ -208,6 +209,9 @@ export default function CartModal() {
                   >
                     Voir le panier complet
                   </Link>
+                  <div className="mt-2 flex justify-center">
+                    <ShareCartButton className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors" />
+                  </div>
                 </div>
               )}
             </Dialog.Panel>

@@ -6,9 +6,10 @@ import { MandatModal } from "components/product/mandat-modal";
 import { VariantSelector } from "./variant-selector";
 import Prose from "components/prose";
 import { Product, ProductVariant } from "lib/supabase/types";
-import { useState, useCallback, useTransition } from "react";
+import { useState, useCallback, useTransition, useEffect } from "react";
 import { useCart } from "components/cart/cart-context";
 import { getEcoDisplay } from "lib/utils/eco";
+import { addRecentlyViewed } from "lib/recently-viewed";
 
 function formatPriceFR(price: number): string {
   return (
@@ -38,6 +39,11 @@ export function ProductDescription({ product }: { product: Product }) {
   const handleVariantChange = useCallback((variant: ProductVariant | null) => {
     setSelectedVariant(variant);
   }, []);
+
+  // Track recently viewed
+  useEffect(() => {
+    addRecentlyViewed(product.handle);
+  }, [product.handle]);
 
   // Displayed SKU: variant SKU → product SKU
   const displaySku = selectedVariant?.sku ?? product.sku;

@@ -1,6 +1,8 @@
 import Grid from "components/grid";
 import { ProductCardImage } from "components/product-image";
 import CompareButton from "components/product/compare-button";
+import { WishlistButton } from "components/product/wishlist-button";
+import { ProductBadges } from "components/product/product-badges";
 import { Product } from "lib/supabase/types";
 import Link from "next/link";
 
@@ -40,6 +42,7 @@ export default function ProductGridItems({ products }: { products: Product[] }) 
           >
             {/* Image — ratio 4:3 */}
             <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-50">
+              <ProductBadges product={product} />
               {product.featuredImage?.url ? (
                 <ProductCardImage
                   src={product.featuredImage.url}
@@ -85,7 +88,10 @@ export default function ProductGridItems({ products }: { products: Product[] }) 
               <p className="mt-2 text-sm font-bold text-gray-900">
                 <PriceRange product={product} />
               </p>
-              <CompareButton handle={product.handle} title={product.title} />
+              <div className="mt-2 flex items-center gap-2">
+                <CompareButton handle={product.handle} title={product.title} />
+                <WishlistButton handle={product.handle} />
+              </div>
             </div>
           </Link>
         </Grid.Item>
