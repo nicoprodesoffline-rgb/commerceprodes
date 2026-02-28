@@ -57,12 +57,21 @@ export default function AdminIAPage() {
     items: Array<{ id: string; title: string; handle: string }>;
   } | null>(null);
 
+  // Statut IA
+  const [iaStatus, setIaStatus] = useState<{
+    ia_available: boolean;
+    model: string;
+    reason: string | null;
+  } | null>(null);
+
   // Module 2 — Descriptions
   const [descCategory, setDescCategory] = useState("");
   const [descLimit, setDescLimit] = useState(5);
   const [descLoading, setDescLoading] = useState(false);
   const [descProgress, setDescProgress] = useState(0);
   const [descResult, setDescResult] = useState<{
+    ia_available?: boolean;
+    reason?: string;
     generated: number;
     errors: string[];
     products: Array<{ title: string; description: string }>;
@@ -83,11 +92,15 @@ export default function AdminIAPage() {
     products: Array<{ title: string; oldPrice: number; newPrice: number }>;
   } | null>(null);
 
-  // Load categories on mount
+  // Load categories + IA status on mount
   useEffect(() => {
     fetch("/api/admin/ia/categories-list")
       .then((r) => r.json())
       .then((d) => setCategories(d.categories ?? []))
+      .catch(() => {});
+    fetch("/api/admin/ia/generate-descriptions")
+      .then((r) => r.json())
+      .then((d) => setIaStatus(d))
       .catch(() => {});
   }, []);
 
@@ -120,8 +133,20 @@ export default function AdminIAPage() {
       });
       clearInterval(timer);
       setDescProgress(100);
-      if (res.ok) setDescResult(await res.json());
-      else alert("Erreur génération — vérifiez la configuration ANTHROPIC_API_KEY");
+      if (res.ok) {
+        const data = await res.json();
+        setDescResult(data);
+        // Mise à jour du statut IA si la réponse le contient
+        if (typeof data.ia_available === "boolean") {
+          setIaStatus((prev) => ({
+            ia_available: data.ia_available,
+            model: data.model ?? prev?.model ?? "",
+            reason: data.reason ?? null,
+          }));
+        }
+      } else {
+        alert("Erreur serveur — vérifiez les logs");
+      }
     } finally {
       clearInterval(timer);
       setDescLoading(false);
@@ -306,10 +331,41 @@ export default function AdminIAPage() {
 
         {/* MODULE 2 — Descriptions */}
         <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="font-semibold text-gray-900">✍️ Génération de descriptions</h2>
+          <div className="flex items-start justify-between mb-0.5">
+            <h2 className="font-semibold text-gray-900">✍️ Génération de descriptions</h2>
+            {iaStatus && (
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                  iaStatus.ia_available
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-600"
+                }`}
+              >
+                {iaStatus.ia_available ? `IA ${iaStatus.model}` : "IA non disponible"}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-gray-500 mt-0.5">
             Génère des descriptions manquantes avec l&apos;IA Claude
           </p>
+          {iaStatus && !iaStatus.ia_available && (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
+              <p className="text-xs font-medium text-red-700 mb-1">
+                Clé API Anthropic manquante
+              </p>
+              <p className="text-xs text-red-600">
+                {iaStatus.reason}
+              </p>
+              <p className="mt-1.5 text-xs text-red-500">
+                Ajoutez <code className="rounded bg-red-100 px-1 font-mono">ANTHROPIC_API_KEY=sk-ant-…</code> puis redémarrez le serveur.
+              </p>
+            </div>
+          )}
+          {descResult && !descResult.ia_available && descResult.reason && (
+            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <p className="text-xs text-amber-700">{descResult.reason}</p>
+            </div>
+          )}
           <div className="mt-3 space-y-3">
             <select
               value={descCategory}
@@ -355,7 +411,7 @@ export default function AdminIAPage() {
                 </p>
               </div>
             )}
-            {descResult && (
+            {descResult && descResult.ia_available !== false && (
               <div className="mt-2">
                 <p className="text-sm font-medium text-green-700 mb-2">
                   ✅ {descResult.generated} description(s) générée(s)
