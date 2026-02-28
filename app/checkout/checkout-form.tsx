@@ -60,6 +60,11 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
   const [livraisonRdv, setLivraisonRdv] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Bloc "Créer un compte" (Section 4)
+  const [createAccount, setCreateAccount] = useState(false);
+  const [accountPassword, setAccountPassword] = useState("");
+  const [accountPasswordConfirm, setAccountPasswordConfirm] = useState("");
+
   const totalTTCFinal = cartSummary.totalTTC + (livraisonRdv ? 20 : 0);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -83,6 +88,18 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
       livraisonRdv,
     };
 
+    // Validation compte si activé
+    if (createAccount && accountPassword) {
+      if (accountPassword !== accountPasswordConfirm) {
+        setError("Les mots de passe ne correspondent pas");
+        return;
+      }
+      if (accountPassword.length < 8) {
+        setError("Mot de passe trop court (8 caractères minimum)");
+        return;
+      }
+    }
+
     startTransition(async () => {
       setError(null);
       try {
@@ -96,6 +113,23 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
           setError(data.error ?? "Une erreur est survenue. Veuillez réessayer.");
           return;
         }
+
+        // Création compte — fire-and-forget, non-bloquant
+        if (createAccount && accountPassword && accountPassword === accountPasswordConfirm) {
+          fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: fd.get("email"),
+              password: accountPassword,
+              prenom: fd.get("prenom"),
+              nom: fd.get("nom"),
+              organisme: fd.get("organisme"),
+              telephone: fd.get("telephone"),
+            }),
+          }).catch(() => {});
+        }
+
         router.push(
           `/checkout/confirmation?orderId=${encodeURIComponent(data.orderId)}&mode=${encodeURIComponent(data.modePaiement)}`
         );
@@ -185,6 +219,59 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
                 placeholder="Consignes de livraison, références marché public, etc."
               />
             </div>
+          </section>
+
+          {/* Section 4 — Créer un compte (optionnel) */}
+          <section className="rounded-lg border border-gray-200 bg-white">
+            <button
+              type="button"
+              onClick={() => setCreateAccount((v) => !v)}
+              className="flex w-full items-center justify-between px-5 py-3 text-left"
+            >
+              <div>
+                <span className="text-sm font-semibold text-gray-800">4. Créer un compte PRODES</span>
+                <span className="ml-2 text-xs text-gray-400">(optionnel)</span>
+              </div>
+              <span className="text-xs text-gray-400">{createAccount ? "▲" : "▼"}</span>
+            </button>
+            {createAccount && (
+              <div className="border-t border-gray-100 p-5 space-y-4">
+                <p className="text-xs text-gray-500">
+                  Retrouvez vos commandes et devis dans votre espace client.
+                  L&apos;email renseigné dans vos coordonnées sera utilisé.
+                </p>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-700">
+                    Mot de passe *{" "}
+                    <span className="font-normal text-gray-400">(8 caractères minimum)</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={accountPassword}
+                    onChange={(e) => setAccountPassword(e.target.value)}
+                    minLength={8}
+                    maxLength={100}
+                    className={inputClass}
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-700">
+                    Confirmer le mot de passe *
+                  </label>
+                  <input
+                    type="password"
+                    value={accountPasswordConfirm}
+                    onChange={(e) => setAccountPasswordConfirm(e.target.value)}
+                    className={inputClass}
+                    placeholder="••••••••"
+                  />
+                </div>
+                {accountPassword && accountPasswordConfirm && accountPassword !== accountPasswordConfirm && (
+                  <p className="text-xs text-red-600">Les mots de passe ne correspondent pas</p>
+                )}
+              </div>
+            )}
           </section>
         </div>
 
