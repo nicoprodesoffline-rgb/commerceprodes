@@ -7,6 +7,7 @@ import { Product, ProductVariant } from "lib/supabase/types";
 import { useSearchParams } from "next/navigation";
 import { useActionState } from "react";
 import { useCart } from "./cart-context";
+import { trackCartEvent } from "lib/analytics/tracker";
 
 function SubmitButton({
   availableForSale,
@@ -80,6 +81,14 @@ export function AddToCart({ product }: { product: Product }) {
       action={async () => {
         addCartItem(finalVariant, product);
         addItemAction();
+        try {
+          trackCartEvent("add", {
+            handle: product.handle,
+            id: selectedVariantId,
+            sku: finalVariant?.sku ?? undefined,
+            quantity: 1,
+          });
+        } catch {}
       }}
     >
       <SubmitButton

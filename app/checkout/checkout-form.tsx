@@ -3,6 +3,7 @@
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { trackCartEvent } from "lib/analytics/tracker";
 
 type CartLine = {
   id: string | undefined;
@@ -111,6 +112,7 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
     startTransition(async () => {
       setError(null);
       try {
+        try { trackCartEvent("checkout_start"); } catch {}
         const res = await fetch("/api/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -138,6 +140,7 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
           }).catch(() => {});
         }
 
+        try { trackCartEvent("checkout_complete"); } catch {}
         router.push(
           `/checkout/confirmation?orderId=${encodeURIComponent(data.orderId)}&mode=${encodeURIComponent(data.modePaiement)}`
         );

@@ -45,9 +45,40 @@ export async function GET(
     });
   } catch (err) {
     log('error', 'pdf.generate_failed', { handle, error: String(err) });
-    return NextResponse.json(
-      { error: 'Erreur lors de la génération du PDF' },
-      { status: 500 },
-    );
+
+    // Fallback : page HTML imprimable à défaut du PDF
+    const fallbackHtml = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Fiche produit — ${product.title ?? handle}</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; color: #111; }
+    h1 { color: #cc1818; font-size: 22px; }
+    .ref { color: #666; font-size: 13px; margin-bottom: 16px; }
+    .desc { font-size: 14px; line-height: 1.6; }
+    .price { font-size: 18px; font-weight: bold; margin-top: 16px; }
+    .notice { background: #fff3cd; border: 1px solid #ffc107; padding: 10px 14px;
+              border-radius: 6px; font-size: 13px; margin-bottom: 20px; }
+    @media print { .notice { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="notice">⚠️ La génération PDF automatique est temporairement indisponible.
+    Vous pouvez imprimer cette page (Ctrl+P / Cmd+P).</div>
+  <h1>${product.title ?? handle}</h1>
+  ${product.description ? `<p class="desc">${product.description}</p>` : ''}
+  <p class="ref">Référence : ${sku || handle}</p>
+  <p style="font-size:12px;color:#999;margin-top:32px">PRODES — Équipements pour collectivités</p>
+</body>
+</html>`;
+
+    return new NextResponse(fallbackHtml, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'X-PDF-Fallback': 'true',
+      },
+    });
   }
 }
