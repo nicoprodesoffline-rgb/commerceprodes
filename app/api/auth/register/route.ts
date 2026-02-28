@@ -18,8 +18,14 @@ function isMissingTable(err: unknown): boolean {
   const e = err as Record<string, unknown>;
   const code = e.code as string | undefined;
   const msg = (e.message as string | undefined) ?? "";
-  // Postgres code 42P01 = undefined_table
-  return code === "42P01" || msg.toLowerCase().includes("does not exist");
+  // Postgres code 42P01 = undefined_table, PostgREST = schema cache
+  const lmsg = msg.toLowerCase();
+  return (
+    code === "42P01" ||
+    lmsg.includes("does not exist") ||
+    lmsg.includes("schema cache") ||
+    lmsg.includes("could not find the table")
+  );
 }
 
 export async function GET() {

@@ -4,8 +4,13 @@ function isMissingTable(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
   const e = err as Record<string, unknown>;
   const code = e.code as string | undefined;
-  const msg = (e.message as string | undefined) ?? "";
-  return code === "42P01" || msg.toLowerCase().includes("does not exist");
+  const msg = ((e.message as string | undefined) ?? "").toLowerCase();
+  return (
+    code === "42P01" ||
+    msg.includes("does not exist") ||
+    msg.includes("schema cache") ||
+    msg.includes("could not find the table")
+  );
 }
 
 export async function POST(req: NextRequest) {

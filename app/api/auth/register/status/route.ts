@@ -15,10 +15,14 @@ export async function GET() {
       .limit(1);
 
     if (error) {
-      const code = (error as Record<string, unknown>).code as string | undefined;
+      const errAny = error as unknown as Record<string, unknown>;
+      const code = errAny.code as string | undefined;
       const msg = (error.message ?? "").toLowerCase();
       const isMissing =
-        code === "42P01" || msg.includes("does not exist");
+        code === "42P01" ||
+        msg.includes("does not exist") ||
+        msg.includes("schema cache") ||
+        msg.includes("could not find the table");
       return NextResponse.json(
         {
           available: false,
