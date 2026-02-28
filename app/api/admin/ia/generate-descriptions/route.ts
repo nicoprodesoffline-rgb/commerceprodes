@@ -2,10 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { sanitizeString, sanitizeNumber } from "lib/validation";
 import { log } from "lib/logger";
 
+const IA_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
+
 function checkAuth(req: NextRequest): boolean {
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.replace("Bearer ", "");
   return token === (process.env.ADMIN_PASSWORD ?? "");
+}
+
+/** GET /api/admin/ia/generate-descriptions — statut de configuration IA */
+export async function GET() {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  return NextResponse.json({
+    ia_available: Boolean(apiKey),
+    model: IA_MODEL,
+    reason: apiKey ? null : "ANTHROPIC_API_KEY non configurée",
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -27,7 +39,14 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY non configurée" }, { status: 500 });
+    return NextResponse.json({
+      ia_available: false,
+      reason:
+        "ANTHROPIC_API_KEY non configurée — ajoutez-la dans .env.local ou les variables d'environnement Vercel",
+      generated: 0,
+      errors: [],
+      products: [],
+    });
   }
 
   try {
@@ -79,7 +98,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (!products || products.length === 0) {
-      return NextResponse.json({ generated: 0, errors: [], products: [] });
+      return NextResponse.json({
+        ia_available: true,
+        model: IA_MODEL,
+        generated: 0,
+        errors: [],
+        products: [],
+      });
     }
 
     const { Anthropic } = await import("@anthropic-ai/sdk");
@@ -94,7 +119,7 @@ export async function POST(req: NextRequest) {
           (product as any).product_categories?.[0]?.categories?.name ?? "équipement collectivité";
 
         const message = await anthropic.messages.create({
-          model: "claude-sonnet-4-6",
+          model: IA_MODEL,
           max_tokens: 300,
           messages: [
             {
@@ -129,12 +154,19 @@ Réponds uniquement avec la description, sans guillemets ni introduction.`,
 
     log("info", "admin.ia.generate_descriptions", {
       category: categorySlug,
+      model: IA_MODEL,
       requested: limit,
       generated: generated.length,
       errors: errors.length,
     });
 
-    return NextResponse.json({ generated: generated.length, errors, products: generated });
+    return NextResponse.json({
+      ia_available: true,
+      model: IA_MODEL,
+      generated: generated.length,
+      errors,
+      products: generated,
+    });
   } catch (err) {
     console.error("ia.generate_descriptions error", err);
     return NextResponse.json({ error: "Erreur génération" }, { status: 500 });
