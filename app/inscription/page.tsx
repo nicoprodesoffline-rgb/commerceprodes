@@ -1,15 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 const inputCls =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#cc1818] focus:outline-none focus:ring-1 focus:ring-[#cc1818]";
 
+function MigrationBanner() {
+  return (
+    <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+      <div className="flex items-start gap-3">
+        <span className="text-amber-500 text-lg mt-0.5">⚠️</span>
+        <div>
+          <p className="text-sm font-semibold text-amber-800">
+            Fonctionnalité temporairement indisponible
+          </p>
+          <p className="mt-1 text-xs text-amber-700">
+            La création de compte nécessite l&apos;application de la migration SQL 009.
+            Contactez l&apos;administrateur ou appliquez{" "}
+            <code className="rounded bg-amber-100 px-1 font-mono text-xs">
+              docs/sql-migrations/009-customer-accounts.sql
+            </code>{" "}
+            via le dashboard Supabase.
+          </p>
+          <p className="mt-2 text-xs text-amber-700">
+            En attendant, vous pouvez{" "}
+            <Link href="/panier" className="underline hover:text-amber-900">
+              passer une commande sans compte
+            </Link>
+            .
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function InscriptionPage() {
   const [status, setStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [confirmedEmail, setConfirmedEmail] = useState("");
+  const [serviceAvailable, setServiceAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/register/status")
+      .then((r) => r.json())
+      .then((d) => setServiceAvailable(d.available === true))
+      .catch(() => setServiceAvailable(null)); // null = unknown, don't block
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,6 +81,10 @@ export default function InscriptionPage() {
       if (res.ok) {
         setConfirmedEmail(String(fd.get("email") ?? ""));
         setStatus("success");
+      } else if (res.status === 503 && data.error_code === "MIGRATION_REQUIRED") {
+        setServiceAvailable(false);
+        setStatus("error");
+        setErrorMsg(null); // banner will show instead
       } else {
         setStatus("error");
         setErrorMsg(data.error ?? "Erreur lors de la création du compte");
@@ -94,6 +136,9 @@ export default function InscriptionPage() {
             Accédez à vos commandes, devis et à l&apos;historique de vos achats.
           </p>
         </div>
+
+        {/* Bannière migration si service indisponible */}
+        {serviceAvailable === false && <MigrationBanner />}
 
         <form
           onSubmit={handleSubmit}
@@ -189,10 +234,14 @@ export default function InscriptionPage() {
 
           <button
             type="submit"
-            disabled={status === "pending"}
+            disabled={status === "pending" || serviceAvailable === false}
             className="w-full rounded-lg bg-[#cc1818] py-3 text-sm font-bold text-white hover:bg-[#aa1414] transition-colors disabled:opacity-60"
           >
-            {status === "pending" ? "Création en cours…" : "Créer mon compte"}
+            {status === "pending"
+              ? "Création en cours…"
+              : serviceAvailable === false
+              ? "Service indisponible"
+              : "Créer mon compte"}
           </button>
 
           <p className="text-center text-xs text-gray-400">

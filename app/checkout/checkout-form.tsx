@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -64,6 +64,14 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
   const [createAccount, setCreateAccount] = useState(false);
   const [accountPassword, setAccountPassword] = useState("");
   const [accountPasswordConfirm, setAccountPasswordConfirm] = useState("");
+  const [accountServiceAvailable, setAccountServiceAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/register/status")
+      .then((r) => r.json())
+      .then((d) => setAccountServiceAvailable(d.available === true))
+      .catch(() => setAccountServiceAvailable(null));
+  }, []);
 
   const totalTTCFinal = cartSummary.totalTTC + (livraisonRdv ? 20 : 0);
 
@@ -236,39 +244,51 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
             </button>
             {createAccount && (
               <div className="border-t border-gray-100 p-5 space-y-4">
-                <p className="text-xs text-gray-500">
-                  Retrouvez vos commandes et devis dans votre espace client.
-                  L&apos;email renseigné dans vos coordonnées sera utilisé.
-                </p>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700">
-                    Mot de passe *{" "}
-                    <span className="font-normal text-gray-400">(8 caractères minimum)</span>
-                  </label>
-                  <input
-                    type="password"
-                    value={accountPassword}
-                    onChange={(e) => setAccountPassword(e.target.value)}
-                    minLength={8}
-                    maxLength={100}
-                    className={inputClass}
-                    placeholder="••••••••"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700">
-                    Confirmer le mot de passe *
-                  </label>
-                  <input
-                    type="password"
-                    value={accountPasswordConfirm}
-                    onChange={(e) => setAccountPasswordConfirm(e.target.value)}
-                    className={inputClass}
-                    placeholder="••••••••"
-                  />
-                </div>
-                {accountPassword && accountPasswordConfirm && accountPassword !== accountPasswordConfirm && (
-                  <p className="text-xs text-red-600">Les mots de passe ne correspondent pas</p>
+                {accountServiceAvailable === false ? (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+                    <p className="text-xs font-semibold text-amber-800">Création de compte temporairement indisponible</p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      La migration SQL 009 n&apos;a pas encore été appliquée.{" "}
+                      <a href="/inscription" className="underline">Créer un compte plus tard →</a>
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs text-gray-500">
+                      Retrouvez vos commandes et devis dans votre espace client.
+                      L&apos;email renseigné dans vos coordonnées sera utilisé.
+                    </p>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-700">
+                        Mot de passe *{" "}
+                        <span className="font-normal text-gray-400">(8 caractères minimum)</span>
+                      </label>
+                      <input
+                        type="password"
+                        value={accountPassword}
+                        onChange={(e) => setAccountPassword(e.target.value)}
+                        minLength={8}
+                        maxLength={100}
+                        className={inputClass}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-700">
+                        Confirmer le mot de passe *
+                      </label>
+                      <input
+                        type="password"
+                        value={accountPasswordConfirm}
+                        onChange={(e) => setAccountPasswordConfirm(e.target.value)}
+                        className={inputClass}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    {accountPassword && accountPasswordConfirm && accountPassword !== accountPasswordConfirm && (
+                      <p className="text-xs text-red-600">Les mots de passe ne correspondent pas</p>
+                    )}
+                  </>
                 )}
               </div>
             )}
