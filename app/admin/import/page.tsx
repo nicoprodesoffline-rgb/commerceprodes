@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { adminFetch } from "lib/admin/fetch";
 
 interface ImportLog {
   id: string;
@@ -23,19 +24,13 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
 export default function AdminImportPage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [logs, setLogs] = useState<ImportLog[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const password =
-    typeof window !== "undefined"
-      ? sessionStorage.getItem("admin_password") ?? ""
-      : "";
-
   const fetchLogs = async () => {
-    const res = await fetch("/api/admin/import-logs", {
-      headers: { Authorization: `Bearer ${password}` },
-    });
+    const res = await adminFetch("/api/admin/import-logs");
     if (res.ok) {
       const data = await res.json();
       setLogs(data.logs ?? []);
@@ -66,45 +61,72 @@ export default function AdminImportPage() {
   const handleUpload = async () => {
     if (!file) return;
     setUploading(true);
+    setUploadProgress(null);
     try {
-      // Upload to Supabase Storage via the API
+      // ── Étape 1: Upload vers Supabase Storage ─────────────────────────────
+      setUploadProgress("Envoi du fichier vers le stockage…");
       const formData = new FormData();
       formData.append("file", file);
 
-      // First create a log entry
-      const logRes = await fetch("/api/admin/import-logs", {
+      const uploadRes = await adminFetch("/api/admin/import-upload", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${password}`,
-        },
-        body: JSON.stringify({ filename: file.name }),
+        body: formData,
+      });
+      const uploadData = await uploadRes.json();
+      const fileUrl: string | null = uploadData.url ?? null;
+      const storageFallback: boolean = uploadData.fallback === true;
+
+      if (storageFallback) {
+        console.warn("[import] Storage indisponible:", uploadData.reason);
+      }
+
+      // ── Étape 2: Créer l'entrée de log avec file_url ──────────────────────
+      setUploadProgress("Enregistrement du log d'import…");
+      const logRes = await adminFetch("/api/admin/import-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          ...(fileUrl ? { file_url: fileUrl } : {}),
+        }),
       });
       const logData = await logRes.json();
-      const logId = logData.id;
+      const logId: string | null = logData.id ?? null;
 
-      // Trigger n8n webhook
-      const webhookRes = await fetch("/api/admin/trigger-webhook", {
+      // ── Étape 3: Déclencher le webhook n8n ────────────────────────────────
+      setUploadProgress("Déclenchement du traitement n8n…");
+      const webhookRes = await adminFetch("/api/admin/trigger-webhook", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${password}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           webhook: "import_supplier",
-          payload: { filename: file.name, logId, uploadedAt: new Date().toISOString() },
+          payload: {
+            filename: file.name,
+            logId,
+            file_url: fileUrl,
+            uploadedAt: new Date().toISOString(),
+            storage_available: !storageFallback,
+          },
         }),
       });
       const webhookData = await webhookRes.json();
-      toast[webhookData.success ? "success" : "warning"](
-        webhookData.message ?? "Import envoyé à n8n pour traitement",
-      );
+
+      if (storageFallback) {
+        toast.warning("Fichier envoyé à n8n — stockage Storage non disponible, file_url absent.");
+      } else {
+        toast[webhookData.success ? "success" : "warning"](
+          webhookData.message ?? "Import envoyé à n8n pour traitement",
+        );
+      }
+
       setFile(null);
       fetchLogs();
-    } catch {
+    } catch (err) {
+      console.error("[import] Erreur upload:", err);
       toast.error("Erreur lors de l'envoi.");
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -160,14 +182,29 @@ export default function AdminImportPage() {
       </div>
 
       {file && (
-        <button
-          onClick={handleUpload}
-          disabled={uploading}
-          className="flex items-center gap-2 rounded-lg bg-[#cc1818] px-6 py-3 text-sm font-semibold text-white hover:bg-[#aa1414] disabled:opacity-60 transition-colors"
-        >
-          {uploading ? "Envoi en cours…" : "📤 Envoyer à n8n pour traitement"}
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={handleUpload}
+            disabled={uploading}
+            className="flex items-center gap-2 rounded-lg bg-[#cc1818] px-6 py-3 text-sm font-semibold text-white hover:bg-[#aa1414] disabled:opacity-60 transition-colors"
+          >
+            {uploading ? "Envoi en cours…" : "📤 Envoyer à n8n pour traitement"}
+          </button>
+          {uploadProgress && (
+            <p className="text-xs text-gray-500 animate-pulse">{uploadProgress}</p>
+          )}
+        </div>
       )}
+
+      {/* Étapes du processus */}
+      <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+        <p className="mb-2 text-xs font-semibold text-blue-800">Processus d&apos;import</p>
+        <ol className="space-y-1 text-xs text-blue-700">
+          <li>1. Le fichier est uploadé vers Supabase Storage (bucket: imports)</li>
+          <li>2. Un log d&apos;import est créé avec l&apos;URL du fichier</li>
+          <li>3. Le webhook n8n est déclenché avec la référence du fichier</li>
+        </ol>
+      </div>
 
       {/* Config info */}
       {!process.env.NEXT_PUBLIC_N8N_CONFIGURED && (
@@ -191,6 +228,7 @@ export default function AdminImportPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Fichier</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Statut</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Lignes</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Lien fichier</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Notes</th>
                 </tr>
               </thead>
@@ -212,6 +250,21 @@ export default function AdminImportPage() {
                       </td>
                       <td className="px-4 py-3 text-right text-gray-600">
                         {log.rows_processed > 0 ? log.rows_processed : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        {log.file_url ? (
+                          <a
+                            href={log.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline truncate block max-w-[120px]"
+                            title={log.file_url}
+                          >
+                            📎 Voir fichier
+                          </a>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500 max-w-[180px] truncate">
                         {log.notes ?? "—"}
