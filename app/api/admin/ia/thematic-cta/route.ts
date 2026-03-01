@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "lib/supabase/client";
-import { timingSafeEqual } from "crypto";
-
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  const expected = process.env.ADMIN_PASSWORD ?? "";
-  if (!token || !expected || token.length !== expected.length) return false;
-  try {
-    return timingSafeEqual(Buffer.from(token), Buffer.from(expected));
-  } catch {
-    return false;
-  }
-}
+import { checkAdminAuth } from "lib/admin/auth";
+import {
+  estimateCostFromTokens,
+  getIaControlConfig,
+  recordIaUsage,
+  renderPromptTemplate,
+} from "lib/admin/ia-control";
+import { sanitizeString } from "lib/validation";
 
 interface ThematicItem {
   keywords: string;
@@ -26,19 +21,44 @@ interface AiResponse {
   items: ThematicItem[];
 }
 
-async function callAnthropic(theme: string): Promise<AiResponse> {
+function extractResponseText(content: any[]): string {
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((block) => block?.type === "text")
+    .map((block) => String(block.text ?? ""))
+    .join("\n")
+    .trim();
+}
+
+function extractUsage(payload: any): { inputTokens: number; outputTokens: number } {
+  const usage = payload?.usage ?? {};
+  return {
+    inputTokens: Number(usage.input_tokens ?? usage.inputTokens ?? 0),
+    outputTokens: Number(usage.output_tokens ?? usage.outputTokens ?? 0),
+  };
+}
+
+async function callAnthropic(theme: string, model: string, promptTemplate: string): Promise<{
+  result: AiResponse;
+  inputTokens: number;
+  outputTokens: number;
+}> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    // Fallback without AI
     return {
-      title: `Collection ${theme}`,
-      intro: `Retrouvez nos produits sélectionnés pour le thème "${theme}".`,
-      items: [
-        { keywords: theme, label: theme, pitch: `Produits adaptés pour ${theme}` },
-      ],
+      result: {
+        title: `Collection ${theme}`,
+        intro: `Retrouvez nos produits sélectionnés pour le thème "${theme}".`,
+        items: [
+          { keywords: theme, label: theme, pitch: `Produits adaptés pour ${theme}` },
+        ],
+      },
+      inputTokens: 0,
+      outputTokens: 0,
     };
   }
 
+  const prompt = renderPromptTemplate(promptTemplate, { theme });
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -47,14 +67,14 @@ async function callAnthropic(theme: string): Promise<AiResponse> {
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
+      model,
       max_tokens: 1024,
       system:
         "Tu es expert équipements collectivités françaises (mobilier urbain, signalisation, jeux, sécurité voirie, affichage, hygiène publique, sport).",
       messages: [
         {
           role: "user",
-          content: `Pour le thème "${theme}", sélectionne 6-8 types de produits pertinents pour des collectivités françaises. Pour chaque type : des mots-clés courts pour une recherche ILIKE Supabase. Génère aussi un titre court (≤ 8 mots) et une intro (2 phrases max). Réponds UNIQUEMENT en JSON valide : { "title": "...", "intro": "...", "items": [{ "keywords": "...", "label": "...", "pitch": "..." }] }`,
+          content: prompt,
         },
       ],
     }),
@@ -62,28 +82,51 @@ async function callAnthropic(theme: string): Promise<AiResponse> {
 
   if (!res.ok) throw new Error(`Anthropic error ${res.status}`);
   const data = await res.json();
-  const text = data.content?.[0]?.text ?? "{}";
+  const text = extractResponseText(data.content);
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("No JSON in response");
-  return JSON.parse(jsonMatch[0]) as AiResponse;
+
+  const usage = extractUsage(data);
+  return {
+    result: JSON.parse(jsonMatch[0]) as AiResponse,
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+  };
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!checkAdminAuth(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const { theme } = await req.json();
-  if (!theme || typeof theme !== "string" || theme.length > 100) {
+  let body: Record<string, unknown>;
+  try {
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "Corps invalide" }, { status: 400 });
+  }
+
+  const theme = sanitizeString(body.theme, 100);
+  if (!theme) {
     return NextResponse.json({ error: "Thème invalide" }, { status: 400 });
   }
 
+  const config = await getIaControlConfig();
+  const model = sanitizeString(body.model, 120) || config.defaultModel;
+
   let aiResult: AiResponse;
+  let inputTokens = 0;
+  let outputTokens = 0;
+
   try {
-    aiResult = await callAnthropic(theme);
+    const ai = await callAnthropic(theme, model, config.prompts.thematicCta);
+    aiResult = ai.result;
+    inputTokens = ai.inputTokens;
+    outputTokens = ai.outputTokens;
   } catch (err) {
     return NextResponse.json({ error: `IA error: ${String(err)}` }, { status: 500 });
   }
 
-  // Fetch products for each item
   const client = supabaseServer();
   const collectedProducts: Array<{ id: string; handle: string; title: string; image_url: string | null }> = [];
 
@@ -109,10 +152,35 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const estimated = estimateCostFromTokens({
+    config,
+    model,
+    inputTokens,
+    outputTokens,
+  });
+
+  if (process.env.ANTHROPIC_API_KEY) {
+    await recordIaUsage({
+      action: "thematic_cta",
+      model,
+      inputTokens,
+      outputTokens,
+      totalUsd: estimated.totalUsd,
+      totalEur: estimated.totalEur,
+      itemCount: 1,
+      metadata: {
+        theme,
+        products: collectedProducts.length,
+      },
+    });
+  }
+
   return NextResponse.json({
     title: aiResult.title,
     intro: aiResult.intro,
     products: collectedProducts.slice(0, 8),
     items: aiResult.items,
+    model,
+    usage: estimated,
   });
 }

@@ -1,19 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
-import { sanitizeString, sanitizeNumber } from "lib/validation";
+import { sanitizeNumber, sanitizeString } from "lib/validation";
 import { log } from "lib/logger";
+import {
+  estimateCostFromTokens,
+  getIaControlConfig,
+  recordIaUsage,
+  renderPromptTemplate,
+} from "lib/admin/ia-control";
 
-const IA_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
+const FALLBACK_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
 
-function buildPrompt(name: string, categoryName: string, sku: string | null): string {
-  return `Tu es un expert en équipements pour collectivités.
-Écris une description commerciale courte (2-3 phrases, max 150 mots) pour ce produit : ${name}.
-Catégorie : ${categoryName}.
-SKU : ${sku ?? "—"}.
-La description doit être factuelle, professionnelle, au ton B2B.
-Ne pas inventer de caractéristiques techniques.
-Pas d'intro générique (pas de "Ce produit est..." ni "Nous vous présentons...").
-Réponds uniquement avec la description, sans guillemets ni introduction.`;
+function extractResponseText(content: any[]): string {
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((block) => block?.type === "text")
+    .map((block) => String(block.text ?? ""))
+    .join("\n")
+    .trim();
+}
+
+function extractUsage(message: any): { inputTokens: number; outputTokens: number } {
+  const usage = message?.usage ?? {};
+  return {
+    inputTokens: Number(usage.input_tokens ?? usage.inputTokens ?? 0),
+    outputTokens: Number(usage.output_tokens ?? usage.outputTokens ?? 0),
+  };
 }
 
 /**
@@ -22,6 +34,9 @@ Réponds uniquement avec la description, sans guillemets ni introduction.`;
  *   (no mode)                → { ia_available, model, reason }
  */
 export async function GET(req: NextRequest) {
+  const config = await getIaControlConfig();
+  const model = config.defaultModel || FALLBACK_MODEL;
+
   const { searchParams } = new URL(req.url);
   const mode = searchParams.get("mode");
 
@@ -29,6 +44,7 @@ export async function GET(req: NextRequest) {
     if (!checkAdminAuth(req)) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
+
     try {
       const { supabaseServer } = await import("lib/supabase/client");
       const client = supabaseServer();
@@ -44,7 +60,7 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.json({
         ia_available: Boolean(process.env.ANTHROPIC_API_KEY),
-        model: IA_MODEL,
+        model,
         count: count ?? (data?.length ?? 0),
         products: (data ?? []).map((p: any) => ({
           id: p.id,
@@ -59,10 +75,9 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Default: config status (no auth needed)
   return NextResponse.json({
     ia_available: Boolean(process.env.ANTHROPIC_API_KEY),
-    model: IA_MODEL,
+    model,
     reason: process.env.ANTHROPIC_API_KEY ? null : "ANTHROPIC_API_KEY non configurée",
   });
 }
@@ -85,26 +100,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Corps invalide" }, { status: 400 });
   }
 
-  const data = body as Record<string, unknown>;
-  const productId = data.productId ? sanitizeString(String(data.productId), 36) : null;
-  const preview = data.preview === true;
-  const confirm = data.confirm === true;
-  const categorySlug = sanitizeString(String(data.categorySlug ?? ""), 100);
-  const limit = sanitizeNumber(Number(data.limit ?? 5), 1, 20);
+  const payload = body as Record<string, unknown>;
+  const productId = payload.productId ? sanitizeString(String(payload.productId), 36) : null;
+  const preview = payload.preview === true;
+  const confirm = payload.confirm === true;
+  const categorySlug = sanitizeString(String(payload.categorySlug ?? ""), 100);
+  const limit = sanitizeNumber(Number(payload.limit ?? 5), 1, 100);
 
-  // Single-product: exiger preview XOR confirm explicitement
   if (productId && !preview && !confirm) {
     return NextResponse.json(
       { error: "Pour un produit unique, précisez preview:true ou confirm:true" },
-      { status: 400 }
+      { status: 400 },
     );
   }
+
+  const config = await getIaControlConfig();
+  const modelOverride = sanitizeString(String(payload.model ?? ""), 120);
+  const model = modelOverride || config.defaultModel || FALLBACK_MODEL;
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json({
       ia_available: false,
-      model: IA_MODEL,
+      model,
       reason:
         "ANTHROPIC_API_KEY non configurée — ajoutez-la dans .env.local ou les variables d'environnement Vercel",
       generated: 0,
@@ -119,7 +137,6 @@ export async function POST(req: NextRequest) {
     const { Anthropic } = await import("@anthropic-ai/sdk");
     const anthropic = new Anthropic({ apiKey });
 
-    // ── Mode single-product (preview ou confirm) ──────────────────────────────
     if (productId) {
       const { data: single, error } = await client
         .from("products")
@@ -134,28 +151,46 @@ export async function POST(req: NextRequest) {
       const categoryName =
         (single as any).product_categories?.[0]?.categories?.name ?? "équipement collectivité";
 
-      const message = await anthropic.messages.create({
-        model: IA_MODEL,
-        max_tokens: 300,
-        messages: [
-          {
-            role: "user",
-            content: buildPrompt(single.name, categoryName, (single as any).sku ?? null),
-          },
-        ],
+      const prompt = renderPromptTemplate(config.prompts.generateDescriptions, {
+        name: String((single as any).name ?? ""),
+        category: String(categoryName),
+        sku: (single as any).sku ?? "—",
       });
 
-      const description =
-        (message.content[0] as { type: string; text: string }).text?.trim() ?? "";
+      const message = await anthropic.messages.create({
+        model,
+        max_tokens: 300,
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      const description = extractResponseText((message as any).content);
+      const usage = extractUsage(message);
+      const estimated = estimateCostFromTokens({
+        config,
+        model,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+      });
 
       if (preview) {
-        // Preview only — aucune écriture DB
-        log("info", "admin.ia.preview_description", { productId, model: IA_MODEL });
+        log("info", "admin.ia.preview_description", { productId, model });
+        await recordIaUsage({
+          action: "generate_description_preview",
+          model,
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+          totalUsd: estimated.totalUsd,
+          totalEur: estimated.totalEur,
+          itemCount: 1,
+          metadata: { productId },
+        });
+
         return NextResponse.json({
           ia_available: true,
-          model: IA_MODEL,
+          model,
           mode: "preview",
           saved: false,
+          usage: estimated,
           product: {
             id: single.id,
             name: single.name,
@@ -165,7 +200,6 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // confirm:true — UPDATE DB explicite
       const { error: updateError } = await client
         .from("products")
         .update({ short_description: description })
@@ -173,12 +207,24 @@ export async function POST(req: NextRequest) {
 
       if (updateError) throw updateError;
 
-      log("info", "admin.ia.confirm_description", { productId, model: IA_MODEL });
+      log("info", "admin.ia.confirm_description", { productId, model });
+      await recordIaUsage({
+        action: "generate_description_confirm",
+        model,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        totalUsd: estimated.totalUsd,
+        totalEur: estimated.totalEur,
+        itemCount: 1,
+        metadata: { productId },
+      });
+
       return NextResponse.json({
         ia_available: true,
-        model: IA_MODEL,
+        model,
         mode: "confirm",
         saved: true,
+        usage: estimated,
         product: {
           id: single.id,
           name: single.name,
@@ -187,7 +233,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Mode batch (backward-compatible) ──────────────────────────────────────
     let products: any[] | null = null;
     let categoryId: string | null = null;
 
@@ -224,7 +269,7 @@ export async function POST(req: NextRequest) {
     if (!products || products.length === 0) {
       return NextResponse.json({
         ia_available: true,
-        model: IA_MODEL,
+        model,
         mode: "batch",
         generated: 0,
         errors: [],
@@ -234,25 +279,30 @@ export async function POST(req: NextRequest) {
 
     const generated: Array<{ id: string; name: string; description: string }> = [];
     const errors: string[] = [];
+    let inputTokens = 0;
+    let outputTokens = 0;
 
     for (const product of products) {
       try {
         const categoryName =
           (product as any).product_categories?.[0]?.categories?.name ?? "équipement collectivité";
 
-        const message = await anthropic.messages.create({
-          model: IA_MODEL,
-          max_tokens: 300,
-          messages: [
-            {
-              role: "user",
-              content: buildPrompt(product.name, categoryName, product.sku ?? null),
-            },
-          ],
+        const prompt = renderPromptTemplate(config.prompts.generateDescriptions, {
+          name: String(product.name ?? ""),
+          category: String(categoryName),
+          sku: product.sku ?? "—",
         });
 
-        const description =
-          (message.content[0] as { type: string; text: string }).text?.trim() ?? "";
+        const message = await anthropic.messages.create({
+          model,
+          max_tokens: 300,
+          messages: [{ role: "user", content: prompt }],
+        });
+
+        const description = extractResponseText((message as any).content);
+        const usage = extractUsage(message);
+        inputTokens += usage.inputTokens;
+        outputTokens += usage.outputTokens;
 
         if (description) {
           await client
@@ -267,18 +317,43 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const estimated = estimateCostFromTokens({
+      config,
+      model,
+      inputTokens,
+      outputTokens,
+      calls: products.length,
+    });
+
+    await recordIaUsage({
+      action: "generate_descriptions_batch",
+      model,
+      inputTokens,
+      outputTokens,
+      totalUsd: estimated.totalUsd,
+      totalEur: estimated.totalEur,
+      itemCount: products.length,
+      metadata: {
+        category: categorySlug || "all",
+        generated: generated.length,
+        errors: errors.length,
+      },
+    });
+
     log("info", "admin.ia.generate_descriptions", {
       category: categorySlug,
-      model: IA_MODEL,
+      model,
       requested: limit,
       generated: generated.length,
       errors: errors.length,
+      estimated_eur: estimated.totalEur,
     });
 
     return NextResponse.json({
       ia_available: true,
-      model: IA_MODEL,
+      model,
       mode: "batch",
+      usage: estimated,
       generated: generated.length,
       errors,
       products: generated,
