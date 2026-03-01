@@ -81,6 +81,14 @@ export default function ProductEditPage() {
 
   const [activeDescTab, setActiveDescTab] = useState<"short" | "long">("short");
 
+  // ── Version history state ─────────────────────────────────────────────────
+  type ProductVersion = { id: string; version_num: number; snapshot: Record<string, unknown>; changed_by: string; change_note: string | null; created_at: string };
+  const [versions, setVersions] = useState<ProductVersion[]>([]);
+  const [versionsLoaded, setVersionsLoaded] = useState(false);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [rollbackPending, setRollbackPending] = useState<string | null>(null);
+  const [rollbackMsg, setRollbackMsg] = useState<string | null>(null);
+
   useEffect(() => {
     if (!id) return;
     fetch(`/api/admin/products/${id}`, {
@@ -180,6 +188,48 @@ export default function ProductEditPage() {
     setProduct({ ...product, short_description: aiPreview.generated });
     setAiPreview(null);
     setActiveDescTab("short");
+  };
+
+  const loadVersions = async () => {
+    if (!product?.id) return;
+    setVersionsLoading(true);
+    try {
+      const res = await fetch(`/api/admin/products/${product.id}/versions`, {
+        headers: { Authorization: `Bearer ${password}` },
+      });
+      const data = await res.json();
+      setVersions(data.versions ?? []);
+      setVersionsLoaded(true);
+    } catch {
+      setVersions([]);
+    } finally {
+      setVersionsLoading(false);
+    }
+  };
+
+  const handleRollback = async (versionId: string, versionNum: number) => {
+    if (!product?.id) return;
+    if (!confirm(`Confirmer le rollback vers la version ${versionNum} ? L'état actuel sera sauvegardé en tant que nouvelle version.`)) return;
+    setRollbackPending(versionId);
+    setRollbackMsg(null);
+    try {
+      const res = await fetch(`/api/admin/products/${product.id}/rollback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${password}` },
+        body: JSON.stringify({ version_id: versionId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRollbackMsg(`✓ Rollback vers v${versionNum} effectué. Rechargement...`);
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setRollbackMsg(`Erreur : ${data.error ?? "Rollback échoué"}`);
+      }
+    } catch {
+      setRollbackMsg("Erreur de connexion");
+    } finally {
+      setRollbackPending(null);
+    }
   };
 
   const handleSave = useCallback(async () => {
@@ -639,6 +689,53 @@ export default function ProductEditPage() {
                   placeholder={product.short_description ?? ""}
                 />
               </div>
+            </div>
+          </section>
+
+          {/* ── Historique des versions ── */}
+          <section className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+            <div className="border-b border-gray-100 px-5 py-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-800">Historique des versions</h2>
+              <button
+                onClick={loadVersions}
+                disabled={versionsLoading}
+                className="text-xs text-blue-600 hover:underline disabled:opacity-50"
+              >
+                {versionsLoaded ? "Actualiser" : "Charger"}
+              </button>
+            </div>
+            <div className="p-5">
+              {rollbackMsg && (
+                <div className={`mb-3 rounded-md px-3 py-2 text-xs ${rollbackMsg.startsWith("✓") ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                  {rollbackMsg}
+                </div>
+              )}
+              {versionsLoading ? (
+                <p className="text-xs text-gray-400">Chargement…</p>
+              ) : !versionsLoaded ? (
+                <p className="text-xs text-gray-400">Cliquez sur &quot;Charger&quot; pour voir l&apos;historique des modifications.</p>
+              ) : versions.length === 0 ? (
+                <p className="text-xs text-gray-400">Aucune version enregistrée. Les versions sont créées automatiquement à chaque modification.</p>
+              ) : (
+                <div className="space-y-2">
+                  {versions.map((v) => (
+                    <div key={v.id} className="flex items-center gap-3 rounded-md border border-gray-100 bg-gray-50 px-3 py-2">
+                      <span className="text-xs font-mono font-bold text-gray-500 w-8">v{v.version_num}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-700 truncate">{v.change_note ?? "Modification"}</p>
+                        <p className="text-xs text-gray-400">{new Date(v.created_at).toLocaleString("fr-FR")} · {v.changed_by}</p>
+                      </div>
+                      <button
+                        onClick={() => handleRollback(v.id, v.version_num)}
+                        disabled={rollbackPending === v.id}
+                        className="shrink-0 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-40"
+                      >
+                        {rollbackPending === v.id ? "…" : "Restaurer"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         </div>

@@ -52,6 +52,8 @@ export async function POST(req: NextRequest) {
       notes,
       modePaiement,
       livraisonRdv,
+      purchaseOrderNumber,
+      serviceReference,
       cart_snapshot,
       ecoTotal: ecoTotalFromFront,
     } = body;
@@ -59,6 +61,12 @@ export async function POST(req: NextRequest) {
     // Validation des champs obligatoires
     if (!prenom || !nom || !organisme || !email || !telephone || !adresse || !codePostal || !ville) {
       return NextResponse.json({ error: "Champs obligatoires manquants" }, { status: 400 });
+    }
+
+    // Validation bon de commande si mode l'exige
+    const REQUIRES_PO = ["bon_commande", "mandat"];
+    if (REQUIRES_PO.includes(modePaiement) && !purchaseOrderNumber) {
+      return NextResponse.json({ error: "Numéro de bon de commande requis" }, { status: 400 });
     }
 
     // ── Source du panier ──────────────────────────────────────
@@ -149,6 +157,8 @@ export async function POST(req: NextRequest) {
       `Total TTC : ${totalTTC.toFixed(2)} €`,
       ``,
       `MODE PAIEMENT : ${modePaiement}`,
+      purchaseOrderNumber ? `N° BON DE COMMANDE : ${purchaseOrderNumber}` : "",
+      serviceReference ? `RÉFÉRENCE SERVICE : ${serviceReference}` : "",
       notes ? `\nNOTES : ${notes}` : "",
     ]
       .filter((l) => l !== undefined && l !== "")

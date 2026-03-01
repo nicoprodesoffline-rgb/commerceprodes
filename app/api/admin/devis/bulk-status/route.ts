@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "lib/supabase/client";
 import { timingSafeEqual } from "crypto";
+import { logAdminAction } from "lib/admin/audit-log";
 
 function checkAuth(req: NextRequest): boolean {
   const auth = req.headers.get("authorization") ?? "";
@@ -46,7 +47,18 @@ async function handleBulkStatus(req: NextRequest) {
     .update({ status, updated_at: new Date().toISOString() })
     .in("id", validIds);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    logAdminAction({ action: "devis.bulk_status", entity: "devis_request", payload_summary: `Bulk ${status} sur ${validIds.length} ids — ÉCHEC`, success: false }).catch(() => {});
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  logAdminAction({
+    action: "devis.bulk_status",
+    entity: "devis_request",
+    payload_summary: `Statut → ${status} pour ${validIds.length} demande(s)`,
+    success: true,
+  }).catch(() => {});
+
   return NextResponse.json({ ok: true, updated: count ?? validIds.length });
 }
 

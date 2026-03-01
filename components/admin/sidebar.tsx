@@ -23,6 +23,9 @@ const navLinks: NavLink[] = [
   { href: "/admin/seo", label: "SEO", icon: "🔍" },
   { href: "/admin/veille", label: "Veille concurr.", icon: "👁️" },
   { href: "/admin/ia", label: "Outils IA", icon: "🤖", badge: "Beta" },
+  { href: "/admin/automation", label: "Automatisation", icon: "⚡", badge: "New" },
+  { href: "/admin/kpi", label: "KPI Business", icon: "📈" },
+  { href: "/admin/audit", label: "Journal audit", icon: "🔒" },
   { href: "/admin/contenu", label: "Contenu & Édito", icon: "✏️" },
 ];
 

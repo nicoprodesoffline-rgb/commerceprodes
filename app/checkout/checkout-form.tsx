@@ -44,6 +44,11 @@ const MODES_PAIEMENT = [
     description: "Chèque à l'ordre de PRODES, à envoyer sous 7 jours",
   },
   {
+    id: "bon_commande",
+    label: "Bon de commande",
+    description: "Joignez votre bon de commande numéroté — traitement à réception",
+  },
+  {
     id: "mandat",
     label: "Mandat administratif",
     description: "Réservé aux organismes publics (mairies, écoles, administrations)",
@@ -56,12 +61,18 @@ const MODES_PAIEMENT = [
   },
 ];
 
+const REQUIRES_PO = ["bon_commande", "mandat"];
+
 export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [modePaiement, setModePaiement] = useState("virement");
   const [livraisonRdv, setLivraisonRdv] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Bon de commande fields
+  const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
+  const [serviceReference, setServiceReference] = useState("");
 
   // Bloc "Créer un compte" (Section 4)
   const [createAccount, setCreateAccount] = useState(false);
@@ -99,10 +110,19 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
       notes: fd.get("notes"),
       modePaiement,
       livraisonRdv,
+      // Bon de commande / mandat
+      purchaseOrderNumber: REQUIRES_PO.includes(modePaiement) ? purchaseOrderNumber.trim() : undefined,
+      serviceReference: serviceReference.trim() || undefined,
       // Snapshot du panier côté client (source primaire pour l'API)
       cart_snapshot: cartSummary.lines,
       ecoTotal: cartSummary.ecoTotal,
     };
+
+    // Validation bon de commande si requis
+    if (REQUIRES_PO.includes(modePaiement) && !purchaseOrderNumber.trim()) {
+      setError("Le numéro de bon de commande est obligatoire pour ce mode de paiement.");
+      return;
+    }
 
     // Validation compte si activé
     if (createAccount && accountPassword) {
@@ -401,6 +421,36 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
                   </label>
                 ))}
               </div>
+
+              {/* Champs bon de commande */}
+              {REQUIRES_PO.includes(modePaiement) && (
+                <div className="mx-5 mb-4 space-y-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                      N° bon de commande *
+                    </label>
+                    <input
+                      type="text"
+                      value={purchaseOrderNumber}
+                      onChange={(e) => setPurchaseOrderNumber(e.target.value)}
+                      className={`w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#cc1818] focus:outline-none focus:ring-1 focus:ring-[#cc1818]`}
+                      placeholder="Ex: BC-2025-042"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                      Référence service <span className="font-normal text-gray-400">(optionnel)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={serviceReference}
+                      onChange={(e) => setServiceReference(e.target.value)}
+                      className={`w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#cc1818] focus:outline-none focus:ring-1 focus:ring-[#cc1818]`}
+                      placeholder="Ex: Service achats, Direction générale..."
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Info mandat */}
               {modePaiement === "mandat" && (

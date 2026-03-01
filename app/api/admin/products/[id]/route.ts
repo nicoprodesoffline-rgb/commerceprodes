@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logAdminAction } from "lib/admin/audit-log";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -84,6 +85,41 @@ export async function PATCH(
     const client = supabaseServer();
 
     const isUuid = UUID_RE.test(id);
+
+    // Snapshot current state before update (for versioning/rollback)
+    let productId = id;
+    if (!isUuid) {
+      const { data: cur } = await client.from("products").select("id").eq("slug", id).single();
+      if (cur?.id) productId = cur.id;
+    }
+    try {
+      const { data: before } = await client
+        .from("products")
+        .select("id, name, sku, regular_price, status, short_description, description, eco_contribution, seo_title, seo_description, stock_status")
+        .eq(isUuid ? "id" : "slug", id)
+        .single();
+
+      if (before) {
+        const { data: lastV } = await client
+          .from("product_versions")
+          .select("version_num")
+          .eq("product_id", before.id ?? productId)
+          .order("version_num", { ascending: false })
+          .limit(1)
+          .single();
+
+        await client.from("product_versions").insert({
+          product_id: before.id ?? productId,
+          version_num: (lastV?.version_num ?? 0) + 1,
+          snapshot: before,
+          changed_by: "admin",
+          change_note: `Champs: ${Object.keys(updates).join(", ")}`,
+        });
+      }
+    } catch {
+      // Non-critical: version snapshot failure should not block the update
+    }
+
     const { data, error } = await client
       .from("products")
       .update(updates)
@@ -94,6 +130,15 @@ export async function PATCH(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Async audit log (non-blocking)
+    logAdminAction({
+      action: "product.update",
+      entity: "product",
+      entity_id: data?.id ?? productId,
+      payload_summary: `Champs mis à jour: ${Object.keys(updates).join(", ")}`,
+      success: true,
+    }).catch(() => {});
 
     console.log(JSON.stringify({ event: "admin.product.updated", id, fields: Object.keys(updates) }));
     return NextResponse.json({ success: true, product: data });
