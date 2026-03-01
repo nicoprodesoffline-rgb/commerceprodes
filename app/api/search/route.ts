@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from 'lib/supabase/client';
+import { getFamilyChildIds } from 'lib/supabase';
 import { rateLimit } from 'lib/rate-limit';
 import { log } from 'lib/logger';
 import { sanitizeString, sanitizeNumber } from 'lib/validation';
@@ -21,21 +22,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results: [], query: q });
   }
 
-  const { data, error } = await supabase
+  const childIds = await getFamilyChildIds();
+
+  let q1 = supabase
     .from('products')
     .select('id, name, slug, sku, regular_price, product_images!inner(url, is_featured, position)')
     .or(`name.ilike.%${q}%,sku.ilike.%${q}%`)
-    .eq('status', 'publish')
-    .limit(limit);
+    .eq('status', 'publish');
+  if (childIds.size > 0) q1 = q1.not('id', 'in', `(${[...childIds].join(',')})`);
+  const { data, error } = await q1.limit(limit);
 
   // Fallback: retry without images join if it fails (e.g. RLS)
   if (error) {
-    const { data: data2, error: error2 } = await supabase
+    let q2 = supabase
       .from('products')
       .select('id, name, slug, sku, regular_price')
       .or(`name.ilike.%${q}%,sku.ilike.%${q}%`)
-      .eq('status', 'publish')
-      .limit(limit);
+      .eq('status', 'publish');
+    if (childIds.size > 0) q2 = q2.not('id', 'in', `(${[...childIds].join(',')})`);
+    const { data: data2, error: error2 } = await q2.limit(limit);
 
     if (error2) {
       log('error', 'search.query_failed', { error: error2.message, q });

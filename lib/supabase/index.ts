@@ -28,6 +28,25 @@ import type {
 // HELPERS
 // ============================================================
 
+/**
+ * Returns product IDs that are "child" members of active families.
+ * These should be excluded from public listings so only the "mère" appears.
+ * Gracefully returns empty set if migration 016 is not yet applied.
+ */
+export async function getFamilyChildIds(): Promise<Set<string>> {
+  try {
+    const { data, error } = await supabase
+      .from("products")
+      .select("id")
+      .eq("family_role", "child");
+    // 42703 = column doesn't exist (migration not applied) — degrade gracefully
+    if (error) return new Set();
+    return new Set((data ?? []).map((p: { id: string }) => p.id));
+  } catch {
+    return new Set();
+  }
+}
+
 function buildImage(
   img: {
     url: string;
@@ -402,6 +421,39 @@ export async function removeFromCart(lineIds: string[]): Promise<Cart> {
 // PRODUCTS
 // ============================================================
 
+/**
+ * If the product at `handle` is a family child (family_role = 'child'),
+ * returns the parent product's slug for a 301 redirect.
+ * Returns null if not a child or if migration 016 is not yet applied.
+ */
+export async function getProductParentSlug(handle: string): Promise<string | null> {
+  try {
+    const { data: row, error } = await supabase
+      .from("products")
+      .select("id, family_role, parent_family_id")
+      .eq("slug", handle)
+      .eq("status", "publish")
+      .single();
+
+    // 42703 = column doesn't exist — migration not applied yet
+    if (error || !row || row.family_role !== "child" || !row.parent_family_id) {
+      return null;
+    }
+
+    // Find parent product via product_families
+    const { data: family } = await supabase
+      .from("product_families")
+      .select("products!product_families_parent_product_id_fkey(slug)")
+      .eq("id", row.parent_family_id)
+      .single();
+
+    const parentSlug = (family?.products as unknown as { slug: string } | null)?.slug;
+    return parentSlug ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getProduct(handle: string): Promise<Product | undefined> {
   "use cache";
   cacheTag(TAGS.products);
@@ -699,6 +751,12 @@ export async function getProducts({
       dbQuery = dbQuery.order("created_at", { ascending: false });
   }
 
+  // Exclude family children — only "mère" products appear in public listings
+  const childIds = await getFamilyChildIds();
+  if (childIds.size > 0) {
+    dbQuery = dbQuery.not("id", "in", `(${[...childIds].join(",")})`);
+  }
+
   const { data: products, error } = await dbQuery.limit(limit);
   if (error || !products) return [];
 
@@ -874,6 +932,12 @@ export async function getCollectionProducts({
       break;
     default:
       dbQuery = dbQuery.order("created_at", { ascending: false });
+  }
+
+  // Exclude family children — only "mère" products appear in public listings
+  const childIds = await getFamilyChildIds();
+  if (childIds.size > 0) {
+    dbQuery = dbQuery.not("id", "in", `(${[...childIds].join(",")})`);
   }
 
   const { data: products } = await dbQuery.limit(250);

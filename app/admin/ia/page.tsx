@@ -29,6 +29,22 @@ interface DuplicateGroup {
   similarity: "title" | "sku";
 }
 
+interface FamilySuggestion {
+  parent: { id: string; name: string; sku: string };
+  children: Array<{ id: string; name: string; sku: string }>;
+  strategy: string;
+  score: number;
+  reasons: string[];
+}
+
+interface FamilyAudit {
+  total_active_families: number;
+  parents_without_children: number;
+  orphan_products: number;
+  large_families: number;
+  pending_candidates: number;
+}
+
 interface Category {
   id: string;
   name: string;
@@ -170,6 +186,16 @@ export default function AdminIAPage() {
 
   const CHIPS = ["rentrée scolaire", "fête nationale", "élections municipales", "marchés de Noël", "aménagement terrasse"];
 
+  // MODULE 6 — Familles & Variations IA
+  const [famSuggestLoading, setFamSuggestLoading] = useState(false);
+  const [famSuggestStrategy, setFamSuggestStrategy] = useState<"parent_sku" | "sku_root">("parent_sku");
+  const [famSuggestions, setFamSuggestions] = useState<FamilySuggestion[] | null>(null);
+  const [famApplyLoading, setFamApplyLoading] = useState(false);
+  const [famApplyResult, setFamApplyResult] = useState<{ created: number; skipped: number } | null>(null);
+  const [famAuditLoading, setFamAuditLoading] = useState(false);
+  const [famAudit, setFamAudit] = useState<FamilyAudit | null>(null);
+  const [famDbAvailable, setFamDbAvailable] = useState<boolean | null>(null);
+
   async function generateThematic() {
     if (!themeInput.trim()) return;
     setThemeLoading(true);
@@ -201,6 +227,59 @@ export default function AdminIAPage() {
       else alert("Erreur publication");
     } finally {
       setPublishing(false);
+    }
+  }
+
+  async function runFamSuggest() {
+    setFamSuggestLoading(true);
+    setFamSuggestions(null);
+    setFamApplyResult(null);
+    try {
+      const res = await fetch("/api/admin/families/suggest", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ strategy: famSuggestStrategy, limit: 50 }),
+      });
+      if (res.status === 503) { setFamDbAvailable(false); return; }
+      setFamDbAvailable(true);
+      if (res.ok) {
+        const d = await res.json();
+        setFamSuggestions(d.suggestions ?? []);
+      } else {
+        alert("Erreur suggestion familles");
+      }
+    } finally {
+      setFamSuggestLoading(false);
+    }
+  }
+
+  async function runFamApply() {
+    if (!famSuggestions || famSuggestions.length === 0) return;
+    setFamApplyLoading(true);
+    try {
+      const res = await fetch("/api/admin/families/suggest/apply", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ strategy: famSuggestStrategy }),
+      });
+      if (res.ok) setFamApplyResult(await res.json());
+      else alert("Erreur application");
+    } finally {
+      setFamApplyLoading(false);
+    }
+  }
+
+  async function runFamAudit() {
+    setFamAuditLoading(true);
+    setFamAudit(null);
+    try {
+      const res = await fetch("/api/admin/families/audit", { headers: authHeaders() });
+      if (res.status === 503) { setFamDbAvailable(false); return; }
+      setFamDbAvailable(true);
+      if (res.ok) setFamAudit(await res.json());
+      else alert("Erreur audit familles");
+    } finally {
+      setFamAuditLoading(false);
     }
   }
 
@@ -581,6 +660,131 @@ export default function AdminIAPage() {
                 >
                   📋 Copier le JSON
                 </button>
+              </div>
+            </div>
+          )}
+        </div>
+        {/* MODULE 6 — Familles & Variations IA */}
+        <div className="col-span-full rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="font-semibold text-gray-900">🔗 Familles produits — Analyse automatique</h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Détecte les variantes liées par parent_sku ou préfixe SKU commun et les regroupe en familles.
+          </p>
+
+          {famDbAvailable === false && (
+            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+              Migration 016 non appliquée — tables product_families manquantes.
+              Exécutez <code className="font-mono">016-product-families.sql</code> dans Supabase pour activer ce module.
+            </div>
+          )}
+
+          {famDbAvailable !== false && (
+            <div className="mt-4 grid gap-6 md:grid-cols-2">
+              {/* Suggestions */}
+              <div>
+                <p className="text-xs font-medium text-gray-700 mb-2">Stratégie de regroupement</p>
+                <div className="flex gap-2 mb-3">
+                  {(["parent_sku", "sku_root"] as const).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setFamSuggestStrategy(s)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors ${
+                        famSuggestStrategy === s
+                          ? "bg-[#cc1818] text-white border-[#cc1818]"
+                          : "bg-white text-gray-600 border-gray-200 hover:border-[#cc1818]"
+                      }`}
+                    >
+                      {s === "parent_sku" ? "parent_sku (WooCommerce)" : "Préfixe SKU"}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={runFamSuggest}
+                  disabled={famSuggestLoading}
+                  className="rounded-lg bg-[#cc1818] px-4 py-2 text-sm font-medium text-white hover:bg-[#b01414] disabled:opacity-60 transition-colors"
+                >
+                  {famSuggestLoading ? "Analyse…" : "Analyser"}
+                </button>
+
+                {famSuggestions !== null && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      {famSuggestions.length === 0
+                        ? "✅ Aucune suggestion — catalogue déjà organisé."
+                        : `${famSuggestions.length} groupe(s) suggéré(s)`}
+                    </p>
+                    {famSuggestions.length > 0 && (
+                      <>
+                        <div className="space-y-2 max-h-56 overflow-y-auto mb-3">
+                          {famSuggestions.slice(0, 10).map((s, i) => (
+                            <div key={i} className="rounded-lg border border-gray-100 px-3 py-2 text-xs">
+                              <p className="font-medium text-gray-800 truncate">
+                                Mère: {s.parent.name} <span className="text-gray-400">({s.parent.sku})</span>
+                              </p>
+                              <p className="text-gray-500 mt-0.5">
+                                {s.children.length} fille(s) · score {s.score}
+                              </p>
+                            </div>
+                          ))}
+                          {famSuggestions.length > 10 && (
+                            <p className="text-xs text-gray-400 text-center">
+                              + {famSuggestions.length - 10} autres…
+                            </p>
+                          )}
+                        </div>
+                        {famApplyResult ? (
+                          <p className="text-sm font-medium text-green-700">
+                            ✅ {famApplyResult.created} famille(s) créée(s), {famApplyResult.skipped} ignorée(s)
+                          </p>
+                        ) : (
+                          <button
+                            onClick={runFamApply}
+                            disabled={famApplyLoading}
+                            className="rounded-lg border border-[#cc1818] px-4 py-2 text-sm font-medium text-[#cc1818] hover:bg-[#cc1818] hover:text-white disabled:opacity-60 transition-colors"
+                          >
+                            {famApplyLoading ? "Application…" : `Appliquer les ${famSuggestions.length} suggestion(s)`}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Audit */}
+              <div>
+                <p className="text-xs font-medium text-gray-700 mb-2">Audit du graphe familles</p>
+                <button
+                  onClick={runFamAudit}
+                  disabled={famAuditLoading}
+                  className="rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-60 transition-colors"
+                >
+                  {famAuditLoading ? "Audit…" : "Lancer l'audit"}
+                </button>
+                {famAudit && (
+                  <div className="mt-4 space-y-2">
+                    {[
+                      { label: "Familles actives", value: famAudit.total_active_families, color: "green" },
+                      { label: "Mères sans filles", value: famAudit.parents_without_children, color: "orange" },
+                      { label: "Produits orphelins", value: famAudit.orphan_products, color: "red" },
+                      { label: "Grandes familles (>10)", value: famAudit.large_families, color: "gray" },
+                      { label: "Candidats en attente", value: famAudit.pending_candidates, color: "blue" },
+                    ].map((row) => (
+                      <div key={row.label} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600">{row.label}</span>
+                        <span className={`rounded-full bg-${row.color}-100 px-2 py-0.5 font-medium text-${row.color}-700`}>
+                          {row.value}
+                        </span>
+                      </div>
+                    ))}
+                    <a
+                      href="/api/admin/families/export"
+                      className="mt-2 inline-flex items-center gap-1 text-xs text-[#cc1818] hover:underline"
+                    >
+                      ⬇ Exporter CSV
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           )}
