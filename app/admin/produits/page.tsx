@@ -240,6 +240,13 @@ export default function AdminProduitsPage() {
                         >
                           👁️
                         </Link>
+                        <Link
+                          href={`/admin/produits/${p.id}`}
+                          className="text-gray-400 hover:text-[#cc1818] transition-colors"
+                          title="Editer"
+                        >
+                          ✏️
+                        </Link>
                         <a
                           href={`/api/product-pdf/${p.handle}`}
                           target="_blank"

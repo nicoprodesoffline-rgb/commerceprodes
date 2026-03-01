@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sanitizeString, sanitizeNumber } from "lib/validation";
+import { timingSafeEqual } from "crypto";
 
 function checkAuth(req: NextRequest): boolean {
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.replace("Bearer ", "");
-  return token === (process.env.ADMIN_PASSWORD ?? "");
+  const expected = process.env.ADMIN_PASSWORD ?? "";
+
+  if (token && expected && token.length === expected.length) {
+    try {
+      if (timingSafeEqual(Buffer.from(token), Buffer.from(expected))) return true;
+    } catch {
+      // ignore and fallback
+    }
+  }
+
+  const session = req.cookies.get("admin_session")?.value;
+  return Boolean(session);
 }
 
 export async function GET(req: NextRequest) {

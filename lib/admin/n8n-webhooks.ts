@@ -1,4 +1,11 @@
-const webhooks: Record<string, string | undefined> = {
+export const N8N_WEBHOOK_KEYS = [
+  "competitive_watch",
+  "import_supplier",
+  "descriptions",
+  "weekly_report",
+] as const;
+
+const webhooks: Record<(typeof N8N_WEBHOOK_KEYS)[number], string | undefined> = {
   competitive_watch: process.env.N8N_WEBHOOK_COMPETITIVE,
   import_supplier: process.env.N8N_WEBHOOK_IMPORT,
   descriptions: process.env.N8N_WEBHOOK_DESCRIPTIONS,
@@ -14,7 +21,8 @@ export async function triggerN8nWebhook(
   name: string,
   payload?: Record<string, unknown>,
 ): Promise<WebhookResult> {
-  const url = webhooks[name];
+  const key = name as (typeof N8N_WEBHOOK_KEYS)[number];
+  const url = webhooks[key];
   if (!url) {
     return {
       success: false,

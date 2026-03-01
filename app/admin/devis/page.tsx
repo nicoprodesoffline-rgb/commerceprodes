@@ -39,8 +39,6 @@ export default async function DevisListPage(props: {
   }
 
   const totalPages = Math.ceil(total / PER_PAGE);
-  // Pass admin password for client-side bulk actions (server-only env var)
-  const adminPassword = process.env.ADMIN_PASSWORD ?? "";
 
   return (
     <div className="space-y-6">
@@ -84,7 +82,7 @@ export default async function DevisListPage(props: {
         </div>
       ) : (
         <>
-          <DevisListClient initialData={data} adminPassword={adminPassword} />
+          <DevisListClient initialData={data} />
 
           {/* Pagination */}
           {totalPages > 1 && (

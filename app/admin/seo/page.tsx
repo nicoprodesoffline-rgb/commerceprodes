@@ -92,6 +92,7 @@ export default function SeoPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | SeoStatus>("all");
+  const [bulkStatus, setBulkStatus] = useState<SeoStatus>("in_progress");
   const [serpTitle, setSerpTitle] = useState("");
   const [serpDesc, setSerpDesc] = useState("");
 
@@ -147,11 +148,14 @@ export default function SeoPage() {
       .finally(() => setLoading(false));
   }, [password]);
 
-  const saveStatus = (id: string, status: SeoStatus) => {
-    const next = { ...statusesRef.current, [id]: status };
+  const persistStatuses = (next: Record<string, SeoStatus>) => {
     statusesRef.current = next;
     setStatuses(next);
     try { localStorage.setItem("prodes_seo_statuses", JSON.stringify(next)); } catch {}
+  };
+
+  const saveStatus = (id: string, status: SeoStatus) => {
+    persistStatuses({ ...statusesRef.current, [id]: status });
   };
 
   const openEdit = (r: SeoProductRow) => {
@@ -207,6 +211,13 @@ export default function SeoPage() {
     return true;
   });
 
+  const applyStatusToFiltered = (status: SeoStatus) => {
+    if (filtered.length === 0) return;
+    const next = { ...statusesRef.current };
+    for (const row of filtered) next[row.id] = status;
+    persistStatuses(next);
+  };
+
   return (
     <div>
       <div className="mb-5 flex items-center justify-between flex-wrap gap-3">
@@ -218,6 +229,13 @@ export default function SeoPage() {
             className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40"
           >
             ⬇ Export CSV
+          </button>
+          <button
+            onClick={() => exportCSV(filtered, statuses)}
+            disabled={filtered.length === 0}
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40"
+          >
+            ⬇ Export filtres
           </button>
         </div>
       </div>
@@ -357,6 +375,22 @@ export default function SeoPage() {
                 <option key={s} value={s}>{SEO_STATUS_LABELS[s]}</option>
               ))}
             </select>
+            <select
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value as SeoStatus)}
+              className="rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none"
+            >
+              {(Object.keys(SEO_STATUS_LABELS) as SeoStatus[]).map((s) => (
+                <option key={s} value={s}>{SEO_STATUS_LABELS[s]}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => applyStatusToFiltered(bulkStatus)}
+              disabled={filtered.length === 0}
+              className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+            >
+              Appliquer aux filtres
+            </button>
           </div>
         </div>
         <div className="overflow-x-auto">
