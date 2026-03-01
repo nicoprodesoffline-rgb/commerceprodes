@@ -15,6 +15,25 @@ interface AnalyticsData {
   chartData: DayData[];
 }
 
+const EMPTY_ANALYTICS: AnalyticsData = {
+  totalViews: 0,
+  cartAdds: 0,
+  cartRemovals: 0,
+  topProducts: [],
+  chartData: [],
+};
+
+function normalizeAnalyticsData(payload: unknown): AnalyticsData {
+  const raw = (payload && typeof payload === "object" ? payload : {}) as Partial<AnalyticsData>;
+  return {
+    totalViews: typeof raw.totalViews === "number" ? raw.totalViews : 0,
+    cartAdds: typeof raw.cartAdds === "number" ? raw.cartAdds : 0,
+    cartRemovals: typeof raw.cartRemovals === "number" ? raw.cartRemovals : 0,
+    topProducts: Array.isArray(raw.topProducts) ? raw.topProducts : [],
+    chartData: Array.isArray(raw.chartData) ? raw.chartData : [],
+  };
+}
+
 function MiniChart({ data }: { data: DayData[] }) {
   if (!data.length) return <p className="text-xs text-gray-400">Aucune donnée</p>;
 
@@ -71,17 +90,34 @@ function MiniChart({ data }: { data: DayData[] }) {
 }
 
 export function AnalyticsWidget() {
-  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [data, setData] = useState<AnalyticsData>(EMPTY_ANALYTICS);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const password = sessionStorage.getItem("admin_password") ?? "";
-    fetch("/api/admin/analytics", {
-      headers: { Authorization: `Bearer ${password}` },
-    })
-      .then((r) => r.json())
-      .then((d) => setData(d))
-      .catch(() => {})
+    const password =
+      sessionStorage.getItem("admin_password") ??
+      sessionStorage.getItem("admin_password_cache") ??
+      "";
+    const requestInit: RequestInit = password
+      ? { headers: { Authorization: `Bearer ${password}` } }
+      : {};
+
+    fetch("/api/admin/analytics", requestInit)
+      .then(async (r) => {
+        const body = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          setError((body && typeof body.error === "string" ? body.error : null) ?? "Analytics indisponibles");
+          setData(EMPTY_ANALYTICS);
+          return;
+        }
+        setError(null);
+        setData(normalizeAnalyticsData(body));
+      })
+      .catch(() => {
+        setError("Erreur réseau sur les analytics");
+        setData(EMPTY_ANALYTICS);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -96,13 +132,17 @@ export function AnalyticsWidget() {
     );
   }
 
-  if (!data) return null;
-
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
       <h2 className="text-sm font-semibold text-gray-900">
         📈 Analytics — 7 derniers jours
       </h2>
+
+      {error && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          {error}
+        </p>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">

@@ -22,6 +22,9 @@ export default function AdminLoginPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
+        // Legacy admin screens still use Bearer auth from sessionStorage.
+        sessionStorage.setItem("admin_password", password);
+        sessionStorage.setItem("admin_password_cache", password);
         window.location.href = "/admin";
       } else {
         setError(data.error || "Erreur de connexion");
