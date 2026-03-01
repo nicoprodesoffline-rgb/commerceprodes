@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { adminFetch } from "lib/admin/fetch";
 
 interface DayData {
   date: string;
@@ -13,6 +14,18 @@ interface AnalyticsData {
   cartRemovals: number;
   topProducts: { handle: string; views: number }[];
   chartData: DayData[];
+}
+
+function isAnalyticsData(value: unknown): value is AnalyticsData {
+  if (!value || typeof value !== "object") return false;
+  const data = value as Record<string, unknown>;
+  return (
+    typeof data.totalViews === "number" &&
+    typeof data.cartAdds === "number" &&
+    typeof data.cartRemovals === "number" &&
+    Array.isArray(data.topProducts) &&
+    Array.isArray(data.chartData)
+  );
 }
 
 function MiniChart({ data }: { data: DayData[] }) {
@@ -73,16 +86,44 @@ function MiniChart({ data }: { data: DayData[] }) {
 export function AnalyticsWidget() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const password = sessionStorage.getItem("admin_password") ?? "";
-    fetch("/api/admin/analytics", {
-      headers: { Authorization: `Bearer ${password}` },
-    })
-      .then((r) => r.json())
-      .then((d) => setData(d))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    adminFetch("/api/admin/analytics")
+      .then(async (response) => {
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(
+            response.status === 401
+              ? "Session expirée pour les analytics."
+              : "Impossible de charger les analytics.",
+          );
+        }
+        if (!isAnalyticsData(payload)) {
+          throw new Error("Format analytics invalide.");
+        }
+        if (!cancelled) setData(payload);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setData({
+            totalViews: 0,
+            cartAdds: 0,
+            cartRemovals: 0,
+            topProducts: [],
+            chartData: [],
+          });
+          setError(err instanceof Error ? err.message : "Erreur analytics");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading) {
@@ -103,6 +144,12 @@ export function AnalyticsWidget() {
       <h2 className="text-sm font-semibold text-gray-900">
         📈 Analytics — 7 derniers jours
       </h2>
+
+      {error && (
+        <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          {error}
+        </p>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">

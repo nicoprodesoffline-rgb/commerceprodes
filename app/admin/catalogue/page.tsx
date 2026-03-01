@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { adminFetch } from "lib/admin/fetch";
 
 interface AdminProduct {
   id: string;
@@ -18,6 +19,17 @@ interface AdminProduct {
 interface Category {
   id: string;
   name: string;
+}
+
+interface ProductsListApiItem {
+  id: string;
+  title: string;
+  handle: string;
+  sku: string | null;
+  regular_price: number | null;
+  status: string;
+  featured_image_url: string | null;
+  categories: string | null;
 }
 
 const PAGE_SIZE = 100;
@@ -172,7 +184,6 @@ export default function CataloguePage() {
   const [bulkAction, setBulkAction] = useState("");
   const [bulkValue, setBulkValue] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
-  const password = typeof window !== "undefined" ? sessionStorage.getItem("admin_password") ?? "" : "";
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -183,40 +194,45 @@ export default function CataloguePage() {
         status: statusFilter,
         limit: String(PAGE_SIZE),
       });
-      const res = await fetch(`/api/admin/products-list?${params}`, {
-        headers: { Authorization: `Bearer ${password}` },
-      });
+      const res = await adminFetch(`/api/admin/products-list?${params}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setProducts(data.products ?? []);
+      const mapped: AdminProduct[] = ((data.products as ProductsListApiItem[]) ?? []).map((item) => ({
+        id: item.id,
+        name: item.title,
+        slug: item.handle,
+        sku: item.sku,
+        regular_price: Number(item.regular_price ?? 0),
+        status: item.status,
+        featured_image_url: item.featured_image_url,
+        categories: item.categories ? { id: "", name: item.categories } : null,
+      }));
+      setProducts(mapped);
       setTotal(data.total ?? 0);
     } catch {
-      /* ignore */
+      setProducts([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, password]);
+  }, [page, search, statusFilter]);
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
   useEffect(() => {
-    fetch("/api/admin/ia/categories-list", {
-      headers: { Authorization: `Bearer ${password}` },
-    })
+    adminFetch("/api/admin/ia/categories-list")
       .then((r) => r.json())
       .then((d) => setCategories(d.categories ?? []))
       .catch(() => {});
-  }, [password]);
+  }, []);
 
   const patchProduct = useCallback(
     async (id: string, field: string, value: string | number) => {
-      const res = await fetch(`/api/admin/products/${id}`, {
+      const res = await adminFetch(`/api/admin/products/${id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${password}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [field]: value }),
       });
       if (!res.ok) throw new Error("Erreur");
@@ -225,7 +241,7 @@ export default function CataloguePage() {
         prev.map((p) => (p.id === id ? { ...p, ...data.product } : p)),
       );
     },
-    [password],
+    [],
   );
 
   const toggleSelect = (id: string) => {
@@ -249,12 +265,9 @@ export default function CataloguePage() {
     if (!bulkAction || selected.size === 0) return;
     setBulkLoading(true);
     try {
-      const res = await fetch("/api/admin/products/bulk", {
+      const res = await adminFetch("/api/admin/products/bulk", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${password}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ids: [...selected],
           action: bulkAction,

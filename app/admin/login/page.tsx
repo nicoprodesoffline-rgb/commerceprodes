@@ -24,6 +24,8 @@ export default function AdminLoginPage() {
       if (res.ok && data.success) {
         if (typeof window !== "undefined") {
           sessionStorage.setItem("admin_password_cache", password);
+          // Backward compatibility for legacy admin pages not yet migrated to adminFetch
+          sessionStorage.setItem("admin_password", password);
         }
         window.location.href = "/admin";
       } else {

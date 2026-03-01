@@ -4,7 +4,9 @@
  */
 export async function adminFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const password =
-    (typeof window !== "undefined" ? sessionStorage.getItem("admin_password_cache") : null) ?? "";
+    (typeof window !== "undefined"
+      ? sessionStorage.getItem("admin_password_cache") ?? sessionStorage.getItem("admin_password")
+      : null) ?? "";
 
   const headers = new Headers(options.headers as HeadersInit | undefined);
   headers.set("Authorization", `Bearer ${password}`);
