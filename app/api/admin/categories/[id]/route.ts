@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("Authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  return token === (process.env.ADMIN_PASSWORD ?? "");
-}
+import { checkAdminAuth } from "lib/admin/auth";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!checkAuth(req)) {
+  if (!checkAdminAuth(req)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -22,14 +17,22 @@ export async function PATCH(
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
 
-  const ALLOWED = ["cover_image_url", "name", "seo_title"];
   const updates: Record<string, unknown> = {};
-  for (const key of ALLOWED) {
-    if (key in body) updates[key] = body[key];
+  if (body.cover_image_url != null) {
+    const v = typeof body.cover_image_url === "string" ? body.cover_image_url.trim().slice(0, 2000) : null;
+    updates.cover_image_url = v || null;
+  }
+  if (body.name != null) {
+    const v = typeof body.name === "string" ? body.name.trim().slice(0, 200) : "";
+    if (!v) return NextResponse.json({ error: "name invalide" }, { status: 400 });
+    updates.name = v;
+  }
+  if (body.seo_title != null) {
+    updates.seo_title = typeof body.seo_title === "string" ? body.seo_title.trim().slice(0, 200) : null;
   }
 
   if (Object.keys(updates).length === 0) {
-    return NextResponse.json({ error: "Aucun champ" }, { status: 400 });
+    return NextResponse.json({ error: "Aucun champ valide" }, { status: 400 });
   }
 
   try {
@@ -47,6 +50,7 @@ export async function PATCH(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    console.log(JSON.stringify({ event: "admin.category.update", id, fields: Object.keys(updates) }));
     return NextResponse.json({ success: true, category: data });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
