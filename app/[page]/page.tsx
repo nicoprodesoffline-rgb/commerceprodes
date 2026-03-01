@@ -4,10 +4,24 @@ import Prose from "components/prose";
 import { getPage } from "lib/supabase";
 import { notFound } from "next/navigation";
 
+/**
+ * Guard: reject handles that clearly are not CMS pages.
+ * Avoids unnecessary DB lookups for static assets, short slugs, etc.
+ */
+function isValidCmsHandle(handle: string): boolean {
+  if (!handle || handle.length < 2 || handle.length > 120) return false;
+  // Reject handles containing dots (static files: .ico, .png, .xml, etc.)
+  if (handle.includes(".")) return false;
+  // Only allow URL-safe characters (letters, numbers, hyphens, underscores)
+  if (!/^[a-zA-Z0-9_-]+$/.test(handle)) return false;
+  return true;
+}
+
 export async function generateMetadata(props: {
   params: Promise<{ page: string }>;
 }): Promise<Metadata> {
   const params = await props.params;
+  if (!isValidCmsHandle(params.page)) return notFound();
   const page = await getPage(params.page);
 
   if (!page) return notFound();
@@ -27,6 +41,7 @@ export default async function Page(props: {
   params: Promise<{ page: string }>;
 }) {
   const params = await props.params;
+  if (!isValidCmsHandle(params.page)) return notFound();
   const page = await getPage(params.page);
 
   if (!page) return notFound();
