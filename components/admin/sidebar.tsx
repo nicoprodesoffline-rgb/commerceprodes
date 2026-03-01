@@ -18,6 +18,7 @@ const navLinks: NavLink[] = [
   { href: "/admin/paniers-abandonnes", label: "Paniers abandonnés", icon: "🛒" },
   { href: "/admin/produits", label: "Produits", icon: "📦" },
   { href: "/admin/catalogue", label: "Vue Excel", icon: "📊" },
+  { href: "/admin/familles", label: "Familles produits", icon: "🔗", badge: "V2" },
   { href: "/admin/categories", label: "Catégories", icon: "🗂️" },
   { href: "/admin/import", label: "Import fournisseur", icon: "📤" },
   { href: "/admin/seo", label: "SEO", icon: "🔍" },
