@@ -1455,6 +1455,101 @@ export async function getHomepageCategories(): Promise<
 }
 
 // ============================================================
+// TESTIMONIALS (homepage — DB-driven with fallback)
+// ============================================================
+
+export interface DbTestimonial {
+  id: string;
+  author: string;
+  role: string | null;
+  content: string;
+  rating: number;
+}
+
+export async function getTestimonialsFromDB(limit = 6): Promise<DbTestimonial[]> {
+  const { data, error } = await supabase
+    .from("testimonials")
+    .select("id, author, role, content, rating")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+  return data as DbTestimonial[];
+}
+
+// ============================================================
+// HOMEPAGE SECTIONS (dynamic product carousels, admin-driven)
+// ============================================================
+
+export interface HomepageSection {
+  id: string;
+  title: string;
+  intro: string | null;
+  position: number;
+  product_ids: string[];
+  products: Product[];
+}
+
+export async function getActiveHomepageSections(): Promise<HomepageSection[]> {
+  const now = new Date().toISOString();
+
+  const { data: sections, error } = await supabase
+    .from("homepage_sections")
+    .select("id, title, intro, position, product_ids, expires_at")
+    .eq("active", true)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
+    .order("position", { ascending: true });
+
+  if (error || !sections || sections.length === 0) return [];
+
+  // Collect all product IDs across sections
+  const allIds: string[] = [];
+  for (const s of sections) {
+    if (Array.isArray(s.product_ids)) {
+      for (const id of s.product_ids as string[]) {
+        if (!allIds.includes(id)) allIds.push(id);
+      }
+    }
+  }
+
+  if (allIds.length === 0) {
+    return sections.map((s: any) => ({
+      id: s.id,
+      title: s.title,
+      intro: s.intro ?? null,
+      position: s.position,
+      product_ids: s.product_ids ?? [],
+      products: [],
+    }));
+  }
+
+  // Batch-fetch all products in one query
+  const { data: products } = await supabase
+    .from("products")
+    .select(PRODUCT_LIST_SELECT)
+    .in("id", allIds)
+    .eq("status", "publish");
+
+  const productMap: Record<string, Product> = {};
+  if (products) {
+    for (const p of products as any[]) {
+      productMap[p.id] = buildProductSummary(p);
+    }
+  }
+
+  return sections.map((s: any) => ({
+    id: s.id,
+    title: s.title,
+    intro: s.intro ?? null,
+    position: s.position,
+    product_ids: s.product_ids ?? [],
+    products: ((s.product_ids ?? []) as string[])
+      .map((id) => productMap[id])
+      .filter(Boolean) as Product[],
+  }));
+}
+
+// ============================================================
 // REVALIDATE (stub — no Shopify webhooks)
 // ============================================================
 

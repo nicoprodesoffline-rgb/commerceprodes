@@ -12,6 +12,10 @@ import {
   getNewProducts,
   getHomepageCategories,
   getProducts,
+  getTestimonialsFromDB,
+  getActiveHomepageSections,
+  type DbTestimonial,
+  type HomepageSection,
 } from "lib/supabase/index";
 
 export const metadata = {
@@ -23,6 +27,33 @@ export const metadata = {
   },
 };
 
+const FALLBACK_TESTIMONIALS = [
+  {
+    id: "fallback-1",
+    author: "Marie-Claire B.",
+    role: "Directrice des services techniques — Mairie de Montpellier",
+    content:
+      "Excellent service, livraison rapide et produits conformes à nos attentes. Le devis a été traité en quelques heures. Je recommande PRODES pour tout achat de mobilier urbain.",
+    rating: 5,
+  },
+  {
+    id: "fallback-2",
+    author: "Jean-Pierre L.",
+    role: "Responsable achats — Communauté de communes du Pays de Sommières",
+    content:
+      "Nous utilisons PRODES depuis 3 ans pour nos équipements d'espaces verts. Qualité constante, prix compétitifs avec les tarifs dégressifs et un interlocuteur dédié réactif.",
+    rating: 5,
+  },
+  {
+    id: "fallback-3",
+    author: "Sophie M.",
+    role: "Gestionnaire de patrimoine — Conseil Régional Occitanie",
+    content:
+      "Le mandat administratif simplifie nos procédures d'achat. Produits robustes, compatibles Chorus Pro. Un partenaire fiable pour nos collectivités.",
+    rating: 5,
+  },
+] satisfies DbTestimonial[];
+
 export default async function HomePage() {
   let categories: Awaited<ReturnType<typeof getRootCategories>> = [];
   let featuredProducts: Awaited<ReturnType<typeof getFeaturedProducts>> = [];
@@ -30,9 +61,11 @@ export default async function HomePage() {
   let newProducts: Awaited<ReturnType<typeof getNewProducts>> = [];
   let homepageCategories: Awaited<ReturnType<typeof getHomepageCategories>> = [];
   let proIntensProducts: Awaited<ReturnType<typeof getProducts>> = [];
+  let dbTestimonials: DbTestimonial[] = [];
+  let dynamicSections: HomepageSection[] = [];
 
   try {
-    [categories, featuredProducts, promoProducts, newProducts, homepageCategories, proIntensProducts] =
+    [categories, featuredProducts, promoProducts, newProducts, homepageCategories, proIntensProducts, dbTestimonials, dynamicSections] =
       await Promise.all([
         getRootCategories(),
         getFeaturedProducts(12),
@@ -40,6 +73,8 @@ export default async function HomePage() {
         getNewProducts(12),
         getHomepageCategories(),
         getProducts({ query: "pro-intens", limit: 8 }),
+        getTestimonialsFromDB(6),
+        getActiveHomepageSections(),
       ]);
     // Fallback PRO-INTENS avec espace
     if (proIntensProducts.length === 0) {
@@ -48,6 +83,8 @@ export default async function HomePage() {
   } catch (e) {
     console.error("Homepage data fetch error:", e);
   }
+
+  const testimonials = dbTestimonials.length > 0 ? dbTestimonials : FALLBACK_TESTIMONIALS;
 
   return (
     <main>
@@ -211,6 +248,20 @@ export default async function HomePage() {
           </section>
         )}
 
+        {/* Section 6b — Sections dynamiques admin */}
+        {dynamicSections.map((section) =>
+          section.products.length > 0 ? (
+            <section key={section.id} className="mx-auto max-w-screen-2xl px-4 pb-12 lg:px-6">
+              <ProductCarousel
+                title={section.title}
+                subtitle={section.intro ?? ""}
+                products={section.products}
+                viewAllHref="/search"
+              />
+            </section>
+          ) : null,
+        )}
+
         {/* Section 7 — Bandeau CTA devis express */}
         <section className="mx-auto max-w-screen-2xl px-4 pb-12 lg:px-6">
           <div className="rounded-xl bg-[#cc1818] px-6 py-8 md:px-10">
@@ -297,46 +348,23 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Section 9 — Témoignages clients */}
+        {/* Section 9 — Témoignages clients (DB-driven, fallback hardcodé) */}
         <section className="mx-auto max-w-screen-2xl px-4 pb-12 lg:px-6">
           <h2 className="mb-6 text-xl font-bold text-gray-900 text-center">Ils nous font confiance</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {[
-              {
-                name: "Marie-Claire B.",
-                role: "Directrice des services techniques",
-                org: "Mairie de Montpellier",
-                text: "Excellent service, livraison rapide et produits conformes à nos attentes. Le devis a été traité en quelques heures. Je recommande PRODES pour tout achat de mobilier urbain.",
-                stars: 5,
-              },
-              {
-                name: "Jean-Pierre L.",
-                role: "Responsable achats",
-                org: "Communauté de communes du Pays de Sommières",
-                text: "Nous utilisons PRODES depuis 3 ans pour nos équipements d'espaces verts. Qualité constante, prix compétitifs avec les tarifs dégressifs et un interlocuteur dédié réactif.",
-                stars: 5,
-              },
-              {
-                name: "Sophie M.",
-                role: "Gestionnaire de patrimoine",
-                org: "Conseil Régional Occitanie",
-                text: "Le mandat administratif simplifie nos procédures d'achat. Produits robustes, compatibles Chorus Pro. Un partenaire fiable pour nos collectivités.",
-                stars: 5,
-              },
-            ].map((t) => (
-              <div key={t.name} className="rounded-xl border border-gray-200 bg-white p-5">
+            {testimonials.slice(0, 3).map((t) => (
+              <div key={t.id} className="rounded-xl border border-gray-200 bg-white p-5">
                 <div className="mb-3 flex gap-0.5">
-                  {Array.from({ length: t.stars }).map((_, i) => (
+                  {Array.from({ length: t.rating }).map((_, i) => (
                     <span key={i} className="text-amber-400 text-sm">★</span>
                   ))}
                 </div>
                 <p className="text-sm text-gray-700 leading-relaxed italic mb-4">
-                  &ldquo;{t.text}&rdquo;
+                  &ldquo;{t.content}&rdquo;
                 </p>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">{t.name}</p>
-                  <p className="text-xs text-gray-500">{t.role}</p>
-                  <p className="text-xs font-medium text-[#cc1818]">{t.org}</p>
+                  <p className="text-sm font-semibold text-gray-900">{t.author}</p>
+                  {t.role && <p className="text-xs text-gray-500">{t.role}</p>}
                 </div>
               </div>
             ))}
