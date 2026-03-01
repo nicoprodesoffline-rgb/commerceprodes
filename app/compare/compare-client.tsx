@@ -5,6 +5,49 @@ import Image from "next/image";
 import type { Product } from "lib/supabase/types";
 import { useCompare } from "lib/compare/context";
 
+function exportCompareCSV(products: Product[]) {
+  if (products.length === 0) return;
+  const FIELDS: Array<{ label: string; getValue: (p: Product) => string }> = [
+    { label: "Nom", getValue: (p) => p.title },
+    { label: "Référence / SKU", getValue: (p) => p.sku ?? "" },
+    { label: "Prix HT (€)", getValue: (p) => {
+      const price = p.priceMin ?? parseFloat(p.priceRange.minVariantPrice.amount) ?? 0;
+      return price > 0 ? price.toFixed(2) : "Sur devis";
+    }},
+    { label: "Éco-participation (€)", getValue: (p) => p.ecoContribution && p.ecoContribution > 0 ? p.ecoContribution.toFixed(2) : "" },
+    { label: "Tarifs dégressifs", getValue: (p) => p.pbqEnabled ? "Oui" : "Non" },
+    { label: "Coloris disponibles", getValue: (p) => p.variants.length > 1 ? String(p.variants.length) : "" },
+    { label: "Catégorie", getValue: (p) => p.categoryName ?? "" },
+    { label: "Livraison offerte", getValue: (p) => p.isFreeshipping ? "Oui" : "" },
+    { label: "Disponibilité", getValue: (p) => p.availableForSale ? "Disponible" : "Sur commande" },
+    { label: "URL fiche", getValue: (p) => `/product/${p.handle}` },
+  ];
+
+  // Header row: empty col (field label) then one col per product
+  const headers = ["Caractéristique", ...products.map((p) => `"${p.title.replace(/"/g, '""')}"`)]
+  const lines = [headers.join(";")];
+
+  for (const field of FIELDS) {
+    const row = [
+      `"${field.label}"`,
+      ...products.map((p) => {
+        const v = field.getValue(p);
+        return `"${v.replace(/"/g, '""')}"`;
+      }),
+    ];
+    lines.push(row.join(";"));
+  }
+
+  const csv = "\uFEFF" + lines.join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `comparatif-${products.map((p) => p.sku ?? p.handle).join("-").slice(0, 60)}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function formatPriceFR(price: number): string {
   return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) + " € HT";
 }
@@ -154,14 +197,20 @@ export default function CompareClient({ products }: CompareClientProps) {
           <h1 className="text-2xl font-bold text-gray-900">Comparateur</h1>
           <p className="text-sm text-gray-500">{products.length} produits comparés</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => exportCompareCSV(products)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+          >
+            <span>⬇</span> Exporter CSV
+          </button>
           <a
             href={`/api/compare/pdf?handles=${products.map((p) => p.handle).join(",")}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
           >
-            <span>🖨</span> Exporter PDF comparatif
+            <span>🖨</span> Imprimer / PDF
           </a>
           <Link href="/search" className="text-sm text-[#cc1818] hover:underline">
             ← Retour au catalogue
