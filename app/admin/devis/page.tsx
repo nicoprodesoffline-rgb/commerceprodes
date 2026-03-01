@@ -1,7 +1,7 @@
 import Link from "next/link";
-import StatusBadge from "components/admin/status-badge";
 import { getDevisRequests } from "lib/supabase/index";
 import type { DevisRequest } from "lib/supabase/types";
+import DevisListClient from "./devis-list-client";
 
 const STATUSES = [
   { value: "all", label: "Tous" },
@@ -13,16 +13,6 @@ const STATUSES = [
 ];
 
 const PER_PAGE = 20;
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export default async function DevisListPage(props: {
   searchParams?: Promise<{ status?: string; page?: string }>;
@@ -49,6 +39,8 @@ export default async function DevisListPage(props: {
   }
 
   const totalPages = Math.ceil(total / PER_PAGE);
+  // Pass admin password for client-side bulk actions (server-only env var)
+  const adminPassword = process.env.ADMIN_PASSWORD ?? "";
 
   return (
     <div className="space-y-6">
@@ -92,47 +84,7 @@ export default async function DevisListPage(props: {
         </div>
       ) : (
         <>
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Date</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Nom</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 hidden lg:table-cell">Email</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">Tél.</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Produit</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">Qté</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Statut</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {data.map((d) => (
-                  <tr key={d.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">
-                      {formatDate(d.created_at)}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{d.nom}</td>
-                    <td className="px-4 py-3 text-gray-500 hidden lg:table-cell">{d.email}</td>
-                    <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{d.telephone || "—"}</td>
-                    <td className="px-4 py-3 text-gray-700 max-w-[180px] truncate">{d.produit}</td>
-                    <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{d.quantite || "—"}</td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={d.status} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/admin/devis/${d.id}`}
-                        className="text-xs font-medium text-blue-600 hover:underline"
-                      >
-                        Voir →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DevisListClient initialData={data} adminPassword={adminPassword} />
 
           {/* Pagination */}
           {totalPages > 1 && (
