@@ -3,10 +3,12 @@ import Footer from "components/layout/footer";
 import { Breadcrumbs } from "components/layout/breadcrumbs";
 import { Gallery } from "components/product/gallery";
 import { ProductDescription, ProductDescriptionTabs } from "components/product/product-description";
+import { ProductClientExtras } from "components/product/product-client-extras";
+import { CompatibleProducts } from "components/product/compatible-products";
 import { RecentlyViewed } from "components/product/recently-viewed";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
 import { getProduct, getProductRecommendations } from "lib/supabase";
-import type { Image } from "lib/supabase/types";
+import type { Image, Product } from "lib/supabase/types";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -130,6 +132,9 @@ export default async function ProductPage(props: {
             <Suspense fallback={null}>
               <ProductDescription product={product} />
             </Suspense>
+            <Suspense fallback={null}>
+              <ProductClientExtras product={product} />
+            </Suspense>
           </div>
         </div>
 
@@ -138,6 +143,7 @@ export default async function ProductPage(props: {
           <ProductDescriptionTabs product={product} />
         </Suspense>
 
+        <CompatibleProductsSection id={product.id} />
         <RelatedProducts id={product.id} />
         <Suspense fallback={null}>
           <RecentlyViewed currentHandle={product.handle} />
@@ -147,6 +153,14 @@ export default async function ProductPage(props: {
       <Footer />
     </>
   );
+}
+
+async function CompatibleProductsSection({ id }: { id: string }) {
+  const products = await getProductRecommendations(id);
+  if (!products.length) return null;
+  // Show first 3 as "compatible", remaining as "related"
+  const compatible = products.slice(0, 3);
+  return <CompatibleProducts products={compatible} title="Produits compatibles" />;
 }
 
 async function RelatedProducts({ id }: { id: string }) {

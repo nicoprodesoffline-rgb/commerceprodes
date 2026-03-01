@@ -154,9 +154,19 @@ export default function CompareClient({ products }: CompareClientProps) {
           <h1 className="text-2xl font-bold text-gray-900">Comparateur</h1>
           <p className="text-sm text-gray-500">{products.length} produits comparés</p>
         </div>
-        <Link href="/search" className="text-sm text-[#cc1818] hover:underline">
-          ← Retour au catalogue
-        </Link>
+        <div className="flex items-center gap-3">
+          <a
+            href={`/api/compare/pdf?handles=${products.map((p) => p.handle).join(",")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+          >
+            <span>🖨</span> Exporter PDF comparatif
+          </a>
+          <Link href="/search" className="text-sm text-[#cc1818] hover:underline">
+            ← Retour au catalogue
+          </Link>
+        </div>
       </div>
 
       <div className="overflow-x-auto">

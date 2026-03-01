@@ -727,6 +727,12 @@ export async function getProductsPage({
   minPrice,
   maxPrice,
   inStockOnly = false,
+  minLength,
+  maxLength,
+  minWidth,
+  maxWidth,
+  minHeight,
+  maxHeight,
 }: {
   query?: string;
   category?: string;
@@ -737,6 +743,12 @@ export async function getProductsPage({
   minPrice?: number;
   maxPrice?: number;
   inStockOnly?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
 } = {}): Promise<ProductsPage> {
   "use cache";
   cacheTag(TAGS.products);
@@ -782,6 +794,12 @@ export async function getProductsPage({
   if (minPrice != null) dbQuery = dbQuery.gte("regular_price", minPrice);
   if (maxPrice != null) dbQuery = dbQuery.lte("regular_price", maxPrice);
   if (inStockOnly) dbQuery = dbQuery.eq("stock_status", "instock");
+  if (minLength != null) dbQuery = dbQuery.gte("length", minLength);
+  if (maxLength != null) dbQuery = dbQuery.lte("length", maxLength);
+  if (minWidth != null) dbQuery = dbQuery.gte("width", minWidth);
+  if (maxWidth != null) dbQuery = dbQuery.lte("width", maxWidth);
+  if (minHeight != null) dbQuery = dbQuery.gte("height", minHeight);
+  if (maxHeight != null) dbQuery = dbQuery.lte("height", maxHeight);
 
   const ascending = !reverse;
   switch (sortKey) {

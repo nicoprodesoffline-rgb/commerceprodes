@@ -11,41 +11,73 @@ export function CatalogFilters() {
   const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") ?? "");
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") ?? "");
   const [inStock, setInStock] = useState(searchParams.get("inStock") === "1");
+  const [minLength, setMinLength] = useState(searchParams.get("minLength") ?? "");
+  const [maxLength, setMaxLength] = useState(searchParams.get("maxLength") ?? "");
+  const [minWidth, setMinWidth] = useState(searchParams.get("minWidth") ?? "");
+  const [maxWidth, setMaxWidth] = useState(searchParams.get("maxWidth") ?? "");
+  const [showDimensions, setShowDimensions] = useState(false);
 
   // Sync state when URL changes (e.g. browser back/forward)
   useEffect(() => {
     setMinPrice(searchParams.get("minPrice") ?? "");
     setMaxPrice(searchParams.get("maxPrice") ?? "");
     setInStock(searchParams.get("inStock") === "1");
+    setMinLength(searchParams.get("minLength") ?? "");
+    setMaxLength(searchParams.get("maxLength") ?? "");
+    setMinWidth(searchParams.get("minWidth") ?? "");
+    setMaxWidth(searchParams.get("maxWidth") ?? "");
   }, [searchParams]);
 
-  const hasActiveFilters =
+  const hasActiveFilters = Boolean(
     searchParams.get("minPrice") ||
     searchParams.get("maxPrice") ||
-    searchParams.get("inStock");
+    searchParams.get("inStock") ||
+    searchParams.get("minLength") ||
+    searchParams.get("maxLength") ||
+    searchParams.get("minWidth") ||
+    searchParams.get("maxWidth"),
+  );
+
+  const hasDimFilters = Boolean(
+    searchParams.get("minLength") ||
+    searchParams.get("maxLength") ||
+    searchParams.get("minWidth") ||
+    searchParams.get("maxWidth"),
+  );
 
   function apply() {
     const params = new URLSearchParams(searchParams.toString());
-    if (minPrice) params.set("minPrice", minPrice);
-    else params.delete("minPrice");
-    if (maxPrice) params.set("maxPrice", maxPrice);
-    else params.delete("maxPrice");
-    if (inStock) params.set("inStock", "1");
-    else params.delete("inStock");
+    params.delete("page");
+    if (minPrice) params.set("minPrice", minPrice); else params.delete("minPrice");
+    if (maxPrice) params.set("maxPrice", maxPrice); else params.delete("maxPrice");
+    if (inStock) params.set("inStock", "1"); else params.delete("inStock");
+    if (minLength) params.set("minLength", minLength); else params.delete("minLength");
+    if (maxLength) params.set("maxLength", maxLength); else params.delete("maxLength");
+    if (minWidth) params.set("minWidth", minWidth); else params.delete("minWidth");
+    if (maxWidth) params.set("maxWidth", maxWidth); else params.delete("maxWidth");
     router.push(`${pathname}?${params.toString()}`);
   }
 
   function reset() {
-    setMinPrice("");
-    setMaxPrice("");
-    setInStock(false);
+    setMinPrice(""); setMaxPrice(""); setInStock(false);
+    setMinLength(""); setMaxLength(""); setMinWidth(""); setMaxWidth("");
     const params = new URLSearchParams(searchParams.toString());
-    params.delete("minPrice");
-    params.delete("maxPrice");
-    params.delete("inStock");
+    ["minPrice", "maxPrice", "inStock", "minLength", "maxLength", "minWidth", "maxWidth", "page"].forEach(
+      (k) => params.delete(k),
+    );
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
   }
+
+  const activeBadges = [
+    searchParams.get("minPrice") && `≥ ${searchParams.get("minPrice")} €`,
+    searchParams.get("maxPrice") && `≤ ${searchParams.get("maxPrice")} €`,
+    searchParams.get("inStock") === "1" && "En stock",
+    searchParams.get("minLength") && `L ≥ ${searchParams.get("minLength")} cm`,
+    searchParams.get("maxLength") && `L ≤ ${searchParams.get("maxLength")} cm`,
+    searchParams.get("minWidth") && `l ≥ ${searchParams.get("minWidth")} cm`,
+    searchParams.get("maxWidth") && `l ≤ ${searchParams.get("maxWidth")} cm`,
+  ].filter(Boolean);
 
   return (
     <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
@@ -88,7 +120,7 @@ export function CatalogFilters() {
       </div>
 
       {/* Disponibilité */}
-      <label className="mb-4 flex cursor-pointer items-center gap-2 text-xs text-gray-700">
+      <label className="mb-3 flex cursor-pointer items-center gap-2 text-xs text-gray-700">
         <input
           type="checkbox"
           checked={inStock}
@@ -97,6 +129,52 @@ export function CatalogFilters() {
         />
         Disponibles seulement
       </label>
+
+      {/* Dimensions (toggle) */}
+      <button
+        onClick={() => setShowDimensions((v) => !v)}
+        className="mb-2 flex w-full items-center justify-between text-xs font-medium text-gray-600 hover:text-[#cc1818]"
+      >
+        <span>Dimensions (cm)</span>
+        <span className="text-gray-400">{showDimensions || hasDimFilters ? "▲" : "▼"}</span>
+      </button>
+
+      {(showDimensions || hasDimFilters) && (
+        <div className="mb-3 space-y-2 rounded bg-gray-50 p-2">
+          <div>
+            <p className="mb-1 text-[10px] text-gray-500">Longueur</p>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number" min={0} placeholder="Min"
+                value={minLength} onChange={(e) => setMinLength(e.target.value)}
+                className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-[#cc1818] focus:outline-none"
+              />
+              <span className="flex-none text-gray-400 text-xs">–</span>
+              <input
+                type="number" min={0} placeholder="Max"
+                value={maxLength} onChange={(e) => setMaxLength(e.target.value)}
+                className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-[#cc1818] focus:outline-none"
+              />
+            </div>
+          </div>
+          <div>
+            <p className="mb-1 text-[10px] text-gray-500">Largeur</p>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number" min={0} placeholder="Min"
+                value={minWidth} onChange={(e) => setMinWidth(e.target.value)}
+                className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-[#cc1818] focus:outline-none"
+              />
+              <span className="flex-none text-gray-400 text-xs">–</span>
+              <input
+                type="number" min={0} placeholder="Max"
+                value={maxWidth} onChange={(e) => setMaxWidth(e.target.value)}
+                className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-[#cc1818] focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bouton appliquer */}
       <button
@@ -107,15 +185,9 @@ export function CatalogFilters() {
       </button>
 
       {/* Badge filtres actifs */}
-      {hasActiveFilters && (
+      {activeBadges.length > 0 && (
         <p className="mt-2 text-center text-[10px] text-[#cc1818]">
-          {[
-            searchParams.get("minPrice") && `≥ ${searchParams.get("minPrice")} €`,
-            searchParams.get("maxPrice") && `≤ ${searchParams.get("maxPrice")} €`,
-            searchParams.get("inStock") === "1" && "En stock",
-          ]
-            .filter(Boolean)
-            .join(" · ")}
+          {activeBadges.join(" · ")}
         </p>
       )}
     </div>

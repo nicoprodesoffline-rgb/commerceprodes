@@ -19,6 +19,10 @@ export default async function SearchPage(props: {
     minPrice,
     maxPrice,
     inStock,
+    minLength,
+    maxLength,
+    minWidth,
+    maxWidth,
     page: pageParam,
   } = searchParams as { [key: string]: string };
 
@@ -35,6 +39,10 @@ export default async function SearchPage(props: {
     minPrice: minPrice ? parseFloat(minPrice) : undefined,
     maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
     inStockOnly: inStock === "1",
+    minLength: minLength ? parseFloat(minLength) : undefined,
+    maxLength: maxLength ? parseFloat(maxLength) : undefined,
+    minWidth: minWidth ? parseFloat(minWidth) : undefined,
+    maxWidth: maxWidth ? parseFloat(maxWidth) : undefined,
   });
 
   const { products, total, totalPages, hasMore } = result;
@@ -46,6 +54,10 @@ export default async function SearchPage(props: {
     minPrice,
     maxPrice,
     inStock,
+    minLength,
+    maxLength,
+    minWidth,
+    maxWidth,
   };
 
   return (
