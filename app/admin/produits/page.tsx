@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { adminFetch } from "lib/admin/fetch";
 
 interface AdminProduct {
   id: string;
@@ -60,7 +61,7 @@ export default function AdminProduitsPage() {
         status: statusFilter,
         sort,
       });
-      const res = await fetch(`/api/admin/products-list?${params}`);
+      const res = await adminFetch(`/api/admin/products-list?${params}`);
       if (res.ok) {
         const data: FetchResult = await res.json();
         setProducts(data.products);

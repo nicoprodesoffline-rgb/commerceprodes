@@ -78,10 +78,20 @@ export default function FamillesPage() {
   const [tab, setTab] = useState<"list" | "audit" | "suggest">("list");
 
   // ── Check DB status ──────────────────────────────────────────────────────────
-  useEffect(() => {
+useEffect(() => {
     adminFetch("/api/admin/families/status")
-      .then((r: Response) => r.json())
-      .then((d: DbStatus) => setDbStatus(d))
+      .then(async (r: Response) => {
+        if (!r.ok) {
+          if (r.status === 401) {
+            setDbStatus({ available: false, reason: "UNAUTHORIZED" });
+            return;
+          }
+          setDbStatus({ available: false, reason: `HTTP_${r.status}` });
+          return;
+        }
+        const d: DbStatus = await r.json();
+        setDbStatus(d);
+      })
       .catch(() => setDbStatus({ available: false, reason: "FETCH_ERROR" }));
   }, []);
 
@@ -227,6 +237,27 @@ export default function FamillesPage() {
   }
 
   if (!dbStatus.available) {
+    if (dbStatus.reason === "UNAUTHORIZED") {
+      return (
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Familles produits</h1>
+            <p className="text-sm text-gray-500 mt-1">Groupement mères / filles</p>
+          </div>
+          <div className="rounded-xl border border-red-300 bg-red-50 p-6">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🔒</span>
+              <div>
+                <h2 className="font-semibold text-red-900">Session admin expirée</h2>
+                <p className="text-red-800 mt-1">
+                  Reconnectez-vous sur <code className="rounded bg-red-100 px-1">/admin/login</code> pour recharger le token de session.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="space-y-6">
         <div>
