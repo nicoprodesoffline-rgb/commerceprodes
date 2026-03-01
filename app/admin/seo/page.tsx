@@ -56,6 +56,34 @@ function computeScore(p: {
   return { score, suggestions };
 }
 
+function stripHtml(input: string | null): string {
+  return String(input ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function withMaxLen(input: string, max: number): string {
+  const normalized = input.replace(/\s+/g, " ").trim();
+  if (normalized.length <= max) return normalized;
+  return `${normalized.slice(0, Math.max(0, max - 3)).trim()}...`;
+}
+
+function suggestSeoTitle(row: SeoProductRow): string {
+  const base = row.title?.trim() || "Produit PRODES";
+  const skuPart = row.sku ? ` | ${row.sku}` : "";
+  return withMaxLen(`${base}${skuPart} - PRODES`, 70);
+}
+
+function suggestSeoDescription(row: SeoProductRow): string {
+  const short = stripHtml(row.short_description);
+  const base =
+    short.length >= 40
+      ? short
+      : `Decouvrez ${row.title} pour collectivites et professionnels. Demandez votre devis rapide avec accompagnement expert PRODES.`;
+  return withMaxLen(base, 155);
+}
+
 function Voyant({ score }: { score: number }) {
   const cls =
     score >= 90 ? "text-green-600" : score >= 70 ? "text-yellow-600" : score >= 40 ? "text-orange-600" : "text-red-600";
@@ -93,6 +121,9 @@ export default function SeoPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | SeoStatus>("all");
   const [bulkStatus, setBulkStatus] = useState<SeoStatus>("in_progress");
+  const [autoMode, setAutoMode] = useState<"missing" | "all">("missing");
+  const [autoApplying, setAutoApplying] = useState(false);
+  const [autoFeedback, setAutoFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [serpTitle, setSerpTitle] = useState("");
   const [serpDesc, setSerpDesc] = useState("");
 
@@ -216,6 +247,96 @@ export default function SeoPage() {
     const next = { ...statusesRef.current };
     for (const row of filtered) next[row.id] = status;
     persistStatuses(next);
+  };
+
+  const applyAutoSeoToFiltered = async () => {
+    if (filtered.length === 0) {
+      setAutoFeedback({ type: "error", message: "Aucun produit a traiter." });
+      return;
+    }
+
+    const candidates = filtered.filter((row) => {
+      if (autoMode === "all") return true;
+      return !row.seo_title || !row.seo_description;
+    });
+
+    if (candidates.length === 0) {
+      setAutoFeedback({
+        type: "success",
+        message: "Aucun champ SEO manquant sur les produits filtres.",
+      });
+      return;
+    }
+
+    setAutoApplying(true);
+    setAutoFeedback(null);
+
+    const updatesById = new Map<string, { seo_title: string | null; seo_description: string | null }>();
+    let updated = 0;
+    let failed = 0;
+
+    try {
+      for (const row of candidates) {
+        const shouldSetTitle = autoMode === "all" || !row.seo_title;
+        const shouldSetDesc = autoMode === "all" || !row.seo_description;
+        if (!shouldSetTitle && !shouldSetDesc) continue;
+
+        const nextTitle = shouldSetTitle ? suggestSeoTitle(row) : row.seo_title;
+        const nextDescription = shouldSetDesc ? suggestSeoDescription(row) : row.seo_description;
+        const body: Record<string, string> = {};
+        if (shouldSetTitle && nextTitle) body.seo_title = nextTitle;
+        if (shouldSetDesc && nextDescription) body.seo_description = nextDescription;
+        if (Object.keys(body).length === 0) continue;
+
+        const res = await fetch(`/api/admin/products/${row.id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${password}`,
+          },
+          body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+          failed += 1;
+          continue;
+        }
+
+        updatesById.set(row.id, {
+          seo_title: nextTitle ?? null,
+          seo_description: nextDescription ?? null,
+        });
+        updated += 1;
+      }
+
+      if (updatesById.size > 0) {
+        setRows((prev) =>
+          prev
+            .map((row) => {
+              const patch = updatesById.get(row.id);
+              if (!patch) return row;
+              const patched = {
+                ...row,
+                seo_title: patch.seo_title,
+                seo_description: patch.seo_description,
+              };
+              const { score, suggestions } = computeScore(patched);
+              return { ...patched, score, suggestions };
+            })
+            .sort((a, b) => a.score - b.score),
+        );
+      }
+
+      setAutoFeedback({
+        type: failed > 0 ? "error" : "success",
+        message:
+          failed > 0
+            ? `SEO auto applique: ${updated} ok / ${failed} en echec.`
+            : `SEO auto applique sur ${updated} produit(s).`,
+      });
+    } finally {
+      setAutoApplying(false);
+    }
   };
 
   return (
@@ -391,8 +512,34 @@ export default function SeoPage() {
             >
               Appliquer aux filtres
             </button>
+            <select
+              value={autoMode}
+              onChange={(e) => setAutoMode(e.target.value as "missing" | "all")}
+              className="rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none"
+            >
+              <option value="missing">SEO auto: champs manquants</option>
+              <option value="all">SEO auto: ecraser tout</option>
+            </select>
+            <button
+              onClick={applyAutoSeoToFiltered}
+              disabled={filtered.length === 0 || autoApplying}
+              className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-40"
+            >
+              {autoApplying ? "Auto SEO..." : "Auto SEO filtres"}
+            </button>
           </div>
         </div>
+        {autoFeedback && (
+          <div
+            className={`mx-5 mt-3 rounded-md px-3 py-2 text-xs ${
+              autoFeedback.type === "success"
+                ? "border border-green-200 bg-green-50 text-green-700"
+                : "border border-red-200 bg-red-50 text-red-700"
+            }`}
+          >
+            {autoFeedback.message}
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead className="bg-gray-50 text-[10px] uppercase tracking-wide text-gray-400">

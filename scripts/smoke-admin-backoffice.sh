@@ -83,6 +83,9 @@ expect_one_of "gate /admin without cookie" "307,200" "$code"
 code="$(http_code "$BASE_URL/api/admin/products-list?page=0")"
 expect_one_of "products-list without auth" "401,403" "$code"
 
+code="$(http_code "$BASE_URL/api/admin/export-devis?status=all&format=csv")"
+expect_one_of "export-devis without auth" "401,403" "$code"
+
 # Login to admin cookie session
 login_code="$(http_code \
   -c "$COOKIE_JAR" \
@@ -124,6 +127,8 @@ api_get=(
   "/api/admin/ia/detect-duplicates"
   "/api/admin/ia/generate-descriptions?mode=list"
   "/api/admin/homepage-sections"
+  "/api/admin/export-devis?status=all&format=csv"
+  "/api/admin/export-devis?status=all&format=xls"
 )
 
 for path in "${api_get[@]}"; do

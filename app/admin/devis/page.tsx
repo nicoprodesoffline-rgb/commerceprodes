@@ -42,7 +42,23 @@ export default async function DevisListPage(props: {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Demandes de devis</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-gray-900">Demandes de devis</h1>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/api/admin/export-devis?status=${encodeURIComponent(currentStatus)}&format=xls`}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:border-gray-300 transition-colors"
+          >
+            Export Excel
+          </Link>
+          <Link
+            href={`/api/admin/export-devis?status=${encodeURIComponent(currentStatus)}&format=csv`}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:border-gray-300 transition-colors"
+          >
+            Export CSV
+          </Link>
+        </div>
+      </div>
 
       {/* Filtres statut */}
       <div className="flex flex-wrap gap-2">

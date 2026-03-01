@@ -13,6 +13,32 @@ const VALID_STATUSES = [
   { value: "refuse", label: "Refusee" },
 ] as const;
 
+const RELANCE_TEMPLATES = [
+  {
+    id: "standard",
+    label: "Relance standard",
+    buildSubject: (produit?: string) => `Relance devis${produit ? ` - ${produit}` : ""}`,
+    buildBody: (nom?: string, produit?: string) =>
+      `Bonjour ${nom || ""},\n\nNous revenons vers vous au sujet de votre demande de devis${produit ? ` pour : ${produit}` : ""}.\n\nNotre equipe est disponible pour repondre a vos questions et finaliser votre besoin.\n\nCordialement,\nL'equipe PRODES\ncontact@prodes.fr - 04 67 24 30 34`,
+  },
+  {
+    id: "need_info",
+    label: "Demande precision",
+    buildSubject: (produit?: string) => `Devis - precision requise${produit ? ` - ${produit}` : ""}`,
+    buildBody: (nom?: string, produit?: string) =>
+      `Bonjour ${nom || ""},\n\nPour finaliser votre devis${produit ? ` concernant ${produit}` : ""}, nous avons besoin de quelques precisions (quantite, delai, adresse de livraison, contraintes techniques).\n\nVous pouvez nous repondre directement a ce message.\n\nCordialement,\nL'equipe PRODES`,
+  },
+  {
+    id: "last_call",
+    label: "Dernier rappel",
+    buildSubject: (produit?: string) => `Dernier rappel devis${produit ? ` - ${produit}` : ""}`,
+    buildBody: (nom?: string, produit?: string) =>
+      `Bonjour ${nom || ""},\n\nSans retour de votre part, nous cloturerons prochainement votre demande de devis${produit ? ` (${produit})` : ""}.\n\nSi votre besoin est toujours d'actualite, repondez simplement a cet email et nous reprenons le dossier immediatement.\n\nCordialement,\nL'equipe PRODES`,
+  },
+] as const;
+
+type RelanceTemplateId = (typeof RELANCE_TEMPLATES)[number]["id"];
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("fr-FR", {
     day: "2-digit",
@@ -23,11 +49,14 @@ function formatDate(iso: string) {
   });
 }
 
-function buildRelanceMailto(d: DevisRequest): string {
-  const subject = encodeURIComponent(`Relance devis - ${d.produit}`);
-  const body = encodeURIComponent(
-    `Bonjour ${d.nom},\n\nNous revenons vers vous au sujet de votre demande de devis pour : ${d.produit}.\n\nNotre equipe est disponible pour repondre a toutes vos questions.\n\nCordialement,\nL'equipe PRODES\ncontact@prodes.fr - 04 67 24 30 34`,
-  );
+function getRelanceTemplate(templateId: RelanceTemplateId) {
+  return RELANCE_TEMPLATES.find((t) => t.id === templateId) ?? RELANCE_TEMPLATES[0];
+}
+
+function buildRelanceMailto(d: DevisRequest, templateId: RelanceTemplateId): string {
+  const template = getRelanceTemplate(templateId);
+  const subject = encodeURIComponent(template.buildSubject(d.produit));
+  const body = encodeURIComponent(template.buildBody(d.nom, d.produit));
   return `mailto:${d.email}?subject=${subject}&body=${body}`;
 }
 
@@ -57,6 +86,34 @@ function exportDevisCsv(rows: DevisRequest[]) {
   URL.revokeObjectURL(url);
 }
 
+function exportDevisXls(rows: DevisRequest[]) {
+  const cols = ["id", "date", "nom", "email", "telephone", "produit", "quantite", "status"];
+  const lines = [cols.join("\t")];
+
+  for (const r of rows) {
+    lines.push([
+      String(r.id ?? ""),
+      String(r.created_at ?? ""),
+      String(r.nom ?? "").replace(/\r?\n/g, " "),
+      String(r.email ?? "").replace(/\r?\n/g, " "),
+      String(r.telephone ?? "").replace(/\r?\n/g, " "),
+      String(r.produit ?? "").replace(/\r?\n/g, " "),
+      String(r.quantite ?? ""),
+      String(r.status ?? ""),
+    ].join("\t"));
+  }
+
+  const blob = new Blob([`\uFEFF${lines.join("\n")}`], {
+    type: "application/vnd.ms-excel;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `devis-${new Date().toISOString().slice(0, 10)}.xls`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 interface Props {
   initialData: DevisRequest[];
 }
@@ -65,6 +122,7 @@ export default function DevisListClient({ initialData }: Props) {
   const [data, setData] = useState<DevisRequest[]>(initialData);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<(typeof VALID_STATUSES)[number]["value"]>("traite");
+  const [relanceTemplate, setRelanceTemplate] = useState<RelanceTemplateId>("standard");
   const [query, setQuery] = useState("");
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -106,6 +164,46 @@ export default function DevisListClient({ initialData }: Props) {
 
   function clearSelection() {
     setSelected(new Set());
+  }
+
+  function launchBulkRelance() {
+    if (selected.size === 0) {
+      setFeedback({ type: "error", message: "Selection vide pour relance." });
+      return;
+    }
+
+    const recipients = Array.from(
+      new Set(
+        data
+          .filter((d) => selected.has(d.id))
+          .map((d) => (d.email || "").trim())
+          .filter(Boolean),
+      ),
+    );
+
+    if (recipients.length === 0) {
+      setFeedback({ type: "error", message: "Aucun email valide dans la selection." });
+      return;
+    }
+
+    const capped = recipients.slice(0, 30);
+    const template = getRelanceTemplate(relanceTemplate);
+    const subject = encodeURIComponent(template.buildSubject(undefined));
+    const body = encodeURIComponent(template.buildBody(undefined, undefined));
+    window.location.href = `mailto:?bcc=${encodeURIComponent(capped.join(","))}&subject=${subject}&body=${body}`;
+
+    if (recipients.length > capped.length) {
+      setFeedback({
+        type: "success",
+        message: `Relance ouverte pour ${capped.length} destinataires (sur ${recipients.length}, limite URL).`,
+      });
+      return;
+    }
+
+    setFeedback({
+      type: "success",
+      message: `Relance ouverte pour ${recipients.length} destinataire(s).`,
+    });
   }
 
   function applyBulkStatus() {
@@ -166,6 +264,13 @@ export default function DevisListClient({ initialData }: Props) {
             >
               Export CSV (filtres)
             </button>
+            <button
+              onClick={() => exportDevisXls(visibleData)}
+              disabled={visibleData.length === 0}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+            >
+              Export Excel (filtres)
+            </button>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -206,6 +311,24 @@ export default function DevisListClient({ initialData }: Props) {
               className="rounded-md bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40 transition-colors"
             >
               {isPending ? "..." : "Appliquer"}
+            </button>
+            <select
+              value={relanceTemplate}
+              onChange={(e) => setRelanceTemplate(e.target.value as RelanceTemplateId)}
+              className="rounded-md border border-gray-300 px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              {RELANCE_TEMPLATES.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={launchBulkRelance}
+              disabled={selected.size === 0}
+              className="rounded-md border border-blue-300 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-40 transition-colors"
+            >
+              Relance selection
             </button>
           </div>
         </div>
@@ -290,7 +413,7 @@ export default function DevisListClient({ initialData }: Props) {
                         Voir {">"}
                       </Link>
                       <a
-                        href={buildRelanceMailto(d)}
+                        href={buildRelanceMailto(d, relanceTemplate)}
                         title="Envoyer relance par email"
                         className="text-xs font-medium text-gray-500 hover:text-[#cc1818] transition-colors whitespace-nowrap"
                       >
