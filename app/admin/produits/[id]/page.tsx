@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -15,7 +15,7 @@ interface ProductDetail {
   description: string | null;
   regular_price: number;
   eco_contribution: number | null;
-  featured_image_url: string | null; // computed from product_images join (read-only)
+  featured_image_url: string | null;
   seo_title: string | null;
   seo_description: string | null;
 }
@@ -25,6 +25,11 @@ interface PriceTier {
   min_quantity: number;
   max_quantity?: number | null;
   price_per_unit: number;
+}
+
+interface AiPreview {
+  before: string | null;
+  generated: string;
 }
 
 function seoScore(p: Partial<ProductDetail>): number {
@@ -55,21 +60,29 @@ const inputClass =
 
 export default function ProductEditPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const id = params.id;
   const password = typeof window !== "undefined" ? sessionStorage.getItem("admin_password") ?? "" : "";
 
   const [product, setProduct] = useState<ProductDetail | null>(null);
+  const savedRef = useRef<ProductDetail | null>(null); // reference for dirty detection
   const [tiers, setTiers] = useState<PriceTier[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saveOk, setSaveOk] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const [dirty, setDirty] = useState(false);
+
+  // IA state
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiConfirming, setAiConfirming] = useState(false);
+  const [aiPreview, setAiPreview] = useState<AiPreview | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiUnavailable, setAiUnavailable] = useState(false);
+
   const [activeDescTab, setActiveDescTab] = useState<"short" | "long">("short");
 
   useEffect(() => {
     if (!id) return;
-    // Fetch product via products-list with search=id (workaround — ideally a dedicated endpoint)
     fetch(`/api/admin/products/${id}`, {
       headers: { Authorization: `Bearer ${password}` },
     })
@@ -77,47 +90,106 @@ export default function ProductEditPage() {
       .then((data) => {
         if (data.product) {
           setProduct(data.product);
+          savedRef.current = data.product;
         }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [id, password]);
 
-  const handleGenerateAI = async () => {
-    if (!product) return;
+  // Track dirty state whenever product changes
+  useEffect(() => {
+    if (!product || !savedRef.current) return;
+    const changed = JSON.stringify(product) !== JSON.stringify(savedRef.current);
+    setDirty(changed);
+  }, [product]);
+
+  // ── IA: Aperçu (preview only, no DB write) ────────────────────────────────
+  const handleAiPreview = async () => {
+    if (!product || !id) return;
     setAiLoading(true);
+    setAiPreview(null);
+    setAiError(null);
+    setAiUnavailable(false);
     try {
       const res = await fetch("/api/admin/ia/generate-descriptions", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${password}`,
-        },
-        body: JSON.stringify({ productId: id }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${password}` },
+        body: JSON.stringify({ productId: id, preview: true }),
       });
       const data = await res.json();
-      if (data.products?.[0]?.description) {
-        setProduct((prev) =>
-          prev ? { ...prev, short_description: data.products[0].description } : prev,
-        );
+      if (data.ia_available === false) {
+        setAiUnavailable(true);
+        setAiError(data.reason ?? "Clé API Anthropic non configurée");
+        return;
       }
-    } catch {
-      /* ignore */
+      if (res.status === 400) {
+        setAiError(data.error ?? "Paramètres invalides");
+        return;
+      }
+      if (!res.ok) {
+        setAiError(`Erreur serveur (${res.status})`);
+        return;
+      }
+      if (data.product?.description_generated) {
+        setAiPreview({
+          before: data.product.description_before ?? null,
+          generated: data.product.description_generated,
+        });
+      } else {
+        setAiError("Réponse IA vide ou inattendue");
+      }
+    } catch (e) {
+      setAiError("Erreur réseau — réessayez");
     } finally {
       setAiLoading(false);
     }
   };
 
+  // ── IA: Confirmer (writes to DB, then updates local state) ────────────────
+  const handleAiConfirm = async () => {
+    if (!product || !id || !aiPreview) return;
+    setAiConfirming(true);
+    setAiError(null);
+    try {
+      const res = await fetch("/api/admin/ia/generate-descriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${password}` },
+        body: JSON.stringify({ productId: id, confirm: true }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setAiError(data.error ?? `Erreur sauvegarde (${res.status})`);
+        return;
+      }
+      const saved = data.product?.description ?? aiPreview.generated;
+      setProduct((prev) => prev ? { ...prev, short_description: saved } : prev);
+      savedRef.current = product ? { ...product, short_description: saved } : savedRef.current;
+      setAiPreview(null);
+      setDirty(false);
+    } catch {
+      setAiError("Erreur réseau — réessayez");
+    } finally {
+      setAiConfirming(false);
+    }
+  };
+
+  // ── IA: Appliquer l'aperçu dans le formulaire (sans sauvegarder) ──────────
+  const handleAiApplyPreview = () => {
+    if (!aiPreview || !product) return;
+    setProduct({ ...product, short_description: aiPreview.generated });
+    setAiPreview(null);
+    setActiveDescTab("short");
+  };
+
   const handleSave = useCallback(async () => {
     if (!product) return;
     setSaving(true);
+    setSaveError(false);
     try {
       const res = await fetch(`/api/admin/products/${id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${password}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${password}` },
         body: JSON.stringify({
           name: product.name,
           sku: product.sku,
@@ -131,11 +203,17 @@ export default function ProductEditPage() {
         }),
       });
       if (res.ok) {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+        savedRef.current = { ...product };
+        setDirty(false);
+        setSaveOk(true);
+        setTimeout(() => setSaveOk(false), 2000);
+      } else {
+        setSaveError(true);
+        setTimeout(() => setSaveError(false), 3000);
       }
     } catch {
-      /* ignore */
+      setSaveError(true);
+      setTimeout(() => setSaveError(false), 3000);
     } finally {
       setSaving(false);
     }
@@ -180,7 +258,12 @@ export default function ProductEditPage() {
           </Link>
           <h1 className="text-xl font-bold text-gray-900 line-clamp-1">{product.name}</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {dirty && !saveOk && (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+              ● Modifications non enregistrées
+            </span>
+          )}
           <Link
             href={`/product/${product.slug}`}
             target="_blank"
@@ -192,10 +275,10 @@ export default function ProductEditPage() {
             onClick={handleSave}
             disabled={saving}
             className={`rounded-md px-4 py-2 text-xs font-semibold text-white transition-colors disabled:opacity-60 ${
-              saved ? "bg-green-600" : "bg-[#cc1818] hover:bg-[#aa1414]"
+              saveError ? "bg-red-600" : saveOk ? "bg-green-600" : "bg-[#cc1818] hover:bg-[#aa1414]"
             }`}
           >
-            {saving ? "Enregistrement…" : saved ? "✓ Enregistré" : "Enregistrer"}
+            {saving ? "Enregistrement…" : saveOk ? "✓ Enregistré" : saveError ? "✕ Erreur" : "Enregistrer"}
           </button>
         </div>
       </div>
@@ -262,20 +345,79 @@ export default function ProductEditPage() {
             </div>
           </section>
 
-          {/* Description */}
+          {/* Description + IA */}
           <section className="rounded-lg border border-gray-200 bg-white">
             <div className="border-b border-gray-100 px-5 py-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-800">Description</h2>
-                <button
-                  onClick={handleGenerateAI}
-                  disabled={aiLoading}
-                  className="flex items-center gap-1 rounded-md bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50"
-                >
-                  ✨ {aiLoading ? "Génération…" : "Générer avec IA"}
-                </button>
+                <div className="flex items-center gap-2">
+                  {aiUnavailable && (
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-700">
+                      IA non disponible
+                    </span>
+                  )}
+                  {!aiPreview && (
+                    <button
+                      onClick={handleAiPreview}
+                      disabled={aiLoading}
+                      className="flex items-center gap-1 rounded-md bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50"
+                    >
+                      ✨ {aiLoading ? "Génération…" : "Aperçu IA"}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* Erreur IA */}
+            {aiError && (
+              <div className="mx-5 mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                {aiError}
+              </div>
+            )}
+
+            {/* Diff avant/après IA */}
+            {aiPreview && (
+              <div className="mx-5 mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <p className="mb-2 text-xs font-semibold text-amber-800">Aperçu de la description générée</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-1 text-[10px] font-medium text-gray-500 uppercase tracking-wide">Avant</p>
+                    <div className="min-h-[60px] rounded border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600">
+                      {aiPreview.before ? aiPreview.before : <span className="italic text-gray-300">vide</span>}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-1 text-[10px] font-medium text-amber-700 uppercase tracking-wide">Généré</p>
+                    <div className="min-h-[60px] rounded border border-amber-300 bg-white px-3 py-2 text-xs text-gray-800">
+                      {aiPreview.generated}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={handleAiConfirm}
+                    disabled={aiConfirming}
+                    className="rounded bg-[#cc1818] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#aa1414] transition-colors disabled:opacity-60"
+                  >
+                    {aiConfirming ? "Sauvegarde…" : "✓ Confirmer et sauvegarder en DB"}
+                  </button>
+                  <button
+                    onClick={handleAiApplyPreview}
+                    className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                  >
+                    Appliquer dans le formulaire
+                  </button>
+                  <button
+                    onClick={() => setAiPreview(null)}
+                    className="rounded border border-gray-200 px-3 py-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    Ignorer
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="p-5">
               <div className="mb-3 flex border-b border-gray-200">
                 {(["short", "long"] as const).map((tab) => (
@@ -330,8 +472,12 @@ export default function ProductEditPage() {
                   <input
                     type="number"
                     step="0.01"
+                    min={0}
                     value={product.regular_price}
-                    onChange={(e) => setProduct({ ...product, regular_price: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      setProduct({ ...product, regular_price: isNaN(v) ? 0 : v });
+                    }}
                     className={inputClass}
                   />
                 </div>
@@ -457,7 +603,7 @@ export default function ProductEditPage() {
               {seoCriterias.length > 0 && (
                 <ul className="rounded-md bg-amber-50 p-3 text-xs text-amber-800 space-y-1">
                   {seoCriterias.map((c) => (
-                    <li key={c}>⚠ {c}</li>
+                    <li key={c as string}>⚠ {c}</li>
                   ))}
                 </ul>
               )}

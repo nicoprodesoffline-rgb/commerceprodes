@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sanitizeString, sanitizeNumber } from "lib/validation";
 
+function checkAuth(req: NextRequest): boolean {
+  const auth = req.headers.get("Authorization") ?? "";
+  const token = auth.replace("Bearer ", "");
+  return token === (process.env.ADMIN_PASSWORD ?? "");
+}
+
 export async function GET(req: NextRequest) {
+  if (!checkAuth(req)) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
   const { searchParams } = req.nextUrl;
   const page = Math.max(0, sanitizeNumber(Number(searchParams.get("page") ?? 0), 0, 1000));
   const search = sanitizeString(searchParams.get("search") ?? "", 200);
@@ -22,6 +31,7 @@ export async function GET(req: NextRequest) {
       .from("products")
       .select(
         `id, name, slug, sku, regular_price, status,
+         short_description, seo_title, seo_description,
          product_images(url, is_featured, position),
          variants(id),
          product_categories(categories(name))`,
@@ -60,6 +70,9 @@ export async function GET(req: NextRequest) {
         featured_image_url: featured?.url ?? null,
         variant_count: (p.variants || []).length,
         categories: cats || null,
+        short_description: p.short_description ?? null,
+        seo_title: p.seo_title ?? null,
+        seo_description: p.seo_description ?? null,
       };
     });
 

@@ -35,14 +35,29 @@ interface Category {
   slug: string;
 }
 
+// Static badge color map — Tailwind classes must be complete strings for purge
+const BADGE_COLORS: Record<string, string> = {
+  orange: "bg-orange-100 text-orange-700",
+  red: "bg-red-100 text-red-700",
+  gray: "bg-gray-100 text-gray-700",
+  green: "bg-green-100 text-green-700",
+  blue: "bg-blue-100 text-blue-700",
+};
+
 function useAdminPassword() {
   const [password, setPassword] = useState("");
   useEffect(() => {
-    // Try to retrieve from session if stored
     const stored = sessionStorage.getItem("admin_password_cache");
     if (stored) setPassword(stored);
   }, []);
   return { password, setPassword };
+}
+
+interface MissingDescProduct {
+  id: string;
+  name: string;
+  sku: string | null;
+  short_description: string | null;
 }
 
 export default function AdminIAPage() {
@@ -187,6 +202,62 @@ export default function AdminIAPage() {
     }
   }
 
+  // Module: Descriptions manquantes (mode=list)
+  const [missingList, setMissingList] = useState<{ count: number; products: MissingDescProduct[] } | null>(null);
+  const [missingLoading, setMissingLoading] = useState(false);
+  const [missingPreview, setMissingPreview] = useState<Record<string, { before: string | null; generated: string } | null>>({});
+  const [missingAction, setMissingAction] = useState<Record<string, "previewing" | "confirming" | null>>({});
+
+  const loadMissingList = useCallback(async () => {
+    setMissingLoading(true);
+    try {
+      const res = await fetch("/api/admin/ia/generate-descriptions?mode=list", { headers: authHeaders() });
+      const data = await res.json();
+      if (res.ok) setMissingList({ count: data.count, products: data.products ?? [] });
+    } finally {
+      setMissingLoading(false);
+    }
+  }, [password]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleMissingPreview = async (productId: string) => {
+    setMissingAction((a) => ({ ...a, [productId]: "previewing" }));
+    try {
+      const res = await fetch("/api/admin/ia/generate-descriptions", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ productId, preview: true }),
+      });
+      const data = await res.json();
+      if (data.product?.description_generated) {
+        setMissingPreview((p) => ({
+          ...p,
+          [productId]: { before: data.product.description_before ?? null, generated: data.product.description_generated },
+        }));
+      }
+    } finally {
+      setMissingAction((a) => ({ ...a, [productId]: null }));
+    }
+  };
+
+  const handleMissingConfirm = async (productId: string) => {
+    setMissingAction((a) => ({ ...a, [productId]: "confirming" }));
+    try {
+      const res = await fetch("/api/admin/ia/generate-descriptions", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ productId, confirm: true }),
+      });
+      if (res.ok) {
+        setMissingPreview((p) => ({ ...p, [productId]: null }));
+        setMissingList((prev) =>
+          prev ? { ...prev, products: prev.products.filter((p) => p.id !== productId), count: Math.max(0, prev.count - 1) } : prev
+        );
+      }
+    } finally {
+      setMissingAction((a) => ({ ...a, [productId]: null }));
+    }
+  };
+
   // MODULE 5 — CTA Thématique
   const [themeInput, setThemeInput] = useState("");
   const [themeLoading, setThemeLoading] = useState(false);
@@ -284,7 +355,7 @@ export default function AdminIAPage() {
                   <span className="text-xs text-gray-700">{row.label}</span>
                   <div className="flex items-center gap-2">
                     <span
-                      className={`rounded-full bg-${row.color}-100 px-2 py-0.5 text-xs font-medium text-${row.color}-700`}
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${BADGE_COLORS[row.color] ?? BADGE_COLORS.gray}`}
                     >
                       {row.data.count}
                     </span>
@@ -432,6 +503,97 @@ export default function AdminIAPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* MODULE 2b — Descriptions manquantes (mode=list) */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6">
+          <div className="flex items-center justify-between mb-0.5">
+            <h2 className="font-semibold text-gray-900">📋 Descriptions manquantes</h2>
+            {missingList && (
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${missingList.count === 0 ? BADGE_COLORS.green : BADGE_COLORS.orange}`}>
+                {missingList.count} produit{missingList.count !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-0.5 mb-3">
+            Produits publiés sans description — aperçu puis confirmation par ligne
+          </p>
+          {!missingList ? (
+            <button
+              onClick={loadMissingList}
+              disabled={missingLoading}
+              className="rounded-lg bg-[#cc1818] px-4 py-2 text-sm font-medium text-white hover:bg-[#b01414] disabled:opacity-60 transition-colors"
+            >
+              {missingLoading ? "Chargement…" : "Charger la liste"}
+            </button>
+          ) : missingList.products.length === 0 ? (
+            <p className="text-sm text-green-700">✅ Tous les produits publiés ont une description.</p>
+          ) : (
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {missingList.products.map((p) => {
+                const preview = missingPreview[p.id];
+                const action = missingAction[p.id];
+                return (
+                  <div key={p.id} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-800 line-clamp-1">{p.name}</p>
+                        {p.sku && <p className="text-[10px] text-gray-400">{p.sku}</p>}
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        {!preview && (
+                          <button
+                            onClick={() => handleMissingPreview(p.id)}
+                            disabled={action === "previewing"}
+                            className="rounded bg-amber-100 px-2 py-1 text-[10px] font-medium text-amber-700 hover:bg-amber-200 disabled:opacity-50 transition-colors"
+                          >
+                            {action === "previewing" ? "…" : "Aperçu"}
+                          </button>
+                        )}
+                        <a
+                          href={`/admin/produits/${p.id}`}
+                          className="rounded border border-gray-200 px-2 py-1 text-[10px] text-gray-500 hover:bg-white transition-colors"
+                        >
+                          Éditer
+                        </a>
+                      </div>
+                    </div>
+                    {preview && (
+                      <div className="mt-2">
+                        <p className="mb-1 text-[10px] text-amber-700 font-medium">Généré par IA :</p>
+                        <p className="text-xs text-gray-700 bg-white rounded border border-amber-200 px-2 py-1.5 line-clamp-3">
+                          {preview.generated}
+                        </p>
+                        <div className="mt-1.5 flex gap-1.5">
+                          <button
+                            onClick={() => handleMissingConfirm(p.id)}
+                            disabled={action === "confirming"}
+                            className="rounded bg-[#cc1818] px-2 py-1 text-[10px] font-semibold text-white hover:bg-[#aa1414] disabled:opacity-60 transition-colors"
+                          >
+                            {action === "confirming" ? "…" : "✓ Confirmer"}
+                          </button>
+                          <button
+                            onClick={() => setMissingPreview((prev) => ({ ...prev, [p.id]: null }))}
+                            className="rounded border border-gray-200 px-2 py-1 text-[10px] text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            Ignorer
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {missingList && missingList.products.length > 0 && (
+            <button
+              onClick={loadMissingList}
+              className="mt-2 text-xs text-gray-400 hover:text-gray-600 underline"
+            >
+              Rafraîchir
+            </button>
+          )}
         </div>
 
         {/* MODULE 3 — Doublons */}
