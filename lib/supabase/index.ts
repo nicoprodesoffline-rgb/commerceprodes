@@ -705,6 +705,119 @@ export async function getProducts({
   return products.map(buildProductSummary);
 }
 
+export const CATALOGUE_PAGE_SIZE = 24;
+
+export type ProductsPage = {
+  products: Product[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+  totalPages: number;
+};
+
+/** Paginated version — used by /search and /search/[collection] */
+export async function getProductsPage({
+  query,
+  category,
+  sortKey = "RELEVANCE",
+  reverse = false,
+  page = 0,
+  pageSize = CATALOGUE_PAGE_SIZE,
+  minPrice,
+  maxPrice,
+  inStockOnly = false,
+}: {
+  query?: string;
+  category?: string;
+  sortKey?: string;
+  reverse?: boolean;
+  page?: number;
+  pageSize?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  inStockOnly?: boolean;
+} = {}): Promise<ProductsPage> {
+  "use cache";
+  cacheTag(TAGS.products);
+  cacheLife("hours");
+
+  let productIds: string[] | null = null;
+  if (category) {
+    const { data: cat } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("slug", category)
+      .single();
+
+    if (cat) {
+      // Include subcategory products too
+      const { data: subCats } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("parent_id", cat.id);
+      const catIds = [cat.id, ...((subCats || []).map((c: any) => c.id))];
+      const { data: catProds } = await supabase
+        .from("product_categories")
+        .select("product_id")
+        .in("category_id", catIds);
+      productIds = [...new Set((catProds || []).map((cp: any) => cp.product_id))] as string[];
+    } else {
+      return { products: [], total: 0, page, pageSize, hasMore: false, totalPages: 0 };
+    }
+  }
+
+  let dbQuery = supabase
+    .from("products")
+    .select(PRODUCT_LIST_SELECT, { count: "exact" })
+    .eq("status", "publish");
+
+  if (query) dbQuery = dbQuery.ilike("name", `%${query}%`);
+  if (productIds !== null) {
+    if (productIds.length === 0) {
+      return { products: [], total: 0, page, pageSize, hasMore: false, totalPages: 0 };
+    }
+    dbQuery = dbQuery.in("id", productIds);
+  }
+  if (minPrice != null) dbQuery = dbQuery.gte("regular_price", minPrice);
+  if (maxPrice != null) dbQuery = dbQuery.lte("regular_price", maxPrice);
+  if (inStockOnly) dbQuery = dbQuery.eq("stock_status", "instock");
+
+  const ascending = !reverse;
+  switch (sortKey) {
+    case "PRICE":
+      dbQuery = dbQuery.order("regular_price", { ascending });
+      break;
+    case "CREATED_AT":
+      dbQuery = dbQuery.order("created_at", { ascending });
+      break;
+    case "BEST_SELLING":
+      dbQuery = dbQuery
+        .order("featured", { ascending: false })
+        .order("created_at", { ascending: false });
+      break;
+    default:
+      dbQuery = dbQuery.order("created_at", { ascending: false });
+  }
+
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+  const { data: products, count, error } = await dbQuery.range(from, to);
+
+  if (error) return { products: [], total: 0, page, pageSize, hasMore: false, totalPages: 0 };
+
+  const total = count ?? 0;
+  const totalPages = Math.ceil(total / pageSize);
+  return {
+    products: (products || []).map(buildProductSummary),
+    total,
+    page,
+    pageSize,
+    hasMore: page < totalPages - 1,
+    totalPages,
+  };
+}
+
 export async function getProductRecommendations(
   productId: string,
 ): Promise<Product[]> {

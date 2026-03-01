@@ -1,7 +1,8 @@
 import Grid from "components/grid";
 import ProductGridItems from "components/layout/product-grid-items";
+import CataloguePagination from "components/layout/catalogue-pagination";
 import { defaultSort, sorting } from "lib/constants";
-import { getProducts } from "lib/supabase";
+import { getProductsPage, CATALOGUE_PAGE_SIZE } from "lib/supabase";
 
 export const metadata = {
   title: "Catalogue – PRODES",
@@ -12,19 +13,40 @@ export default async function SearchPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const searchParams = await props.searchParams;
-  const { sort, q: searchValue, minPrice, maxPrice, inStock } = searchParams as { [key: string]: string };
+  const {
+    sort,
+    q: searchValue,
+    minPrice,
+    maxPrice,
+    inStock,
+    page: pageParam,
+  } = searchParams as { [key: string]: string };
+
+  const page = Math.max(0, parseInt(pageParam ?? "0") || 0);
   const { sortKey, reverse } =
     sorting.find((item) => item.slug === sort) || defaultSort;
 
-  const products = await getProducts({
+  const result = await getProductsPage({
     sortKey,
     reverse,
     query: searchValue,
+    page,
+    pageSize: CATALOGUE_PAGE_SIZE,
     minPrice: minPrice ? parseFloat(minPrice) : undefined,
     maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
     inStockOnly: inStock === "1",
   });
-  const resultsText = products.length > 1 ? "résultats" : "résultat";
+
+  const { products, total, totalPages, hasMore } = result;
+  const resultsText = total > 1 ? "résultats" : "résultat";
+
+  const currentParams: Record<string, string | undefined> = {
+    sort,
+    q: searchValue,
+    minPrice,
+    maxPrice,
+    inStock,
+  };
 
   return (
     <>
@@ -35,13 +57,18 @@ export default async function SearchPage(props: {
       </h1>
       {searchValue ? (
         <p className="mb-6 text-sm text-gray-500">
-          {products.length === 0
+          {total === 0
             ? "Aucun produit ne correspond à cette recherche."
-            : `${products.length} ${resultsText}`}
+            : `${total} ${resultsText}`}
         </p>
       ) : (
         <p className="mb-6 text-sm text-gray-500">
-          {products.length} produit{products.length !== 1 ? "s" : ""}
+          {total} produit{total !== 1 ? "s" : ""}
+          {totalPages > 1 && (
+            <span className="ml-2 text-gray-400">
+              — page {page + 1}/{totalPages}
+            </span>
+          )}
         </p>
       )}
       {products.length > 0 ? (
@@ -49,6 +76,14 @@ export default async function SearchPage(props: {
           <ProductGridItems products={products} />
         </Grid>
       ) : null}
+      <CataloguePagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pageSize={CATALOGUE_PAGE_SIZE}
+        searchParams={currentParams}
+        basePath="/search"
+      />
     </>
   );
 }
