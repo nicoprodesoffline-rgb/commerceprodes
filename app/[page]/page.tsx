@@ -24,7 +24,7 @@ export async function generateMetadata(props: {
   if (!isValidCmsHandle(params.page)) return notFound();
   const page = await getPage(params.page);
 
-  if (!page) return notFound();
+  if (!page || !page.id) return notFound();
 
   return {
     title: page.seo?.title || page.title,
@@ -44,7 +44,7 @@ export default async function Page(props: {
   if (!isValidCmsHandle(params.page)) return notFound();
   const page = await getPage(params.page);
 
-  if (!page) return notFound();
+  if (!page || !page.id) return notFound();
 
   return (
     <>

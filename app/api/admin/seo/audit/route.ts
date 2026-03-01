@@ -20,10 +20,14 @@ interface ProductRow {
   slug?: string;
   sku: string | null;
   short_description: string | null;
-  featured_image_url: string | null;
   seo_title: string | null;
   seo_description: string | null;
   status: string;
+  product_images?: Array<{
+    url: string | null;
+    is_featured?: boolean | null;
+    position?: number | null;
+  }>;
 }
 
 interface AuditRow extends ProductRow {
@@ -35,6 +39,14 @@ function stripHtml(s: string | null): string {
   return (s ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function getFeaturedImageUrl(p: ProductRow): string | null {
+  const imgs = Array.isArray(p.product_images) ? p.product_images : [];
+  if (imgs.length === 0) return null;
+  const sorted = [...imgs].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  const featured = sorted.find((img) => img.is_featured) ?? sorted[0];
+  return featured?.url ?? null;
+}
+
 function computeScore(p: ProductRow): { score: number; suggestions: string[] } {
   const suggestions: string[] = [];
   let score = 0;
@@ -44,7 +56,8 @@ function computeScore(p: ProductRow): { score: number; suggestions: string[] } {
   const descLen = stripHtml(p.short_description).length;
   if (descLen >= 80 && descLen <= 300) score += 20;
   else suggestions.push(descLen < 80 ? "Description trop courte ou absente" : "Description trop longue");
-  if (p.featured_image_url && !p.featured_image_url.includes("placeholder")) score += 20;
+  const featuredImageUrl = getFeaturedImageUrl(p);
+  if (featuredImageUrl && !featuredImageUrl.includes("placeholder")) score += 20;
   else suggestions.push("Image principale manquante");
   if (p.sku?.trim()) score += 20;
   else suggestions.push("SKU manquant");
@@ -93,15 +106,30 @@ export async function GET(req: NextRequest) {
 
     let query = client
       .from("products")
-      .select("id, title, name, handle, slug, sku, short_description, featured_image_url, seo_title, seo_description, status")
+      .select("id, name, slug, sku, short_description, seo_title, seo_description, status, product_images(url, is_featured, position)")
       .limit(limit);
 
     if (status !== "all") {
       query = query.eq("status", status);
     }
 
-    const { data, error } = await query;
-    if (error) throw error;
+    let data: ProductRow[] | null = null;
+    const { data: dataWithImages, error } = await query;
+    if (!error) {
+      data = dataWithImages as ProductRow[] | null;
+    } else {
+      // Some environments may not expose nested product_images relation in PostgREST.
+      let fallbackQuery = client
+        .from("products")
+        .select("id, name, slug, sku, short_description, seo_title, seo_description, status")
+        .limit(limit);
+      if (status !== "all") {
+        fallbackQuery = fallbackQuery.eq("status", status);
+      }
+      const { data: fallbackData, error: fallbackError } = await fallbackQuery;
+      if (fallbackError) throw fallbackError;
+      data = (fallbackData ?? []).map((row: any) => ({ ...row, product_images: [] }));
+    }
 
     const rows: AuditRow[] = (data ?? []).map((p: ProductRow) => {
       const { score, suggestions } = computeScore(p);
@@ -145,7 +173,12 @@ export async function GET(req: NextRequest) {
         seo_description: r.seo_description,
       })),
     });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+  } catch (err: any) {
+    const message =
+      err?.message ||
+      err?.error_description ||
+      err?.details ||
+      (typeof err === "string" ? err : "Erreur inconnue");
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

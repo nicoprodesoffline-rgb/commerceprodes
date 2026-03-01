@@ -34,7 +34,7 @@ const ROUTES_TO_CHECK: Array<{
   { name: "API Products List (auth)", path: "/api/admin/products-list?page=0&limit=1", expected: 200 },
   { name: "API Analytics (auth)", path: "/api/admin/analytics", expected: 200 },
   { name: "API Auth Login (no body)", path: "/api/admin/auth", method: "POST", expected: 400, body: "{}", contentType: "application/json" },
-  { name: "404 handling", path: "/cette-page-nexiste-pas-du-tout-xyzabc", expected: 404 },
+  { name: "404 handling (API)", path: "/api/__healthcheck_missing_route__", expected: 404 },
   { name: "API Proposals", path: "/api/admin/proposals", expected: 200 },
   { name: "SEO Audit API", path: "/api/admin/seo/audit?limit=1", expected: 200 },
 ];

@@ -1,23 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logAdminAction } from "lib/admin/audit-log";
+import { checkAdminAuth } from "lib/admin/auth";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function checkAuth(req: NextRequest): boolean {
-  // Bearer token (admin catalogue / produits pages)
-  const auth = req.headers.get("Authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  if (token && token === (process.env.ADMIN_PASSWORD ?? "")) return true;
-  // Cookie session (admin products [handle] editor)
-  const session = req.cookies.get("admin_session")?.value;
-  return !!session;
-}
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!checkAuth(req)) {
+  if (!checkAdminAuth(req)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -52,7 +43,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!checkAuth(req)) {
+  if (!checkAdminAuth(req)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 

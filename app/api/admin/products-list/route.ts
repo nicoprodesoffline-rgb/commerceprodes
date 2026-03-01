@@ -11,12 +11,23 @@ export async function GET(req: NextRequest) {
   const search = sanitizeString(searchParams.get("search") ?? "", 200);
   const status = sanitizeString(searchParams.get("status") ?? "publish", 20);
   const sortParam = sanitizeString(searchParams.get("sort") ?? "created_at-desc", 50);
+  const categoryId = sanitizeString(searchParams.get("categoryId") ?? "", 50);
+  const minPrice = sanitizeNumber(Number(searchParams.get("minPrice") ?? 0), 0, 999999);
+  const maxPriceRaw = searchParams.get("maxPrice");
+  const maxPrice = maxPriceRaw == null || maxPriceRaw === ""
+    ? null
+    : sanitizeNumber(Number(maxPriceRaw), 0, 999999);
+  const missingDesc = searchParams.get("missingDesc") === "true";
   const limitParam = sanitizeNumber(Number(searchParams.get("limit") ?? 0), 0, 1000);
 
   const PAGE_SIZE = limitParam > 0 ? Math.min(limitParam, 1000) : 50;
 
-  const [sortField, sortDir] = sortParam.split("-");
-  const ascending = sortDir === "asc";
+  const [sortFieldRaw, sortDir] = sortParam.split("-");
+  const sortFieldCandidate = sortFieldRaw ?? "";
+  const sortField = ["created_at", "regular_price", "name", "status"].includes(sortFieldCandidate)
+    ? sortFieldCandidate
+    : "created_at";
+  const ascending = (sortDir ?? "") === "asc";
 
   try {
     const { supabaseServer } = await import("lib/supabase/client");
@@ -41,6 +52,26 @@ export async function GET(req: NextRequest) {
     if (search) {
       query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);
     }
+    if (categoryId) {
+      const { data: catProducts } = await client
+        .from("product_categories")
+        .select("product_id")
+        .eq("category_id", categoryId);
+      const ids = (catProducts ?? []).map((cp: any) => cp.product_id);
+      if (ids.length === 0) {
+        return NextResponse.json({ products: [], total: 0 });
+      }
+      query = query.in("id", ids);
+    }
+    if (minPrice > 0) {
+      query = query.gte("regular_price", minPrice);
+    }
+    if (maxPrice !== null) {
+      query = query.lte("regular_price", maxPrice);
+    }
+    if (missingDesc) {
+      query = query.or("short_description.is.null,short_description.eq.");
+    }
 
     const { data, count, error } = await query;
     if (error) throw error;
@@ -57,7 +88,9 @@ export async function GET(req: NextRequest) {
 
       return {
         id: p.id,
+        name: p.name,
         title: p.name,
+        slug: p.slug,
         handle: p.slug,
         sku: p.sku ?? null,
         regular_price: p.regular_price ?? null,
