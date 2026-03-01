@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { adminFetch } from "lib/admin/fetch";
 
 // Status local-only (localStorage, not DB) — quick triage tracking
 type SeoStatus = "todo" | "in_progress" | "done";
@@ -137,8 +138,6 @@ export default function SeoPage() {
   const [statuses, setStatuses] = useState<Record<string, SeoStatus>>({});
   const statusesRef = useRef<Record<string, SeoStatus>>({});
 
-  const password = typeof window !== "undefined" ? sessionStorage.getItem("admin_password") ?? "" : "";
-
   useEffect(() => {
     // Load statuses from localStorage
     try {
@@ -151,9 +150,7 @@ export default function SeoPage() {
     } catch {}
 
     // Load products
-    fetch("/api/admin/products-list?page=0&limit=500&status=all", {
-      headers: { Authorization: `Bearer ${password}` },
-    })
+    adminFetch("/api/admin/products-list?page=0&limit=500&status=all")
       .then((r) => r.json())
       .then((data) => {
         const products = data.products ?? [];
@@ -177,7 +174,7 @@ export default function SeoPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [password]);
+  }, []);
 
   const persistStatuses = (next: Record<string, SeoStatus>) => {
     statusesRef.current = next;
@@ -199,9 +196,9 @@ export default function SeoPage() {
     if (!editingId) return;
     setEditSaving(true);
     try {
-      const res = await fetch(`/api/admin/products/${editingId}`, {
+      const res = await adminFetch(`/api/admin/products/${editingId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${password}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seo_title: editFields.seo_title, seo_description: editFields.seo_description }),
       });
       if (res.ok) {
@@ -288,12 +285,9 @@ export default function SeoPage() {
         if (shouldSetDesc && nextDescription) body.seo_description = nextDescription;
         if (Object.keys(body).length === 0) continue;
 
-        const res = await fetch(`/api/admin/products/${row.id}`, {
+        const res = await adminFetch(`/api/admin/products/${row.id}`, {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${password}`,
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
 

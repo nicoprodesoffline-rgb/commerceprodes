@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
+import { adminFetch } from "lib/admin/fetch";
 
 interface ThematicProduct {
   id: string;
@@ -44,15 +45,6 @@ const BADGE_COLORS: Record<string, string> = {
   blue: "bg-blue-100 text-blue-700",
 };
 
-function useAdminPassword() {
-  const [password, setPassword] = useState("");
-  useEffect(() => {
-    const stored = sessionStorage.getItem("admin_password_cache");
-    if (stored) setPassword(stored);
-  }, []);
-  return { password, setPassword };
-}
-
 interface MissingDescProduct {
   id: string;
   name: string;
@@ -61,7 +53,6 @@ interface MissingDescProduct {
 }
 
 export default function AdminIAPage() {
-  const { password, setPassword } = useAdminPassword();
   const [categories, setCategories] = useState<Category[]>([]);
 
   // Module 1 — Audit
@@ -109,25 +100,21 @@ export default function AdminIAPage() {
 
   // Load categories + IA status on mount
   useEffect(() => {
-    fetch("/api/admin/ia/categories-list")
+    adminFetch("/api/admin/ia/categories-list")
       .then((r) => r.json())
       .then((d) => setCategories(d.categories ?? []))
       .catch(() => {});
-    fetch("/api/admin/ia/generate-descriptions")
+    adminFetch("/api/admin/ia/generate-descriptions")
       .then((r) => r.json())
       .then((d) => setIaStatus(d))
       .catch(() => {});
   }, []);
 
-  function authHeaders() {
-    return { Authorization: `Bearer ${password}`, "Content-Type": "application/json" };
-  }
-
   async function runAudit() {
     setAuditLoading(true);
     setAuditResult(null);
     try {
-      const res = await fetch("/api/admin/ia/audit", { headers: authHeaders() });
+      const res = await adminFetch("/api/admin/ia/audit");
       if (res.ok) setAuditResult(await res.json());
       else alert("Erreur audit — vérifiez le mot de passe admin");
     } finally {
@@ -141,9 +128,9 @@ export default function AdminIAPage() {
     setDescProgress(0);
     const timer = setInterval(() => setDescProgress((p) => Math.min(p + 10, 90)), 500);
     try {
-      const res = await fetch("/api/admin/ia/generate-descriptions", {
+      const res = await adminFetch("/api/admin/ia/generate-descriptions", {
         method: "POST",
-        headers: authHeaders(),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ categorySlug: descCategory, limit: descLimit }),
       });
       clearInterval(timer);
@@ -172,7 +159,7 @@ export default function AdminIAPage() {
     setDupLoading(true);
     setDupGroups(null);
     try {
-      const res = await fetch("/api/admin/ia/detect-duplicates", { headers: authHeaders() });
+      const res = await adminFetch("/api/admin/ia/detect-duplicates");
       if (res.ok) {
         const d = await res.json();
         setDupGroups(d.groups);
@@ -189,9 +176,9 @@ export default function AdminIAPage() {
     setPriceLoading(true);
     setPriceResult(null);
     try {
-      const res = await fetch("/api/admin/ia/bulk-price-update", {
+      const res = await adminFetch("/api/admin/ia/bulk-price-update", {
         method: "POST",
-        headers: authHeaders(),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ categorySlug: priceCategory, percentage: pricePercent }),
       });
       if (res.ok) setPriceResult(await res.json());
@@ -211,20 +198,20 @@ export default function AdminIAPage() {
   const loadMissingList = useCallback(async () => {
     setMissingLoading(true);
     try {
-      const res = await fetch("/api/admin/ia/generate-descriptions?mode=list", { headers: authHeaders() });
+      const res = await adminFetch("/api/admin/ia/generate-descriptions?mode=list");
       const data = await res.json();
       if (res.ok) setMissingList({ count: data.count, products: data.products ?? [] });
     } finally {
       setMissingLoading(false);
     }
-  }, [password]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleMissingPreview = async (productId: string) => {
     setMissingAction((a) => ({ ...a, [productId]: "previewing" }));
     try {
-      const res = await fetch("/api/admin/ia/generate-descriptions", {
+      const res = await adminFetch("/api/admin/ia/generate-descriptions", {
         method: "POST",
-        headers: authHeaders(),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId, preview: true }),
       });
       const data = await res.json();
@@ -242,9 +229,9 @@ export default function AdminIAPage() {
   const handleMissingConfirm = async (productId: string) => {
     setMissingAction((a) => ({ ...a, [productId]: "confirming" }));
     try {
-      const res = await fetch("/api/admin/ia/generate-descriptions", {
+      const res = await adminFetch("/api/admin/ia/generate-descriptions", {
         method: "POST",
-        headers: authHeaders(),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId, confirm: true }),
       });
       if (res.ok) {
@@ -271,9 +258,9 @@ export default function AdminIAPage() {
     setThemeLoading(true);
     setThemeResult(null);
     try {
-      const res = await fetch("/api/admin/ia/thematic-cta", {
+      const res = await adminFetch("/api/admin/ia/thematic-cta", {
         method: "POST",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ theme: themeInput }),
       });
       if (res.ok) setThemeResult(await res.json());
@@ -288,9 +275,9 @@ export default function AdminIAPage() {
     setPublishing(true);
     try {
       const productIds = themeResult.products.map((p) => p.id);
-      const res = await fetch("/api/admin/homepage-sections", {
+      const res = await adminFetch("/api/admin/homepage-sections", {
         method: "POST",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: themeResult.title, intro: themeResult.intro, product_ids: productIds, position: 0 }),
       });
       if (res.ok) alert("✅ Section publiée ! Elle apparaît en 1ère position sur la homepage.");
@@ -305,23 +292,6 @@ export default function AdminIAPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Outils IA</h1>
         <p className="mt-1 text-sm text-gray-500">Optimisation automatique du catalogue</p>
-      </div>
-
-      {/* Mot de passe admin */}
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-        <p className="text-xs font-medium text-amber-800 mb-2">
-          Authentification requise pour les opérations IA
-        </p>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-            sessionStorage.setItem("admin_password_cache", e.target.value);
-          }}
-          placeholder="Mot de passe admin"
-          className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm focus:outline-none w-full max-w-xs"
-        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import StatusBadge from "components/admin/status-badge";
 import { AnalyticsWidget } from "components/admin/analytics-widget";
+import { ProposalsWidget } from "components/admin/proposals-widget";
 import type { DevisRequest } from "lib/supabase/types";
 
 function formatDate(iso: string) {
@@ -236,6 +237,9 @@ export default async function AdminDashboard() {
 
       {/* Analytics */}
       <AnalyticsWidget />
+
+      {/* Propositions autonomes */}
+      <ProposalsWidget />
 
       {/* Quick links */}
       <div>

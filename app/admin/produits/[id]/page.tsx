@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { adminFetch } from "lib/admin/fetch";
 
 interface ProductDetail {
   id: string;
@@ -32,6 +33,15 @@ interface AiPreview {
   generated: string;
 }
 
+type ProductVersion = {
+  id: string;
+  version_num: number;
+  snapshot: Record<string, unknown>;
+  changed_by: string;
+  change_note: string | null;
+  created_at: string;
+};
+
 function seoScore(p: Partial<ProductDetail>): number {
   let score = 0;
   if (p.name && p.name.length >= 30 && p.name.length <= 70) score += 25;
@@ -55,16 +65,133 @@ function SeoVoyant({ score }: { score: number }) {
   );
 }
 
+// ── Diff modal helpers ────────────────────────────────────────────────────────
+
+const DIFF_FIELDS: { key: keyof ProductDetail; label: string }[] = [
+  { key: "name", label: "Titre" },
+  { key: "sku", label: "SKU" },
+  { key: "status", label: "Statut" },
+  { key: "regular_price", label: "Prix HT" },
+  { key: "short_description", label: "Description courte" },
+  { key: "seo_title", label: "Titre SEO" },
+  { key: "seo_description", label: "Description meta" },
+];
+
+function DiffModal({
+  version,
+  current,
+  loading,
+  onConfirm,
+  onCancel,
+}: {
+  version: ProductVersion;
+  current: ProductDetail;
+  loading: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const snap = version.snapshot as Partial<ProductDetail>;
+
+  const rows = DIFF_FIELDS.map((f) => {
+    const cur = String(current[f.key] ?? "");
+    const next = String(snap[f.key] ?? "");
+    const changed = cur !== next;
+    return { ...f, cur, next, changed };
+  });
+
+  const hasChanges = rows.some((r) => r.changed);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="w-full max-w-2xl rounded-xl border border-gray-200 bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+          <div>
+            <h3 className="text-base font-bold text-gray-900">
+              Restaurer v{version.version_num}
+            </h3>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {new Date(version.created_at).toLocaleString("fr-FR")} · {version.changed_by}
+              {version.change_note ? ` — ${version.change_note}` : ""}
+            </p>
+          </div>
+          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 text-xl leading-none">
+            ×
+          </button>
+        </div>
+
+        <div className="max-h-[60vh] overflow-y-auto px-6 py-4">
+          {hasChanges ? (
+            <>
+              <p className="mb-3 text-xs text-gray-500">
+                Les champs en surbrillance seront modifiés. Les champs identiques ne sont pas affichés.
+              </p>
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="border border-gray-100 px-3 py-2 text-left text-gray-600 font-medium w-28">Champ</th>
+                    <th className="border border-gray-100 px-3 py-2 text-left text-gray-600 font-medium">
+                      Actuel
+                    </th>
+                    <th className="border border-gray-100 px-3 py-2 text-left text-gray-600 font-medium">
+                      Après rollback (v{version.version_num})
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows
+                    .filter((r) => r.changed)
+                    .map((r) => (
+                      <tr key={r.key} className="bg-amber-50/60">
+                        <td className="border border-gray-100 px-3 py-2 font-medium text-gray-700 align-top">
+                          {r.label}
+                        </td>
+                        <td className="border border-gray-100 px-3 py-2 text-red-700 line-through align-top max-w-[200px] break-words">
+                          {r.cur || <span className="italic not-italic text-gray-300 no-underline" style={{textDecoration:"none"}}>vide</span>}
+                        </td>
+                        <td className="border border-gray-100 px-3 py-2 text-green-700 align-top max-w-[200px] break-words">
+                          {r.next || <span className="italic text-gray-300">vide</span>}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </>
+          ) : (
+            <p className="text-sm text-gray-500 py-4 text-center">
+              Aucune différence détectée entre la version actuelle et v{version.version_num}.
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+          <button
+            onClick={onCancel}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors disabled:opacity-60"
+          >
+            {loading ? "Restauration…" : `✓ Confirmer rollback vers v${version.version_num}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const inputClass =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-[#cc1818] focus:outline-none focus:ring-1 focus:ring-[#cc1818]";
 
 export default function ProductEditPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
-  const password = typeof window !== "undefined" ? sessionStorage.getItem("admin_password") ?? "" : "";
 
   const [product, setProduct] = useState<ProductDetail | null>(null);
-  const savedRef = useRef<ProductDetail | null>(null); // reference for dirty detection
+  const savedRef = useRef<ProductDetail | null>(null);
   const [tiers, setTiers] = useState<PriceTier[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -82,18 +209,16 @@ export default function ProductEditPage() {
   const [activeDescTab, setActiveDescTab] = useState<"short" | "long">("short");
 
   // ── Version history state ─────────────────────────────────────────────────
-  type ProductVersion = { id: string; version_num: number; snapshot: Record<string, unknown>; changed_by: string; change_note: string | null; created_at: string };
   const [versions, setVersions] = useState<ProductVersion[]>([]);
   const [versionsLoaded, setVersionsLoaded] = useState(false);
   const [versionsLoading, setVersionsLoading] = useState(false);
-  const [rollbackPending, setRollbackPending] = useState<string | null>(null);
+  const [rollbackTarget, setRollbackTarget] = useState<ProductVersion | null>(null);
+  const [rollbackLoading, setRollbackLoading] = useState(false);
   const [rollbackMsg, setRollbackMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/admin/products/${id}`, {
-      headers: { Authorization: `Bearer ${password}` },
-    })
+    adminFetch(`/api/admin/products/${id}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.product) {
@@ -103,7 +228,7 @@ export default function ProductEditPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [id, password]);
+  }, [id]);
 
   // Track dirty state whenever product changes
   useEffect(() => {
@@ -120,9 +245,9 @@ export default function ProductEditPage() {
     setAiError(null);
     setAiUnavailable(false);
     try {
-      const res = await fetch("/api/admin/ia/generate-descriptions", {
+      const res = await adminFetch("/api/admin/ia/generate-descriptions", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${password}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId: id, preview: true }),
       });
       const data = await res.json();
@@ -147,7 +272,7 @@ export default function ProductEditPage() {
       } else {
         setAiError("Réponse IA vide ou inattendue");
       }
-    } catch (e) {
+    } catch {
       setAiError("Erreur réseau — réessayez");
     } finally {
       setAiLoading(false);
@@ -160,9 +285,9 @@ export default function ProductEditPage() {
     setAiConfirming(true);
     setAiError(null);
     try {
-      const res = await fetch("/api/admin/ia/generate-descriptions", {
+      const res = await adminFetch("/api/admin/ia/generate-descriptions", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${password}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId: id, confirm: true }),
       });
       const data = await res.json();
@@ -182,7 +307,6 @@ export default function ProductEditPage() {
     }
   };
 
-  // ── IA: Appliquer l'aperçu dans le formulaire (sans sauvegarder) ──────────
   const handleAiApplyPreview = () => {
     if (!aiPreview || !product) return;
     setProduct({ ...product, short_description: aiPreview.generated });
@@ -194,9 +318,7 @@ export default function ProductEditPage() {
     if (!product?.id) return;
     setVersionsLoading(true);
     try {
-      const res = await fetch(`/api/admin/products/${product.id}/versions`, {
-        headers: { Authorization: `Bearer ${password}` },
-      });
+      const res = await adminFetch(`/api/admin/products/${product.id}/versions`);
       const data = await res.json();
       setVersions(data.versions ?? []);
       setVersionsLoaded(true);
@@ -207,28 +329,36 @@ export default function ProductEditPage() {
     }
   };
 
-  const handleRollback = async (versionId: string, versionNum: number) => {
-    if (!product?.id) return;
-    if (!confirm(`Confirmer le rollback vers la version ${versionNum} ? L'état actuel sera sauvegardé en tant que nouvelle version.`)) return;
-    setRollbackPending(versionId);
+  // Open diff modal
+  const handleRollbackPreview = (version: ProductVersion) => {
     setRollbackMsg(null);
+    setRollbackTarget(version);
+  };
+
+  // Execute confirmed rollback
+  const handleRollbackConfirm = async () => {
+    if (!product?.id || !rollbackTarget) return;
+    setRollbackLoading(true);
     try {
-      const res = await fetch(`/api/admin/products/${product.id}/rollback`, {
+      const res = await adminFetch(`/api/admin/products/${product.id}/rollback`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${password}` },
-        body: JSON.stringify({ version_id: versionId }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ version_id: rollbackTarget.id }),
       });
       const data = await res.json();
       if (res.ok) {
-        setRollbackMsg(`✓ Rollback vers v${versionNum} effectué. Rechargement...`);
+        setRollbackTarget(null);
+        setRollbackMsg(`✓ Rollback vers v${rollbackTarget.version_num} effectué. Rechargement…`);
         setTimeout(() => window.location.reload(), 1500);
       } else {
+        setRollbackTarget(null);
         setRollbackMsg(`Erreur : ${data.error ?? "Rollback échoué"}`);
       }
     } catch {
+      setRollbackTarget(null);
       setRollbackMsg("Erreur de connexion");
     } finally {
-      setRollbackPending(null);
+      setRollbackLoading(false);
     }
   };
 
@@ -237,9 +367,9 @@ export default function ProductEditPage() {
     setSaving(true);
     setSaveError(false);
     try {
-      const res = await fetch(`/api/admin/products/${id}`, {
+      const res = await adminFetch(`/api/admin/products/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${password}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: product.name,
           sku: product.sku,
@@ -267,7 +397,7 @@ export default function ProductEditPage() {
     } finally {
       setSaving(false);
     }
-  }, [product, id, password]);
+  }, [product, id]);
 
   if (loading) {
     return <div className="py-12 text-center text-gray-400">Chargement…</div>;
@@ -298,6 +428,17 @@ export default function ProductEditPage() {
 
   return (
     <div>
+      {/* ── Rollback diff modal ── */}
+      {rollbackTarget && (
+        <DiffModal
+          version={rollbackTarget}
+          current={product}
+          loading={rollbackLoading}
+          onConfirm={handleRollbackConfirm}
+          onCancel={() => setRollbackTarget(null)}
+        />
+      )}
+
       <div className="mb-5 flex items-center justify-between">
         <div>
           <Link
@@ -726,11 +867,10 @@ export default function ProductEditPage() {
                         <p className="text-xs text-gray-400">{new Date(v.created_at).toLocaleString("fr-FR")} · {v.changed_by}</p>
                       </div>
                       <button
-                        onClick={() => handleRollback(v.id, v.version_num)}
-                        disabled={rollbackPending === v.id}
-                        className="shrink-0 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-40"
+                        onClick={() => handleRollbackPreview(v)}
+                        className="shrink-0 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100 transition-colors"
                       >
-                        {rollbackPending === v.id ? "…" : "Restaurer"}
+                        Restaurer
                       </button>
                     </div>
                   ))}
