@@ -28,7 +28,8 @@ export async function GET(
     weight, length, width, height,
     min_order_quantity, status, position, created_at, updated_at,
     variant_attributes (
-      attribute_name, attribute_value, position
+      attribute_id, term_slug,
+      attributes (id, name, slug)
     )
   `;
 
@@ -44,7 +45,8 @@ export async function GET(
       min_quantity, max_quantity, group_of_quantity, stock_multiplier, initial_stock,
       supplier_ref, supplier_name, supplier_purchase_price, eco_contribution,
       variant_attributes (
-        attribute_name, attribute_value, position
+        attribute_id, term_slug,
+        attributes (id, name, slug)
       )
     `;
   }
@@ -63,8 +65,19 @@ export async function GET(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  const variations = (data ?? []).map((v: any) => ({
+    ...v,
+    variant_attributes: (v.variant_attributes ?? []).map((va: any, idx: number) => ({
+      attribute_id: va.attribute_id,
+      term_slug: va.term_slug,
+      attribute_name: va.attributes?.name ?? va.attributes?.slug ?? va.attribute_id,
+      attribute_value: va.term_slug,
+      position: idx,
+    })),
+  }));
+
   return NextResponse.json({
-    variations: data ?? [],
+    variations,
     total: count ?? 0,
     page,
     limit,

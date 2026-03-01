@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkAdminAuth } from "lib/admin/auth";
 import { sanitizeString, sanitizeNumber } from "lib/validation";
 
 export async function GET(req: NextRequest) {
+  if (!checkAdminAuth(req)) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
   const { searchParams } = req.nextUrl;
   const page = Math.max(0, sanitizeNumber(Number(searchParams.get("page") ?? 0), 0, 1000));
   const search = sanitizeString(searchParams.get("search") ?? "", 200);

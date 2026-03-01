@@ -16,6 +16,13 @@ function cartesian(arrays: string[][]): string[][] {
   );
 }
 
+function buildComboKey(attrIds: string[], values: string[]): string {
+  return attrIds
+    .map((attributeId, idx) => `${attributeId}:${values[idx] ?? ""}`)
+    .sort()
+    .join("|");
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -29,6 +36,7 @@ export async function POST(
   try { body = await req.json(); } catch { /* optional body */ }
 
   const client = supabaseServer();
+  const maxNew = Math.max(1, Math.min(500, Number(body.max_new ?? 200)));
 
   // Get product
   const { data: product } = await client
@@ -39,57 +47,97 @@ export async function POST(
 
   if (!product) return NextResponse.json({ error: "Produit non trouvé" }, { status: 404 });
 
-  // attributes from body or default from product
-  let attributes: Array<{ name: string; values: string[] }> = [];
-  if (Array.isArray(body.attributes)) {
-    attributes = (body.attributes as unknown[]).filter((a): a is { name: string; values: string[] } =>
-      typeof a === "object" && a !== null &&
-      typeof (a as Record<string, unknown>).name === "string" &&
-      Array.isArray((a as Record<string, unknown>).values)
-    );
+  // Source of truth for generated combinations: product_attributes(is_variation=true)
+  const { data: productAttrs, error: attrsError } = await client
+    .from("product_attributes")
+    .select("attribute_id, terms, attributes(name, slug)")
+    .eq("product_id", id)
+    .eq("is_variation", true);
+
+  if (attrsError) {
+    return NextResponse.json({ error: attrsError.message }, { status: 500 });
   }
 
-  if (attributes.length === 0) {
-    // Fallback: read from variant_attributes of existing variants
-    const { data: existing } = await client
-      .from("variant_attributes")
-      .select("attribute_name, attribute_value")
-      .in("variant_id", (
-        await client.from("variants").select("id").eq("product_id", id)
-      ).data?.map((v) => v.id) ?? []);
+  const attributeDefs = (productAttrs ?? [])
+    .map((a: any) => ({
+      attributeId: String(a.attribute_id),
+      name: a.attributes?.name ?? a.attributes?.slug ?? String(a.attribute_id),
+      terms: (a.terms ?? []).map((t: unknown) => String(t)).filter(Boolean),
+    }))
+    .filter((a: { terms: string[] }) => a.terms.length > 0);
 
-    const byAttr: Record<string, Set<string>> = {};
-    for (const row of existing ?? []) {
-      if (!byAttr[row.attribute_name]) byAttr[row.attribute_name] = new Set<string>();
-      byAttr[row.attribute_name]!.add(row.attribute_value);
-    }
-    attributes = Object.entries(byAttr).map(([name, vals]) => ({ name, values: [...vals] }));
-  }
-
-  if (attributes.length === 0) {
+  if (attributeDefs.length === 0) {
     return NextResponse.json({ error: "Aucun attribut défini pour générer des variations" }, { status: 400 });
   }
 
-  // Get existing variant attribute combinations to avoid duplicates
+  // Get existing combinations to avoid duplicates
   const { data: existingVariants } = await client
     .from("variants")
-    .select("id, sku")
+    .select("id, sku, variant_attributes(attribute_id, term_slug)")
     .eq("product_id", id);
 
-  const combinations = cartesian(attributes.map((a) => a.values));
-  const attrNames = attributes.map((a) => a.name);
+  const combinations = cartesian(attributeDefs.map((a) => a.terms));
+  const attrIds = attributeDefs.map((a) => a.attributeId);
+
+  // Guard against accidental combinatorial explosion
+  if (combinations.length > 5000 && body.force !== true) {
+    return NextResponse.json({
+      error: "Trop de combinaisons potentielles. Ajoutez {\"force\":true} ou réduisez les attributs.",
+      total_combinations: combinations.length,
+    }, { status: 400 });
+  }
+
+  const existingKeys = new Set<string>();
+  for (const variant of existingVariants ?? []) {
+    const pairs = (variant as any).variant_attributes ?? [];
+    if (pairs.length === 0) continue;
+    const key = [...pairs]
+      .map((p: any) => `${p.attribute_id}:${p.term_slug}`)
+      .sort()
+      .join("|");
+    if (key) existingKeys.add(key);
+  }
+
+  const usedSkus = new Set((existingVariants ?? []).map((v: any) => String(v.sku)));
 
   let created = 0;
   let skipped = 0;
+  let attempts = 0;
 
-  for (let i = 0; i < combinations.length; i++) {
-    const combo = combinations[i]!;
-    const variantName = combo.join(" / ");
-    const variantSku = `${product.sku}-v${String(existingVariants!.length + i + 1).padStart(3, "0")}`;
+  // For prettier variant names, resolve term labels once
+  const { data: termRows } = await client
+    .from("attribute_terms")
+    .select("attribute_id, slug, name")
+    .in("attribute_id", attrIds);
+  const termLabelMap = new Map<string, string>();
+  for (const row of termRows ?? []) {
+    termLabelMap.set(`${row.attribute_id}:${row.slug}`, row.name);
+  }
 
-    // Check if exact same-named variant already exists
-    const alreadyExists = (existingVariants ?? []).some((v) => v.sku === variantSku);
-    if (alreadyExists) { skipped++; continue; }
+  let skuCounter = (existingVariants?.length ?? 0) + 1;
+  const nextSku = () => {
+    let candidate = "";
+    while (!candidate || usedSkus.has(candidate)) {
+      candidate = `${product.sku}-v${String(skuCounter).padStart(4, "0")}`;
+      skuCounter++;
+    }
+    usedSkus.add(candidate);
+    return candidate;
+  };
+
+  for (const combo of combinations) {
+    if (created >= maxNew) break;
+    attempts++;
+    const comboKey = buildComboKey(attrIds, combo);
+    if (existingKeys.has(comboKey)) {
+      skipped++;
+      continue;
+    }
+
+    const variantName = combo
+      .map((val, idx) => termLabelMap.get(`${attrIds[idx]}:${val}`) ?? val)
+      .join(" / ");
+    const variantSku = nextSku();
 
     const { data: newVariant, error } = await client
       .from("variants")
@@ -100,24 +148,46 @@ export async function POST(
         regular_price: product.regular_price,
         stock_status: "instock",
         status: "publish",
-        position: (existingVariants?.length ?? 0) + i,
+        position: (existingVariants?.length ?? 0) + created,
       })
       .select("id")
       .single();
 
     if (error || !newVariant) { skipped++; continue; }
 
-    // Insert attribute values
+    // Insert attribute values on canonical schema (attribute_id + term_slug)
     const attrRows = combo.map((val, j) => ({
       variant_id: newVariant.id,
-      attribute_name: attrNames[j],
-      attribute_value: val,
-      position: j,
+      attribute_id: attrIds[j],
+      term_slug: val,
     }));
-    await client.from("variant_attributes").insert(attrRows as never);
+    const { error: attrsInsertError } = await client.from("variant_attributes").insert(attrRows as never);
+    if (attrsInsertError) {
+      // Cleanup variant if attributes insertion fails
+      await client.from("variants").delete().eq("id", newVariant.id);
+      skipped++;
+      continue;
+    }
+
+    existingKeys.add(comboKey);
     created++;
   }
 
-  console.log(JSON.stringify({ event: "admin.variations.generate", product_id: id, created, skipped }));
-  return NextResponse.json({ ok: true, created, skipped, total_combinations: combinations.length });
+  console.log(JSON.stringify({
+    event: "admin.variations.generate",
+    product_id: id,
+    created,
+    skipped,
+    attempts,
+    total_combinations: combinations.length,
+    max_new: maxNew,
+  }));
+  return NextResponse.json({
+    ok: true,
+    created,
+    skipped,
+    attempts,
+    total_combinations: combinations.length,
+    max_new: maxNew,
+  });
 }
