@@ -105,6 +105,7 @@ function createOrUpdateCartItem(
         handle: product.handle,
         title: product.title,
         featuredImage: product.featuredImage,
+        ecoContribution: product.ecoContribution ?? null,
       },
     },
   };

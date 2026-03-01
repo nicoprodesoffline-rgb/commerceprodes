@@ -7,9 +7,9 @@ export const metadata = {
 };
 
 export default async function ConfirmationPage(props: {
-  searchParams: Promise<{ orderId?: string; mode?: string }>;
+  searchParams: Promise<{ orderId?: string; mode?: string; accountCreated?: string }>;
 }) {
-  const { orderId, mode } = await props.searchParams;
+  const { orderId, mode, accountCreated } = await props.searchParams;
 
   const modeMessages: Record<string, { title: string; body: string; cta?: string }> = {
     virement: {
@@ -66,6 +66,14 @@ export default async function ConfirmationPage(props: {
               </svg>
               Télécharger le bon de commande
             </a>
+          )}
+
+          {/* Compte créé */}
+          {accountCreated === "1" && (
+            <div className="mt-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+              ✓ Votre compte PRODES a bien été créé. Vous pouvez{" "}
+              <a href="/connexion" className="font-medium underline">vous connecter</a> pour retrouver vos commandes.
+            </div>
           )}
 
           {/* Contact */}

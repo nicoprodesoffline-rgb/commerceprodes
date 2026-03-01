@@ -19,8 +19,12 @@ export default function CheckoutPage() {
 
   const cartSummary = useMemo(() => {
     const subtotalHT = Number(cart.cost.subtotalAmount.amount);
+    const ecoTotal = cart.lines.reduce(
+      (sum, item) => sum + item.quantity * (item.merchandise.product.ecoContribution || 0),
+      0,
+    );
     const tva = subtotalHT * 0.2;
-    const totalTTC = subtotalHT + tva;
+    const totalTTC = subtotalHT + ecoTotal + tva;
     return {
       lines: cart.lines.map((item) => ({
         id: item.id,
@@ -32,9 +36,11 @@ export default function CheckoutPage() {
         quantity: item.quantity,
         unitPrice: Number(item.cost.totalAmount.amount) / item.quantity,
         lineTotal: Number(item.cost.totalAmount.amount),
+        ecoUnit: item.merchandise.product.ecoContribution || 0,
         imageUrl: item.merchandise.product.featuredImage?.url ?? null,
       })),
       subtotalHT,
+      ecoTotal,
       tva,
       totalTTC,
     };

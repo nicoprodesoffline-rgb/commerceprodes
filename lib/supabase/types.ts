@@ -46,6 +46,8 @@ export type CartProduct = {
   handle: string;
   title: string;
   featuredImage: Image;
+  /** Éco-participation par unité (PRODES extension). Stored in localStorage. */
+  ecoContribution?: number | null;
 };
 
 export type CartItem = {

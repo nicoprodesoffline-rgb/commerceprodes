@@ -12,12 +12,14 @@ type CartLine = {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  ecoUnit: number;
   imageUrl: string | null;
 };
 
 type CartSummary = {
   lines: CartLine[];
   subtotalHT: number;
+  ecoTotal: number;
   tva: number;
   totalTTC: number;
 };
@@ -66,6 +68,7 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
   const [accountPassword, setAccountPassword] = useState("");
   const [accountPasswordConfirm, setAccountPasswordConfirm] = useState("");
   const [accountServiceAvailable, setAccountServiceAvailable] = useState<boolean | null>(null);
+  const [accountResult, setAccountResult] = useState<"success" | "exists" | "error" | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/register/status")
@@ -74,6 +77,7 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
       .catch(() => setAccountServiceAvailable(null));
   }, []);
 
+  // totalTTC already includes ecoTotal; livraison is added on top
   const totalTTCFinal = cartSummary.totalTTC + (livraisonRdv ? 20 : 0);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -95,6 +99,9 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
       notes: fd.get("notes"),
       modePaiement,
       livraisonRdv,
+      // Snapshot du panier côté client (source primaire pour l'API)
+      cart_snapshot: cartSummary.lines,
+      ecoTotal: cartSummary.ecoTotal,
     };
 
     // Validation compte si activé
@@ -124,26 +131,38 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
           return;
         }
 
-        // Création compte — fire-and-forget, non-bloquant
+        // Création compte — non-bloquant mais avec feedback (résultat stocké pour confirmation page)
         if (createAccount && accountPassword && accountPassword === accountPasswordConfirm) {
-          fetch("/api/auth/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: fd.get("email"),
-              password: accountPassword,
-              prenom: fd.get("prenom"),
-              nom: fd.get("nom"),
-              organisme: fd.get("organisme"),
-              telephone: fd.get("telephone"),
-            }),
-          }).catch(() => {});
+          try {
+            const regRes = await fetch("/api/auth/register", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: fd.get("email"),
+                password: accountPassword,
+                prenom: fd.get("prenom"),
+                nom: fd.get("nom"),
+                organisme: fd.get("organisme"),
+                telephone: fd.get("telephone"),
+              }),
+            });
+            if (regRes.ok) {
+              setAccountResult("success");
+            } else {
+              const regData = await regRes.json().catch(() => ({}));
+              setAccountResult(regData?.error === "EMAIL_EXISTS" ? "exists" : "error");
+            }
+          } catch {
+            setAccountResult("error");
+          }
         }
 
         try { trackCartEvent("checkout_complete"); } catch {}
-        router.push(
-          `/checkout/confirmation?orderId=${encodeURIComponent(data.orderId)}&mode=${encodeURIComponent(data.modePaiement)}`
-        );
+        const confirmUrl = new URL("/checkout/confirmation", window.location.href);
+        confirmUrl.searchParams.set("orderId", data.orderId);
+        confirmUrl.searchParams.set("mode", data.modePaiement);
+        if (accountResult === "success") confirmUrl.searchParams.set("accountCreated", "1");
+        router.push(confirmUrl.pathname + confirmUrl.search);
       } catch {
         setError("Erreur de connexion. Veuillez réessayer.");
       }
@@ -332,6 +351,12 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
                   <span>Sous-total HT</span>
                   <span>{formatHT(cartSummary.subtotalHT)}</span>
                 </div>
+                {cartSummary.ecoTotal > 0 && (
+                  <div className="flex justify-between text-gray-500 text-xs">
+                    <span>Éco-participation</span>
+                    <span>{formatHT(cartSummary.ecoTotal)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-600">
                   <span>TVA 20%</span>
                   <span>{formatHT(cartSummary.tva)}</span>
@@ -401,6 +426,19 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
                 </span>
               </label>
             </div>
+
+            {/* Résultat création compte */}
+            {accountResult === "error" && (
+              <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                La création de compte a échoué — votre commande est bien enregistrée. Créez votre compte plus tard sur{" "}
+                <a href="/inscription" className="underline">la page inscription</a>.
+              </div>
+            )}
+            {accountResult === "exists" && (
+              <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-800">
+                Un compte existe déjà pour cet email. <a href="/connexion" className="underline">Se connecter →</a>
+              </div>
+            )}
 
             {/* Erreur */}
             {error && (
