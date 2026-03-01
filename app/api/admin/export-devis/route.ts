@@ -1,24 +1,7 @@
-import { timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { checkAdminAuth } from "lib/admin/auth";
 
 const VALID_STATUSES = ["all", "nouveau", "en_cours", "traite", "archive", "refuse"] as const;
-
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  const expected = process.env.ADMIN_PASSWORD ?? "";
-
-  if (token && expected && token.length === expected.length) {
-    try {
-      if (timingSafeEqual(Buffer.from(token), Buffer.from(expected))) return true;
-    } catch {
-      // ignore and fallback
-    }
-  }
-
-  const session = req.cookies.get("admin_session")?.value;
-  return Boolean(session);
-}
 
 function normalizeCell(value: unknown): string {
   return String(value ?? "")
@@ -75,7 +58,7 @@ function toTsv(rows: Record<string, unknown>[]): string {
 }
 
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) {
+  if (!checkAdminAuth(req)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 

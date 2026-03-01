@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkAdminAuth } from "lib/admin/auth";
 import { sanitizeString, sanitizeNumber } from "lib/validation";
 import { log } from "lib/logger";
 
 const IA_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
-
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("Authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  return token === (process.env.ADMIN_PASSWORD ?? "");
-}
 
 function buildPrompt(name: string, categoryName: string, sku: string | null): string {
   return `Tu es un expert en équipements pour collectivités.
@@ -31,7 +26,7 @@ export async function GET(req: NextRequest) {
   const mode = searchParams.get("mode");
 
   if (mode === "list") {
-    if (!checkAuth(req)) {
+    if (!checkAdminAuth(req)) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
     try {
@@ -79,7 +74,7 @@ export async function GET(req: NextRequest) {
  *   { categorySlug?, limit? }     → mode batch (backward-compatible, sauvegarde toujours)
  */
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) {
+  if (!checkAdminAuth(req)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 

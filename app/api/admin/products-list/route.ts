@@ -1,26 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkAdminAuth } from "lib/admin/auth";
 import { sanitizeString, sanitizeNumber } from "lib/validation";
-import { timingSafeEqual } from "crypto";
-
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("Authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  const expected = process.env.ADMIN_PASSWORD ?? "";
-
-  if (token && expected && token.length === expected.length) {
-    try {
-      if (timingSafeEqual(Buffer.from(token), Buffer.from(expected))) return true;
-    } catch {
-      // ignore and fallback
-    }
-  }
-
-  const session = req.cookies.get("admin_session")?.value;
-  return Boolean(session);
-}
 
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) {
+  if (!checkAdminAuth(req)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
   const { searchParams } = req.nextUrl;
