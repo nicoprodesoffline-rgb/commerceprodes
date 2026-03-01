@@ -41,6 +41,12 @@ export async function POST(req: NextRequest) {
   }
 
   // Otherwise deactivate the entire family
+  const { error: membersError } = await client
+    .from("product_family_members")
+    .update({ active: false })
+    .eq("family_id", family_id);
+  if (membersError) return NextResponse.json({ error: membersError.message }, { status: 500 });
+
   const { error } = await client
     .from("product_families")
     .update({ active: false })

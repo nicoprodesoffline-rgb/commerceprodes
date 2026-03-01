@@ -30,9 +30,10 @@ export async function POST(req: NextRequest) {
   }
 
   const parent_product_id = body.parent_product_id;
-  const member_product_ids: string[] = Array.isArray(body.member_product_ids)
+  const member_product_ids_raw: string[] = Array.isArray(body.member_product_ids)
     ? (body.member_product_ids as unknown[]).filter(isUUID)
     : [];
+  const member_product_ids = member_product_ids_raw.filter((id) => id !== parent_product_id);
   const member_variant_ids: string[] = Array.isArray(body.member_variant_ids)
     ? (body.member_variant_ids as unknown[]).filter(isUUID)
     : [];
@@ -123,32 +124,62 @@ export async function POST(req: NextRequest) {
       .eq("id", familyId);
   }
 
-  // Insert members
-  const rows: Record<string, unknown>[] = [];
+  // Insert/update product members without relying on invalid upsert constraints.
   for (let i = 0; i < member_product_ids.length; i++) {
-    rows.push({
+    const memberId = member_product_ids[i]!;
+    const { data: existing } = await client
+      .from("product_family_members")
+      .select("id")
+      .eq("family_id", familyId)
+      .eq("member_product_id", memberId)
+      .maybeSingle();
+
+    if (existing?.id) {
+      const { error } = await client
+        .from("product_family_members")
+        .update({ active: true, position: i, member_type: "product" })
+        .eq("id", existing.id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      continue;
+    }
+
+    const { error } = await client.from("product_family_members").insert({
       family_id: familyId,
-      member_product_id: member_product_ids[i],
+      member_product_id: memberId,
       member_type: "product",
       position: i,
       active: true,
     });
-  }
-  for (let i = 0; i < member_variant_ids.length; i++) {
-    rows.push({
-      family_id: familyId,
-      member_variant_id: member_variant_ids[i],
-      member_type: "variant",
-      position: member_product_ids.length + i,
-      active: true,
-    });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  if (rows.length > 0) {
-    const { error: memErr } = await client
+  for (let i = 0; i < member_variant_ids.length; i++) {
+    const memberId = member_variant_ids[i]!;
+    const position = member_product_ids.length + i;
+    const { data: existing } = await client
       .from("product_family_members")
-      .upsert(rows, { onConflict: "family_id,member_product_id" });
-    if (memErr) return NextResponse.json({ error: memErr.message }, { status: 500 });
+      .select("id")
+      .eq("family_id", familyId)
+      .eq("member_variant_id", memberId)
+      .maybeSingle();
+
+    if (existing?.id) {
+      const { error } = await client
+        .from("product_family_members")
+        .update({ active: true, position, member_type: "variant" })
+        .eq("id", existing.id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      continue;
+    }
+
+    const { error } = await client.from("product_family_members").insert({
+      family_id: familyId,
+      member_variant_id: memberId,
+      member_type: "variant",
+      position,
+      active: true,
+    });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   console.log(JSON.stringify({

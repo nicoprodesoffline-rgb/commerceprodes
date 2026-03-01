@@ -25,8 +25,8 @@ export async function GET(
       product_family_members (
         id, member_type, position, active, axes_summary,
         member_product_id, member_variant_id,
-        products (id, name, slug, sku, status, regular_price),
-        variants (id, name, sku, stock_status, regular_price)
+        products!product_family_members_member_product_id_fkey (id, name, slug, sku, status, regular_price),
+        variants!product_family_members_member_variant_id_fkey (id, name, sku, stock_status, regular_price)
       )
     `)
     .eq("id", id)

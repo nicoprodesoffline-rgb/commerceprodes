@@ -34,6 +34,9 @@ interface AuditResult {
   parents_without_children: Array<{ id: string; name: string }>;
   orphan_products: Array<{ id: string; name: string; sku: string; parent_sku: string }>;
   large_families: Array<{ id: string; name: string; count: number }>;
+  potential_suggestions?: number;
+  potential_breakdown?: Record<string, number>;
+  potential_examples?: Suggestion[];
   issues: number;
 }
 
@@ -52,6 +55,7 @@ interface DbStatus {
 }
 
 const STRATEGY_LABELS: Record<string, string> = {
+  auto: "Auto",
   parent_sku: "Parent SKU",
   sku_root: "Racine SKU",
   title_root: "Titre similaire",
@@ -72,9 +76,12 @@ export default function FamillesPage() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [suggestLoading, setSuggestLoading] = useState(false);
-  const [suggestStrategy, setSuggestStrategy] = useState("parent_sku");
+  const [suggestStrategy, setSuggestStrategy] = useState("auto");
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
   const [applyingIdx, setApplyingIdx] = useState<Set<number>>(new Set());
+  const [bulkApplyLoading, setBulkApplyLoading] = useState(false);
+  const [bulkDeactivateLoading, setBulkDeactivateLoading] = useState(false);
+  const [dragMember, setDragMember] = useState<{ familyId: string; memberId: string } | null>(null);
   const [tab, setTab] = useState<"list" | "audit" | "suggest">("list");
 
   // ── Check DB status ──────────────────────────────────────────────────────────
@@ -122,9 +129,14 @@ useEffect(() => {
   async function runAudit() {
     if (!dbStatus?.available) return;
     setAuditLoading(true);
+    setError(null);
     try {
       const res = await adminFetch("/api/admin/families/audit");
       if (res.ok) setAudit(await res.json());
+      else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Erreur audit");
+      }
     } finally {
       setAuditLoading(false);
     }
@@ -135,6 +147,8 @@ useEffect(() => {
     if (!dbStatus?.available) return;
     setSuggestLoading(true);
     setSuggestions([]);
+    setSelectedSuggestions(new Set());
+    setError(null);
     try {
       const res = await adminFetch("/api/admin/families/suggest", {
         method: "POST",
@@ -165,31 +179,141 @@ useEffect(() => {
       });
       if (res.ok) {
         setSuggestions((prev) => prev.filter((_, i) => i !== idx));
+        setSelectedSuggestions((prev) => {
+          const next = new Set<number>();
+          [...prev].forEach((i) => {
+            if (i === idx) return;
+            next.add(i > idx ? i - 1 : i);
+          });
+          return next;
+        });
         loadFamilies();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Impossible d'assembler la suggestion");
       }
     } finally {
       setApplyingIdx((prev) => { const n = new Set(prev); n.delete(idx); return n; });
     }
   }
 
+  async function applySelectedSuggestions() {
+    if (selectedSuggestions.size === 0) return;
+    setBulkApplyLoading(true);
+    const selected = [...selectedSuggestions].sort((a, b) => b - a);
+    try {
+      for (const idx of selected) {
+        const suggestion = suggestions[idx];
+        if (!suggestion) continue;
+        await applySuggestion(idx, suggestion);
+      }
+      setSelectedSuggestions(new Set());
+    } finally {
+      setBulkApplyLoading(false);
+    }
+  }
+
+  async function deactivateSelectedFamilies() {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Désactiver ${selectedIds.size} famille(s) sélectionnée(s) ?`)) return;
+    setBulkDeactivateLoading(true);
+    try {
+      for (const id of selectedIds) {
+        await adminFetch("/api/admin/families/disassemble", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ family_id: id }),
+        });
+      }
+      setSelectedIds(new Set());
+      await loadFamilies();
+    } finally {
+      setBulkDeactivateLoading(false);
+    }
+  }
+
+  async function reorderMembers(familyId: string, orderedIds: string[]) {
+    const res = await adminFetch(`/api/admin/families/${familyId}/members/reorder`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ordered_ids: orderedIds }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.error ?? "Impossible de réordonner");
+    }
+  }
+
+  async function handleDropMember(family: Family, targetMemberId: string) {
+    if (!dragMember || dragMember.familyId !== family.id || dragMember.memberId === targetMemberId) {
+      return;
+    }
+    const members = [...(family.product_family_members ?? [])]
+      .filter((m) => m.active)
+      .sort((a, b) => a.position - b.position);
+    const from = members.findIndex((m) => m.id === dragMember.memberId);
+    const to = members.findIndex((m) => m.id === targetMemberId);
+    if (from < 0 || to < 0 || from === to) {
+      setDragMember(null);
+      return;
+    }
+
+    const reordered = [...members];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved!);
+
+    // Optimistic UI update
+    setFamilies((prev) =>
+      prev.map((f) => {
+        if (f.id !== family.id) return f;
+        const byId = new Map(reordered.map((m, i) => [m.id, { ...m, position: i }]));
+        return {
+          ...f,
+          product_family_members: (f.product_family_members ?? []).map(
+            (m) => byId.get(m.id) ?? m,
+          ),
+        };
+      }),
+    );
+
+    try {
+      await reorderMembers(family.id, reordered.map((m) => m.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur de réordonnancement");
+      await loadFamilies();
+    } finally {
+      setDragMember(null);
+    }
+  }
+
   // ── Deactivate family ────────────────────────────────────────────────────────
   async function deactivateFamily(familyId: string) {
     if (!confirm("Désactiver cette famille ?")) return;
-    await adminFetch("/api/admin/families/disassemble", {
+    const res = await adminFetch("/api/admin/families/disassemble", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ family_id: familyId }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Impossible de désactiver la famille");
+      return;
+    }
     loadFamilies();
   }
 
   // ── Remove member ────────────────────────────────────────────────────────────
   async function removeMember(familyId: string, memberId: string) {
-    await adminFetch(`/api/admin/families/${familyId}/members/remove`, {
+    const res = await adminFetch(`/api/admin/families/${familyId}/members/remove`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ member_id: memberId }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Impossible de détacher la fille");
+      return;
+    }
     loadFamilies();
   }
 
@@ -349,6 +473,27 @@ useEffect(() => {
             </button>
           </div>
 
+          {selectedIds.size > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm">
+              <span className="font-medium text-blue-800">
+                {selectedIds.size} famille(s) sélectionnée(s)
+              </span>
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="text-blue-700 underline"
+              >
+                Réinitialiser la sélection
+              </button>
+              <button
+                onClick={deactivateSelectedFamilies}
+                disabled={bulkDeactivateLoading}
+                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {bulkDeactivateLoading ? "Désactivation…" : "Désactiver la sélection"}
+              </button>
+            </div>
+          )}
+
           {loading && <p className="text-sm text-gray-400">Chargement…</p>}
 
           {/* Family tree */}
@@ -431,7 +576,7 @@ useEffect(() => {
                         <div className="space-y-1.5">
                           {/* Axis header: Options → Coloris → Lots */}
                           <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-2">
-                            Filles — ordre: Options › Coloris › Lots
+                            Filles — ordre: Options › Coloris › Lots · glisser-déposer pour réordonner
                           </div>
                           {activeMembers
                             .sort((a, b) => a.position - b.position)
@@ -441,7 +586,22 @@ useEffect(() => {
                               const memberSku = mp ? (mp as { sku: string }).sku : "—";
 
                               return (
-                                <div key={member.id} className="flex items-center gap-3 rounded-lg bg-gray-50 px-3 py-2 text-sm">
+                                <div
+                                  key={member.id}
+                                  draggable
+                                  onDragStart={() => setDragMember({ familyId: family.id, memberId: member.id })}
+                                  onDragEnd={() => setDragMember(null)}
+                                  onDragOver={(e) => e.preventDefault()}
+                                  onDrop={() => handleDropMember(family, member.id)}
+                                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${
+                                    dragMember?.memberId === member.id
+                                      ? "bg-blue-100 ring-1 ring-blue-300"
+                                      : "bg-gray-50"
+                                  }`}
+                                >
+                                  <span className="cursor-move text-gray-300" title="Glisser pour réordonner">
+                                    ⋮⋮
+                                  </span>
                                   <span className="text-gray-300">┗</span>
                                   <div className="flex-1">
                                     <span className="font-medium text-gray-800">{memberName}</span>
@@ -488,16 +648,57 @@ useEffect(() => {
           </div>
 
           {audit && (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
               {[
-                { label: "Familles actives", value: audit.total_active_families, color: "green" },
-                { label: "Candidats en attente", value: audit.pending_candidates, color: "blue" },
-                { label: "Problèmes", value: audit.issues, color: audit.issues > 0 ? "red" : "green" },
-                { label: "Orphelines", value: audit.orphan_products.length, color: audit.orphan_products.length > 0 ? "orange" : "green" },
+                {
+                  label: "Familles actives",
+                  value: audit.total_active_families,
+                  wrapper: "rounded-xl border border-green-200 bg-green-50 p-4",
+                  valueClass: "text-2xl font-bold text-green-700",
+                  labelClass: "mt-0.5 text-xs text-green-600",
+                },
+                {
+                  label: "Candidats en attente",
+                  value: audit.pending_candidates,
+                  wrapper: "rounded-xl border border-blue-200 bg-blue-50 p-4",
+                  valueClass: "text-2xl font-bold text-blue-700",
+                  labelClass: "mt-0.5 text-xs text-blue-600",
+                },
+                {
+                  label: "Problèmes",
+                  value: audit.issues,
+                  wrapper:
+                    audit.issues > 0
+                      ? "rounded-xl border border-red-200 bg-red-50 p-4"
+                      : "rounded-xl border border-green-200 bg-green-50 p-4",
+                  valueClass: audit.issues > 0 ? "text-2xl font-bold text-red-700" : "text-2xl font-bold text-green-700",
+                  labelClass: audit.issues > 0 ? "mt-0.5 text-xs text-red-600" : "mt-0.5 text-xs text-green-600",
+                },
+                {
+                  label: "Orphelines",
+                  value: audit.orphan_products.length,
+                  wrapper:
+                    audit.orphan_products.length > 0
+                      ? "rounded-xl border border-orange-200 bg-orange-50 p-4"
+                      : "rounded-xl border border-green-200 bg-green-50 p-4",
+                  valueClass:
+                    audit.orphan_products.length > 0
+                      ? "text-2xl font-bold text-orange-700"
+                      : "text-2xl font-bold text-green-700",
+                  labelClass:
+                    audit.orphan_products.length > 0 ? "mt-0.5 text-xs text-orange-600" : "mt-0.5 text-xs text-green-600",
+                },
+                {
+                  label: "Suggestions potentielles",
+                  value: audit.potential_suggestions ?? 0,
+                  wrapper: "rounded-xl border border-indigo-200 bg-indigo-50 p-4",
+                  valueClass: "text-2xl font-bold text-indigo-700",
+                  labelClass: "mt-0.5 text-xs text-indigo-600",
+                },
               ].map((kpi) => (
-                <div key={kpi.label} className={`rounded-xl border p-4 bg-${kpi.color}-50 border-${kpi.color}-200`}>
-                  <p className={`text-2xl font-bold text-${kpi.color}-700`}>{kpi.value}</p>
-                  <p className={`text-xs text-${kpi.color}-600 mt-0.5`}>{kpi.label}</p>
+                <div key={kpi.label} className={kpi.wrapper}>
+                  <p className={kpi.valueClass}>{kpi.value}</p>
+                  <p className={kpi.labelClass}>{kpi.label}</p>
                 </div>
               ))}
             </div>
@@ -532,6 +733,28 @@ useEffect(() => {
               </div>
             </div>
           )}
+
+          {audit && (audit.potential_examples ?? []).length > 0 && (
+            <div className="rounded-xl border border-indigo-200 bg-white p-4">
+              <h3 className="mb-2 font-medium text-gray-900">
+                Exemples de groupements potentiels ({audit.potential_examples?.length})
+              </h3>
+              <div className="space-y-1.5 text-xs">
+                {(audit.potential_examples ?? []).map((s, idx) => (
+                  <div key={`${s.parent.id}-${idx}`} className="rounded bg-indigo-50 px-2 py-1 text-indigo-900">
+                    <strong>{s.parent.name}</strong> ({s.parent.sku ?? "—"}) · {s.children.length} fille(s) ·{" "}
+                    <span className="text-indigo-700">{s.strategy}</span>
+                  </div>
+                ))}
+              </div>
+              {audit.potential_breakdown && (
+                <p className="mt-3 text-xs text-gray-500">
+                  Détail: parent_sku {audit.potential_breakdown.parent_sku ?? 0} · sku_root{" "}
+                  {audit.potential_breakdown.sku_root ?? 0} · title_root {audit.potential_breakdown.title_root ?? 0}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -545,8 +768,10 @@ useEffect(() => {
               onChange={(e) => setSuggestStrategy(e.target.value)}
               className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none"
             >
+              <option value="auto">Stratégie: auto (recommandée)</option>
               <option value="parent_sku">Stratégie: parent_sku (prioritaire)</option>
               <option value="sku_root">Stratégie: sku_root</option>
+              <option value="title_root">Stratégie: title_root</option>
             </select>
             <button
               onClick={runSuggest}
@@ -555,6 +780,17 @@ useEffect(() => {
             >
               {suggestLoading ? "Analyse…" : "Analyser"}
             </button>
+            {selectedSuggestions.size > 0 && (
+              <button
+                onClick={applySelectedSuggestions}
+                disabled={bulkApplyLoading}
+                className="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+              >
+                {bulkApplyLoading
+                  ? "Assemblage…"
+                  : `Assembler la sélection (${selectedSuggestions.size})`}
+              </button>
+            )}
           </div>
 
           <p className="text-sm text-gray-500">
@@ -562,6 +798,12 @@ useEffect(() => {
               ? `${suggestions.length} suggestion${suggestions.length > 1 ? "s" : ""} — cliquez "Assembler" pour créer la famille`
               : "Lancez l'analyse pour détecter les familles potentielles."}
           </p>
+          {suggestions.length > 0 && (
+            <p className="text-xs text-gray-400">
+              Astuce: la stratégie <code>auto</code> combine <code>parent_sku</code>, <code>sku_root</code> et{" "}
+              <code>title_root</code> puis priorise les groupes les plus fiables.
+            </p>
+          )}
 
           <div className="space-y-3">
             {suggestions.map((s, idx) => (

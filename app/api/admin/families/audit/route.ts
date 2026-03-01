@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
 import { checkFamiliesDb, degradedResponse } from "lib/admin/families-db";
 import { supabaseServer } from "lib/supabase/client";
+import { computeFamilySuggestions, type ProductLite } from "lib/admin/family-suggest";
 
 export async function GET(req: NextRequest) {
   if (!checkAdminAuth(req)) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
   // ── Parents with no active children ─────────────────────────────────────────
   const { data: allFamilies } = await client
     .from("product_families")
-    .select("id, name, parent_product_id, product_family_members(id, active)")
+    .select("id, name, parent_product_id, product_family_members(id, active, member_product_id)")
     .eq("active", true);
 
   const parentsWithoutChildren = (allFamilies ?? []).filter((f) => {
@@ -40,8 +41,7 @@ export async function GET(req: NextRequest) {
 
   // ── Orphan products: have parent_sku but no active family membership ──────────
   let orphanProducts: Array<{ id: string; name: string; sku: string; parent_sku: string }> = [];
-  const familiesColumnExists = await client.from("products").select("parent_sku").limit(0)
-    .then(r => !r.error);
+  const familiesColumnExists = await client.from("products").select("parent_sku").limit(0).then((r) => !r.error);
   if (familiesColumnExists) {
     const { data: childCandidates } = await client
       .from("products")
@@ -51,14 +51,43 @@ export async function GET(req: NextRequest) {
 
     const allMemberProductIds = new Set(
       (allFamilies ?? []).flatMap((f) =>
-        (f.product_family_members as Array<{ id: string }> ?? []).map((m) => m.id)
-      )
+        (f.product_family_members as Array<{ member_product_id: string | null; active: boolean }> ?? [])
+          .filter((m) => m.active)
+          .map((m) => m.member_product_id)
+          .filter(Boolean),
+      ) as string[],
     );
 
     orphanProducts = (childCandidates ?? [])
       .filter((p) => !allMemberProductIds.has(p.id))
       .map((p) => ({ id: p.id, name: p.name as string, sku: p.sku as string, parent_sku: p.parent_sku as string }));
   }
+
+  // ── Potential groupings preview (for cases with zero existing families) ─────
+  const { data: publishedProducts } = await client
+    .from("products")
+    .select("id, name, sku, parent_sku, status")
+    .eq("status", "publish")
+    .limit(5000);
+
+  const activeMemberSet = new Set<string>(
+    (allFamilies ?? []).flatMap((f) =>
+      (f.product_family_members as Array<{ member_product_id: string | null; active: boolean }> ?? [])
+        .filter((m) => m.active)
+        .map((m) => m.member_product_id)
+        .filter(Boolean),
+    ) as string[],
+  );
+
+  const products: ProductLite[] = (publishedProducts ?? []).map((p) => ({
+    id: p.id as string,
+    name: p.name as string,
+    sku: (p.sku as string | null) ?? null,
+    parent_sku: (p.parent_sku as string | null) ?? null,
+    status: (p.status as string) ?? "publish",
+  }));
+
+  const suggestPreview = computeFamilySuggestions(products, "auto", activeMemberSet, 12);
 
   // ── Total counts ─────────────────────────────────────────────────────────────
   const { count: totalFamilies } = await client
@@ -77,6 +106,9 @@ export async function GET(req: NextRequest) {
     parents_without_children: parentsWithoutChildren,
     orphan_products: orphanProducts.slice(0, 100),
     large_families: largeFamilies,
+    potential_suggestions: suggestPreview.suggestions.length,
+    potential_breakdown: suggestPreview.breakdown,
+    potential_examples: suggestPreview.suggestions.slice(0, 5),
     issues: parentsWithoutChildren.length + orphanProducts.length + largeFamilies.length,
   });
 }

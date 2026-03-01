@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
 import { sanitizeString, sanitizeNumber } from "lib/validation";
 
+const SORT_WHITELIST = new Set(["created_at", "regular_price", "name", "updated_at"]);
+
 export async function GET(req: NextRequest) {
   if (!checkAdminAuth(req)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
@@ -12,10 +14,17 @@ export async function GET(req: NextRequest) {
   const status = sanitizeString(searchParams.get("status") ?? "publish", 20);
   const sortParam = sanitizeString(searchParams.get("sort") ?? "created_at-desc", 50);
   const limitParam = sanitizeNumber(Number(searchParams.get("limit") ?? 0), 0, 1000);
+  const categoryId = sanitizeString(searchParams.get("categoryId") ?? "", 64);
+  const minPrice = sanitizeNumber(Number(searchParams.get("minPrice") ?? ""), 0, 10_000_000);
+  const maxPrice = sanitizeNumber(Number(searchParams.get("maxPrice") ?? ""), 0, 10_000_000);
+  const hasMinPrice = searchParams.get("minPrice") !== null && searchParams.get("minPrice") !== "";
+  const hasMaxPrice = searchParams.get("maxPrice") !== null && searchParams.get("maxPrice") !== "";
+  const missingDescOnly = searchParams.get("missingDesc") === "true";
 
   const PAGE_SIZE = limitParam > 0 ? Math.min(limitParam, 1000) : 50;
 
-  const [sortField, sortDir] = sortParam.split("-");
+  const [requestedSortField, sortDir] = sortParam.split("-");
+  const sortField = SORT_WHITELIST.has(requestedSortField ?? "") ? requestedSortField! : "created_at";
   const ascending = sortDir === "asc";
 
   try {
@@ -25,20 +34,32 @@ export async function GET(req: NextRequest) {
     let query = client
       .from("products")
       .select(
-        `id, name, slug, sku, regular_price, status,
+        `id, name, slug, sku, parent_sku, regular_price, status, short_description, seo_title, seo_description,
          product_images(url, is_featured, position),
          variants(id),
-         product_categories(categories(name))`,
+         product_categories(category_id, categories(name))`,
         { count: "exact" },
       )
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
-      .order(sortField || "created_at", { ascending });
+      .order(sortField, { ascending });
 
     if (status && status !== "all") {
       query = query.eq("status", status);
     }
     if (search) {
       query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);
+    }
+    if (categoryId) {
+      query = query.eq("product_categories.category_id", categoryId);
+    }
+    if (hasMinPrice) {
+      query = query.gte("regular_price", minPrice);
+    }
+    if (hasMaxPrice) {
+      query = query.lte("regular_price", maxPrice);
+    }
+    if (missingDescOnly) {
+      query = query.or("short_description.is.null,short_description.eq.");
     }
 
     const { data, count, error } = await query;
@@ -57,10 +78,16 @@ export async function GET(req: NextRequest) {
       return {
         id: p.id,
         title: p.name,
+        name: p.name,
         handle: p.slug,
+        slug: p.slug,
         sku: p.sku ?? null,
+        parent_sku: p.parent_sku ?? null,
         regular_price: p.regular_price ?? null,
         status: p.status,
+        short_description: p.short_description ?? null,
+        seo_title: p.seo_title ?? null,
+        seo_description: p.seo_description ?? null,
         featured_image_url: featured?.url ?? null,
         variant_count: (p.variants || []).length,
         categories: cats || null,

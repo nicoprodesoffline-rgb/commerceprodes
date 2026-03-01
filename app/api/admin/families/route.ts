@@ -25,7 +25,9 @@ export async function GET(req: NextRequest) {
       parent_product_id,
       products!product_families_parent_product_id_fkey (id, name, slug, sku, status),
       product_family_members (
-        id, member_product_id, member_variant_id, member_type, position, active
+        id, member_product_id, member_variant_id, member_type, position, active, axes_summary,
+        products!product_family_members_member_product_id_fkey (id, name, slug, sku, status),
+        variants!product_family_members_member_variant_id_fkey (id, name, sku, stock_status, regular_price)
       )
     `, { count: "exact" })
     .order("created_at", { ascending: false })
