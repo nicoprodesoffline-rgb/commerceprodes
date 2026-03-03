@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { adminFetch } from "lib/admin/fetch";
@@ -11,14 +11,33 @@ interface AdminProduct {
   handle: string;
   name?: string;
   slug?: string;
+  type?: string | null;
   sku: string | null;
-  regular_price: number;
+  parent_sku?: string | null;
+  family_role?: string | null;
+  stock_quantity?: number | null;
+  stock_status?: string | null;
+  supplier_ref?: string | null;
+  supplier_code?: string | null;
+  supplier_price?: number | null;
+  tax_status?: string | null;
+  tax_class?: string | null;
+  weight?: number | null;
+  length?: number | null;
+  width?: number | null;
+  height?: number | null;
+  regular_price: number | null;
+  sale_price?: number | null;
   status: string;
   featured_image_url: string | null;
   categories: string | null;
   short_description?: string | null;
   seo_title?: string | null;
   seo_description?: string | null;
+  variant_count?: number;
+  family_id?: string | null;
+  family_name?: string | null;
+  family_children_count?: number;
 }
 
 interface Category {
@@ -27,7 +46,32 @@ interface Category {
   slug?: string;
 }
 
-type ColumnKey = "image" | "title" | "sku" | "price" | "status" | "seo" | "actions";
+interface AdminVariant {
+  id: string;
+  sku: string | null;
+  name: string;
+  regular_price: number | null;
+  sale_price: number | null;
+  stock_quantity: number | null;
+  stock_status: string;
+  status: string;
+  variant_attributes?: Array<{
+    attribute_name: string;
+    attribute_value: string;
+  }>;
+}
+
+type ColumnKey =
+  | "image"
+  | "title"
+  | "sku"
+  | "family"
+  | "price"
+  | "stock"
+  | "supplier"
+  | "status"
+  | "seo"
+  | "actions";
 
 interface SavedView {
   id: string;
@@ -55,7 +99,7 @@ interface PasteRow {
 }
 
 const PAGE_SIZE = 100;
-const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = ["image", "title", "sku", "price", "status", "seo", "actions"];
+const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = ["image", "title", "sku", "family", "price", "stock", "status", "seo", "actions"];
 const VIEWS_STORAGE_KEY = "prodes_catalog_excel_views";
 const UNDO_MAX = 50;
 
@@ -69,7 +113,14 @@ const PASTE_COLUMN_MAP: Array<{ field: keyof AdminProduct; label: string; type: 
 
 const BULK_FIELD_OPTIONS = [
   { id: "regular_price", label: "Prix HT (€)", type: "number" },
+  { id: "sale_price", label: "Prix promo (€)", type: "number" },
   { id: "status", label: "Statut", type: "select" },
+  { id: "stock_quantity", label: "Stock qty", type: "number" },
+  { id: "stock_status", label: "Stock status", type: "text" },
+  { id: "supplier_ref", label: "Supplier ref", type: "text" },
+  { id: "supplier_price", label: "Supplier price", type: "number" },
+  { id: "parent_sku", label: "parent_sku", type: "text" },
+  { id: "family_role", label: "family_role", type: "text" },
   { id: "short_description", label: "Desc. courte", type: "text" },
   { id: "seo_title", label: "SEO title", type: "text" },
   { id: "seo_description", label: "SEO description", type: "text" },
@@ -78,9 +129,10 @@ const BULK_FIELD_OPTIONS = [
 const STATUS_OPTIONS = [
   { id: "publish", label: "Publié" },
   { id: "draft", label: "Brouillon" },
+  { id: "private", label: "Privé" },
 ];
 
-const VALID_STATUSES = new Set(["publish", "draft"]);
+const VALID_STATUSES = new Set(["publish", "draft", "private"]);
 
 function seoScore(p: AdminProduct): number {
   const title = p.name || p.title || "";
@@ -88,7 +140,7 @@ function seoScore(p: AdminProduct): number {
   if (title && title.length >= 30 && title.length <= 70) score += 20;
   if (p.sku) score += 20;
   if (p.featured_image_url) score += 20;
-  if (p.regular_price > 0) score += 20;
+  if ((p.regular_price ?? 0) > 0) score += 20;
   if (p.categories) score += 20;
   return score;
 }
@@ -221,12 +273,42 @@ function exportToCsv(products: AdminProduct[], dirtyRows: Map<string, Partial<Ad
   }));
 
   // Only export fields corresponding to visible columns
-  const allHeaders = ["id", "sku", "title", "handle", "regular_price", "status", "categories", "short_description", "seo_title", "seo_description"];
+  const allHeaders = [
+    "id",
+    "sku",
+    "title",
+    "handle",
+    "type",
+    "family_role",
+    "parent_sku",
+    "variant_count",
+    "family_name",
+    "regular_price",
+    "sale_price",
+    "stock_quantity",
+    "stock_status",
+    "supplier_ref",
+    "supplier_price",
+    "tax_status",
+    "tax_class",
+    "weight",
+    "length",
+    "width",
+    "height",
+    "status",
+    "categories",
+    "short_description",
+    "seo_title",
+    "seo_description",
+  ];
   const colToFields: Record<ColumnKey, string[]> = {
     image: [],
     title: ["title", "handle"],
     sku: ["sku"],
-    price: ["regular_price"],
+    family: ["family_role", "parent_sku", "type", "variant_count", "family_name"],
+    price: ["regular_price", "sale_price"],
+    stock: ["stock_quantity", "stock_status", "tax_status", "tax_class"],
+    supplier: ["supplier_ref", "supplier_price", "supplier_code"],
     status: ["status"],
     seo: ["seo_title", "seo_description"],
     actions: [],
@@ -402,6 +484,14 @@ export default function CataloguePage() {
     applied: number;
     ignored: number;
   } | null>(null);
+  const [expandedVariantRows, setExpandedVariantRows] = useState<Set<string>>(new Set());
+  const [variantsByProduct, setVariantsByProduct] = useState<Map<string, AdminVariant[]>>(new Map());
+  const [variantsLoadingByProduct, setVariantsLoadingByProduct] = useState<Set<string>>(new Set());
+  const [variantErrors, setVariantErrors] = useState<Map<string, string>>(new Map());
+
+  // Duplicate detection
+  const [showDuplicates, setShowDuplicates] = useState(false);
+  const [familyRoleFilter, setFamilyRoleFilter] = useState("");
 
   // ── Column toggle ────────────────────────────────────────────
   const toggleColumn = (col: ColumnKey) => {
@@ -645,7 +735,7 @@ export default function CataloguePage() {
   }, [dirtyRows.size, saveAllLoading]);
 
   // ── Individual patch (immediate save) ──────────────────────
-  const patchProduct = useCallback(async (id: string, field: string, value: string | number) => {
+  const patchProduct = useCallback(async (id: string, field: string, value: string | number | null) => {
     const res = await adminFetch(`/api/admin/products/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -667,6 +757,83 @@ export default function CataloguePage() {
     setDirtyRows((prev) => { const next = new Map(prev); next.delete(id); return next; });
     setErrorRows((prev) => { const next = new Set(prev); next.delete(id); return next; });
   }, []);
+
+  const loadVariants = useCallback(async (productId: string) => {
+    setVariantsLoadingByProduct((prev) => {
+      const next = new Set(prev);
+      next.add(productId);
+      return next;
+    });
+    setVariantErrors((prev) => {
+      const next = new Map(prev);
+      next.delete(productId);
+      return next;
+    });
+
+    try {
+      const res = await adminFetch(`/api/admin/products/${productId}/variations?page=1&limit=120`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Impossible de charger les variantes");
+      const rows = (data.variations ?? []) as AdminVariant[];
+      setVariantsByProduct((prev) => {
+        const next = new Map(prev);
+        next.set(productId, rows);
+        return next;
+      });
+    } catch (error) {
+      setVariantErrors((prev) => {
+        const next = new Map(prev);
+        next.set(productId, error instanceof Error ? error.message : "Erreur variantes");
+        return next;
+      });
+    } finally {
+      setVariantsLoadingByProduct((prev) => {
+        const next = new Set(prev);
+        next.delete(productId);
+        return next;
+      });
+    }
+  }, []);
+
+  const toggleVariantsRow = useCallback((productId: string) => {
+    setExpandedVariantRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) {
+        next.delete(productId);
+      } else {
+        next.add(productId);
+      }
+      return next;
+    });
+
+    const hasLoaded = variantsByProduct.has(productId);
+    if (!hasLoaded) {
+      void loadVariants(productId);
+    }
+  }, [loadVariants, variantsByProduct]);
+
+  const patchVariant = useCallback(
+    async (productId: string, variantId: string, field: string, value: string | number | null) => {
+      const res = await adminFetch(`/api/admin/products/${productId}/variations/${variantId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Erreur de sauvegarde variante");
+      const updated = (data.variation ?? {}) as Partial<AdminVariant>;
+      setVariantsByProduct((prev) => {
+        const next = new Map(prev);
+        const rows = next.get(productId) ?? [];
+        next.set(
+          productId,
+          rows.map((row) => (row.id === variantId ? { ...row, ...updated } : row)),
+        );
+        return next;
+      });
+    },
+    [],
+  );
 
   // ── Save all dirty ──────────────────────────────────────────
   const saveAllDirty = useCallback(async () => {
@@ -766,8 +933,9 @@ export default function CataloguePage() {
       const row = products.find((p) => p.id === id);
       if (!row) continue;
 
-      if (formulaField === "regular_price") {
-        const base = Number(row.regular_price || 0);
+      if (["regular_price", "sale_price", "stock_quantity", "supplier_price"].includes(formulaField)) {
+        const currentRaw = (row as unknown as Record<string, unknown>)[formulaField];
+        const base = Number(currentRaw || 0);
         const n = Number(formulaValue || 0);
         let next = base;
         if (formulaOp === "set") next = n;
@@ -776,7 +944,10 @@ export default function CataloguePage() {
         if (formulaOp === "increase_abs") next = base + n;
         if (formulaOp === "decrease_abs") next = base - n;
         if (!Number.isFinite(next)) continue;
-        setLocalChange(id, "regular_price", Math.max(0, Math.round(next * 100) / 100));
+        const normalized = formulaField === "stock_quantity"
+          ? Math.max(0, Math.round(next))
+          : Math.max(0, Math.round(next * 100) / 100);
+        setLocalChange(id, formulaField, normalized);
         count++;
         continue;
       }
@@ -827,7 +998,34 @@ export default function CataloguePage() {
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const dirtyCount = dirtyRows.size;
   const visibleColumnCount = 1 + DEFAULT_VISIBLE_COLUMNS.filter((col) => visibleColumns.has(col)).length;
-  const displayedProducts = showOnlyDirty ? products.filter((p) => dirtyRows.has(p.id)) : products;
+
+  // Duplicate SKU detection (client-side on current page)
+  const { duplicateSkus, duplicateCount } = useMemo(() => {
+    const skuCount = new Map<string, number>();
+    for (const p of products) {
+      if (p.sku) skuCount.set(p.sku, (skuCount.get(p.sku) ?? 0) + 1);
+    }
+    const dups = new Set<string>();
+    for (const [sku, count] of skuCount.entries()) {
+      if (count > 1) dups.add(sku);
+    }
+    return { duplicateSkus: dups, duplicateCount: dups.size };
+  }, [products]);
+
+  const displayedProducts = useMemo(() => {
+    let list = showOnlyDirty ? products.filter((p) => dirtyRows.has(p.id)) : products;
+    if (showDuplicates) {
+      list = list.filter((p) => p.sku && duplicateSkus.has(p.sku));
+    }
+    if (familyRoleFilter) {
+      if (familyRoleFilter === "none") {
+        list = list.filter((p) => !p.family_role);
+      } else {
+        list = list.filter((p) => p.family_role === familyRoleFilter);
+      }
+    }
+    return list;
+  }, [products, showOnlyDirty, dirtyRows, showDuplicates, duplicateSkus, familyRoleFilter]);
 
   return (
     <div>
@@ -919,6 +1117,7 @@ export default function CataloguePage() {
             <option value="all">Tous statuts</option>
             <option value="publish">Publié</option>
             <option value="draft">Brouillon</option>
+            <option value="private">Privé</option>
           </select>
           <select
             value={categoryFilter}
@@ -951,6 +1150,16 @@ export default function CataloguePage() {
             />
             Desc manquante
           </label>
+          <select
+            value={familyRoleFilter}
+            onChange={(e) => { setFamilyRoleFilter(e.target.value); setPage(0); }}
+            className="rounded-md border border-gray-300 px-2 py-1.5 text-xs focus:outline-none"
+          >
+            <option value="">Tous rôles</option>
+            <option value="parent">Mère</option>
+            <option value="child">Fille</option>
+            <option value="none">Sans rôle</option>
+          </select>
           <label className={`flex items-center gap-1 rounded border px-2 py-1.5 text-xs cursor-pointer ${showOnlyDirty ? "border-amber-400 bg-amber-50 text-amber-700" : "border-gray-300 bg-white text-gray-600"}`}>
             <input
               type="checkbox"
@@ -961,6 +1170,13 @@ export default function CataloguePage() {
             {dirtyCount > 0 ? `Modifiés (${dirtyCount})` : "Modifiés seulement"}
           </label>
           <button
+            onClick={() => { setShowDuplicates((v) => !v); setPage(0); }}
+            className={`rounded border px-2 py-1.5 text-xs font-medium ${showDuplicates ? "border-red-400 bg-red-50 text-red-700" : duplicateCount > 0 ? "border-orange-300 bg-orange-50 text-orange-700" : "border-gray-300 bg-white text-gray-600"}`}
+            title={duplicateCount > 0 ? `${duplicateCount} SKU en doublon détectés` : "Aucun doublon SKU sur la page"}
+          >
+            Doublons{duplicateCount > 0 ? ` (${duplicateCount})` : ""}
+          </button>
+          <button
             onClick={() => {
               setSearch("");
               setStatusFilter("all");
@@ -969,6 +1185,8 @@ export default function CataloguePage() {
               setMaxPriceFilter("");
               setMissingDescFilter(false);
               setShowOnlyDirty(false);
+              setShowDuplicates(false);
+              setFamilyRoleFilter("");
               setPage(0);
             }}
             className="rounded border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
@@ -980,6 +1198,67 @@ export default function CataloguePage() {
           </span>
         </div>
 
+        {/* Active filter chips */}
+        {(search || statusFilter !== "all" || categoryFilter || minPriceFilter || maxPriceFilter || missingDescFilter || showOnlyDirty || showDuplicates || familyRoleFilter) && (
+          <div className="flex flex-wrap items-center gap-1 border-t border-gray-200 pt-2">
+            <span className="text-[11px] font-medium text-gray-500 mr-1">Filtres actifs :</span>
+            {search && (
+              <span className="flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] text-indigo-700">
+                Recherche: &quot;{search}&quot;
+                <button onClick={() => { setSearch(""); setPage(0); }} className="ml-0.5 text-indigo-500 hover:text-indigo-700">×</button>
+              </span>
+            )}
+            {statusFilter !== "all" && (
+              <span className="flex items-center gap-1 rounded-full bg-gray-200 px-2 py-0.5 text-[11px] text-gray-700">
+                Statut: {statusFilter}
+                <button onClick={() => { setStatusFilter("all"); setPage(0); }} className="ml-0.5 hover:text-gray-900">×</button>
+              </span>
+            )}
+            {categoryFilter && (
+              <span className="flex items-center gap-1 rounded-full bg-gray-200 px-2 py-0.5 text-[11px] text-gray-700">
+                Catégorie: {categories.find((c) => c.id === categoryFilter)?.name ?? categoryFilter}
+                <button onClick={() => { setCategoryFilter(""); setPage(0); }} className="ml-0.5 hover:text-gray-900">×</button>
+              </span>
+            )}
+            {minPriceFilter && (
+              <span className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] text-blue-700">
+                Prix ≥ {minPriceFilter}€
+                <button onClick={() => { setMinPriceFilter(""); setPage(0); }} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+            {maxPriceFilter && (
+              <span className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] text-blue-700">
+                Prix ≤ {maxPriceFilter}€
+                <button onClick={() => { setMaxPriceFilter(""); setPage(0); }} className="ml-0.5 hover:text-blue-900">×</button>
+              </span>
+            )}
+            {missingDescFilter && (
+              <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-700">
+                Desc manquante
+                <button onClick={() => { setMissingDescFilter(false); setPage(0); }} className="ml-0.5 hover:text-amber-900">×</button>
+              </span>
+            )}
+            {familyRoleFilter && (
+              <span className="flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[11px] text-purple-700">
+                Rôle: {familyRoleFilter === "none" ? "sans rôle" : familyRoleFilter}
+                <button onClick={() => { setFamilyRoleFilter(""); setPage(0); }} className="ml-0.5 hover:text-purple-900">×</button>
+              </span>
+            )}
+            {showDuplicates && (
+              <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] text-red-700">
+                Doublons SKU ({duplicateCount})
+                <button onClick={() => setShowDuplicates(false)} className="ml-0.5 hover:text-red-900">×</button>
+              </span>
+            )}
+            {showOnlyDirty && (
+              <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-700">
+                Modifiés ({dirtyCount})
+                <button onClick={() => setShowOnlyDirty(false)} className="ml-0.5 hover:text-amber-900">×</button>
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Colonnes */}
         <div className="flex flex-wrap items-center gap-2 border-t border-gray-200 pt-2">
           <span className="text-xs font-medium text-gray-700">Colonnes :</span>
@@ -987,7 +1266,10 @@ export default function CataloguePage() {
             ["image", "Image"],
             ["title", "Titre"],
             ["sku", "SKU"],
+            ["family", "Famille"],
             ["price", "Prix"],
+            ["stock", "Stock/Fiscalité"],
+            ["supplier", "Fournisseur"],
             ["status", "Statut"],
             ["seo", "SEO"],
             ["actions", "Actions"],
@@ -1164,7 +1446,14 @@ export default function CataloguePage() {
               className="rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none"
             >
               <option value="regular_price">Prix HT</option>
+              <option value="sale_price">Prix promo</option>
               <option value="status">Statut</option>
+              <option value="stock_quantity">Stock qty</option>
+              <option value="stock_status">Stock status</option>
+              <option value="supplier_ref">Supplier ref</option>
+              <option value="supplier_price">Supplier price</option>
+              <option value="parent_sku">parent_sku</option>
+              <option value="family_role">family_role</option>
               <option value="short_description">Desc. courte</option>
               <option value="seo_title">SEO title</option>
               <option value="seo_description">SEO description</option>
@@ -1195,6 +1484,12 @@ export default function CataloguePage() {
               className="rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none"
             >
               <option value="regular_price">Prix HT</option>
+              <option value="sale_price">Prix promo</option>
+              <option value="stock_quantity">Stock qty</option>
+              <option value="stock_status">Stock status</option>
+              <option value="supplier_ref">Supplier ref</option>
+              <option value="parent_sku">parent_sku</option>
+              <option value="family_role">family_role</option>
               <option value="short_description">Desc. courte</option>
               <option value="seo_title">SEO title</option>
               <option value="seo_description">SEO description</option>
@@ -1209,7 +1504,7 @@ export default function CataloguePage() {
               <option value="append">Suffixer</option>
               <option value="replace">Rechercher/Remplacer</option>
               <option value="trim">Supprimer espaces (trim)</option>
-              {formulaField === "regular_price" && (
+              {["regular_price", "sale_price", "stock_quantity", "supplier_price"].includes(formulaField) && (
                 <>
                   <option value="increase_pct">+ %</option>
                   <option value="decrease_pct">- %</option>
@@ -1344,7 +1639,10 @@ export default function CataloguePage() {
               {visibleColumns.has("image") && <th className="w-12 px-3 py-3">Image</th>}
               {visibleColumns.has("title") && <th className="px-3 py-3 text-left">Titre</th>}
               {visibleColumns.has("sku") && <th className="w-28 px-3 py-3 text-left">SKU</th>}
+              {visibleColumns.has("family") && <th className="w-56 px-3 py-3 text-left">Famille / Type</th>}
               {visibleColumns.has("price") && <th className="w-28 px-3 py-3 text-right">Prix HT</th>}
+              {visibleColumns.has("stock") && <th className="w-48 px-3 py-3 text-left">Stock / Fiscalité</th>}
+              {visibleColumns.has("supplier") && <th className="w-44 px-3 py-3 text-left">Fournisseur</th>}
               {visibleColumns.has("status") && <th className="w-24 px-3 py-3 text-left">Statut</th>}
               {visibleColumns.has("seo") && <th className="w-24 px-3 py-3 text-center">SEO</th>}
               {visibleColumns.has("actions") && <th className="w-28 px-3 py-3 text-center">Actions</th>}
@@ -1364,9 +1662,14 @@ export default function CataloguePage() {
                 const hasError = errorRows.has(p.id);
                 const title = p.name || p.title || "";
                 const handle = p.handle || p.slug || "";
+                const variantsOpen = expandedVariantRows.has(p.id);
+                const variantRows = variantsByProduct.get(p.id) ?? [];
+                const variantLoading = variantsLoadingByProduct.has(p.id);
+                const variantError = variantErrors.get(p.id) ?? null;
                 return (
-                  <tr key={p.id}
-                    className={`hover:bg-gray-50 transition-colors ${selected.has(p.id) ? "bg-blue-50" : ""} ${rowDirty ? "border-l-2 border-amber-400" : ""} ${hasError ? "border-l-2 border-red-500 bg-red-50" : ""}`}
+                  <Fragment key={p.id}>
+                  <tr
+                    className={`hover:bg-gray-50 transition-colors ${selected.has(p.id) ? "bg-blue-50" : ""} ${rowDirty ? "border-l-2 border-amber-400" : ""} ${hasError ? "border-l-2 border-red-500 bg-red-50" : ""} ${p.sku && duplicateSkus.has(p.sku) ? "ring-1 ring-inset ring-orange-300 bg-orange-50/30" : ""}`}
                   >
                     <td className="px-3 py-2">
                       <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} className="accent-[#cc1818]" />
@@ -1394,10 +1697,74 @@ export default function CataloguePage() {
                           onSave={(v) => patchProduct(p.id, "sku", v)} />
                       </td>
                     )}
+                    {visibleColumns.has("family") && (
+                      <td className="px-3 py-2 align-top">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1">
+                            <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">{p.type || "—"}</span>
+                            <EditableCell
+                              value={p.family_role ?? "standalone"}
+                              dirty={"family_role" in dirty}
+                              error={hasError}
+                              onSave={(v) => patchProduct(p.id, "family_role", v)}
+                            />
+                          </div>
+                          <EditableCell
+                            value={p.parent_sku ?? ""}
+                            dirty={"parent_sku" in dirty}
+                            error={hasError}
+                            onSave={(v) => patchProduct(p.id, "parent_sku", v)}
+                          />
+                          <div className="text-[10px] text-gray-500">
+                            {(p.variant_count ?? 0)} var. · {p.family_name ? `${p.family_name} (${p.family_children_count ?? 0})` : "sans famille DB"}
+                          </div>
+                          {(p.variant_count ?? 0) > 0 && (
+                            <Link
+                              href={`/admin/produits/${p.id}`}
+                              className="inline-flex text-[10px] text-blue-600 hover:underline"
+                            >
+                              Ouvrir variantes
+                            </Link>
+                          )}
+                        </div>
+                      </td>
+                    )}
                     {visibleColumns.has("price") && (
                       <td className="px-3 py-2 text-right">
-                        <EditableCell value={p.regular_price} type="number" dirty={"regular_price" in dirty} error={hasError}
-                          onSave={(v) => patchProduct(p.id, "regular_price", parseFloat(v))} />
+                        <div className="space-y-1">
+                          <EditableCell value={p.regular_price ?? ""} type="number" dirty={"regular_price" in dirty} error={hasError}
+                            onSave={(v) => patchProduct(p.id, "regular_price", v === "" ? null : parseFloat(v))} />
+                          <EditableCell value={p.sale_price ?? ""} type="number" dirty={"sale_price" in dirty} error={hasError}
+                            onSave={(v) => patchProduct(p.id, "sale_price", v === "" ? null : parseFloat(v))} />
+                        </div>
+                      </td>
+                    )}
+                    {visibleColumns.has("stock") && (
+                      <td className="px-3 py-2">
+                        <div className="space-y-1">
+                          <EditableCell value={p.stock_quantity ?? ""} type="number" dirty={"stock_quantity" in dirty} error={hasError}
+                            onSave={(v) => patchProduct(p.id, "stock_quantity", v === "" ? null : parseInt(v, 10))} />
+                          <EditableCell value={p.stock_status ?? "instock"} dirty={"stock_status" in dirty} error={hasError}
+                            onSave={(v) => patchProduct(p.id, "stock_status", v)} />
+                          <div className="grid grid-cols-2 gap-1">
+                            <EditableCell value={p.tax_status ?? ""} dirty={"tax_status" in dirty} error={hasError}
+                              onSave={(v) => patchProduct(p.id, "tax_status", v)} />
+                            <EditableCell value={p.tax_class ?? ""} dirty={"tax_class" in dirty} error={hasError}
+                              onSave={(v) => patchProduct(p.id, "tax_class", v)} />
+                          </div>
+                        </div>
+                      </td>
+                    )}
+                    {visibleColumns.has("supplier") && (
+                      <td className="px-3 py-2">
+                        <div className="space-y-1">
+                          <EditableCell value={p.supplier_ref ?? ""} dirty={"supplier_ref" in dirty} error={hasError}
+                            onSave={(v) => patchProduct(p.id, "supplier_ref", v)} />
+                          <EditableCell value={p.supplier_code ?? ""} dirty={"supplier_code" in dirty} error={hasError}
+                            onSave={(v) => patchProduct(p.id, "supplier_code", v)} />
+                          <EditableCell value={p.supplier_price ?? ""} type="number" dirty={"supplier_price" in dirty} error={hasError}
+                            onSave={(v) => patchProduct(p.id, "supplier_price", v === "" ? null : parseFloat(v))} />
+                        </div>
                       </td>
                     )}
                     {visibleColumns.has("status") && (
@@ -1416,11 +1783,121 @@ export default function CataloguePage() {
                         <div className="flex items-center justify-center gap-1.5">
                           <Link href={`/product/${handle}`} target="_blank" className="text-gray-400 hover:text-[#cc1818] transition-colors" title="Voir">👁️</Link>
                           <Link href={`/admin/produits/${p.id}`} className="text-gray-400 hover:text-[#cc1818] transition-colors" title="Éditer">✏️</Link>
+                          {(p.variant_count ?? 0) > 0 && (
+                            <button
+                              onClick={() => toggleVariantsRow(p.id)}
+                              className={`transition-colors ${variantsOpen ? "text-indigo-600" : "text-gray-400 hover:text-[#cc1818]"}`}
+                              title={variantsOpen ? "Masquer variantes" : "Afficher variantes inline"}
+                            >
+                              🧬
+                            </button>
+                          )}
                           <a href={`/api/product-pdf/${handle}`} target="_blank" className="text-gray-400 hover:text-[#cc1818] transition-colors" title="PDF">📄</a>
                         </div>
                       </td>
                     )}
                   </tr>
+                  {variantsOpen && (
+                    <tr key={`${p.id}-variants`}>
+                      <td colSpan={visibleColumnCount} className="bg-indigo-50/40 px-3 py-3">
+                        <div className="rounded-lg border border-indigo-100 bg-white p-3">
+                          <div className="mb-2 flex items-center justify-between">
+                            <p className="text-xs font-semibold text-indigo-700">
+                              Variantes de {title} ({p.variant_count ?? 0})
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => void loadVariants(p.id)}
+                                className="rounded border border-indigo-200 px-2 py-1 text-[11px] text-indigo-700 hover:bg-indigo-50"
+                              >
+                                Rafraîchir
+                              </button>
+                              <Link
+                                href={`/admin/produits/${p.id}`}
+                                className="rounded border border-gray-300 px-2 py-1 text-[11px] text-gray-600 hover:bg-gray-50"
+                              >
+                                Ouvrir fiche complète
+                              </Link>
+                            </div>
+                          </div>
+
+                          {variantLoading ? (
+                            <p className="text-xs text-gray-500">Chargement variantes...</p>
+                          ) : variantError ? (
+                            <p className="rounded bg-red-50 px-2 py-1 text-xs text-red-700">{variantError}</p>
+                          ) : variantRows.length === 0 ? (
+                            <p className="text-xs text-gray-500">Aucune variante trouvée.</p>
+                          ) : (
+                            <div className="overflow-x-auto rounded border border-gray-200">
+                              <table className="w-full text-xs">
+                                <thead className="bg-gray-50 text-left text-[11px] text-gray-500">
+                                  <tr>
+                                    <th className="px-2 py-1.5">SKU variante</th>
+                                    <th className="px-2 py-1.5">Attributs</th>
+                                    <th className="px-2 py-1.5 text-right">Prix HT</th>
+                                    <th className="px-2 py-1.5">Stock</th>
+                                    <th className="px-2 py-1.5">Statut</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                  {variantRows.map((variant) => (
+                                    <tr key={variant.id}>
+                                      <td className="px-2 py-1.5 font-mono text-gray-700">
+                                        <EditableCell
+                                          value={variant.sku ?? ""}
+                                          onSave={(v) => patchVariant(p.id, variant.id, "sku", v)}
+                                        />
+                                      </td>
+                                      <td className="px-2 py-1.5 text-gray-600">
+                                        {(variant.variant_attributes ?? []).length > 0
+                                          ? (variant.variant_attributes ?? [])
+                                              .map((attr) => `${attr.attribute_name}: ${attr.attribute_value}`)
+                                              .join(" · ")
+                                          : "—"}
+                                      </td>
+                                      <td className="px-2 py-1.5 text-right">
+                                        <EditableCell
+                                          value={variant.regular_price ?? ""}
+                                          type="number"
+                                          onSave={(v) =>
+                                            patchVariant(
+                                              p.id,
+                                              variant.id,
+                                              "regular_price",
+                                              v === "" ? null : parseFloat(v),
+                                            )
+                                          }
+                                        />
+                                      </td>
+                                      <td className="px-2 py-1.5">
+                                        <SelectCell
+                                          value={variant.stock_status || "instock"}
+                                          options={[
+                                            { id: "instock", label: "En stock" },
+                                            { id: "outofstock", label: "Rupture" },
+                                            { id: "onbackorder", label: "Sur commande" },
+                                          ]}
+                                          onSave={(v) => patchVariant(p.id, variant.id, "stock_status", v)}
+                                        />
+                                      </td>
+                                      <td className="px-2 py-1.5">
+                                        <SelectCell
+                                          value={variant.status || "publish"}
+                                          options={STATUS_OPTIONS}
+                                          onSave={(v) => patchVariant(p.id, variant.id, "status", v)}
+                                        />
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })
             )}
