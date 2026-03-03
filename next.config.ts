@@ -1,6 +1,8 @@
+const enablePpr = process.env.NEXT_ENABLE_PPR === "1";
+
 export default {
   experimental: {
-    ppr: true,
+    ...(enablePpr ? { ppr: true } : {}),
     inlineCss: true,
     useCache: true,
   },
