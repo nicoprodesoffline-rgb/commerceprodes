@@ -346,6 +346,14 @@ function uniquePreserve(values: string[]): string[] {
   return out;
 }
 
+function chunkList<T>(rows: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < rows.length; i += size) {
+    out.push(rows.slice(i, i + size));
+  }
+  return out;
+}
+
 function inferPriceImpactAttrIds(
   product: PuidProductRow,
   variants: PuidVariantRow[],
@@ -644,15 +652,19 @@ export async function loadPuidInput(
     return { products: [], variants: [], rules: [] };
   }
 
-  const { data: variantData, error: variantError } = await client
-    .from("variants")
-    .select(
-      "id, product_id, sku, name, regular_price, status, variant_attributes(attribute_id, term_slug, attributes(slug, name))",
-    )
-    .in("product_id", productIdsLoaded)
-    .order("position", { ascending: true })
-    .limit(12000);
-  if (variantError) throw new Error(variantError.message);
+  const variantData: any[] = [];
+  for (const idsChunk of chunkList(productIdsLoaded, 120)) {
+    const { data, error } = await client
+      .from("variants")
+      .select(
+        "id, product_id, sku, name, regular_price, status, variant_attributes(attribute_id, term_slug, attributes(slug, name))",
+      )
+      .in("product_id", idsChunk)
+      .order("position", { ascending: true })
+      .limit(12000);
+    if (error) throw new Error(error.message);
+    variantData.push(...(data || []));
+  }
 
   const variants: PuidVariantRow[] = (variantData || []).map((row: any) => ({
     id: String(row.id),
@@ -674,33 +686,58 @@ export async function loadPuidInput(
     products.map((p) => p.parent_family_id || "").filter(Boolean),
   );
 
-  let ruleQuery = client
-    .from("pricing_attribute_rules")
-    .select("product_id, family_id, attribute_id, impacts_price, active")
-    .eq("active", true)
-    .eq("impacts_price", true)
-    .limit(8000);
+  const rules: PuidRuleRow[] = [];
+  const seenRuleKeys = new Set<string>();
 
-  if (familyIds.length === 0) {
-    ruleQuery = ruleQuery.in("product_id", productIdsLoaded);
-  } else {
-    ruleQuery = ruleQuery.or(
-      `product_id.in.(${productIdsLoaded.join(",")}),family_id.in.(${familyIds.join(",")})`,
-    );
+  for (const idsChunk of chunkList(productIdsLoaded, 200)) {
+    const { data: productRules, error } = await client
+      .from("pricing_attribute_rules")
+      .select("product_id, family_id, attribute_id, impacts_price, active")
+      .eq("active", true)
+      .eq("impacts_price", true)
+      .in("product_id", idsChunk);
+    if (error) {
+      return { products, variants, rules: [] };
+    }
+    for (const row of productRules || []) {
+      const normalized: PuidRuleRow = {
+        product_id: row.product_id ? String(row.product_id) : null,
+        family_id: row.family_id ? String(row.family_id) : null,
+        attribute_id: String(row.attribute_id),
+        impacts_price: Boolean(row.impacts_price),
+        active: Boolean(row.active),
+      };
+      const key = `${normalized.product_id || ""}::${normalized.family_id || ""}::${normalized.attribute_id}`;
+      if (seenRuleKeys.has(key)) continue;
+      seenRuleKeys.add(key);
+      rules.push(normalized);
+    }
   }
 
-  const { data: rulesData, error: rulesError } = await ruleQuery;
-  if (rulesError) {
-    return { products, variants, rules: [] };
+  for (const idsChunk of chunkList(familyIds, 200)) {
+    const { data: familyRules, error } = await client
+      .from("pricing_attribute_rules")
+      .select("product_id, family_id, attribute_id, impacts_price, active")
+      .eq("active", true)
+      .eq("impacts_price", true)
+      .in("family_id", idsChunk);
+    if (error) {
+      return { products, variants, rules: [] };
+    }
+    for (const row of familyRules || []) {
+      const normalized: PuidRuleRow = {
+        product_id: row.product_id ? String(row.product_id) : null,
+        family_id: row.family_id ? String(row.family_id) : null,
+        attribute_id: String(row.attribute_id),
+        impacts_price: Boolean(row.impacts_price),
+        active: Boolean(row.active),
+      };
+      const key = `${normalized.product_id || ""}::${normalized.family_id || ""}::${normalized.attribute_id}`;
+      if (seenRuleKeys.has(key)) continue;
+      seenRuleKeys.add(key);
+      rules.push(normalized);
+    }
   }
-
-  const rules: PuidRuleRow[] = (rulesData || []).map((row: any) => ({
-    product_id: row.product_id ? String(row.product_id) : null,
-    family_id: row.family_id ? String(row.family_id) : null,
-    attribute_id: String(row.attribute_id),
-    impacts_price: Boolean(row.impacts_price),
-    active: Boolean(row.active),
-  }));
 
   return { products, variants, rules };
 }
