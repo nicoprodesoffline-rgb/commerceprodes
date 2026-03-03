@@ -26,18 +26,37 @@ interface Family {
   parent_product_id: string;
   products?: { id: string; name: string; slug: string; sku: string; status: string } | null;
   product_family_members?: FamilyMember[];
+  branch_summary?: {
+    total_skus: number;
+    roots: Array<{
+      root: string;
+      branches: Array<{
+        price_branch: string;
+        count: number;
+        style_examples: string[];
+        samples: string[];
+      }>;
+    }>;
+  };
 }
 
 interface AuditResult {
   total_active_families: number;
   pending_candidates: number;
+  native_candidates?: number;
   parents_without_children: Array<{ id: string; name: string }>;
   orphan_products: Array<{ id: string; name: string; sku: string; parent_sku: string }>;
   large_families: Array<{ id: string; name: string; count: number }>;
   potential_suggestions?: number;
   potential_breakdown?: Record<string, number>;
   potential_examples?: Suggestion[];
+  native_examples?: Array<{ id: string; name: string; sku: string | null; variants: number }>;
   issues: number;
+  scope?: {
+    mode: "all" | "latest_import" | string;
+    since?: string | null;
+    products_considered?: number;
+  };
 }
 
 interface Suggestion {
@@ -54,11 +73,31 @@ interface DbStatus {
   migration?: string;
 }
 
+interface FamilyPricingAttribute {
+  id: string;
+  name: string;
+  slug: string | null;
+  terms: string[];
+  impacts_price: boolean;
+  auto_impacts_price: boolean;
+}
+
+interface FamilyPricingState {
+  loading: boolean;
+  saving: boolean;
+  loaded: boolean;
+  error: string | null;
+  attributes: FamilyPricingAttribute[];
+  selectedIds: string[];
+  autoIds: string[];
+}
+
 const STRATEGY_LABELS: Record<string, string> = {
   auto: "Auto",
   parent_sku: "Parent SKU",
   sku_root: "Racine SKU",
   title_root: "Titre similaire",
+  native_variants: "Variantes natives",
   manual: "Manuel",
 };
 
@@ -77,12 +116,15 @@ export default function FamillesPage() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [suggestStrategy, setSuggestStrategy] = useState("auto");
+  const [createDedicatedMother, setCreateDedicatedMother] = useState(true);
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
   const [applyingIdx, setApplyingIdx] = useState<Set<number>>(new Set());
   const [bulkApplyLoading, setBulkApplyLoading] = useState(false);
   const [bulkDeactivateLoading, setBulkDeactivateLoading] = useState(false);
   const [dragMember, setDragMember] = useState<{ familyId: string; memberId: string } | null>(null);
   const [tab, setTab] = useState<"list" | "audit" | "suggest">("list");
+  const [familyPricing, setFamilyPricing] = useState<Record<string, FamilyPricingState>>({});
+  const [focusLatestImport, setFocusLatestImport] = useState(false);
 
   // ── Check DB status ──────────────────────────────────────────────────────────
 useEffect(() => {
@@ -113,6 +155,7 @@ useEffect(() => {
         limit: "50",
       });
       if (search) params.set("q", search);
+      if (focusLatestImport) params.set("scope", "latest_import");
       const res = await adminFetch(`/api/admin/families?${params}`);
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Erreur"); return; }
@@ -121,7 +164,7 @@ useEffect(() => {
     } finally {
       setLoading(false);
     }
-  }, [dbStatus, activeOnly, search]);
+  }, [dbStatus, activeOnly, search, focusLatestImport]);
 
   useEffect(() => { loadFamilies(); }, [loadFamilies]);
 
@@ -131,7 +174,10 @@ useEffect(() => {
     setAuditLoading(true);
     setError(null);
     try {
-      const res = await adminFetch("/api/admin/families/audit");
+      const params = new URLSearchParams();
+      if (focusLatestImport) params.set("scope", "latest_import");
+      const suffix = params.toString();
+      const res = await adminFetch(`/api/admin/families/audit${suffix ? `?${suffix}` : ""}`);
       if (res.ok) setAudit(await res.json());
       else {
         const data = await res.json().catch(() => ({}));
@@ -153,7 +199,11 @@ useEffect(() => {
       const res = await adminFetch("/api/admin/families/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ strategy: suggestStrategy, limit: 50 }),
+        body: JSON.stringify({
+          strategy: suggestStrategy,
+          limit: 50,
+          import_scope: focusLatestImport ? "latest_import" : "all",
+        }),
       });
       const data = await res.json();
       if (res.ok) setSuggestions(data.suggestions ?? []);
@@ -171,8 +221,10 @@ useEffect(() => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          parent_product_id: suggestion.parent.id,
+          parent_product_id: createDedicatedMother ? undefined : suggestion.parent.id,
           member_product_ids: suggestion.children.map((c) => c.id),
+          create_parent_product: createDedicatedMother,
+          parent_name: suggestion.parent.name,
           strategy: suggestion.strategy,
           name: suggestion.parent.name,
         }),
@@ -219,6 +271,7 @@ useEffect(() => {
     setBulkDeactivateLoading(true);
     try {
       for (const id of selectedIds) {
+        if (id.startsWith("native-")) continue;
         await adminFetch("/api/admin/families/disassemble", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -233,6 +286,7 @@ useEffect(() => {
   }
 
   async function reorderMembers(familyId: string, orderedIds: string[]) {
+    if (familyId.startsWith("native-")) return;
     const res = await adminFetch(`/api/admin/families/${familyId}/members/reorder`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -241,6 +295,146 @@ useEffect(() => {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data?.error ?? "Impossible de réordonner");
+    }
+  }
+
+  async function loadFamilyPricing(familyId: string) {
+    setFamilyPricing((prev) => ({
+      ...prev,
+      [familyId]: {
+        loading: true,
+        saving: prev[familyId]?.saving ?? false,
+        loaded: prev[familyId]?.loaded ?? false,
+        error: null,
+        attributes: prev[familyId]?.attributes ?? [],
+        selectedIds: prev[familyId]?.selectedIds ?? [],
+        autoIds: prev[familyId]?.autoIds ?? [],
+      },
+    }));
+
+    try {
+      const res = await adminFetch(`/api/admin/families/${familyId}/pricing-attributes`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFamilyPricing((prev) => ({
+          ...prev,
+          [familyId]: {
+            loading: false,
+            saving: prev[familyId]?.saving ?? false,
+            loaded: prev[familyId]?.loaded ?? false,
+            error: data.error ?? "Erreur chargement règles tarifaires",
+            attributes: prev[familyId]?.attributes ?? [],
+            selectedIds: prev[familyId]?.selectedIds ?? [],
+            autoIds: prev[familyId]?.autoIds ?? [],
+          },
+        }));
+        return;
+      }
+
+      const attributes: FamilyPricingAttribute[] = data.attributes ?? [];
+      const selectedIds: string[] =
+        data.selected_attribute_ids ??
+        attributes.filter((a) => a.impacts_price).map((a) => a.id);
+      const autoIds: string[] =
+        data.auto_suggested_attribute_ids ??
+        attributes.filter((a) => a.auto_impacts_price).map((a) => a.id);
+
+      setFamilyPricing((prev) => ({
+        ...prev,
+        [familyId]: {
+          loading: false,
+          saving: false,
+          loaded: true,
+          error: null,
+          attributes,
+          selectedIds,
+          autoIds,
+        },
+      }));
+    } catch {
+      setFamilyPricing((prev) => ({
+        ...prev,
+        [familyId]: {
+          loading: false,
+          saving: prev[familyId]?.saving ?? false,
+          loaded: prev[familyId]?.loaded ?? false,
+          error: "Erreur réseau",
+          attributes: prev[familyId]?.attributes ?? [],
+          selectedIds: prev[familyId]?.selectedIds ?? [],
+          autoIds: prev[familyId]?.autoIds ?? [],
+        },
+      }));
+    }
+  }
+
+  function toggleFamilyPricingAttribute(familyId: string, attributeId: string, checked: boolean) {
+    setFamilyPricing((prev) => {
+      const current = prev[familyId];
+      if (!current) return prev;
+      const selected = new Set(current.selectedIds);
+      if (checked) selected.add(attributeId);
+      else selected.delete(attributeId);
+      return {
+        ...prev,
+        [familyId]: {
+          ...current,
+          selectedIds: [...selected],
+        },
+      };
+    });
+  }
+
+  function applyFamilyAutoPricing(familyId: string) {
+    setFamilyPricing((prev) => {
+      const current = prev[familyId];
+      if (!current) return prev;
+      return {
+        ...prev,
+        [familyId]: {
+          ...current,
+          selectedIds: [...current.autoIds],
+        },
+      };
+    });
+  }
+
+  async function saveFamilyPricing(familyId: string) {
+    const current = familyPricing[familyId];
+    if (!current) return;
+
+    setFamilyPricing((prev) => ({
+      ...prev,
+      [familyId]: { ...current, saving: true, error: null },
+    }));
+
+    try {
+      const res = await adminFetch(`/api/admin/families/${familyId}/pricing-attributes`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attribute_ids: current.selectedIds }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFamilyPricing((prev) => ({
+          ...prev,
+          [familyId]: {
+            ...current,
+            saving: false,
+            error: data.error ?? "Impossible d'enregistrer les règles",
+          },
+        }));
+        return;
+      }
+      await loadFamilyPricing(familyId);
+    } catch {
+      setFamilyPricing((prev) => ({
+        ...prev,
+        [familyId]: {
+          ...current,
+          saving: false,
+          error: "Erreur réseau",
+        },
+      }));
     }
   }
 
@@ -288,6 +482,7 @@ useEffect(() => {
 
   // ── Deactivate family ────────────────────────────────────────────────────────
   async function deactivateFamily(familyId: string) {
+    if (familyId.startsWith("native-")) return;
     if (!confirm("Désactiver cette famille ?")) return;
     const res = await adminFetch("/api/admin/families/disassemble", {
       method: "POST",
@@ -304,6 +499,7 @@ useEffect(() => {
 
   // ── Remove member ────────────────────────────────────────────────────────────
   async function removeMember(familyId: string, memberId: string) {
+    if (familyId.startsWith("native-")) return;
     const res = await adminFetch(`/api/admin/families/${familyId}/members/remove`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -365,8 +561,8 @@ useEffect(() => {
       return (
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Familles produits</h1>
-            <p className="text-sm text-gray-500 mt-1">Groupement mères / filles</p>
+            <h1 className="text-2xl font-bold text-gray-900">Produits mères</h1>
+            <p className="text-sm text-gray-500 mt-1">Structure mère / filles</p>
           </div>
           <div className="rounded-xl border border-red-300 bg-red-50 p-6">
             <div className="flex items-start gap-3">
@@ -385,8 +581,8 @@ useEffect(() => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Familles produits</h1>
-          <p className="text-sm text-gray-500 mt-1">Groupement mères / filles</p>
+          <h1 className="text-2xl font-bold text-gray-900">Produits mères</h1>
+          <p className="text-sm text-gray-500 mt-1">Structure mère / filles</p>
         </div>
         <div className="rounded-xl border border-amber-300 bg-amber-50 p-6">
           <div className="flex items-start gap-3">
@@ -414,12 +610,21 @@ useEffect(() => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Familles produits</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Mères / Filles produits</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {total} famille{total !== 1 ? "s" : ""} · Groupement mères / filles
+            {total} mère{total !== 1 ? "s" : ""} · Arbres produits éditables
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <label className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-700">
+            <input
+              type="checkbox"
+              className="mr-1 align-middle"
+              checked={focusLatestImport}
+              onChange={(e) => setFocusLatestImport(e.target.checked)}
+            />
+            Scope: dernier import
+          </label>
           <button
             onClick={exportCsv}
             className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
@@ -435,7 +640,7 @@ useEffect(() => {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-gray-200">
-        {([["list", "Familles"], ["audit", "Audit"], ["suggest", "Suggestions IA"]] as const).map(([t, label]) => (
+        {([["list", "Mères"], ["audit", "Audit"], ["suggest", "Suggestions Mères/Filles IA"]] as const).map(([t, label]) => (
           <button
             key={t}
             onClick={() => { setTab(t); if (t === "audit" && !audit) runAudit(); if (t === "suggest") runSuggest(); }}
@@ -458,12 +663,12 @@ useEffect(() => {
         <>
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-3">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher une famille…"
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none flex-1 min-w-48"
-            />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher une mère…"
+                className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none flex-1 min-w-48"
+              />
             <label className="flex items-center gap-2 text-sm text-gray-600">
               <input type="checkbox" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} />
               Actives uniquement
@@ -472,11 +677,16 @@ useEffect(() => {
               Actualiser
             </button>
           </div>
+          {focusLatestImport && (
+            <p className="text-xs text-indigo-700">
+              Affichage limité aux mères/filles liées aux produits modifiés depuis le dernier import.
+            </p>
+          )}
 
           {selectedIds.size > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm">
               <span className="font-medium text-blue-800">
-                {selectedIds.size} famille(s) sélectionnée(s)
+                {selectedIds.size} mère(s) sélectionnée(s)
               </span>
               <button
                 onClick={() => setSelectedIds(new Set())}
@@ -489,7 +699,7 @@ useEffect(() => {
                 disabled={bulkDeactivateLoading}
                 className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
               >
-                {bulkDeactivateLoading ? "Désactivation…" : "Désactiver la sélection"}
+                {bulkDeactivateLoading ? "Désactivation…" : "Désactiver les mères sélectionnées"}
               </button>
             </div>
           )}
@@ -501,8 +711,8 @@ useEffect(() => {
             {families.length === 0 && !loading && (
               <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-gray-400">
                 <div className="text-3xl mb-2">🔗</div>
-                <p className="text-sm">Aucune famille trouvée.</p>
-                <p className="text-xs mt-1">Utilisez l&apos;onglet "Suggestions IA" pour en créer automatiquement.</p>
+                <p className="text-sm">Aucune mère trouvée.</p>
+                <p className="text-xs mt-1">Utilisez l&apos;onglet "Suggestions Mères/Filles IA" pour en créer automatiquement.</p>
               </div>
             )}
 
@@ -510,6 +720,7 @@ useEffect(() => {
               const expanded = expandedIds.has(family.id);
               const selected = selectedIds.has(family.id);
               const activeMembers = (family.product_family_members ?? []).filter((m) => m.active);
+              const isNative = family.id.startsWith("native-") || family.strategy === "native_variants";
 
               return (
                 <div
@@ -523,6 +734,7 @@ useEffect(() => {
                     <input
                       type="checkbox"
                       checked={selected}
+                      disabled={isNative}
                       onChange={() => toggleSelect(family.id)}
                       className="rounded"
                     />
@@ -542,9 +754,14 @@ useEffect(() => {
                           <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700">
                             {STRATEGY_LABELS[family.strategy] ?? family.strategy}
                           </span>
+                          {isNative && (
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                              virtuel
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5">
-                          Mère: <strong>{(family.products as { sku: string } | null)?.sku ?? "?"}</strong>
+                          Mère: <strong>{(family.products as { sku: string } | null)?.sku ?? "sans SKU"}</strong>
                           {" · "}
                           {activeMemberCount(family)} fille{activeMemberCount(family) !== 1 ? "s" : ""}
                         </div>
@@ -560,9 +777,10 @@ useEffect(() => {
                       </a>
                       <button
                         onClick={() => deactivateFamily(family.id)}
-                        className="text-xs text-red-400 hover:text-red-600"
+                        disabled={isNative}
+                        className="text-xs text-red-400 hover:text-red-600 disabled:cursor-not-allowed disabled:text-gray-300"
                       >
-                        Désactiver
+                        {isNative ? "Natif" : "Désactiver"}
                       </button>
                     </div>
                   </div>
@@ -570,6 +788,125 @@ useEffect(() => {
                   {/* Members list */}
                   {expanded && (
                     <div className="border-t border-gray-100 px-4 pb-4 pt-3">
+                      <div className="mb-3 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                          Arbre SKU / PUID (racine → branche prix → styles)
+                        </p>
+                        {!family.branch_summary || family.branch_summary.total_skus === 0 ? (
+                          <p className="text-xs text-indigo-700/80">
+                            Aucun SKU exploitable détecté sur les filles de cette mère.
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            {family.branch_summary.roots.map((root) => (
+                              <div key={root.root} className="rounded border border-indigo-100 bg-white p-2">
+                                <p className="text-xs font-semibold text-indigo-800">
+                                  Racine: <span className="font-mono">{root.root}</span>
+                                </p>
+                                <div className="mt-1 space-y-1">
+                                  {root.branches.map((branch) => (
+                                    <div
+                                      key={`${root.root}-${branch.price_branch}`}
+                                      className="rounded border border-gray-100 bg-gray-50 px-2 py-1.5 text-xs"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium text-gray-700">
+                                          Branche prix: <span className="font-mono">{branch.price_branch}</span>
+                                        </span>
+                                        <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] text-indigo-700">
+                                          {branch.count} refs
+                                        </span>
+                                      </div>
+                                      {branch.style_examples.length > 0 && (
+                                        <p className="mt-1 text-[11px] text-gray-500">
+                                          Styles: {branch.style_examples.join(", ")}
+                                        </p>
+                                      )}
+                                      {branch.samples.length > 0 && (
+                                        <p className="mt-1 font-mono text-[10px] text-gray-400">
+                                          Ex: {branch.samples.join(" · ")}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {!isNative && (
+                        <div className="mb-3 rounded-lg border border-purple-200 bg-purple-50 p-3">
+                          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">
+                              Attributs qui impactent le prix (famille)
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => loadFamilyPricing(family.id)}
+                                className="rounded border border-purple-300 px-2 py-1 text-[11px] text-purple-700 hover:bg-purple-100"
+                              >
+                                {familyPricing[family.id]?.loading ? "Chargement…" : "Charger / Rafraîchir"}
+                              </button>
+                              {familyPricing[family.id]?.loaded && (
+                                <button
+                                  onClick={() => applyFamilyAutoPricing(family.id)}
+                                  className="rounded border border-amber-300 px-2 py-1 text-[11px] text-amber-700 hover:bg-amber-50"
+                                >
+                                  Suggestion auto
+                                </button>
+                              )}
+                              {familyPricing[family.id]?.loaded && (
+                                <button
+                                  onClick={() => saveFamilyPricing(family.id)}
+                                  disabled={familyPricing[family.id]?.saving}
+                                  className="rounded bg-purple-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+                                >
+                                  {familyPricing[family.id]?.saving ? "Enregistrement…" : "Enregistrer"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {familyPricing[family.id]?.error && (
+                            <p className="mb-2 rounded bg-red-50 px-2 py-1 text-xs text-red-700">
+                              {familyPricing[family.id]?.error}
+                            </p>
+                          )}
+
+                          {!familyPricing[family.id]?.loaded ? (
+                            <p className="text-xs text-purple-700/80">
+                              Chargez les attributs de la famille pour définir ce qui pilote la grille tarifaire.
+                            </p>
+                          ) : familyPricing[family.id]?.attributes.length === 0 ? (
+                            <p className="text-xs text-purple-700/80">
+                              Aucun attribut de variation disponible sur la mère de cette famille.
+                            </p>
+                          ) : (
+                            <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
+                              {familyPricing[family.id]?.attributes.map((attr) => (
+                                <label key={attr.id} className="flex items-center gap-2 text-xs text-gray-700">
+                                  <input
+                                    type="checkbox"
+                                    checked={familyPricing[family.id]?.selectedIds.includes(attr.id)}
+                                    onChange={(e) =>
+                                      toggleFamilyPricingAttribute(family.id, attr.id, e.target.checked)
+                                    }
+                                  />
+                                  <span className="font-medium">{attr.name}</span>
+                                  {attr.auto_impacts_price && (
+                                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-700">
+                                      auto
+                                    </span>
+                                  )}
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {activeMembers.length === 0 ? (
                         <p className="text-xs text-gray-400 italic">Aucune fille active.</p>
                       ) : (
@@ -588,11 +925,11 @@ useEffect(() => {
                               return (
                                 <div
                                   key={member.id}
-                                  draggable
-                                  onDragStart={() => setDragMember({ familyId: family.id, memberId: member.id })}
+                                  draggable={!isNative}
+                                  onDragStart={() => !isNative && setDragMember({ familyId: family.id, memberId: member.id })}
                                   onDragEnd={() => setDragMember(null)}
                                   onDragOver={(e) => e.preventDefault()}
-                                  onDrop={() => handleDropMember(family, member.id)}
+                                  onDrop={() => !isNative && handleDropMember(family, member.id)}
                                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${
                                     dragMember?.memberId === member.id
                                       ? "bg-blue-100 ring-1 ring-blue-300"
@@ -615,9 +952,10 @@ useEffect(() => {
                                   </div>
                                   <button
                                     onClick={() => removeMember(family.id, member.id)}
-                                    className="text-xs text-gray-400 hover:text-red-500"
+                                    disabled={isNative}
+                                    className="text-xs text-gray-400 hover:text-red-500 disabled:cursor-not-allowed disabled:text-gray-300"
                                   >
-                                    Détacher
+                                    {isNative ? "—" : "Détacher"}
                                   </button>
                                 </div>
                               );
@@ -635,9 +973,9 @@ useEffect(() => {
 
       {/* ── AUDIT TAB ────────────────────────────────────────────────────────── */}
       {tab === "audit" && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <h2 className="font-semibold text-gray-900">Audit familles</h2>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+            <h2 className="font-semibold text-gray-900">Audit Mères / Filles</h2>
             <button
               onClick={runAudit}
               disabled={auditLoading}
@@ -646,12 +984,21 @@ useEffect(() => {
               {auditLoading ? "Analyse…" : "Relancer"}
             </button>
           </div>
+          {audit?.scope?.mode === "latest_import" && (
+            <p className="text-xs text-indigo-700">
+              Scope actif: dernier import
+              {audit.scope.since ? ` (depuis ${new Date(audit.scope.since).toLocaleString("fr-FR")})` : ""}
+              {typeof audit.scope.products_considered === "number"
+                ? ` · ${audit.scope.products_considered} produit(s) considérés`
+                : ""}
+            </p>
+          )}
 
           {audit && (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-6">
               {[
                 {
-                  label: "Familles actives",
+                  label: "Mères actives",
                   value: audit.total_active_families,
                   wrapper: "rounded-xl border border-green-200 bg-green-50 p-4",
                   valueClass: "text-2xl font-bold text-green-700",
@@ -695,6 +1042,13 @@ useEffect(() => {
                   valueClass: "text-2xl font-bold text-indigo-700",
                   labelClass: "mt-0.5 text-xs text-indigo-600",
                 },
+                {
+                  label: "Mères natives",
+                  value: audit.native_candidates ?? 0,
+                  wrapper: "rounded-xl border border-purple-200 bg-purple-50 p-4",
+                  valueClass: "text-2xl font-bold text-purple-700",
+                  labelClass: "mt-0.5 text-xs text-purple-600",
+                },
               ].map((kpi) => (
                 <div key={kpi.label} className={kpi.wrapper}>
                   <p className={kpi.valueClass}>{kpi.value}</p>
@@ -724,7 +1078,7 @@ useEffect(() => {
           {audit && audit.parents_without_children.length > 0 && (
             <div className="rounded-xl border border-amber-200 bg-white p-4">
               <h3 className="font-medium text-gray-900 mb-2">
-                Familles sans filles ({audit.parents_without_children.length})
+                Mères sans filles ({audit.parents_without_children.length})
               </h3>
               <div className="space-y-1">
                 {audit.parents_without_children.map((f) => (
@@ -755,6 +1109,21 @@ useEffect(() => {
               )}
             </div>
           )}
+
+          {audit && (audit.native_examples ?? []).length > 0 && (
+            <div className="rounded-xl border border-purple-200 bg-white p-4">
+              <h3 className="mb-2 font-medium text-gray-900">
+                Exemples familles natives (produits avec variantes)
+              </h3>
+              <div className="space-y-1.5 text-xs">
+                {(audit.native_examples ?? []).map((n) => (
+                  <div key={n.id} className="rounded bg-purple-50 px-2 py-1 text-purple-900">
+                    <strong>{n.name}</strong> ({n.sku ?? "—"}) · {n.variants} variante(s)
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -762,7 +1131,7 @@ useEffect(() => {
       {tab === "suggest" && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <h2 className="font-semibold text-gray-900">Suggestions de familles</h2>
+            <h2 className="font-semibold text-gray-900">Suggestions de mères</h2>
             <select
               value={suggestStrategy}
               onChange={(e) => setSuggestStrategy(e.target.value)}
@@ -780,6 +1149,15 @@ useEffect(() => {
             >
               {suggestLoading ? "Analyse…" : "Analyser"}
             </button>
+            <label className="rounded-lg border border-indigo-200 bg-indigo-50 px-2 py-1 text-xs text-indigo-700">
+              <input
+                type="checkbox"
+                className="mr-1 align-middle"
+                checked={createDedicatedMother}
+                onChange={(e) => setCreateDedicatedMother(e.target.checked)}
+              />
+              Créer une mère dédiée
+            </label>
             {selectedSuggestions.size > 0 && (
               <button
                 onClick={applySelectedSuggestions}
@@ -795,9 +1173,14 @@ useEffect(() => {
 
           <p className="text-sm text-gray-500">
             {suggestions.length > 0
-              ? `${suggestions.length} suggestion${suggestions.length > 1 ? "s" : ""} — cliquez "Assembler" pour créer la famille`
-              : "Lancez l'analyse pour détecter les familles potentielles."}
+              ? `${suggestions.length} suggestion${suggestions.length > 1 ? "s" : ""} — cliquez "Assembler" pour créer une mère`
+              : "Lancez l'analyse pour détecter les structures mère/filles potentielles."}
           </p>
+          {focusLatestImport && (
+            <p className="text-xs text-indigo-700">
+              Analyse limitée au dernier import (produits modifiés récemment).
+            </p>
+          )}
           {suggestions.length > 0 && (
             <p className="text-xs text-gray-400">
               Astuce: la stratégie <code>auto</code> combine <code>parent_sku</code>, <code>sku_root</code> et{" "}

@@ -11,12 +11,12 @@ Le PUID (Product Unique Identifier) est l'identifiant interne PRODES destiné à
 ## 2) Format
 
 ```
-G-{SUP}-{MODEL}-{PRICE_BRANCH}.{STYLE_BRANCH}
+P-{SUP}-{MODEL}-{PRICE_BRANCH}.{STYLE_BRANCH}
 ```
 
 | Partie | Description | Exemple |
 |--------|-------------|---------|
-| `G` | Préfixe gamme générique | `G` |
+| `P` | Préfixe PUID PRODES | `P` |
 | `SUP` | Code fournisseur (3 lettres max) | `GMC`, `ESU`, `SOC` |
 | `MODEL` | Code modèle (unique, stable, non vague) | `MARCA`, `PRIMO`, `GPA45320` |
 | `PRICE_BRANCH` | Attributs qui **changent le prix** | `M4D18AA`, `3X3M` |
@@ -25,9 +25,9 @@ G-{SUP}-{MODEL}-{PRICE_BRANCH}.{STYLE_BRANCH}
 **Règle clé** : Le `.` sépare strictement les attributs prix et non-prix.
 
 ### Exemples validés
-- `G-GMC-PRIMO.BLEU` — produit simple Grosfillex Primo bleu
-- `G-GMC-MARCA-M4D18AA.CH.BLEU` — MARCA avec norme M4D18AA, piètement chrome, bleu
-- `G-ESU-GPA45320-3X3M.BLAN` — tente ESU 3x3m, blanc
+- `P-GMC-PRIMO.BLEU` — produit simple Grosfillex Primo bleu
+- `P-GMC-MARCA-M4D18AA.CH.BLEU` — MARCA avec norme M4D18AA, piètement chrome, bleu
+- `P-ESU-GPA45320-3X3M.BLAN` — tente ESU 3x3m, blanc
 
 ## 3) Workflow d'application (4 étapes)
 
@@ -87,7 +87,7 @@ La mère élue = produit avec `family_role='parent'` ou PUID le plus court.
 ## 7) Architecture PUID → Familles
 
 ```
-puid_root = G-SUP-MODEL
+puid_root = P-SUP-MODEL
   └─ Mère logique = produit le plus générique avec ce root
       ├─ Branche prix 1 = PRICE_BRANCH_A
       │    └─ Filles style = STYLE_BRANCH_1, STYLE_BRANCH_2

@@ -49,6 +49,66 @@ export async function checkVariationsDb(): Promise<DbStatus> {
   return { available: true };
 }
 
+export async function checkCommercialPricingDb(): Promise<DbStatus> {
+  const client = supabaseServer();
+
+  const promoCheck = await client
+    .from("product_promotion_layers")
+    .select("id")
+    .limit(0);
+  if (promoCheck.error && (promoCheck.error.code === "42703" || promoCheck.error.code === "42P01")) {
+    return {
+      available: false,
+      reason: "MIGRATION_REQUIRED",
+      table: "product_promotion_layers",
+    };
+  }
+
+  const rulesCheck = await client
+    .from("pricing_attribute_rules")
+    .select("id")
+    .limit(0);
+  if (rulesCheck.error && (rulesCheck.error.code === "42703" || rulesCheck.error.code === "42P01")) {
+    return {
+      available: false,
+      reason: "MIGRATION_REQUIRED",
+      table: "pricing_attribute_rules",
+    };
+  }
+
+  return { available: true };
+}
+
+export async function checkLotPricingDb(): Promise<DbStatus> {
+  const client = supabaseServer();
+
+  const profilesCheck = await client
+    .from("product_pricing_profiles")
+    .select("id")
+    .limit(0);
+  if (profilesCheck.error && (profilesCheck.error.code === "42703" || profilesCheck.error.code === "42P01")) {
+    return {
+      available: false,
+      reason: "MIGRATION_REQUIRED",
+      table: "product_pricing_profiles",
+    };
+  }
+
+  const offersCheck = await client
+    .from("product_lot_offers")
+    .select("id")
+    .limit(0);
+  if (offersCheck.error && (offersCheck.error.code === "42703" || offersCheck.error.code === "42P01")) {
+    return {
+      available: false,
+      reason: "MIGRATION_REQUIRED",
+      table: "product_lot_offers",
+    };
+  }
+
+  return { available: true };
+}
+
 export function degradedResponse(status: DbStatus) {
   return {
     available: false,

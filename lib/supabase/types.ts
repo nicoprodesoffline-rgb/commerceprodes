@@ -39,6 +39,8 @@ export type ProductVariant = {
   price: Money;
   /** SKU de la variante (PRODES extension) */
   sku?: string;
+  /** Profil tarifaire commercial (lots / dégressif avancé). */
+  pricingProfileId?: string;
 };
 
 export type CartProduct = {
@@ -54,6 +56,8 @@ export type CartItem = {
   cost: {
     totalAmount: Money;
   };
+  /** Snapshot commercial pour garder un calcul stable lors des edits de quantité. */
+  pricingSnapshot?: CartPricingSnapshot;
   merchandise: {
     id: string;
     title: string;
@@ -110,6 +114,62 @@ export type PriceTierDisplay = {
   position: number;
 };
 
+export type ProductLotOffer = {
+  id: string;
+  label: string;
+  paidUnits: number;
+  bonusUnits: number;
+  totalUnits: number;
+  lotPriceHt: number;
+  ecoIncluded: boolean;
+  position: number;
+};
+
+export type ProductPricingProfile = {
+  id: string;
+  profileKey: string;
+  label: string;
+  appliesTo: "variant" | "family" | "product";
+  axis?: Record<string, string>;
+  lotOffers: ProductLotOffer[];
+};
+
+export type ProductPromotionLayer = {
+  id: string;
+  label: string;
+  mode: "lot" | "unit_flat_discount" | "unit_percent_discount" | "unit_sale_price";
+  discountAmount?: number | null;
+  discountPercent?: number | null;
+  overrideUnitPriceHt?: number | null;
+  pricingProfileId?: string | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  forcePromotionsCategory: boolean;
+  meta?: Record<string, unknown>;
+};
+
+export type CartPricingSnapshot = {
+  mode: "unit" | "lot";
+  ecoMode: "included" | "extra";
+  ecoUnit: number;
+  unitPriceHt: number;
+  subtotalHtExEco: number;
+  ecoTotal: number;
+  subtotalHt: number;
+  lot?: {
+    offerId: string;
+    label: string;
+    lotPriceHt: number;
+    paidUnitsPerLot: number;
+    bonusUnitsPerLot: number;
+    totalUnitsPerLot: number;
+    lotsCount: number;
+    paidUnits: number;
+    bonusUnits: number;
+    totalUnits: number;
+  };
+};
+
 export type Product = {
   id: string;
   handle: string;
@@ -137,6 +197,10 @@ export type Product = {
   pbqPricingType?: "fixed" | "percentage" | null;
   pbqMinQuantity?: number;
   priceTiers?: PriceTierDisplay[];
+  pricingProfiles?: ProductPricingProfile[];
+  promotionLayer?: ProductPromotionLayer | null;
+  forceLotMode?: boolean;
+  priceImpactAttributeKeys?: string[];
   weightKg?: number | null;
   lengthCm?: number | null;
   widthCm?: number | null;
@@ -201,6 +265,66 @@ export type DbPriceTier = {
   price: number | null;
   discount_percent: number | null;
   position: number;
+};
+
+export type DbPricingProfile = {
+  id: string;
+  product_id: string;
+  parent_family_id: string | null;
+  profile_key: string;
+  label: string;
+  applies_to: "variant" | "family" | "product";
+  axis: Record<string, string> | null;
+  source: string;
+  active: boolean;
+  position: number;
+};
+
+export type DbLotOffer = {
+  id: string;
+  pricing_profile_id: string;
+  label: string;
+  paid_units: number;
+  bonus_units: number;
+  lot_price_ht: number;
+  eco_included: boolean;
+  active: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+  position: number;
+};
+
+export type DbVariantPricingProfile = {
+  variant_id: string;
+  pricing_profile_id: string;
+};
+
+export type DbProductPromotionLayer = {
+  id: string;
+  product_id: string;
+  pricing_profile_id: string | null;
+  label: string;
+  mode: "lot" | "unit_flat_discount" | "unit_percent_discount" | "unit_sale_price";
+  discount_amount: number | null;
+  discount_percent: number | null;
+  override_unit_price_ht: number | null;
+  force_promotions_category: boolean;
+  active: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+  position: number;
+  meta?: Record<string, unknown> | null;
+};
+
+export type DbPricingAttributeRule = {
+  id: string;
+  product_id: string | null;
+  family_id: string | null;
+  attribute_id: string;
+  impacts_price: boolean;
+  source: "manual" | "auto";
+  confidence: number;
+  active: boolean;
 };
 
 export type DbProduct = {

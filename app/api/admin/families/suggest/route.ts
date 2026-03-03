@@ -38,13 +38,36 @@ export async function POST(req: NextRequest) {
       ? (body.strategy as FamilySuggestStrategy)
       : "auto";
   const limit = Math.min(200, Math.max(1, Number(body.limit) || 50));
+  const importScope =
+    body.import_scope === "latest_import" || body.import_scope === "latest"
+      ? "latest_import"
+      : "all";
   const client = supabaseServer();
 
-  const { data: allProducts, error: productsError } = await client
+  let sinceIso: string | null = null;
+  if (importScope === "latest_import") {
+    const latestImport = await client
+      .from("import_logs")
+      .select("created_at")
+      .in("status", ["pending", "processing", "done"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!latestImport.error && latestImport.data?.created_at) {
+      sinceIso = String(latestImport.data.created_at);
+    }
+  }
+
+  let productsQuery = client
     .from("products")
     .select("id, name, sku, parent_sku, status")
     .eq("status", "publish")
     .limit(5000);
+  if (sinceIso) {
+    productsQuery = productsQuery.gte("updated_at", sinceIso);
+  }
+
+  const { data: allProducts, error: productsError } = await productsQuery;
   if (productsError) return NextResponse.json({ error: productsError.message }, { status: 500 });
 
   const { data: activeMembers } = await client
@@ -107,5 +130,10 @@ export async function POST(req: NextRequest) {
     total: suggestions.length,
     breakdown,
     excluded_already_grouped: excludedChildren.size,
+    scope: {
+      mode: importScope,
+      since: sinceIso,
+      products_considered: products.length,
+    },
   });
 }

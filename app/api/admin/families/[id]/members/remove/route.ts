@@ -27,6 +27,17 @@ export async function POST(
   }
 
   const client = supabaseServer();
+  const { data: memberRow } = await client
+    .from("product_family_members")
+    .select("id, member_product_id, member_variant_id")
+    .eq("id", memberId)
+    .eq("family_id", id)
+    .maybeSingle();
+
+  if (!memberRow) {
+    return NextResponse.json({ error: "Membre introuvable" }, { status: 404 });
+  }
+
   const { error } = await client
     .from("product_family_members")
     .update({ active: false })
@@ -34,6 +45,24 @@ export async function POST(
     .eq("family_id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  let detachedProductId: string | null = memberRow.member_product_id ?? null;
+  if (!detachedProductId && memberRow.member_variant_id) {
+    const { data: variant } = await client
+      .from("variants")
+      .select("id, product_id")
+      .eq("id", memberRow.member_variant_id)
+      .maybeSingle();
+    detachedProductId = variant?.product_id ?? null;
+  }
+
+  if (detachedProductId) {
+    await client
+      .from("products")
+      .update({ family_role: "standalone", parent_family_id: null })
+      .eq("id", detachedProductId);
+  }
+
   console.log(JSON.stringify({ event: "admin.family.member.remove", family_id: id, member_id: memberId }));
   return NextResponse.json({ ok: true });
 }

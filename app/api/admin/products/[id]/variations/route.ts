@@ -9,6 +9,22 @@ import { supabaseServer } from "lib/supabase/client";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+function normalizeSku(value: unknown): string {
+  return String(value ?? "").trim().toUpperCase();
+}
+
+function isMeaningfulVariation(productSku: string, variation: any): boolean {
+  const attrCount = Array.isArray(variation?.variant_attributes)
+    ? variation.variant_attributes.length
+    : 0;
+  if (attrCount > 0) return true;
+
+  const variationSku = normalizeSku(variation?.sku);
+  if (!variationSku || !productSku) return true;
+
+  return variationSku !== productSku;
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -20,6 +36,12 @@ export async function GET(
 
   const client = supabaseServer();
   const dbStatus = await checkVariationsDb();
+  const { data: productRow } = await client
+    .from("products")
+    .select("sku")
+    .eq("id", id)
+    .maybeSingle();
+  const productSku = normalizeSku(productRow?.sku);
 
   // Base select — always available
   let selectFields = `
@@ -74,11 +96,11 @@ export async function GET(
       attribute_value: va.term_slug,
       position: idx,
     })),
-  }));
+  })).filter((variation) => isMeaningfulVariation(productSku, variation));
 
   return NextResponse.json({
     variations,
-    total: count ?? 0,
+    total: variations.length,
     page,
     limit,
     extended_fields: dbStatus.available,
