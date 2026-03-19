@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import crypto from "crypto";
+import { deleteAdminSession, saveAdminSession } from "lib/admin/sessions";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-
-// In-memory session store (fallback when DB not available)
-const memSessions = new Map<string, number>();
 
 // POST — Login
 export async function POST(req: NextRequest) {
@@ -16,9 +14,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
 
-  const { password } = (body as Record<string, unknown>);
+  const { password } = body as Record<string, unknown>;
   if (!password || typeof password !== "string") {
-    return NextResponse.json({ error: "Mot de passe manquant" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Mot de passe manquant" },
+      { status: 400 },
+    );
   }
 
   if (!ADMIN_PASSWORD) {
@@ -55,13 +56,14 @@ export async function POST(req: NextRequest) {
     await client.from("admin_sessions").insert({
       token,
       expires_at: new Date(expiresAt).toISOString(),
-      ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+      ip_address:
+        req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
       user_agent: req.headers.get("user-agent"),
     });
   } catch {
-    // Fallback: in-memory
-    memSessions.set(token, expiresAt);
+    // DB session storage unavailable; rely on shared in-memory fallback.
   }
+  saveAdminSession(token, expiresAt);
 
   // Set cookie
   const cookieStore = await cookies();
@@ -87,8 +89,9 @@ export async function DELETE(req: NextRequest) {
       const client = supabaseServer();
       await client.from("admin_sessions").delete().eq("token", token);
     } catch {
-      memSessions.delete(token);
+      // Fall back to the shared in-memory session store.
     }
+    deleteAdminSession(token);
   }
 
   const cookieStore = await cookies();

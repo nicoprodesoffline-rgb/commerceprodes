@@ -5,11 +5,11 @@ import { Gallery } from "components/product/gallery";
 import { ProductDescription, ProductDescriptionTabs } from "components/product/product-description";
 import { RecentlyViewed } from "components/product/recently-viewed";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
-import { getProduct, getProductRecommendations } from "lib/supabase";
+import { getProduct, getProductParentSlug, getProductRecommendations } from "lib/supabase";
 import type { Image } from "lib/supabase/types";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
 export async function generateMetadata(props: {
@@ -65,6 +65,11 @@ export default async function ProductPage(props: {
   params: Promise<{ handle: string }>;
 }) {
   const params = await props.params;
+
+  // 301 redirect if this product is a family child → serve the parent/mère page
+  const parentSlug = await getProductParentSlug(params.handle);
+  if (parentSlug) redirect(`/product/${parentSlug}`);
+
   const product = await getProduct(params.handle);
 
   if (!product) return notFound();

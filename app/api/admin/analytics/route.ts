@@ -1,13 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkAdminAuth } from "lib/admin/auth";
+import { hasActiveAdminSession } from "lib/admin/sessions";
 
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("Authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  return token === (process.env.ADMIN_PASSWORD ?? "");
+async function checkAnalyticsAuth(req: NextRequest): Promise<boolean> {
+  if (checkAdminAuth(req)) {
+    return true;
+  }
+
+  const session = req.cookies.get("admin_session")?.value;
+  if (!session) {
+    return false;
+  }
+  if (hasActiveAdminSession(session)) {
+    return true;
+  }
+
+  try {
+    const { supabaseServer } = await import("lib/supabase/client");
+    const client = supabaseServer();
+    const { data, error } = await client
+      .from("admin_sessions")
+      .select("token")
+      .eq("token", session)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+
+    return !error && Boolean(data?.token);
+  } catch {
+    return false;
+  }
 }
 
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) {
+  if (!(await checkAnalyticsAuth(req))) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -70,7 +95,8 @@ export async function GET(req: NextRequest) {
     if (topRes.status === "fulfilled" && topRes.value.data) {
       for (const row of topRes.value.data) {
         if (row.product_handle) {
-          handleCounts[row.product_handle] = (handleCounts[row.product_handle] ?? 0) + 1;
+          handleCounts[row.product_handle] =
+            (handleCounts[row.product_handle] ?? 0) + 1;
         }
       }
     }
