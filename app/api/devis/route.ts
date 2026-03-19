@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendEmail } from "lib/email/sender";
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const CONTACT_EMAIL = "contact@prodes.fr";
 
 // ── Rate limiting ────────────────────────────────────────────
@@ -69,11 +69,7 @@ function validateDevisBody(
   )
     return { valid: false, error: "Produit manquant" };
 
-  if (
-    b.telephone &&
-    typeof b.telephone === "string" &&
-    b.telephone.length > 20
-  )
+  if (b.telephone && typeof b.telephone === "string" && b.telephone.length > 20)
     return { valid: false, error: "Téléphone trop long" };
 
   if (
@@ -101,10 +97,8 @@ function validateDevisBody(
         b.telephone && typeof b.telephone === "string"
           ? b.telephone.trim()
           : undefined,
-      quantite:
-        b.quantite !== undefined ? Number(b.quantite) : undefined,
-      sku:
-        b.sku && typeof b.sku === "string" ? b.sku.trim() : undefined,
+      quantite: b.quantite !== undefined ? Number(b.quantite) : undefined,
+      sku: b.sku && typeof b.sku === "string" ? b.sku.trim() : undefined,
       message:
         b.message && typeof b.message === "string"
           ? b.message.trim()
@@ -130,10 +124,14 @@ function buildEmailHtml(data: DevisData) {
       <td style="padding: 8px 12px; background: #f3f4f6; font-weight: bold; width: 160px;">Produit</td>
       <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${produit}</td>
     </tr>
-    ${sku ? `<tr>
+    ${
+      sku
+        ? `<tr>
       <td style="padding: 8px 12px; background: #f3f4f6; font-weight: bold;">Référence</td>
       <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${sku}</td>
-    </tr>` : ""}
+    </tr>`
+        : ""
+    }
     <tr>
       <td style="padding: 8px 12px; background: #f3f4f6; font-weight: bold;">Nom</td>
       <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${nom}</td>
@@ -142,18 +140,30 @@ function buildEmailHtml(data: DevisData) {
       <td style="padding: 8px 12px; background: #f3f4f6; font-weight: bold;">Email</td>
       <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${email}</td>
     </tr>
-    ${telephone ? `<tr>
+    ${
+      telephone
+        ? `<tr>
       <td style="padding: 8px 12px; background: #f3f4f6; font-weight: bold;">Téléphone</td>
       <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${telephone}</td>
-    </tr>` : ""}
-    ${data.quantite ? `<tr>
+    </tr>`
+        : ""
+    }
+    ${
+      data.quantite
+        ? `<tr>
       <td style="padding: 8px 12px; background: #f3f4f6; font-weight: bold;">Quantité</td>
       <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">${data.quantite}</td>
-    </tr>` : ""}
-    ${message ? `<tr>
+    </tr>`
+        : ""
+    }
+    ${
+      message
+        ? `<tr>
       <td style="padding: 8px 12px; background: #f3f4f6; font-weight: bold; vertical-align: top;">Message</td>
       <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; white-space: pre-wrap;">${message}</td>
-    </tr>` : ""}
+    </tr>`
+        : ""
+    }
   </table>
   <p style="margin-top: 24px; font-size: 12px; color: #6b7280;">
     Demande reçue depuis le site PRODES — prodes.fr
@@ -240,25 +250,27 @@ export async function POST(req: NextRequest) {
       produit: data.produit,
     });
 
-    if (RESEND_API_KEY) {
-      const { Resend } = await import("resend");
-      const resend = new Resend(RESEND_API_KEY);
-      const subject = `Demande de devis – ${data.produit} – ${data.nom}`;
+    const subject = `Demande de devis – ${data.produit} – ${data.nom}`;
 
-      await resend.emails.send({
-        from: "PRODES Site <noreply@prodes.fr>",
-        to: CONTACT_EMAIL,
-        replyTo: data.email,
-        subject,
-        html: buildEmailHtml(data),
-      });
+    const internalResult = await sendEmail({
+      from: "PRODES Site <noreply@prodes.fr>",
+      to: CONTACT_EMAIL,
+      replyTo: data.email,
+      subject,
+      html: buildEmailHtml(data),
+    });
+    if (internalResult.error) {
+      console.warn("[DEVIS] Email interne:", internalResult.error);
+    }
 
-      await resend.emails.send({
-        from: "PRODES <noreply@prodes.fr>",
-        to: data.email,
-        subject: "Confirmation de votre demande de devis — PRODES",
-        html: buildConfirmationHtml(data),
-      });
+    const customerResult = await sendEmail({
+      from: "PRODES <noreply@prodes.fr>",
+      to: data.email,
+      subject: "Confirmation de votre demande de devis — PRODES",
+      html: buildConfirmationHtml(data),
+    });
+    if (customerResult.error) {
+      console.warn("[DEVIS] Email confirmation:", customerResult.error);
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

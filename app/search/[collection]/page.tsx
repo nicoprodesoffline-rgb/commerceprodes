@@ -41,7 +41,9 @@ export default async function CategoryPage(props: {
 }) {
   const searchParams = await props.searchParams;
   const params = await props.params;
-  const { sort, minPrice, maxPrice, inStock } = searchParams as { [key: string]: string };
+  const { sort, minPrice, maxPrice, inStock, supplier, eco } = searchParams as {
+    [key: string]: string;
+  };
   const { sortKey, reverse } =
     sorting.find((item) => item.slug === sort) || defaultSort;
 
@@ -54,6 +56,8 @@ export default async function CategoryPage(props: {
       minPrice: minPrice ? parseFloat(minPrice) : undefined,
       maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
       inStockOnly: inStock === "1",
+      supplier: supplier || undefined,
+      ecoOnly: eco === "1",
     }),
   ]);
 
@@ -65,7 +69,8 @@ export default async function CategoryPage(props: {
         {collection.title}
       </h1>
       <p className="mb-6 text-sm text-gray-500">
-        {products.length} produit{products.length !== 1 ? "s" : ""} dans cette catégorie
+        {products.length} produit{products.length !== 1 ? "s" : ""} dans cette
+        catégorie
       </p>
       {products.length === 0 ? (
         <p className="py-3 text-lg text-neutral-500">

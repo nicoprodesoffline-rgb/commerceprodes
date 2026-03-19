@@ -44,10 +44,16 @@ interface ContactConfirmEmailData {
 }
 
 function formatHT(n: number) {
-  return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) + " € HT";
+  return (
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) +
+    " € HT"
+  );
 }
 function formatTTC(n: number) {
-  return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) + " € TTC";
+  return (
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) +
+    " € TTC"
+  );
 }
 
 function itemsTable(items: EmailItem[]): string {
@@ -165,10 +171,14 @@ interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
+  text?: string;
   from?: string;
+  replyTo?: string;
 }
 
-export async function sendEmail(opts: SendEmailOptions): Promise<{ success: boolean; error?: string }> {
+export async function sendEmail(
+  opts: SendEmailOptions,
+): Promise<{ success: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = opts.from ?? "noreply@prodes.fr";
 
@@ -178,7 +188,8 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ success: bool
       to: opts.to,
       subject: opts.subject,
       from,
-      preview: opts.html.slice(0, 200),
+      replyTo: opts.replyTo,
+      preview: (opts.text ?? opts.html).slice(0, 200),
     });
     return { success: true };
   }
@@ -189,8 +200,10 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ success: bool
     const { error } = await resend.emails.send({
       from,
       to: opts.to,
+      replyTo: opts.replyTo,
       subject: opts.subject,
       html: opts.html,
+      text: opts.text,
     });
     if (error) {
       console.error("[EMAIL:error]", error);

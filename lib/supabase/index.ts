@@ -426,7 +426,9 @@ export async function removeFromCart(lineIds: string[]): Promise<Cart> {
  * returns the parent product's slug for a 301 redirect.
  * Returns null if not a child or if migration 016 is not yet applied.
  */
-export async function getProductParentSlug(handle: string): Promise<string | null> {
+export async function getProductParentSlug(
+  handle: string,
+): Promise<string | null> {
   try {
     const { data: row, error } = await supabase
       .from("products")
@@ -447,7 +449,8 @@ export async function getProductParentSlug(handle: string): Promise<string | nul
       .eq("id", row.parent_family_id)
       .single();
 
-    const parentSlug = (family?.products as unknown as { slug: string } | null)?.slug;
+    const parentSlug = (family?.products as unknown as { slug: string } | null)
+      ?.slug;
     return parentSlug ?? null;
   } catch {
     return null;
@@ -539,8 +542,8 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
     .limit(5);
 
   const catLink = catLinks?.[0] ?? null;
-  const isFreeshipping = (catLinks ?? []).some(
-    (pc: any) => (pc.categories as any)?.slug?.includes("pub26"),
+  const isFreeshipping = (catLinks ?? []).some((pc: any) =>
+    (pc.categories as any)?.slug?.includes("pub26"),
   );
 
   // Build options
@@ -598,12 +601,15 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
 
   // Price range — fallback: si le produit parent a prix 0, prendre le min des variants
   const base = Number(dbProduct.regular_price) || 0;
-  const [priceMin, priceMax] = computePriceRange(productVariants.map(v => ({
-    regular_price: Number(v.price.amount),
-  })), base);
+  const [priceMin, priceMax] = computePriceRange(
+    productVariants.map((v) => ({
+      regular_price: Number(v.price.amount),
+    })),
+    base,
+  );
 
   // Si le prix de base est 0 ou null, utiliser le prix minimum des variants
-  const effectiveBase = base > 0 ? base : (priceMin > 0 ? priceMin : 0);
+  const effectiveBase = base > 0 ? base : priceMin > 0 ? priceMin : 0;
 
   // PBQ price tiers for display (product-level tiers sorted by min_quantity)
   const displayTiers: PriceTierDisplay[] = priceTiersRaw
@@ -684,6 +690,8 @@ export async function getProducts({
   minPrice,
   maxPrice,
   inStockOnly = false,
+  supplier,
+  ecoOnly = false,
 }: {
   query?: string;
   category?: string;
@@ -693,6 +701,8 @@ export async function getProducts({
   minPrice?: number;
   maxPrice?: number;
   inStockOnly?: boolean;
+  supplier?: string;
+  ecoOnly?: boolean;
 } = {}): Promise<Product[]> {
   "use cache";
   cacheTag(TAGS.products);
@@ -733,6 +743,8 @@ export async function getProducts({
   if (minPrice != null) dbQuery = dbQuery.gte("regular_price", minPrice);
   if (maxPrice != null) dbQuery = dbQuery.lte("regular_price", maxPrice);
   if (inStockOnly) dbQuery = dbQuery.eq("stock_status", "instock");
+  if (supplier) dbQuery = dbQuery.eq("supplier_code", supplier);
+  if (ecoOnly) dbQuery = dbQuery.gt("eco_contribution", 0);
 
   const ascending = !reverse;
   switch (sortKey) {
@@ -865,6 +877,8 @@ export async function getCollectionProducts({
   minPrice,
   maxPrice,
   inStockOnly = false,
+  supplier,
+  ecoOnly = false,
 }: {
   collection: string;
   reverse?: boolean;
@@ -872,6 +886,8 @@ export async function getCollectionProducts({
   minPrice?: number;
   maxPrice?: number;
   inStockOnly?: boolean;
+  supplier?: string;
+  ecoOnly?: boolean;
 }): Promise<Product[]> {
   "use cache";
   cacheTag(TAGS.collections, TAGS.products);
@@ -896,10 +912,7 @@ export async function getCollectionProducts({
     .select("id")
     .eq("parent_id", mainCat.id);
 
-  const categoryIds = [
-    mainCat.id,
-    ...((subCats || []).map((c: any) => c.id)),
-  ];
+  const categoryIds = [mainCat.id, ...(subCats || []).map((c: any) => c.id)];
 
   const { data: catProducts } = await supabase
     .from("product_categories")
@@ -922,6 +935,8 @@ export async function getCollectionProducts({
   if (minPrice != null) dbQuery = dbQuery.gte("regular_price", minPrice);
   if (maxPrice != null) dbQuery = dbQuery.lte("regular_price", maxPrice);
   if (inStockOnly) dbQuery = dbQuery.eq("stock_status", "instock");
+  if (supplier) dbQuery = dbQuery.eq("supplier_code", supplier);
+  if (ecoOnly) dbQuery = dbQuery.gt("eco_contribution", 0);
 
   switch (sortKey) {
     case "PRICE":
@@ -942,6 +957,101 @@ export async function getCollectionProducts({
 
   const { data: products } = await dbQuery.limit(250);
   return (products || []).map(buildProductSummary);
+}
+
+type CatalogFilterOptions = {
+  priceMin: number;
+  priceMax: number;
+  suppliers: Array<{ value: string; count: number }>;
+  ecoCount: number;
+  total: number;
+};
+
+export async function getCatalogFilterOptions({
+  query,
+  collection,
+}: {
+  query?: string;
+  collection?: string;
+} = {}): Promise<CatalogFilterOptions> {
+  "use cache";
+  cacheTag(TAGS.collections, TAGS.products);
+  cacheLife("hours");
+
+  let productIds: string[] | null = null;
+  if (collection) {
+    const { data: mainCat } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("slug", collection)
+      .single();
+
+    if (!mainCat) {
+      return { priceMin: 0, priceMax: 0, suppliers: [], ecoCount: 0, total: 0 };
+    }
+
+    const { data: subCats } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("parent_id", mainCat.id);
+
+    const categoryIds = [mainCat.id, ...(subCats || []).map((c: any) => c.id)];
+    const { data: catProducts } = await supabase
+      .from("product_categories")
+      .select("product_id")
+      .in("category_id", categoryIds);
+
+    productIds = [
+      ...new Set((catProducts || []).map((cp: any) => cp.product_id)),
+    ] as string[];
+    if (productIds.length === 0) {
+      return { priceMin: 0, priceMax: 0, suppliers: [], ecoCount: 0, total: 0 };
+    }
+  }
+
+  let dbQuery = supabase
+    .from("products")
+    .select("id, regular_price, supplier_code, eco_contribution")
+    .eq("status", "publish");
+
+  if (query) dbQuery = dbQuery.ilike("name", `%${query}%`);
+  if (productIds !== null) dbQuery = dbQuery.in("id", productIds);
+
+  const childIds = await getFamilyChildIds();
+  if (childIds.size > 0) {
+    dbQuery = dbQuery.not("id", "in", `(${[...childIds].join(",")})`);
+  }
+
+  const { data, error } = await dbQuery.limit(2000);
+  if (error || !data) {
+    return { priceMin: 0, priceMax: 0, suppliers: [], ecoCount: 0, total: 0 };
+  }
+
+  const prices = data
+    .map((row: any) => Number(row.regular_price))
+    .filter((price) => Number.isFinite(price) && price > 0);
+
+  const supplierMap = new Map<string, number>();
+  let ecoCount = 0;
+  for (const row of data as any[]) {
+    const supplierCode = String(row.supplier_code ?? "").trim();
+    if (supplierCode) {
+      supplierMap.set(supplierCode, (supplierMap.get(supplierCode) ?? 0) + 1);
+    }
+    if (Number(row.eco_contribution ?? 0) > 0) ecoCount += 1;
+  }
+
+  const suppliers = [...supplierMap.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0], "fr"))
+    .map(([value, count]) => ({ value, count }));
+
+  return {
+    priceMin: prices.length > 0 ? Math.floor(Math.min(...prices)) : 0,
+    priceMax: prices.length > 0 ? Math.ceil(Math.max(...prices)) : 0,
+    suppliers,
+    ecoCount,
+    total: data.length,
+  };
 }
 
 // ============================================================
@@ -1080,7 +1190,8 @@ export async function getRootCategories(): Promise<CategoryWithCount[]> {
   const totalCount = { ...directCount };
   for (const cat of allCats as any[]) {
     if (cat.parent_id && directCount[cat.id]) {
-      totalCount[cat.parent_id] = (totalCount[cat.parent_id] ?? 0) + (directCount[cat.id] ?? 0);
+      totalCount[cat.parent_id] =
+        (totalCount[cat.parent_id] ?? 0) + (directCount[cat.id] ?? 0);
     }
   }
 
@@ -1132,9 +1243,10 @@ export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
   const withImages = products.filter(
     (p: any) => p.product_images && p.product_images.length > 0,
   );
-  const selected = withImages.length >= limit
-    ? withImages.slice(0, limit)
-    : products.slice(0, limit);
+  const selected =
+    withImages.length >= limit
+      ? withImages.slice(0, limit)
+      : products.slice(0, limit);
 
   return selected.map((p: any) => {
     const imgs: any[] = (p.product_images || []).sort(
@@ -1261,9 +1373,7 @@ export async function getAdminStats(): Promise<{
         .from("products")
         .select("id", { count: "exact", head: true })
         .eq("status", "publish"),
-      supabase
-        .from("categories")
-        .select("id", { count: "exact", head: true }),
+      supabase.from("categories").select("id", { count: "exact", head: true }),
       supabase
         .from("product_variants")
         .select("id", { count: "exact", head: true }),
@@ -1276,7 +1386,11 @@ export async function getAdminStats(): Promise<{
         .select("id", { count: "exact", head: true })
         .gte(
           "created_at",
-          new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
+          new Date(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            1,
+          ).toISOString(),
         ),
     ]);
 
@@ -1336,9 +1450,10 @@ export async function getNewProducts(limit = 12): Promise<Product[]> {
     (p: any) => p.product_images && p.product_images.length > 0,
   );
 
-  const selected = withImages.length >= limit
-    ? withImages.slice(0, limit)
-    : (products || []).slice(0, limit);
+  const selected =
+    withImages.length >= limit
+      ? withImages.slice(0, limit)
+      : (products || []).slice(0, limit);
 
   return selected.map(buildProductSummary);
 }
