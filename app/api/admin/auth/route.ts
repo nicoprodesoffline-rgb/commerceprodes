@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import crypto from "crypto";
 import { deleteAdminSession, saveAdminSession } from "lib/admin/sessions";
+import { rateLimit } from "lib/rate-limit";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 // POST — Login
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  if (!rateLimit(ip, 5, 60000)) {
+    return NextResponse.json({ error: "Trop de tentatives" }, { status: 429 });
+  }
+
   let body: unknown;
   try {
     body = await req.json();

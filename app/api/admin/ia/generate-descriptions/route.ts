@@ -2,14 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { sanitizeString, sanitizeNumber } from "lib/validation";
 import { log } from "lib/logger";
 
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("Authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  return token === (process.env.ADMIN_PASSWORD ?? "");
-}
+import { checkAdminAuth } from "lib/admin/auth";
 
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) {
+  if (!checkAdminAuth(req)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -21,13 +17,18 @@ export async function POST(req: NextRequest) {
   }
 
   const data = body as Record<string, unknown>;
-  const productId = data.productId ? sanitizeString(String(data.productId), 36) : null;
+  const productId = data.productId
+    ? sanitizeString(String(data.productId), 36)
+    : null;
   const categorySlug = sanitizeString(String(data.categorySlug ?? ""), 100);
   const limit = sanitizeNumber(Number(data.limit ?? 5), 1, 20);
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY non configurée" }, { status: 500 });
+    return NextResponse.json(
+      { error: "ANTHROPIC_API_KEY non configurée" },
+      { status: 500 },
+    );
   }
 
   try {
@@ -85,13 +86,15 @@ export async function POST(req: NextRequest) {
     const { Anthropic } = await import("@anthropic-ai/sdk");
     const anthropic = new Anthropic({ apiKey });
 
-    const generated: Array<{ id: string; title: string; description: string }> = [];
+    const generated: Array<{ id: string; title: string; description: string }> =
+      [];
     const errors: string[] = [];
 
     for (const product of products) {
       try {
         const categoryName =
-          (product as any).product_categories?.[0]?.categories?.name ?? "équipement collectivité";
+          (product as any).product_categories?.[0]?.categories?.name ??
+          "équipement collectivité";
 
         const message = await anthropic.messages.create({
           model: "claude-sonnet-4-6",
@@ -112,7 +115,8 @@ Réponds uniquement avec la description, sans guillemets ni introduction.`,
         });
 
         const description =
-          (message.content[0] as { type: string; text: string }).text?.trim() ?? "";
+          (message.content[0] as { type: string; text: string }).text?.trim() ??
+          "";
 
         if (description) {
           await client
@@ -134,9 +138,13 @@ Réponds uniquement avec la description, sans guillemets ni introduction.`,
       errors: errors.length,
     });
 
-    return NextResponse.json({ generated: generated.length, errors, products: generated });
+    return NextResponse.json({
+      generated: generated.length,
+      errors,
+      products: generated,
+    });
   } catch (err) {
-    console.error("ia.generate_descriptions error", err);
+    log("error", "ia.generate_descriptions", { error: String(err) });
     return NextResponse.json({ error: "Erreur génération" }, { status: 500 });
   }
 }

@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkAdminAuth } from "lib/admin/auth";
+import { log } from "lib/logger";
+import { safeErrorMessage } from "lib/admin/security";
 
 function checkAuth(req: NextRequest): boolean {
+  if (checkAdminAuth(req)) return true;
+  // Also accept N8N webhook secret
   const auth = req.headers.get("Authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  return (
-    token === (process.env.ADMIN_PASSWORD ?? "") ||
-    token === (process.env.N8N_WEBHOOK_SECRET ?? "")
-  );
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  return token === (process.env.N8N_WEBHOOK_SECRET ?? "");
 }
 
 export async function POST(req: NextRequest) {
@@ -29,9 +31,7 @@ export async function POST(req: NextRequest) {
 
   const priceDiff = body.ourPrice - body.competitorPrice;
   const priceDiffPct =
-    body.competitorPrice > 0
-      ? ((priceDiff / body.competitorPrice) * 100)
-      : 0;
+    body.competitorPrice > 0 ? (priceDiff / body.competitorPrice) * 100 : 0;
 
   try {
     const { supabaseServer } = await import("lib/supabase/client");
@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    log("error", "admin.competitive.insert_failed", { error: String(err) });
+    return NextResponse.json({ error: safeErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -69,7 +70,11 @@ export async function GET(req: NextRequest) {
       .limit(500);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      log("error", "admin.competitive.fetch_failed", { error: error.message });
+      return NextResponse.json(
+        { error: safeErrorMessage(error) },
+        { status: 500 },
+      );
     }
 
     // Group by SKU + competitor — keep latest per pair
@@ -83,6 +88,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ data: grouped });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    log("error", "admin.competitive.get_failed", { error: String(err) });
+    return NextResponse.json({ error: safeErrorMessage(err) }, { status: 500 });
   }
 }

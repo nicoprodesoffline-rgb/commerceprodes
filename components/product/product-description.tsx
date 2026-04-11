@@ -15,7 +15,8 @@ import { AddToQuoteButton } from "components/quote/quote-bar";
 
 function formatPriceFR(price: number): string {
   return (
-    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) + " € HT"
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) +
+    " € HT"
   );
 }
 
@@ -34,7 +35,9 @@ export function ProductDescription({ product }: { product: Product }) {
   const [devisOpen, setDevisOpen] = useState(false);
   const [mandatOpen, setMandatOpen] = useState(false);
   const [quantity, setQuantity] = useState(product.pbqMinQuantity ?? 1);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
+    null,
+  );
   const [toastVisible, setToastVisible] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -59,17 +62,19 @@ export function ProductDescription({ product }: { product: Product }) {
     }
     return product.priceMin && product.priceMin > 0
       ? product.priceMin
-      : (product.regularPrice ?? parseFloat(product.priceRange.minVariantPrice.amount));
+      : (product.regularPrice ??
+          parseFloat(product.priceRange.minVariantPrice.amount));
   })();
 
   const basePrice = displayPrice;
 
   // Eco-participation display logic
   const hasLotsVariant = product.variants.some((v) =>
-    v.selectedOptions.some((o) => o.name === 'pa_les-lots'),
+    v.selectedOptions.some((o) => o.name === "pa_les-lots"),
   );
   const ecoDisplay = getEcoDisplay(product.ecoContribution, hasLotsVariant);
-  const hasPriceTiers = product.pbqEnabled && product.priceTiers && product.priceTiers.length > 0;
+  const hasPriceTiers =
+    product.pbqEnabled && product.priceTiers && product.priceTiers.length > 0;
 
   // Variant label for modals
   const variantLabel = selectedVariant
@@ -96,7 +101,9 @@ export function ProductDescription({ product }: { product: Product }) {
       {/* Title + SKU */}
       <div className="mb-4 border-b border-gray-200 pb-4">
         {displaySku && (
-          <p className="mb-1 text-xs text-gray-400 font-mono">Réf : {displaySku}</p>
+          <p className="mb-1 text-xs text-gray-400 font-mono">
+            Réf : {displaySku}
+          </p>
         )}
         <h1 className="text-2xl font-semibold leading-tight text-gray-900">
           {product.title}
@@ -107,8 +114,10 @@ export function ProductDescription({ product }: { product: Product }) {
       <div className="mb-4">
         {product.variants.length > 1 && !selectedVariant ? (
           <p className="text-2xl font-bold text-gray-900">
-            {product.priceMin != null && product.priceMax != null &&
-            product.priceMin > 0 && product.priceMin !== product.priceMax ? (
+            {product.priceMin != null &&
+            product.priceMax != null &&
+            product.priceMin > 0 &&
+            product.priceMin !== product.priceMax ? (
               <>
                 {formatPriceFR(product.priceMin)}
                 <span className="mx-2 text-gray-400 font-normal">–</span>
@@ -125,16 +134,21 @@ export function ProductDescription({ product }: { product: Product }) {
         )}
 
         {/* Eco-participation */}
-        {ecoDisplay.show && ecoDisplay.type === 'included' && (
+        {ecoDisplay.show && ecoDisplay.type === "included" && (
           <p className="mt-1 text-xs text-gray-500">
             Éco-participation :{" "}
-            <span className="font-medium">{formatPriceFR(ecoDisplay.amount)}</span> incluse
+            <span className="font-medium">
+              {formatPriceFR(ecoDisplay.amount)}
+            </span>{" "}
+            incluse
           </p>
         )}
-        {ecoDisplay.show && ecoDisplay.type === 'per-unit' && (
+        {ecoDisplay.show && ecoDisplay.type === "per-unit" && (
           <p className="mt-1 text-xs text-gray-500">
             +{" "}
-            <span className="font-medium">{formatPriceFR(ecoDisplay.amount)}</span>{" "}
+            <span className="font-medium">
+              {formatPriceFR(ecoDisplay.amount)}
+            </span>{" "}
             éco-participation / unité
           </p>
         )}
@@ -174,7 +188,14 @@ export function ProductDescription({ product }: { product: Product }) {
           type="number"
           min={product.pbqMinQuantity ?? 1}
           value={quantity}
-          onChange={(e) => setQuantity(Math.max(product.pbqMinQuantity ?? 1, parseInt(e.target.value) || 1))}
+          onChange={(e) =>
+            setQuantity(
+              Math.max(
+                product.pbqMinQuantity ?? 1,
+                parseInt(e.target.value) || 1,
+              ),
+            )
+          }
           className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#cc1818] focus:outline-none focus:ring-1 focus:ring-[#cc1818]"
         />
         {(product.pbqMinQuantity ?? 0) > 1 && (
@@ -185,42 +206,49 @@ export function ProductDescription({ product }: { product: Product }) {
       </div>
 
       {/* Bloc récapitulatif dynamique (sans lots, avec éco-participation) */}
-      {!hasPriceTiers && ecoDisplay.show && ecoDisplay.type === 'per-unit' && quantity > 0 && (
-        <div className="mb-5 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm">
-          <div className="mb-2 font-medium text-gray-900">
-            Pour {quantity} unité{quantity > 1 ? 's' : ''} :
+      {!hasPriceTiers &&
+        ecoDisplay.show &&
+        ecoDisplay.type === "per-unit" &&
+        quantity > 0 && (
+          <div className="mb-5 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm">
+            <div className="mb-2 font-medium text-gray-900">
+              Pour {quantity} unité{quantity > 1 ? "s" : ""} :
+            </div>
+            <div className="space-y-1 text-gray-600">
+              <div className="flex justify-between">
+                <span>Sous-total HT</span>
+                <span>
+                  {formatPriceFR(basePrice)} × {quantity} ={" "}
+                  <strong>{formatPriceFR(basePrice * quantity)}</strong>
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Éco-participation</span>
+                <span>
+                  {formatPriceFR(ecoDisplay.amount)} × {quantity} ={" "}
+                  <strong>{formatPriceFR(ecoDisplay.amount * quantity)}</strong>
+                </span>
+              </div>
+              <div className="mt-2 flex justify-between border-t border-gray-300 pt-2 font-medium text-gray-900">
+                <span>Total avant TVA</span>
+                <span>
+                  {formatPriceFR((basePrice + ecoDisplay.amount) * quantity)} HT
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="space-y-1 text-gray-600">
-            <div className="flex justify-between">
-              <span>Sous-total HT</span>
-              <span>
-                {formatPriceFR(basePrice)} × {quantity} ={' '}
-                <strong>{formatPriceFR(basePrice * quantity)}</strong>
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Éco-participation</span>
-              <span>
-                {formatPriceFR(ecoDisplay.amount)} × {quantity} ={' '}
-                <strong>{formatPriceFR(ecoDisplay.amount * quantity)}</strong>
-              </span>
-            </div>
-            <div className="mt-2 flex justify-between border-t border-gray-300 pt-2 font-medium text-gray-900">
-              <span>Total avant TVA</span>
-              <span>{formatPriceFR((basePrice + ecoDisplay.amount) * quantity)} HT</span>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
 
       {/* PBQ Price grid */}
-      {product.pbqEnabled && product.priceTiers && product.priceTiers.length > 0 && (
-        <PriceGrid
-          tiers={product.priceTiers}
-          pricingType={product.pbqPricingType ?? null}
-          basePrice={basePrice}
-        />
-      )}
+      {product.pbqEnabled &&
+        product.priceTiers &&
+        product.priceTiers.length > 0 && (
+          <PriceGrid
+            tiers={product.priceTiers}
+            pricingType={product.pbqPricingType ?? null}
+            basePrice={basePrice}
+          />
+        )}
 
       {/* Livraison */}
       <div className="mb-4">
@@ -242,8 +270,18 @@ export function ProductDescription({ product }: { product: Product }) {
           disabled={isPending}
           className="flex w-full items-center justify-center gap-2 rounded-md bg-green-600 py-3 text-sm font-semibold text-white hover:bg-green-700 transition-colors disabled:opacity-60"
         >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 6.5M7 13l2.5 6.5m0 0h8m-8 0a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 100 2 1 1 0 000-2z" />
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 6.5M7 13l2.5 6.5m0 0h8m-8 0a1 1 0 100 2 1 1 0 000-2zm8 0a1 1 0 100 2 1 1 0 000-2z"
+            />
           </svg>
           Ajouter au panier
         </button>
@@ -255,7 +293,9 @@ export function ProductDescription({ product }: { product: Product }) {
           >
             Demander un devis
           </button>
-          <p className="mt-0.5 text-center text-xs text-gray-400">Réponse sous 24h</p>
+          <p className="mt-0.5 text-center text-xs text-gray-400">
+            Réponse sous 24h
+          </p>
         </div>
 
         <div>
@@ -265,7 +305,9 @@ export function ProductDescription({ product }: { product: Product }) {
           >
             Mandat administratif
           </button>
-          <p className="mt-0.5 text-center text-xs text-gray-400">Pour les collectivités</p>
+          <p className="mt-0.5 text-center text-xs text-gray-400">
+            Pour les collectivités
+          </p>
         </div>
       </div>
 
@@ -322,7 +364,9 @@ export function ProductDescription({ product }: { product: Product }) {
 // Composant séparé pour les onglets Description / Caractéristiques
 // Utilisé en pleine largeur sous la zone image+form dans page.tsx
 export function ProductDescriptionTabs({ product }: { product: Product }) {
-  const [activeTab, setActiveTab] = useState<"description" | "specs">("description");
+  const [activeTab, setActiveTab] = useState<"description" | "specs">(
+    "description",
+  );
 
   const hasSpecs =
     product.weightKg != null ||
@@ -373,25 +417,33 @@ export function ProductDescriptionTabs({ product }: { product: Product }) {
             <tbody>
               {product.weightKg != null && (
                 <tr className="border-b border-gray-100">
-                  <td className="py-2 pr-4 font-medium text-gray-600 w-1/3">Poids</td>
+                  <td className="py-2 pr-4 font-medium text-gray-600 w-1/3">
+                    Poids
+                  </td>
                   <td className="py-2 text-gray-800">{product.weightKg} kg</td>
                 </tr>
               )}
               {product.lengthCm != null && (
                 <tr className="border-b border-gray-100">
-                  <td className="py-2 pr-4 font-medium text-gray-600">Longueur</td>
+                  <td className="py-2 pr-4 font-medium text-gray-600">
+                    Longueur
+                  </td>
                   <td className="py-2 text-gray-800">{product.lengthCm} cm</td>
                 </tr>
               )}
               {product.widthCm != null && (
                 <tr className="border-b border-gray-100">
-                  <td className="py-2 pr-4 font-medium text-gray-600">Largeur</td>
+                  <td className="py-2 pr-4 font-medium text-gray-600">
+                    Largeur
+                  </td>
                   <td className="py-2 text-gray-800">{product.widthCm} cm</td>
                 </tr>
               )}
               {product.heightCm != null && (
                 <tr className="border-b border-gray-100">
-                  <td className="py-2 pr-4 font-medium text-gray-600">Hauteur</td>
+                  <td className="py-2 pr-4 font-medium text-gray-600">
+                    Hauteur
+                  </td>
                   <td className="py-2 text-gray-800">{product.heightCm} cm</td>
                 </tr>
               )}

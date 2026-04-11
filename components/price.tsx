@@ -12,7 +12,9 @@ const Price = ({
   currencyCodeClassName?: string;
 } & React.ComponentProps<"p">) => (
   <p suppressHydrationWarning={true} className={className}>
-    {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(parseFloat(amount))}
+    {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(
+      parseFloat(amount),
+    )}
     {" € HT"}
   </p>
 );

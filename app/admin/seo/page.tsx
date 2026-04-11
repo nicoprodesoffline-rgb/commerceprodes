@@ -23,11 +23,20 @@ function computeScore(p: {
   const suggestions: string[] = [];
   let score = 0;
   if (p.title && p.title.length >= 30 && p.title.length <= 70) score += 20;
-  else suggestions.push((p.title?.length ?? 0) < 30 ? "Titre trop court" : "Titre trop long");
+  else
+    suggestions.push(
+      (p.title?.length ?? 0) < 30 ? "Titre trop court" : "Titre trop long",
+    );
   const descLen = (p.short_description ?? "").replace(/<[^>]*>/g, "").length;
   if (descLen >= 80 && descLen <= 300) score += 20;
-  else suggestions.push(descLen < 80 ? "Description trop courte ou absente" : "Description trop longue");
-  if (p.featured_image_url && !p.featured_image_url.includes("placeholder")) score += 20;
+  else
+    suggestions.push(
+      descLen < 80
+        ? "Description trop courte ou absente"
+        : "Description trop longue",
+    );
+  if (p.featured_image_url && !p.featured_image_url.includes("placeholder"))
+    score += 20;
   else suggestions.push("Image principale manquante");
   if (p.sku && p.sku.trim()) score += 20;
   else suggestions.push("SKU manquant");
@@ -37,8 +46,16 @@ function computeScore(p: {
 
 function Voyant({ score }: { score: number }) {
   const cls =
-    score >= 90 ? "text-green-600" : score >= 70 ? "text-yellow-600" : score >= 40 ? "text-orange-600" : "text-red-600";
-  return <span className={`font-mono text-sm font-bold ${cls}`}>● {score}</span>;
+    score >= 90
+      ? "text-green-600"
+      : score >= 70
+        ? "text-yellow-600"
+        : score >= 40
+          ? "text-orange-600"
+          : "text-red-600";
+  return (
+    <span className={`font-mono text-sm font-bold ${cls}`}>● {score}</span>
+  );
 }
 
 export default function SeoPage() {
@@ -46,7 +63,10 @@ export default function SeoPage() {
   const [loading, setLoading] = useState(true);
   const [serpTitle, setSerpTitle] = useState("");
   const [serpDesc, setSerpDesc] = useState("");
-  const password = typeof window !== "undefined" ? sessionStorage.getItem("admin_password") ?? "" : "";
+  const password =
+    typeof window !== "undefined"
+      ? (sessionStorage.getItem("admin_password") ?? "")
+      : "";
 
   useEffect(() => {
     // Load all products (up to 500) and compute scores client-side
@@ -70,7 +90,9 @@ export default function SeoPage() {
   const green = rows.filter((r) => r.score >= 90).length;
   const orange = rows.filter((r) => r.score >= 40 && r.score < 90).length;
   const red = rows.filter((r) => r.score < 40).length;
-  const avg = rows.length ? Math.round(rows.reduce((s, r) => s + r.score, 0) / rows.length) : 0;
+  const avg = rows.length
+    ? Math.round(rows.reduce((s, r) => s + r.score, 0) / rows.length)
+    : 0;
 
   const serpPreviewTitle = serpTitle.slice(0, 70);
   const serpPreviewDesc = serpDesc.slice(0, 155);
@@ -89,8 +111,13 @@ export default function SeoPage() {
           { label: "Score < 40 🔴", value: red, color: "text-red-600" },
           { label: "Score moyen", value: avg, color: "text-gray-900" },
         ].map((s) => (
-          <div key={s.label} className="rounded-lg border border-gray-200 bg-white p-4">
-            <p className={`text-2xl font-bold ${s.color}`}>{loading ? "…" : s.value}</p>
+          <div
+            key={s.label}
+            className="rounded-lg border border-gray-200 bg-white p-4"
+          >
+            <p className={`text-2xl font-bold ${s.color}`}>
+              {loading ? "…" : s.value}
+            </p>
             <p className="mt-0.5 text-xs text-gray-500">{s.label}</p>
           </div>
         ))}
@@ -116,11 +143,15 @@ export default function SeoPage() {
         {/* Top 10 priorités */}
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-100 px-5 py-3">
-            <h2 className="text-sm font-semibold text-gray-800">Top 10 priorités (scores les plus bas)</h2>
+            <h2 className="text-sm font-semibold text-gray-800">
+              Top 10 priorités (scores les plus bas)
+            </h2>
           </div>
           <div className="divide-y divide-gray-50">
             {loading ? (
-              <p className="py-6 text-center text-xs text-gray-400">Chargement…</p>
+              <p className="py-6 text-center text-xs text-gray-400">
+                Chargement…
+              </p>
             ) : (
               rows.slice(0, 10).map((r) => (
                 <div key={r.id} className="flex items-center gap-3 px-5 py-3">
@@ -133,7 +164,9 @@ export default function SeoPage() {
                       {r.title}
                     </Link>
                     {r.suggestions[0] && (
-                      <p className="text-xs text-orange-600">{r.suggestions[0]}</p>
+                      <p className="text-xs text-orange-600">
+                        {r.suggestions[0]}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -145,11 +178,15 @@ export default function SeoPage() {
         {/* Simulateur SERP */}
         <section className="rounded-lg border border-gray-200 bg-white">
           <div className="border-b border-gray-100 px-5 py-3">
-            <h2 className="text-sm font-semibold text-gray-800">Simulateur SERP</h2>
+            <h2 className="text-sm font-semibold text-gray-800">
+              Simulateur SERP
+            </h2>
           </div>
           <div className="p-5 space-y-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-700">Titre (70 max)</label>
+              <label className="mb-1 block text-xs font-medium text-gray-700">
+                Titre (70 max)
+              </label>
               <input
                 type="text"
                 value={serpTitle}
@@ -159,7 +196,9 @@ export default function SeoPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-700">Description (155 max)</label>
+              <label className="mb-1 block text-xs font-medium text-gray-700">
+                Description (155 max)
+              </label>
               <textarea
                 rows={3}
                 value={serpDesc}
@@ -171,16 +210,25 @@ export default function SeoPage() {
 
             {/* Prévisualisation */}
             <div className="rounded-lg border border-gray-100 bg-gray-50 p-4 font-sans text-sm">
-              <p className={`text-lg font-medium leading-tight ${titleTruncated ? "text-red-600" : "text-blue-700"} hover:underline cursor-pointer`}>
+              <p
+                className={`text-lg font-medium leading-tight ${titleTruncated ? "text-red-600" : "text-blue-700"} hover:underline cursor-pointer`}
+              >
                 {serpPreviewTitle || "Titre de la page"}
-                {titleTruncated && <span className="ml-1 text-xs text-red-500">⚠ tronqué</span>}
+                {titleTruncated && (
+                  <span className="ml-1 text-xs text-red-500">⚠ tronqué</span>
+                )}
               </p>
               <p className="mt-0.5 text-xs text-green-700">
                 https://prodes.fr/product/exemple
               </p>
-              <p className={`mt-1 text-xs leading-relaxed ${descTruncated ? "text-orange-600" : "text-gray-600"}`}>
-                {serpPreviewDesc || "Description de la page dans les résultats de recherche…"}
-                {descTruncated && <span className="ml-1 text-red-500">⚠ tronquée</span>}
+              <p
+                className={`mt-1 text-xs leading-relaxed ${descTruncated ? "text-orange-600" : "text-gray-600"}`}
+              >
+                {serpPreviewDesc ||
+                  "Description de la page dans les résultats de recherche…"}
+                {descTruncated && (
+                  <span className="ml-1 text-red-500">⚠ tronquée</span>
+                )}
               </p>
             </div>
           </div>
@@ -190,7 +238,9 @@ export default function SeoPage() {
       {/* Actions IA */}
       <section className="mt-6 rounded-lg border border-gray-200 bg-white">
         <div className="border-b border-gray-100 px-5 py-3">
-          <h2 className="text-sm font-semibold text-gray-800">Optimisation IA</h2>
+          <h2 className="text-sm font-semibold text-gray-800">
+            Optimisation IA
+          </h2>
         </div>
         <div className="flex flex-wrap gap-3 p-5">
           <Link

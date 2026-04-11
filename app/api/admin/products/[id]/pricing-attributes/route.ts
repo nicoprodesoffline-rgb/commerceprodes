@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
-import { checkCommercialPricingDb, degradedResponse } from "lib/admin/families-db";
+import {
+  checkCommercialPricingDb,
+  degradedResponse,
+} from "lib/admin/families-db";
+import { log } from "lib/logger";
 import { supabaseServer } from "lib/supabase/client";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function normalizeToken(value: string): string {
   return value
@@ -86,25 +91,29 @@ export async function GET(
 
   const client = supabaseServer();
 
-  const [{ data: attrs }, { data: rules }, { data: variants }] = await Promise.all([
-    client
-      .from("product_attributes")
-      .select("attribute_id, terms, attributes(id, name, slug)")
-      .eq("product_id", productId)
-      .eq("is_variation", true),
-    client
-      .from("pricing_attribute_rules")
-      .select("attribute_id, impacts_price, source, confidence")
-      .eq("product_id", productId)
-      .eq("active", true),
-    client
-      .from("variants")
-      .select("regular_price, variant_attributes(attribute_id, term_slug)")
-      .eq("product_id", productId)
-      .eq("status", "publish"),
-  ]);
+  const [{ data: attrs }, { data: rules }, { data: variants }] =
+    await Promise.all([
+      client
+        .from("product_attributes")
+        .select("attribute_id, terms, attributes(id, name, slug)")
+        .eq("product_id", productId)
+        .eq("is_variation", true),
+      client
+        .from("pricing_attribute_rules")
+        .select("attribute_id, impacts_price, source, confidence")
+        .eq("product_id", productId)
+        .eq("active", true),
+      client
+        .from("variants")
+        .select("regular_price, variant_attributes(attribute_id, term_slug)")
+        .eq("product_id", productId)
+        .eq("status", "publish"),
+    ]);
 
-  const rulesByAttr = new Map<string, { impacts_price: boolean; source: string; confidence: number }>();
+  const rulesByAttr = new Map<
+    string,
+    { impacts_price: boolean; source: string; confidence: number }
+  >();
   (rules || []).forEach((r: any) => {
     rulesByAttr.set(String(r.attribute_id), {
       impacts_price: Boolean(r.impacts_price),
@@ -133,7 +142,9 @@ export async function GET(
   return NextResponse.json({
     product_id: productId,
     attributes,
-    selected_attribute_ids: attributes.filter((a) => a.impacts_price).map((a) => a.id),
+    selected_attribute_ids: attributes
+      .filter((a) => a.impacts_price)
+      .map((a) => a.id),
     auto_suggested_attribute_ids: attributes
       .filter((a) => a.auto_impacts_price)
       .map((a) => a.id),
@@ -170,7 +181,10 @@ export async function PATCH(
     ? body.attribute_ids.map((v) => String(v)).filter(Boolean)
     : null;
   if (!attributeIds) {
-    return NextResponse.json({ error: "attribute_ids (array) requis" }, { status: 400 });
+    return NextResponse.json(
+      { error: "attribute_ids (array) requis" },
+      { status: 400 },
+    );
   }
 
   const client = supabaseServer();
@@ -184,9 +198,14 @@ export async function PATCH(
     return NextResponse.json({ error: attrsError.message }, { status: 500 });
   }
 
-  const eligible = new Set((attrs || []).map((a: any) => String(a.attribute_id)));
+  const eligible = new Set(
+    (attrs || []).map((a: any) => String(a.attribute_id)),
+  );
   if (eligible.size === 0) {
-    return NextResponse.json({ error: "Aucun attribut de variation disponible" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Aucun attribut de variation disponible" },
+      { status: 400 },
+    );
   }
 
   const selected = new Set(attributeIds.filter((id) => eligible.has(id)));
@@ -219,13 +238,10 @@ export async function PATCH(
     }
   }
 
-  console.log(
-    JSON.stringify({
-      event: "admin.product.pricing_attributes.updated",
-      product_id: productId,
-      selected_count: selected.size,
-    }),
-  );
+  log("info", "admin.product.pricing_attributes.updated", {
+    product_id: productId,
+    selected_count: selected.size,
+  });
 
   return NextResponse.json({
     ok: true,

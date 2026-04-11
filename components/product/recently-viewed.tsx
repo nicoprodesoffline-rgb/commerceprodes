@@ -14,14 +14,19 @@ interface RecentProduct {
 }
 
 function formatHT(n: number) {
-  return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) + " € HT";
+  return (
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) +
+    " € HT"
+  );
 }
 
 export function RecentlyViewed({ currentHandle }: { currentHandle: string }) {
   const [products, setProducts] = useState<RecentProduct[]>([]);
 
   useEffect(() => {
-    const handles = getRecentlyViewed().filter((h) => h !== currentHandle).slice(0, 8);
+    const handles = getRecentlyViewed()
+      .filter((h) => h !== currentHandle)
+      .slice(0, 8);
     if (handles.length < 2) return;
     fetch(`/api/products-by-handles?handles=${handles.join(",")}`)
       .then((r) => r.json())
@@ -33,7 +38,9 @@ export function RecentlyViewed({ currentHandle }: { currentHandle: string }) {
 
   return (
     <section className="mt-10 border-t border-gray-100 pt-8">
-      <h2 className="mb-4 text-lg font-semibold text-gray-900">Récemment consultés</h2>
+      <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        Récemment consultés
+      </h2>
       <div className="flex gap-3 overflow-x-auto pb-2">
         {products.map((p) => (
           <Link

@@ -3,7 +3,8 @@ import { checkAdminAuth } from "lib/admin/auth";
 import { checkLotPricingDb, degradedResponse } from "lib/admin/families-db";
 import { supabaseServer } from "lib/supabase/client";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function asNumber(value: unknown): number | null {
   if (value == null || value === "") return null;
@@ -33,7 +34,9 @@ async function loadProfiles(productId: string) {
   const client = supabaseServer();
   const { data: profiles, error: profileError } = await client
     .from("product_pricing_profiles")
-    .select("id, product_id, profile_key, label, applies_to, axis, active, position")
+    .select(
+      "id, product_id, profile_key, label, applies_to, axis, active, position",
+    )
     .eq("product_id", productId)
     .order("position", { ascending: true });
 
@@ -51,7 +54,8 @@ async function loadProfiles(productId: string) {
       )
       .in("pricing_profile_id", profileIds)
       .order("position", { ascending: true });
-    if (offersError) return { error: offersError.message, profiles: [] as any[] };
+    if (offersError)
+      return { error: offersError.message, profiles: [] as any[] };
     offers = offersRaw || [];
   }
 
@@ -71,14 +75,20 @@ async function loadProfiles(productId: string) {
   };
 }
 
-function parseSkuPrefix(sku: string): { prefix: string; root: string; branch: string } | null {
+function parseSkuPrefix(
+  sku: string,
+): { prefix: string; root: string; branch: string } | null {
   const clean = String(sku || "").trim();
   if (!clean) return null;
   const beforeDot = clean.split(".")[0]?.trim() || "";
   if (!beforeDot) return null;
-  const tokens = beforeDot.split("-").map((t) => t.trim()).filter(Boolean);
+  const tokens = beforeDot
+    .split("-")
+    .map((t) => t.trim())
+    .filter(Boolean);
   if (tokens.length === 0) return null;
-  const rootTokens = tokens.length >= 3 ? tokens.slice(0, 3) : tokens.slice(0, 1);
+  const rootTokens =
+    tokens.length >= 3 ? tokens.slice(0, 3) : tokens.slice(0, 1);
   const root = rootTokens.join("-");
   const branch = tokens.slice(rootTokens.length).join("-");
   return {
@@ -92,22 +102,26 @@ async function loadBranchCandidates(productId: string) {
   const client = supabaseServer();
   const candidates = new Map<
     string,
-    { prefix: string; root: string; branch: string; sampleSkus: string[]; count: number }
+    {
+      prefix: string;
+      root: string;
+      branch: string;
+      sampleSkus: string[];
+      count: number;
+    }
   >();
 
   const addSku = (sku: string) => {
     const parsed = parseSkuPrefix(sku);
     if (!parsed) return;
     const key = parsed.prefix;
-    const current =
-      candidates.get(key) ||
-      {
-        prefix: parsed.prefix,
-        root: parsed.root,
-        branch: parsed.branch,
-        sampleSkus: [],
-        count: 0,
-      };
+    const current = candidates.get(key) || {
+      prefix: parsed.prefix,
+      root: parsed.root,
+      branch: parsed.branch,
+      sampleSkus: [],
+      count: 0,
+    };
     current.count += 1;
     if (current.sampleSkus.length < 4 && !current.sampleSkus.includes(sku)) {
       current.sampleSkus.push(sku);
@@ -299,8 +313,7 @@ export async function POST(
     if (!pricingProfileId || !label || paidUnits == null || lotPrice == null) {
       return NextResponse.json(
         {
-          error:
-            "pricing_profile_id, label, paid_units et lot_price_ht requis",
+          error: "pricing_profile_id, label, paid_units et lot_price_ht requis",
         },
         { status: 400 },
       );
@@ -344,7 +357,10 @@ export async function POST(
     return NextResponse.json({ ok: true, kind, id: inserted?.id ?? null });
   }
 
-  return NextResponse.json({ error: "kind inconnu (profile|offer)" }, { status: 400 });
+  return NextResponse.json(
+    { error: "kind inconnu (profile|offer)" },
+    { status: 400 },
+  );
 }
 
 export async function PATCH(
@@ -389,14 +405,22 @@ export async function PATCH(
       .single();
 
     if (existingError || !existing || existing.product_id !== productId) {
-      return NextResponse.json({ error: "Profil introuvable" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Profil introuvable" },
+        { status: 404 },
+      );
     }
 
     const payload: Record<string, unknown> = {};
     if (body.label != null) payload.label = String(body.label);
-    if (body.profile_key != null) payload.profile_key = String(body.profile_key);
+    if (body.profile_key != null)
+      payload.profile_key = String(body.profile_key);
     if (body.applies_to != null) payload.applies_to = String(body.applies_to);
-    if (body.axis && typeof body.axis === "object" && !Array.isArray(body.axis)) {
+    if (
+      body.axis &&
+      typeof body.axis === "object" &&
+      !Array.isArray(body.axis)
+    ) {
       payload.axis = body.axis;
     }
     if (body.active != null) payload.active = asBoolean(body.active);
@@ -429,19 +453,34 @@ export async function PATCH(
       .eq("id", offer.pricing_profile_id)
       .single();
     if (profileError || !profile || profile.product_id !== productId) {
-      return NextResponse.json({ error: "Offre hors produit" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Offre hors produit" },
+        { status: 400 },
+      );
     }
 
     const payload: Record<string, unknown> = {};
     if (body.code != null) payload.code = body.code ? String(body.code) : null;
     if (body.label != null) payload.label = String(body.label);
-    if (body.paid_units != null) payload.paid_units = Math.max(1, Math.trunc(asNumber(body.paid_units) ?? 1));
-    if (body.bonus_units != null) payload.bonus_units = Math.max(0, Math.trunc(asNumber(body.bonus_units) ?? 0));
-    if (body.lot_price_ht != null) payload.lot_price_ht = asNumber(body.lot_price_ht);
-    if (body.eco_included != null) payload.eco_included = asBoolean(body.eco_included);
+    if (body.paid_units != null)
+      payload.paid_units = Math.max(
+        1,
+        Math.trunc(asNumber(body.paid_units) ?? 1),
+      );
+    if (body.bonus_units != null)
+      payload.bonus_units = Math.max(
+        0,
+        Math.trunc(asNumber(body.bonus_units) ?? 0),
+      );
+    if (body.lot_price_ht != null)
+      payload.lot_price_ht = asNumber(body.lot_price_ht);
+    if (body.eco_included != null)
+      payload.eco_included = asBoolean(body.eco_included);
     if (body.active != null) payload.active = asBoolean(body.active);
-    if (body.starts_at !== undefined) payload.starts_at = body.starts_at ? String(body.starts_at) : null;
-    if (body.ends_at !== undefined) payload.ends_at = body.ends_at ? String(body.ends_at) : null;
+    if (body.starts_at !== undefined)
+      payload.starts_at = body.starts_at ? String(body.starts_at) : null;
+    if (body.ends_at !== undefined)
+      payload.ends_at = body.ends_at ? String(body.ends_at) : null;
     if (body.position != null) payload.position = asNumber(body.position);
 
     const { error } = await client
@@ -454,7 +493,10 @@ export async function PATCH(
     return NextResponse.json({ ok: true, kind, id: rowId });
   }
 
-  return NextResponse.json({ error: "kind inconnu (profile|offer)" }, { status: 400 });
+  return NextResponse.json(
+    { error: "kind inconnu (profile|offer)" },
+    { status: 400 },
+  );
 }
 
 export async function DELETE(
@@ -491,13 +533,17 @@ export async function DELETE(
       .eq("id", rowId)
       .single();
     if (existingError || !existing || existing.product_id !== productId) {
-      return NextResponse.json({ error: "Profil introuvable" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Profil introuvable" },
+        { status: 404 },
+      );
     }
     const { error } = await client
       .from("product_pricing_profiles")
       .delete()
       .eq("id", rowId);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error)
+      return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, kind, id: rowId });
   }
 
@@ -518,16 +564,23 @@ export async function DELETE(
       .eq("id", offer.pricing_profile_id)
       .single();
     if (profileError || !profile || profile.product_id !== productId) {
-      return NextResponse.json({ error: "Offre hors produit" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Offre hors produit" },
+        { status: 400 },
+      );
     }
 
     const { error } = await client
       .from("product_lot_offers")
       .delete()
       .eq("id", rowId);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error)
+      return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, kind, id: rowId });
   }
 
-  return NextResponse.json({ error: "kind inconnu (profile|offer)" }, { status: 400 });
+  return NextResponse.json(
+    { error: "kind inconnu (profile|offer)" },
+    { status: 400 },
+  );
 }

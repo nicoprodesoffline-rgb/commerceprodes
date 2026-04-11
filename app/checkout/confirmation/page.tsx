@@ -11,7 +11,10 @@ export default async function ConfirmationPage(props: {
 }) {
   const { orderId, mode } = await props.searchParams;
 
-  const modeMessages: Record<string, { title: string; body: string; cta?: string }> = {
+  const modeMessages: Record<
+    string,
+    { title: string; body: string; cta?: string }
+  > = {
     virement: {
       title: "Commande enregistrée !",
       body: "Un email de confirmation vous a été envoyé avec les coordonnées bancaires pour effectuer votre virement. Votre commande sera traitée dès réception du paiement.",
@@ -40,8 +43,18 @@ export default async function ConfirmationPage(props: {
         <div className="mx-auto max-w-md">
           {/* Icône succès */}
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-            <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            <svg
+              className="h-8 w-8 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
 
@@ -49,7 +62,8 @@ export default async function ConfirmationPage(props: {
 
           {orderId && (
             <p className="mt-2 text-sm font-mono text-gray-500">
-              Référence : <span className="font-semibold text-gray-800">{orderId}</span>
+              Référence :{" "}
+              <span className="font-semibold text-gray-800">{orderId}</span>
             </p>
           )}
 
@@ -61,8 +75,18 @@ export default async function ConfirmationPage(props: {
               href={`/api/checkout/bon-de-commande?orderId=${encodeURIComponent(orderId)}`}
               className="mt-6 inline-flex items-center gap-2 rounded-md bg-[#2563eb] px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
               </svg>
               Télécharger le bon de commande
             </a>
@@ -72,9 +96,18 @@ export default async function ConfirmationPage(props: {
           <div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
             <p className="font-medium text-gray-800 mb-1">Une question ?</p>
             <p>
-              📞 <a href="tel:+33467243034" className="hover:text-[#cc1818]">04 67 24 30 34</a>
+              📞{" "}
+              <a href="tel:+33467243034" className="hover:text-[#cc1818]">
+                04 67 24 30 34
+              </a>
               {" · "}
-              ✉️ <a href="mailto:contact@prodes.fr" className="hover:text-[#cc1818]">contact@prodes.fr</a>
+              ✉️{" "}
+              <a
+                href="mailto:contact@prodes.fr"
+                className="hover:text-[#cc1818]"
+              >
+                contact@prodes.fr
+              </a>
             </p>
             <p className="mt-1 text-xs text-gray-400">Lun–Sam 8h30–19h</p>
           </div>

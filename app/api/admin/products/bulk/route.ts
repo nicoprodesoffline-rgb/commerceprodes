@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("Authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  return token === (process.env.ADMIN_PASSWORD ?? "");
-}
+import { checkAdminAuth } from "lib/admin/auth";
+import { log } from "lib/logger";
+import { safeErrorMessage } from "lib/admin/security";
 
 // UUID v4 pattern
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) {
+  if (!checkAdminAuth(req)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -42,26 +40,41 @@ export async function POST(req: NextRequest) {
     } else if (action === "price_discount" || action === "price_increase") {
       const pct = Number(value);
       if (isNaN(pct) || pct <= 0 || pct > 100) {
-        return NextResponse.json({ error: "Pourcentage invalide (1-100)" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Pourcentage invalide (1-100)" },
+          { status: 400 },
+        );
       }
       // Fetch current prices
-      const { data: prods } = await client.from("products").select("id, regular_price").in("id", ids);
+      const { data: prods } = await client
+        .from("products")
+        .select("id, regular_price")
+        .in("id", ids);
       for (const p of prods ?? []) {
         const base = Number(p.regular_price) || 0;
-        const newPrice = action === "price_discount"
-          ? Math.max(0.01, base * (1 - pct / 100))
-          : base * (1 + pct / 100);
-        await client.from("products").update({ regular_price: Math.round(newPrice * 100) / 100 }).eq("id", p.id);
+        const newPrice =
+          action === "price_discount"
+            ? Math.max(0.01, base * (1 - pct / 100))
+            : base * (1 + pct / 100);
+        await client
+          .from("products")
+          .update({ regular_price: Math.round(newPrice * 100) / 100 })
+          .eq("id", p.id);
       }
-      console.log(JSON.stringify({ event: "admin.bulk.price", action, pct, count: ids.length }));
+      log("info", "admin.bulk.price", { action, pct, count: ids.length });
       return NextResponse.json({ success: true, updated: ids.length });
     } else if (action === "change_category") {
       updates = {};
       // Insert product_categories rows (simplified: replace primary cat)
       for (const pid of ids) {
-        await client.from("product_categories").upsert({ product_id: pid, category_id: value });
+        await client
+          .from("product_categories")
+          .upsert({ product_id: pid, category_id: value });
       }
-      console.log(JSON.stringify({ event: "admin.bulk.category", category_id: value, count: ids.length }));
+      log("info", "admin.bulk.category", {
+        category_id: value,
+        count: ids.length,
+      });
       return NextResponse.json({ success: true, updated: ids.length });
     } else {
       return NextResponse.json({ error: "Action inconnue" }, { status: 400 });
@@ -71,9 +84,10 @@ export async function POST(req: NextRequest) {
       await client.from("products").update(updates).in("id", ids);
     }
 
-    console.log(JSON.stringify({ event: "admin.bulk", action, count: ids.length }));
+    log("info", "admin.bulk", { action, count: ids.length });
     return NextResponse.json({ success: true, updated: ids.length });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    log("error", "admin.bulk.failed", { error: String(err) });
+    return NextResponse.json({ error: safeErrorMessage(err) }, { status: 500 });
   }
 }

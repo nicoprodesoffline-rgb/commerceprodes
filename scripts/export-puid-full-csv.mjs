@@ -35,7 +35,10 @@ function loadEnv(filePath) {
     const k = m[1];
     if (process.env[k]) continue;
     let v = m[2].trim();
-    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+    if (
+      (v.startsWith('"') && v.endsWith('"')) ||
+      (v.startsWith("'") && v.endsWith("'"))
+    ) {
       v = v.slice(1, -1);
     }
     process.env[k] = v;
@@ -79,7 +82,9 @@ function toCsv(rows) {
 }
 
 function normalizeScope(scope) {
-  return scope === "latest" || scope === "latest_import" ? "latest_import" : "all";
+  return scope === "latest" || scope === "latest_import"
+    ? "latest_import"
+    : "all";
 }
 
 async function resolveLatestImportSince(client) {
@@ -102,21 +107,30 @@ async function main() {
   const OUTPUT = path.join(DOCS_DIR, `puid-full-export-${TS}.csv`);
 
   const scope = normalizeScope(argValue("--scope", "all"));
-  const limit = Math.min(3000, Math.max(1, Number(argValue("--limit", "3000")) || 3000));
+  const limit = Math.min(
+    3000,
+    Math.max(1, Number(argValue("--limit", "3000")) || 3000),
+  );
   const includeDraft = parseBool(argValue("--include-draft", "true"), true);
 
   loadEnv(ENV_FILE);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+  const serviceKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
   if (!supabaseUrl || !serviceKey) {
-    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local");
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local",
+    );
   }
 
   const { loadPuidInput, buildPuidPlan } = await import("../lib/admin/puid.ts");
 
-  const client = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
-  const sinceIso = scope === "latest_import" ? await resolveLatestImportSince(client) : null;
+  const client = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false },
+  });
+  const sinceIso =
+    scope === "latest_import" ? await resolveLatestImportSince(client) : null;
 
   const input = await loadPuidInput(client, {
     scope,
@@ -217,7 +231,9 @@ async function main() {
         variants: plan.variant_suggestions.length,
         simples: rows.filter((r) => r.line_type === "simple").length,
         meres: rows.filter((r) => r.line_type === "mere").length,
-        produits_avec_variantes: rows.filter((r) => r.line_type === "produit_avec_variantes").length,
+        produits_avec_variantes: rows.filter(
+          (r) => r.line_type === "produit_avec_variantes",
+        ).length,
       },
       null,
       2,

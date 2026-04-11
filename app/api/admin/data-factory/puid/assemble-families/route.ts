@@ -67,10 +67,16 @@ export async function POST(req: NextRequest) {
   }
 
   // Check puid columns
-  const puidProbe = await client.from("products").select("id, puid_root").limit(1);
+  const puidProbe = await client
+    .from("products")
+    .select("id, puid_root")
+    .limit(1);
   if (puidProbe.error) {
     return NextResponse.json(
-      { error: "Migration 021 requise (colonne puid_root absente).", migration: "docs/sql-migrations/021-puid-identity.sql" },
+      {
+        error: "Migration 021 requise (colonne puid_root absente).",
+        migration: "docs/sql-migrations/021-puid-identity.sql",
+      },
       { status: 503 },
     );
   }
@@ -78,7 +84,9 @@ export async function POST(req: NextRequest) {
   // Load products with puid_root
   let q = client
     .from("products")
-    .select("id, name, slug, sku, puid, puid_root, family_role, parent_family_id, status, updated_at")
+    .select(
+      "id, name, slug, sku, puid, puid_root, family_role, parent_family_id, status, updated_at",
+    )
     .not("puid_root", "is", null)
     .order("updated_at", { ascending: false })
     .limit(limit);
@@ -101,18 +109,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: productError.message }, { status: 500 });
   }
 
-  const products: ProductRow[] = (productData ?? []).map((row: Record<string, unknown>) => ({
-    id: String(row.id),
-    name: String(row.name || ""),
-    slug: String(row.slug || ""),
-    sku: row.sku ? String(row.sku) : null,
-    puid: row.puid ? String(row.puid) : null,
-    puid_root: row.puid_root ? String(row.puid_root) : null,
-    family_role: row.family_role ? String(row.family_role) : null,
-    parent_family_id: row.parent_family_id ? String(row.parent_family_id) : null,
-    status: row.status ? String(row.status) : null,
-    updated_at: row.updated_at ? String(row.updated_at) : null,
-  }));
+  const products: ProductRow[] = (productData ?? []).map(
+    (row: Record<string, unknown>) => ({
+      id: String(row.id),
+      name: String(row.name || ""),
+      slug: String(row.slug || ""),
+      sku: row.sku ? String(row.sku) : null,
+      puid: row.puid ? String(row.puid) : null,
+      puid_root: row.puid_root ? String(row.puid_root) : null,
+      family_role: row.family_role ? String(row.family_role) : null,
+      parent_family_id: row.parent_family_id
+        ? String(row.parent_family_id)
+        : null,
+      status: row.status ? String(row.status) : null,
+      updated_at: row.updated_at ? String(row.updated_at) : null,
+    }),
+  );
 
   // Group by puid_root
   const byRoot = new Map<string, ProductRow[]>();
@@ -133,7 +145,12 @@ export async function POST(req: NextRequest) {
 
   for (const [root, members] of byRoot.entries()) {
     if (members.length - 1 < minChildren) {
-      plan.push({ puid_root: root, mother: members[0]!, children: [], action: "skip_single" });
+      plan.push({
+        puid_root: root,
+        mother: members[0]!,
+        children: [],
+        action: "skip_single",
+      });
       continue;
     }
 
@@ -182,7 +199,9 @@ export async function POST(req: NextRequest) {
         puid_root: p.puid_root,
         mother: { id: p.mother.id, name: p.mother.name, sku: p.mother.sku },
         children_count: p.children.length,
-        children_sample: p.children.slice(0, 5).map((c) => ({ id: c.id, name: c.name, sku: c.sku })),
+        children_sample: p.children
+          .slice(0, 5)
+          .map((c) => ({ id: c.id, name: c.name, sku: c.sku })),
       })),
     });
   }
@@ -200,7 +219,10 @@ export async function POST(req: NextRequest) {
     const { mother, children, puid_root } = entry;
 
     // Create family
-    const familySlug = `family-${puid_root.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 60)}-${Date.now().toString(36)}`;
+    const familySlug = `family-${puid_root
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .slice(0, 60)}-${Date.now().toString(36)}`;
     const { data: newFamily, error: familyError } = await client
       .from("product_families")
       .insert({
@@ -215,7 +237,9 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (familyError || !newFamily) {
-      result.errors.push(`family:${puid_root}:${familyError?.message ?? "no data"}`);
+      result.errors.push(
+        `family:${puid_root}:${familyError?.message ?? "no data"}`,
+      );
       continue;
     }
 
@@ -231,14 +255,16 @@ export async function POST(req: NextRequest) {
     // Add members
     for (let i = 0; i < children.length; i++) {
       const child = children[i]!;
-      const { error: memberError } = await client.from("product_family_members").insert({
-        family_id: familyId,
-        member_type: "product",
-        member_product_id: child.id,
-        position: (i + 1) * 10,
-        active: true,
-        axes_summary: child.puid ?? child.sku ?? null,
-      });
+      const { error: memberError } = await client
+        .from("product_family_members")
+        .insert({
+          family_id: familyId,
+          member_type: "product",
+          member_product_id: child.id,
+          position: (i + 1) * 10,
+          active: true,
+          axes_summary: child.puid ?? child.sku ?? null,
+        });
 
       if (memberError) {
         result.errors.push(`member:${child.id}:${memberError.message}`);

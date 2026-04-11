@@ -3,6 +3,8 @@ import { supabase } from "lib/supabase/client";
 import { getCart } from "lib/supabase";
 import { cookies } from "next/headers";
 import { log } from "lib/logger";
+import { rateLimit } from "lib/rate-limit";
+import { sanitizeString, sanitizeEmail } from "lib/validation";
 import {
   confirmationEmailHtml,
   internalAlertEmailHtml,
@@ -11,25 +13,32 @@ import {
 } from "lib/email/sender";
 
 export async function POST(req: NextRequest) {
+  const ip =
+    req.headers.get("x-forwarded-for") ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
+
+  if (!rateLimit(ip, 5, 60000)) {
+    return NextResponse.json({ error: "Trop de requêtes" }, { status: 429 });
+  }
+
   try {
     const body = await req.json();
 
-    const {
-      prenom,
-      nom,
-      organisme,
-      email,
-      telephone,
-      adresse,
-      complement,
-      codePostal,
-      ville,
-      joursReception,
-      horairesReception,
-      notes,
-      modePaiement,
-      livraisonRdv,
-    } = body;
+    const prenom = sanitizeString(body.prenom, 50);
+    const nom = sanitizeString(body.nom, 50);
+    const organisme = sanitizeString(body.organisme, 100);
+    const email = sanitizeEmail(body.email);
+    const telephone = sanitizeString(body.telephone, 20);
+    const adresse = sanitizeString(body.adresse, 200);
+    const complement = sanitizeString(body.complement, 200);
+    const codePostal = sanitizeString(body.codePostal, 10);
+    const ville = sanitizeString(body.ville, 100);
+    const joursReception = sanitizeString(body.joursReception, 200);
+    const horairesReception = sanitizeString(body.horairesReception, 200);
+    const notes = sanitizeString(body.notes, 1000);
+    const modePaiement = sanitizeString(body.modePaiement, 50);
+    const livraisonRdv = body.livraisonRdv === true;
 
     // Validation des champs obligatoires
     if (

@@ -3,7 +3,7 @@
  * Use this instead of bare console.log in API routes and server code.
  */
 
-type LogLevel = 'info' | 'warn' | 'error';
+type LogLevel = "info" | "warn" | "error";
 
 export function log(
   level: LogLevel,
@@ -17,7 +17,7 @@ export function log(
     ...data,
   };
 
-  if (level === 'error') {
+  if (level === "error") {
     console.error(JSON.stringify(entry));
   } else {
     console.log(JSON.stringify(entry));

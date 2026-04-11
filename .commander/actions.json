@@ -1,0 +1,61 @@
+{
+  "version": "1",
+  "actions": [
+    {
+      "id": "tsc-check",
+      "label": "TSC Check",
+      "icon": "⚡",
+      "group": "Qualité",
+      "command": "cd /Users/nico/Desktop/prodes_newsite_codex/commerce && npx tsc --noEmit 2>&1 | head -40"
+    },
+    {
+      "id": "lint",
+      "label": "Lint",
+      "icon": "🔍",
+      "group": "Qualité",
+      "command": "cd /Users/nico/Desktop/prodes_newsite_codex/commerce && npm run lint 2>&1 | tail -30"
+    },
+    {
+      "id": "git-status",
+      "label": "Git Status",
+      "icon": "📋",
+      "group": "Git",
+      "command": "cd /Users/nico/Desktop/prodes_newsite_codex/commerce && git status --short && echo '---' && git log --oneline -5"
+    },
+    {
+      "id": "git-diff",
+      "label": "Git Diff",
+      "icon": "🔀",
+      "group": "Git",
+      "command": "cd /Users/nico/Desktop/prodes_newsite_codex/commerce && git diff --stat HEAD"
+    },
+    {
+      "id": "relay-status",
+      "label": "Relay Status",
+      "icon": "📡",
+      "group": "Orchestration",
+      "command": "cat /Users/nico/Desktop/prodes_newsite_codex/state/lock.json 2>/dev/null || echo 'No lock'; echo '---'; cat /Users/nico/Desktop/prodes_newsite_codex/state/handoff.json 2>/dev/null | python3 -m json.tool 2>/dev/null || cat /Users/nico/Desktop/prodes_newsite_codex/state/handoff.json 2>/dev/null"
+    },
+    {
+      "id": "relay-end",
+      "label": "Relay End",
+      "icon": "🏁",
+      "group": "Orchestration",
+      "command": "cd /Users/nico/Desktop/prodes_newsite_codex && bash relay.sh end 2>&1"
+    },
+    {
+      "id": "dashboard",
+      "label": "Dashboard",
+      "icon": "🖥",
+      "group": "Outils",
+      "command": "open http://localhost:3333"
+    },
+    {
+      "id": "dev-server",
+      "label": "Dev Server",
+      "icon": "🚀",
+      "group": "Outils",
+      "command": "cd /Users/nico/Desktop/prodes_newsite_codex/commerce && npm run dev"
+    }
+  ]
+}

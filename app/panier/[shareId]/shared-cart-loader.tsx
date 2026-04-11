@@ -6,7 +6,10 @@ import type { CartItem } from "lib/supabase/types";
 import Image from "next/image";
 
 function formatHT(n: number) {
-  return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) + " € HT";
+  return (
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) +
+    " € HT"
+  );
 }
 
 export function SharedCartLoader({ items }: { items: unknown[] }) {
@@ -28,7 +31,9 @@ export function SharedCartLoader({ items }: { items: unknown[] }) {
         availableForSale: true,
         selectedOptions: item.merchandise.selectedOptions,
         price: {
-          amount: (Number(item.cost.totalAmount.amount) / item.quantity).toFixed(2),
+          amount: (
+            Number(item.cost.totalAmount.amount) / item.quantity
+          ).toFixed(2),
           currencyCode: item.cost.totalAmount.currencyCode,
         },
       };
@@ -42,15 +47,25 @@ export function SharedCartLoader({ items }: { items: unknown[] }) {
         descriptionHtml: "",
         options: [],
         priceRange: {
-          maxVariantPrice: { amount: variant.price.amount, currencyCode: "EUR" },
-          minVariantPrice: { amount: variant.price.amount, currencyCode: "EUR" },
+          maxVariantPrice: {
+            amount: variant.price.amount,
+            currencyCode: "EUR",
+          },
+          minVariantPrice: {
+            amount: variant.price.amount,
+            currencyCode: "EUR",
+          },
         },
         variants: [variant],
         images: [],
         tags: [],
         seo: { title: "", description: "" },
       } as unknown as Parameters<typeof addCartItem>[1];
-      addCartItem(variant as Parameters<typeof addCartItem>[0], product, item.quantity);
+      addCartItem(
+        variant as Parameters<typeof addCartItem>[0],
+        product,
+        item.quantity,
+      );
     });
     router.push("/checkout");
   };
@@ -82,7 +97,9 @@ export function SharedCartLoader({ items }: { items: unknown[] }) {
                 {item.merchandise.product.title}
               </p>
               {item.merchandise.title !== "Default Title" && (
-                <p className="text-xs text-gray-500">{item.merchandise.title}</p>
+                <p className="text-xs text-gray-500">
+                  {item.merchandise.title}
+                </p>
               )}
               <p className="text-xs text-gray-400">× {item.quantity}</p>
             </div>

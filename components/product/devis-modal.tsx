@@ -1,6 +1,11 @@
 "use client";
 
-import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
+import {
+  Dialog,
+  DialogBackdrop,
+  DialogPanel,
+  DialogTitle,
+} from "@headlessui/react";
 import { useState } from "react";
 
 interface DevisModalProps {
@@ -25,9 +30,13 @@ export function DevisModal({
     quantite: defaultQuantity,
     message: "",
   });
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -68,7 +77,9 @@ export function DevisModal({
           </DialogTitle>
           <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
             <span className="font-medium">{productTitle}</span>
-            {productSku ? <span className="ml-2 text-neutral-400">Réf : {productSku}</span> : null}
+            {productSku ? (
+              <span className="ml-2 text-neutral-400">Réf : {productSku}</span>
+            ) : null}
           </p>
 
           {status === "success" ? (
@@ -161,7 +172,8 @@ export function DevisModal({
 
               {status === "error" && (
                 <p className="text-sm text-red-600">
-                  Une erreur est survenue. Veuillez réessayer ou nous contacter par téléphone.
+                  Une erreur est survenue. Veuillez réessayer ou nous contacter
+                  par téléphone.
                 </p>
               )}
 

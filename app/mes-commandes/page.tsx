@@ -6,20 +6,25 @@ import Link from "next/link";
 interface StoredOrder {
   orderId: string;
   date: string;
-  items: Array<{ title: string; sku?: string; quantity: number; price?: number }>;
+  items: Array<{
+    title: string;
+    sku?: string;
+    quantity: number;
+    price?: number;
+  }>;
   totalHT?: number;
   status: string;
   mode?: string;
 }
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
-  pending:   { label: "En attente", cls: "bg-gray-100 text-gray-600" },
-  contacted: { label: "Contacté",   cls: "bg-amber-100 text-amber-700" },
-  confirmed: { label: "Confirmé",   cls: "bg-green-100 text-green-700" },
-  cancelled: { label: "Annulé",     cls: "bg-red-100 text-red-600" },
-  nouveau:   { label: "Reçu",       cls: "bg-blue-100 text-blue-700" },
-  en_cours:  { label: "En cours",   cls: "bg-amber-100 text-amber-700" },
-  traite:    { label: "Traité",     cls: "bg-green-100 text-green-700" },
+  pending: { label: "En attente", cls: "bg-gray-100 text-gray-600" },
+  contacted: { label: "Contacté", cls: "bg-amber-100 text-amber-700" },
+  confirmed: { label: "Confirmé", cls: "bg-green-100 text-green-700" },
+  cancelled: { label: "Annulé", cls: "bg-red-100 text-red-600" },
+  nouveau: { label: "Reçu", cls: "bg-blue-100 text-blue-700" },
+  en_cours: { label: "En cours", cls: "bg-amber-100 text-amber-700" },
+  traite: { label: "Traité", cls: "bg-green-100 text-green-700" },
 };
 
 export default function MesCommandesPage() {
@@ -31,14 +36,20 @@ export default function MesCommandesPage() {
       if (stored) {
         const parsed: StoredOrder[] = JSON.parse(stored);
         // Sort by date descending
-        setOrders(parsed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setOrders(
+          parsed.sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+          ),
+        );
       }
     } catch {}
   }, []);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Mes demandes de devis</h1>
+      <h1 className="mb-6 text-2xl font-bold text-gray-900">
+        Mes demandes de devis
+      </h1>
 
       {orders.length === 0 ? (
         <div className="rounded-xl border border-gray-200 bg-white py-16 text-center">
@@ -59,15 +70,23 @@ export default function MesCommandesPage() {
       ) : (
         <div className="space-y-4">
           {orders.map((order) => {
-            const s = STATUS_MAP[order.status] ?? { label: order.status, cls: "bg-gray-100 text-gray-600" };
+            const s = STATUS_MAP[order.status] ?? {
+              label: order.status,
+              cls: "bg-gray-100 text-gray-600",
+            };
             const date = new Date(order.date).toLocaleDateString("fr-FR", {
-              day: "numeric", month: "long", year: "numeric",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
             });
             const summary = order.items
               .slice(0, 3)
               .map((i) => i.title)
               .join(", ");
-            const skuList = order.items.map((i) => i.sku).filter(Boolean).join(",");
+            const skuList = order.items
+              .map((i) => i.sku)
+              .filter(Boolean)
+              .join(",");
 
             return (
               <div
@@ -80,7 +99,9 @@ export default function MesCommandesPage() {
                       <span className="font-mono text-sm font-semibold text-gray-800">
                         #{order.orderId.slice(0, 8).toUpperCase()}
                       </span>
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${s.cls}`}>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${s.cls}`}
+                      >
                         {s.label}
                       </span>
                       {order.mode && (
@@ -90,10 +111,14 @@ export default function MesCommandesPage() {
                       )}
                     </div>
                     <p className="mt-1 text-xs text-gray-400">{date}</p>
-                    <p className="mt-2 line-clamp-2 text-sm text-gray-600">{summary}</p>
+                    <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+                      {summary}
+                    </p>
                     {order.totalHT && (
                       <p className="mt-1 text-sm font-semibold text-gray-800">
-                        {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(order.totalHT)}{" "}
+                        {new Intl.NumberFormat("fr-FR", {
+                          minimumFractionDigits: 2,
+                        }).format(order.totalHT)}{" "}
                         € HT
                       </p>
                     )}

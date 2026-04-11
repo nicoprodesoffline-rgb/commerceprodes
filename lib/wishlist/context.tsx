@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 const WISHLIST_KEY = "prodes_wishlist";
 
@@ -11,7 +18,9 @@ type WishlistContextType = {
   count: number;
 };
 
-const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
+const WishlistContext = createContext<WishlistContextType | undefined>(
+  undefined,
+);
 
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const [wishlist, setWishlist] = useState<string[]>([]);
@@ -38,7 +47,9 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const toggle = useCallback((handle: string) => {
     setWishlist((prev) =>
-      prev.includes(handle) ? prev.filter((h) => h !== handle) : [...prev, handle],
+      prev.includes(handle)
+        ? prev.filter((h) => h !== handle)
+        : [...prev, handle],
     );
   }, []);
 
@@ -52,7 +63,11 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     [wishlist, toggle, isWishlisted],
   );
 
-  return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;
+  return (
+    <WishlistContext.Provider value={value}>
+      {children}
+    </WishlistContext.Provider>
+  );
 }
 
 export function useWishlist() {

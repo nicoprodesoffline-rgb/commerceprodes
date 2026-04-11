@@ -19,7 +19,13 @@ interface CompetitorRow {
 interface SeoRow {
   sku: string;
   our_price: number;
-  competitors: { name: string; price: number; url: string | null; diff_pct: number; scraped_at: string }[];
+  competitors: {
+    name: string;
+    price: number;
+    url: string | null;
+    diff_pct: number;
+    scraped_at: string;
+  }[];
   maxDiffPct: number;
 }
 
@@ -29,7 +35,10 @@ export default function VeillePage() {
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [triggeringWebhook, setTriggeringWebhook] = useState(false);
   const [alertThreshold, setAlertThreshold] = useState<number>(10);
-  const password = typeof window !== "undefined" ? sessionStorage.getItem("admin_password") ?? "" : "";
+  const password =
+    typeof window !== "undefined"
+      ? (sessionStorage.getItem("admin_password") ?? "")
+      : "";
 
   const fetchData = () => {
     setLoading(true);
@@ -60,7 +69,9 @@ export default function VeillePage() {
           });
           entry.maxDiffPct = Math.max(entry.maxDiffPct, row.price_diff_pct);
         }
-        const sorted = Object.values(skuMap).sort((a, b) => b.maxDiffPct - a.maxDiffPct);
+        const sorted = Object.values(skuMap).sort(
+          (a, b) => b.maxDiffPct - a.maxDiffPct,
+        );
         setRows(sorted);
         if (rawRows.length > 0) {
           setLastUpdate(rawRows[0]?.scraped_at ?? null);
@@ -100,7 +111,9 @@ export default function VeillePage() {
   return (
     <div>
       <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Veille concurrentielle</h1>
+        <h1 className="text-xl font-bold text-gray-900">
+          Veille concurrentielle
+        </h1>
         <button
           onClick={triggerAnalysis}
           disabled={triggeringWebhook}
@@ -118,11 +131,15 @@ export default function VeillePage() {
         </div>
         <div className="rounded-lg border border-red-200 bg-red-50 p-4">
           <p className="text-2xl font-bold text-red-600">{moreExpensive}</p>
-          <p className="mt-0.5 text-xs text-gray-500">On est + cher (&gt;10%)</p>
+          <p className="mt-0.5 text-xs text-gray-500">
+            On est + cher (&gt;10%)
+          </p>
         </div>
         <div className="rounded-lg border border-green-200 bg-green-50 p-4">
           <p className="text-2xl font-bold text-green-600">{cheaper}</p>
-          <p className="mt-0.5 text-xs text-gray-500">On est - cher (&gt;10%)</p>
+          <p className="mt-0.5 text-xs text-gray-500">
+            On est - cher (&gt;10%)
+          </p>
         </div>
       </div>
 
@@ -134,7 +151,9 @@ export default function VeillePage() {
 
       {/* Seuil alerte */}
       <div className="mb-4 flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
-        <span className="text-sm text-gray-700">M&apos;alerter si on est &gt;</span>
+        <span className="text-sm text-gray-700">
+          M&apos;alerter si on est &gt;
+        </span>
         <input
           type="number"
           min={1}
@@ -150,9 +169,15 @@ export default function VeillePage() {
         <div className="py-12 text-center text-gray-400">Chargement…</div>
       ) : rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 py-16 text-center">
-          <p className="text-lg font-semibold text-gray-700">Aucune donnée de veille</p>
+          <p className="text-lg font-semibold text-gray-700">
+            Aucune donnée de veille
+          </p>
           <p className="mt-2 text-sm text-gray-500">
-            Configurez <code className="text-xs bg-gray-100 px-1 rounded">N8N_WEBHOOK_COMPETITIVE</code> et lancez une analyse.
+            Configurez{" "}
+            <code className="text-xs bg-gray-100 px-1 rounded">
+              N8N_WEBHOOK_COMPETITIVE
+            </code>{" "}
+            et lancez une analyse.
           </p>
         </div>
       ) : (
@@ -171,14 +196,20 @@ export default function VeillePage() {
             <tbody className="divide-y divide-gray-50">
               {rows.map((row) => {
                 const prozon = row.competitors.find((c) => c.name === "prozon");
-                const fc = row.competitors.find((c) => c.name === "france-collectivites");
+                const fc = row.competitors.find(
+                  (c) => c.name === "france-collectivites",
+                );
                 const isAlert = row.maxDiffPct > alertThreshold;
                 const isCompetitive = row.maxDiffPct < -alertThreshold;
                 return (
                   <tr
                     key={row.sku}
                     className={`hover:bg-gray-50 transition-colors ${
-                      isAlert ? "bg-red-50/50" : isCompetitive ? "bg-green-50/50" : ""
+                      isAlert
+                        ? "bg-red-50/50"
+                        : isCompetitive
+                          ? "bg-green-50/50"
+                          : ""
                     }`}
                   >
                     <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-800">
@@ -190,25 +221,50 @@ export default function VeillePage() {
                     <td className="px-4 py-3 text-right text-gray-600">
                       {prozon ? (
                         prozon.url ? (
-                          <a href={prozon.url} target="_blank" rel="noopener noreferrer" className="hover:text-[#cc1818] underline">
+                          <a
+                            href={prozon.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-[#cc1818] underline"
+                          >
                             {prozon.price.toFixed(2)} €
                           </a>
-                        ) : `${prozon.price.toFixed(2)} €`
-                      ) : "—"}
+                        ) : (
+                          `${prozon.price.toFixed(2)} €`
+                        )
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right text-gray-600">
                       {fc ? (
                         fc.url ? (
-                          <a href={fc.url} target="_blank" rel="noopener noreferrer" className="hover:text-[#cc1818] underline">
+                          <a
+                            href={fc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-[#cc1818] underline"
+                          >
                             {fc.price.toFixed(2)} €
                           </a>
-                        ) : `${fc.price.toFixed(2)} €`
-                      ) : "—"}
+                        ) : (
+                          `${fc.price.toFixed(2)} €`
+                        )
+                      ) : (
+                        "—"
+                      )}
                     </td>
-                    <td className={`px-4 py-3 text-right font-semibold ${
-                      row.maxDiffPct > 10 ? "text-red-600" : row.maxDiffPct < -10 ? "text-green-600" : "text-gray-600"
-                    }`}>
-                      {row.maxDiffPct > 0 ? "+" : ""}{row.maxDiffPct.toFixed(1)} %
+                    <td
+                      className={`px-4 py-3 text-right font-semibold ${
+                        row.maxDiffPct > 10
+                          ? "text-red-600"
+                          : row.maxDiffPct < -10
+                            ? "text-green-600"
+                            : "text-gray-600"
+                      }`}
+                    >
+                      {row.maxDiffPct > 0 ? "+" : ""}
+                      {row.maxDiffPct.toFixed(1)} %
                     </td>
                     <td className="px-4 py-3 text-center">
                       {isAlert ? "🔴" : isCompetitive ? "🟢" : "🟡"}

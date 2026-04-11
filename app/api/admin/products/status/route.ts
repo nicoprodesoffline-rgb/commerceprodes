@@ -10,12 +10,19 @@ export async function GET(request: NextRequest) {
 
   try {
     const client = supabaseServer();
-    const [productsRes, publishedRes, draftRes, variantsRes] = await Promise.all([
-      client.from("products").select("id", { count: "exact", head: true }),
-      client.from("products").select("id", { count: "exact", head: true }).eq("status", "publish"),
-      client.from("products").select("id", { count: "exact", head: true }).neq("status", "publish"),
-      client.from("variants").select("id", { count: "exact", head: true }),
-    ]);
+    const [productsRes, publishedRes, draftRes, variantsRes] =
+      await Promise.all([
+        client.from("products").select("id", { count: "exact", head: true }),
+        client
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "publish"),
+        client
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .neq("status", "publish"),
+        client.from("variants").select("id", { count: "exact", head: true }),
+      ]);
 
     return NextResponse.json({
       total_products: productsRes.count ?? 0,
@@ -25,7 +32,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     return NextResponse.json(
-      { error: safeErrorMessage(error, "Impossible de charger le statut produits") },
+      {
+        error: safeErrorMessage(
+          error,
+          "Impossible de charger le statut produits",
+        ),
+      },
       { status: 500 },
     );
   }

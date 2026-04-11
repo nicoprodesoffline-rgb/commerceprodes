@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { log } from "lib/logger";
 
 export async function GET() {
   try {
@@ -48,7 +49,7 @@ export async function GET() {
       },
     });
   } catch (err) {
-    console.error("export-products error", err);
+    log("error", "admin.export_products", { error: String(err) });
     return NextResponse.json({ error: "Export failed" }, { status: 500 });
   }
 }

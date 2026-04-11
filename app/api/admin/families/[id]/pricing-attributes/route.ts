@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
-import { checkCommercialPricingDb, checkFamiliesDb, degradedResponse } from "lib/admin/families-db";
+import {
+  checkCommercialPricingDb,
+  checkFamiliesDb,
+  degradedResponse,
+} from "lib/admin/families-db";
+import { log } from "lib/logger";
 import { supabaseServer } from "lib/supabase/client";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function normalizeToken(value: string): string {
   return value
@@ -89,23 +95,24 @@ export async function GET(
     return NextResponse.json({ error: "Famille introuvable" }, { status: 404 });
   }
 
-  const [{ data: parentAttrs }, { data: rules }, { data: members }] = await Promise.all([
-    client
-      .from("product_attributes")
-      .select("attribute_id, terms, attributes(id, name, slug)")
-      .eq("product_id", family.parent_product_id)
-      .eq("is_variation", true),
-    client
-      .from("pricing_attribute_rules")
-      .select("attribute_id, impacts_price, source, confidence")
-      .eq("family_id", id)
-      .eq("active", true),
-    client
-      .from("product_family_members")
-      .select("member_variant_id, member_product_id")
-      .eq("family_id", id)
-      .eq("active", true),
-  ]);
+  const [{ data: parentAttrs }, { data: rules }, { data: members }] =
+    await Promise.all([
+      client
+        .from("product_attributes")
+        .select("attribute_id, terms, attributes(id, name, slug)")
+        .eq("product_id", family.parent_product_id)
+        .eq("is_variation", true),
+      client
+        .from("pricing_attribute_rules")
+        .select("attribute_id, impacts_price, source, confidence")
+        .eq("family_id", id)
+        .eq("active", true),
+      client
+        .from("product_family_members")
+        .select("member_variant_id, member_product_id")
+        .eq("family_id", id)
+        .eq("active", true),
+    ]);
 
   const memberVariantIds = (members || [])
     .map((m: any) => m.member_variant_id)
@@ -115,7 +122,10 @@ export async function GET(
     .map((m: any) => m.member_product_id)
     .filter((v: string | null) => Boolean(v)) as string[];
 
-  const variantPool: Array<{ regular_price: number | null; variant_attributes?: Array<{ attribute_id: string; term_slug: string }> }> = [];
+  const variantPool: Array<{
+    regular_price: number | null;
+    variant_attributes?: Array<{ attribute_id: string; term_slug: string }>;
+  }> = [];
 
   if (memberVariantIds.length > 0) {
     const { data } = await client
@@ -134,7 +144,10 @@ export async function GET(
     variantPool.push(...((data || []) as any[]));
   }
 
-  const rulesByAttr = new Map<string, { impacts_price: boolean; source: string; confidence: number }>();
+  const rulesByAttr = new Map<
+    string,
+    { impacts_price: boolean; source: string; confidence: number }
+  >();
   (rules || []).forEach((r: any) => {
     rulesByAttr.set(String(r.attribute_id), {
       impacts_price: Boolean(r.impacts_price),
@@ -164,7 +177,9 @@ export async function GET(
     family_id: id,
     parent_product_id: family.parent_product_id,
     attributes,
-    selected_attribute_ids: attributes.filter((a) => a.impacts_price).map((a) => a.id),
+    selected_attribute_ids: attributes
+      .filter((a) => a.impacts_price)
+      .map((a) => a.id),
     auto_suggested_attribute_ids: attributes
       .filter((a) => a.auto_impacts_price)
       .map((a) => a.id),
@@ -205,7 +220,10 @@ export async function PATCH(
     ? body.attribute_ids.map((v) => String(v)).filter(Boolean)
     : null;
   if (!attributeIds) {
-    return NextResponse.json({ error: "attribute_ids (array) requis" }, { status: 400 });
+    return NextResponse.json(
+      { error: "attribute_ids (array) requis" },
+      { status: 400 },
+    );
   }
 
   const client = supabaseServer();
@@ -230,12 +248,19 @@ export async function PATCH(
     return NextResponse.json({ error: attrsError.message }, { status: 500 });
   }
 
-  const eligible = new Set((attrs || []).map((a: any) => String(a.attribute_id)));
+  const eligible = new Set(
+    (attrs || []).map((a: any) => String(a.attribute_id)),
+  );
   if (eligible.size === 0) {
-    return NextResponse.json({ error: "Aucun attribut de variation disponible pour la famille" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Aucun attribut de variation disponible pour la famille" },
+      { status: 400 },
+    );
   }
 
-  const selected = new Set(attributeIds.filter((attrId) => eligible.has(attrId)));
+  const selected = new Set(
+    attributeIds.filter((attrId) => eligible.has(attrId)),
+  );
 
   const { error: delError } = await client
     .from("pricing_attribute_rules")
@@ -265,13 +290,10 @@ export async function PATCH(
     }
   }
 
-  console.log(
-    JSON.stringify({
-      event: "admin.family.pricing_attributes.updated",
-      family_id: id,
-      selected_count: selected.size,
-    }),
-  );
+  log("info", "admin.family.pricing_attributes.updated", {
+    family_id: id,
+    selected_count: selected.size,
+  });
 
   return NextResponse.json({
     ok: true,

@@ -1,25 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseServer } from 'lib/supabase/client';
-import { log } from 'lib/logger';
+import { NextRequest, NextResponse } from "next/server";
+import { checkAdminAuth } from "lib/admin/auth";
+import { supabaseServer } from "lib/supabase/client";
+import { log } from "lib/logger";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!checkAdminAuth(request))
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   const { id } = await params;
-  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
   const client = supabaseServer();
   const { error } = await client
-    .from('abandoned_carts')
+    .from("abandoned_carts")
     .update({ recovered_at: new Date().toISOString() })
-    .eq('id', id);
+    .eq("id", id);
 
   if (error) {
-    log('error', 'abandoned_cart.recover_failed', { error: error.message, id });
-    return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
+    log("error", "abandoned_cart.recover_failed", { error: error.message, id });
+    return NextResponse.json({ error: "Failed to update" }, { status: 500 });
   }
 
-  log('info', 'abandoned_cart.recovered', { id });
+  log("info", "abandoned_cart.recovered", { id });
   return NextResponse.json({ ok: true });
 }

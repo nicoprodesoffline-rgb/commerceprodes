@@ -19,14 +19,19 @@ export async function Navbar() {
         <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-1.5 text-xs lg:px-6">
           {/* Gauche : tel + horaires */}
           <div className="flex items-center gap-4">
-            <a href="tel:+33467243034" className="flex items-center gap-1.5 hover:text-red-100 transition-colors">
+            <a
+              href="tel:+33467243034"
+              className="flex items-center gap-1.5 hover:text-red-100 transition-colors"
+            >
               <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/>
+                <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z" />
               </svg>
               04 67 24 30 34
             </a>
             <span className="hidden sm:inline text-red-200">·</span>
-            <span className="hidden sm:inline text-red-100">Lun–Sam 8h30–19h</span>
+            <span className="hidden sm:inline text-red-100">
+              Lun–Sam 8h30–19h
+            </span>
           </div>
 
           {/* Centre : message */}
@@ -40,11 +45,17 @@ export async function Navbar() {
               FAQ
             </Link>
             <span className="text-red-300">|</span>
-            <Link href="/contact" className="hover:text-red-100 transition-colors">
+            <Link
+              href="/contact"
+              className="hover:text-red-100 transition-colors"
+            >
               Nous contacter
             </Link>
             <span className="text-red-300">|</span>
-            <Link href="/search" className="hover:text-red-100 transition-colors">
+            <Link
+              href="/search"
+              className="hover:text-red-100 transition-colors"
+            >
               Catalogue
             </Link>
           </div>
@@ -62,7 +73,12 @@ export async function Navbar() {
           </div>
 
           {/* Logo */}
-          <Link href="/" prefetch={true} aria-label="PRODES — Accueil" className="flex-none">
+          <Link
+            href="/"
+            prefetch={true}
+            aria-label="PRODES — Accueil"
+            className="flex-none"
+          >
             <Image
               src="/logo-prodes.png"
               alt="PRODES"

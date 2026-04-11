@@ -10,6 +10,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
 import { checkFamiliesDb, degradedResponse } from "lib/admin/families-db";
+import { log } from "lib/logger";
+import { safeErrorMessage } from "lib/admin/security";
 import { supabaseServer } from "lib/supabase/client";
 import {
   computeFamilySuggestions,
@@ -25,16 +27,23 @@ const ALLOWED_STRATEGIES: FamilySuggestStrategy[] = [
 ];
 
 export async function POST(req: NextRequest) {
-  if (!checkAdminAuth(req)) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  if (!checkAdminAuth(req))
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const db = await checkFamiliesDb();
-  if (!db.available) return NextResponse.json(degradedResponse(db), { status: 503 });
+  if (!db.available)
+    return NextResponse.json(degradedResponse(db), { status: 503 });
 
   let body: Record<string, unknown> = {};
-  try { body = await req.json(); } catch { /* empty body ok */ }
+  try {
+    body = await req.json();
+  } catch {
+    /* empty body ok */
+  }
 
   const requestedStrategy =
-    typeof body.strategy === "string" && ALLOWED_STRATEGIES.includes(body.strategy as FamilySuggestStrategy)
+    typeof body.strategy === "string" &&
+    ALLOWED_STRATEGIES.includes(body.strategy as FamilySuggestStrategy)
       ? (body.strategy as FamilySuggestStrategy)
       : "auto";
   const limit = Math.min(200, Math.max(1, Number(body.limit) || 50));
@@ -68,7 +77,11 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: allProducts, error: productsError } = await productsQuery;
-  if (productsError) return NextResponse.json({ error: productsError.message }, { status: 500 });
+  if (productsError)
+    return NextResponse.json(
+      { error: safeErrorMessage(productsError) },
+      { status: 500 },
+    );
 
   const { data: activeMembers } = await client
     .from("product_family_members")
@@ -76,7 +89,9 @@ export async function POST(req: NextRequest) {
     .eq("active", true)
     .not("member_product_id", "is", null);
   const excludedChildren = new Set<string>(
-    (activeMembers ?? []).map((m) => m.member_product_id as string).filter(Boolean),
+    (activeMembers ?? [])
+      .map((m) => m.member_product_id as string)
+      .filter(Boolean),
   );
 
   const products: ProductLite[] = (allProducts ?? []).map((p) => ({
@@ -102,7 +117,15 @@ export async function POST(req: NextRequest) {
       .from("product_family_candidates")
       .delete()
       .eq("status", "pending")
-      .in("strategy", uniqueStrategies as ("parent_sku" | "sku_root" | "title_root" | "manual")[]);
+      .in(
+        "strategy",
+        uniqueStrategies as (
+          | "parent_sku"
+          | "sku_root"
+          | "title_root"
+          | "manual"
+        )[],
+      );
   }
 
   const candidateRows = suggestions.flatMap((s) =>
@@ -117,10 +140,14 @@ export async function POST(req: NextRequest) {
   );
 
   if (candidateRows.length > 0) {
-    const { error: insertError } = await client.from("product_family_candidates").insert(candidateRows as never);
+    const { error: insertError } = await client
+      .from("product_family_candidates")
+      .insert(candidateRows as never);
     if (insertError) {
       // Non-blocking: suggestions are still returned to the UI even if candidate snapshot fails.
-      console.error("admin.family.suggest.candidates_insert_failed", insertError);
+      log("error", "admin.family.suggest.candidates_insert_failed", {
+        error: insertError.message,
+      });
     }
   }
 

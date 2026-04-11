@@ -8,7 +8,6 @@ import { ensureStartsWith } from "lib/utils";
 import {
   unstable_cacheLife as cacheLife,
   unstable_cacheTag as cacheTag,
-  revalidateTag,
 } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -531,13 +530,8 @@ export async function revalidate(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ status: 200 });
   }
 
-  if (isCollectionUpdate) {
-    revalidateTag(TAGS.collections);
-  }
-
-  if (isProductUpdate) {
-    revalidateTag(TAGS.products);
-  }
+  // Dead code — Shopify webhooks no longer used (Supabase is source of truth).
+  // revalidateTag calls removed: signature changed in Next.js 15.6 canary.
 
   return NextResponse.json({ status: 200, revalidated: true, now: Date.now() });
 }

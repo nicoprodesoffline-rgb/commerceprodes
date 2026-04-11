@@ -2,10 +2,17 @@ import { GridTileImage } from "components/grid/tile";
 import Footer from "components/layout/footer";
 import { Breadcrumbs } from "components/layout/breadcrumbs";
 import { Gallery } from "components/product/gallery";
-import { ProductDescription, ProductDescriptionTabs } from "components/product/product-description";
+import {
+  ProductDescription,
+  ProductDescriptionTabs,
+} from "components/product/product-description";
 import { RecentlyViewed } from "components/product/recently-viewed";
 import { HIDDEN_PRODUCT_TAG } from "lib/constants";
-import { getProduct, getProductParentSlug, getProductRecommendations } from "lib/supabase";
+import {
+  getProduct,
+  getProductParentSlug,
+  getProductRecommendations,
+} from "lib/supabase";
 import type { Image } from "lib/supabase/types";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -23,10 +30,15 @@ export async function generateMetadata(props: {
   const { url, width, height, altText: alt } = product.featuredImage || {};
   const indexable = !product.tags.includes(HIDDEN_PRODUCT_TAG);
 
-  const rawDescription = product.shortDescription || product.seo.description || product.description || "";
-  const metaDescription = rawDescription.length > 160
-    ? rawDescription.slice(0, 157) + "…"
-    : rawDescription;
+  const rawDescription =
+    product.shortDescription ||
+    product.seo.description ||
+    product.description ||
+    "";
+  const metaDescription =
+    rawDescription.length > 160
+      ? rawDescription.slice(0, 157) + "…"
+      : rawDescription;
 
   return {
     title: `${product.seo.title || product.title} – PRODES`,

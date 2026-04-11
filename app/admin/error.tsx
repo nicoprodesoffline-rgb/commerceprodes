@@ -11,14 +11,14 @@ export default function AdminError({
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="w-full max-w-md rounded-xl border border-red-200 bg-white p-8 text-center shadow-sm">
         <div className="mb-4 text-5xl">⚠️</div>
-        <h1 className="mb-2 text-xl font-bold text-gray-900">
-          Erreur admin
-        </h1>
+        <h1 className="mb-2 text-xl font-bold text-gray-900">Erreur admin</h1>
         <p className="mb-1 text-sm text-gray-500">
           Une erreur est survenue dans l&apos;interface d&apos;administration.
         </p>
         {error?.digest && (
-          <p className="mb-4 font-mono text-xs text-gray-400">#{error.digest}</p>
+          <p className="mb-4 font-mono text-xs text-gray-400">
+            #{error.digest}
+          </p>
         )}
         <div className="flex gap-3 justify-center">
           <button

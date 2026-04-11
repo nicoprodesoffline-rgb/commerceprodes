@@ -77,15 +77,22 @@ export default async function DevisListPage(props: {
             ⚠️ La table devis_requests n&apos;existe pas encore.
           </p>
           <p className="mt-1 text-sm text-orange-700">
-            Exécutez <code className="font-mono bg-orange-100 px-1 rounded">docs/sql-backoffice.sql</code> dans Supabase.
+            Exécutez{" "}
+            <code className="font-mono bg-orange-100 px-1 rounded">
+              docs/sql-backoffice.sql
+            </code>{" "}
+            dans Supabase.
           </p>
         </div>
       ) : data.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-500">
           Aucune demande dans cette catégorie.
           <div className="mt-2">
-            <Link href="/product/panneau-electoral-1-candidat" target="_blank"
-              className="text-sm text-blue-600 hover:underline">
+            <Link
+              href="/product/panneau-electoral-1-candidat"
+              target="_blank"
+              className="text-sm text-blue-600 hover:underline"
+            >
               Tester le formulaire de devis →
             </Link>
           </div>
@@ -96,14 +103,30 @@ export default async function DevisListPage(props: {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Date</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Nom</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 hidden lg:table-cell">Email</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">Tél.</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Produit</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">Qté</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Statut</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Actions</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">
+                    Date
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">
+                    Nom
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 hidden lg:table-cell">
+                    Email
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">
+                    Tél.
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">
+                    Produit
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">
+                    Qté
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">
+                    Statut
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -112,11 +135,21 @@ export default async function DevisListPage(props: {
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">
                       {formatDate(d.created_at)}
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{d.nom}</td>
-                    <td className="px-4 py-3 text-gray-500 hidden lg:table-cell">{d.email}</td>
-                    <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{d.telephone || "—"}</td>
-                    <td className="px-4 py-3 text-gray-700 max-w-[180px] truncate">{d.produit}</td>
-                    <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{d.quantite || "—"}</td>
+                    <td className="px-4 py-3 font-medium text-gray-800">
+                      {d.nom}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 hidden lg:table-cell">
+                      {d.email}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 hidden md:table-cell">
+                      {d.telephone || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-gray-700 max-w-[180px] truncate">
+                      {d.produit}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 hidden md:table-cell">
+                      {d.quantite || "—"}
+                    </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={d.status} />
                     </td>

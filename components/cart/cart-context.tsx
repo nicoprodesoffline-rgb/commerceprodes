@@ -1,6 +1,11 @@
 "use client";
 
-import type { Cart, CartItem, Product, ProductVariant } from "lib/supabase/types";
+import type {
+  Cart,
+  CartItem,
+  Product,
+  ProductVariant,
+} from "lib/supabase/types";
 import React, {
   createContext,
   useCallback,
@@ -35,7 +40,11 @@ type CartAction =
 type CartContextType = {
   cart: Cart;
   updateCartItem: (merchandiseId: string, updateType: UpdateType) => void;
-  addCartItem: (variant: ProductVariant, product: Product, quantity?: number) => void;
+  addCartItem: (
+    variant: ProductVariant,
+    product: Product,
+    quantity?: number,
+  ) => void;
   clearCart: () => void;
   isOpen: boolean;
   openCart: () => void;
@@ -62,7 +71,9 @@ function createEmptyCart(): Cart {
   };
 }
 
-function updateCartTotals(lines: CartItem[]): Pick<Cart, "totalQuantity" | "cost"> {
+function updateCartTotals(
+  lines: CartItem[],
+): Pick<Cart, "totalQuantity" | "cost"> {
   const totalQuantity = lines.reduce((sum, item) => sum + item.quantity, 0);
   const totalAmount = lines.reduce(
     (sum, item) => sum + Number(item.cost.totalAmount.amount),
@@ -84,7 +95,9 @@ function createOrUpdateCartItem(
   product: Product,
   addQuantity = 1,
 ): CartItem {
-  const quantity = existingItem ? existingItem.quantity + addQuantity : addQuantity;
+  const quantity = existingItem
+    ? existingItem.quantity + addQuantity
+    : addQuantity;
   const totalAmount = calculateItemCost(quantity, variant.price.amount);
 
   return {
@@ -127,7 +140,8 @@ function cartReducer(state: Cart, action: CartAction): Cart {
           const newQuantity =
             updateType === "plus" ? item.quantity + 1 : item.quantity - 1;
           if (newQuantity === 0) return null;
-          const singleItemAmount = Number(item.cost.totalAmount.amount) / item.quantity;
+          const singleItemAmount =
+            Number(item.cost.totalAmount.amount) / item.quantity;
           return {
             ...item,
             quantity: newQuantity,
@@ -135,13 +149,20 @@ function cartReducer(state: Cart, action: CartAction): Cart {
               ...item.cost,
               totalAmount: {
                 ...item.cost.totalAmount,
-                amount: calculateItemCost(newQuantity, singleItemAmount.toString()),
+                amount: calculateItemCost(
+                  newQuantity,
+                  singleItemAmount.toString(),
+                ),
               },
             },
           };
         })
         .filter(Boolean) as CartItem[];
-      return { ...state, ...updateCartTotals(updatedLines), lines: updatedLines };
+      return {
+        ...state,
+        ...updateCartTotals(updatedLines),
+        lines: updatedLines,
+      };
     }
 
     case "ADD_ITEM": {
@@ -149,13 +170,22 @@ function cartReducer(state: Cart, action: CartAction): Cart {
       const existingItem = state.lines.find(
         (item) => item.merchandise.id === variant.id,
       );
-      const updatedItem = createOrUpdateCartItem(existingItem, variant, product, quantity);
+      const updatedItem = createOrUpdateCartItem(
+        existingItem,
+        variant,
+        product,
+        quantity,
+      );
       const updatedLines = existingItem
         ? state.lines.map((item) =>
             item.merchandise.id === variant.id ? updatedItem : item,
           )
         : [...state.lines, updatedItem];
-      return { ...state, ...updateCartTotals(updatedLines), lines: updatedLines };
+      return {
+        ...state,
+        ...updateCartTotals(updatedLines),
+        lines: updatedLines,
+      };
     }
 
     default:
@@ -221,11 +251,14 @@ export function CartProvider({
 
     window.addEventListener("beforeunload", handleUnload);
 
-    const inactivityTimer = setTimeout(() => {
-      if (cart.lines.length > 0) {
-        persistAbandonedCart(cart);
-      }
-    }, 5 * 60 * 1000);
+    const inactivityTimer = setTimeout(
+      () => {
+        if (cart.lines.length > 0) {
+          persistAbandonedCart(cart);
+        }
+      },
+      5 * 60 * 1000,
+    );
 
     return () => {
       window.removeEventListener("beforeunload", handleUnload);
@@ -260,7 +293,15 @@ export function CartProvider({
   const closeCart = useCallback(() => setIsOpen(false), []);
 
   const value = useMemo(
-    () => ({ cart, updateCartItem, addCartItem, clearCart, isOpen, openCart, closeCart }),
+    () => ({
+      cart,
+      updateCartItem,
+      addCartItem,
+      clearCart,
+      isOpen,
+      openCart,
+      closeCart,
+    }),
     [cart, updateCartItem, addCartItem, clearCart, isOpen, openCart, closeCart],
   );
 

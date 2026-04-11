@@ -12,6 +12,7 @@ Accès : `/admin/data-factory`
 ### Démarrer un import
 
 1. Renseigner les métadonnées :
+
    - **Fournisseur** : ex. Grosfillex, E-Sunny, Socomix
    - **Nom catalogue** : ex. "TARIFS REVENDEURS 2026"
    - **Année** : 2026
@@ -26,6 +27,7 @@ si configuré, et stocke le fichier en Supabase Storage (bucket `imports`).
 ### Historique des imports
 
 Le tableau affiche pour chaque import :
+
 - Date, Fournisseur, Nom catalogue, Année
 - Statut : `pending` → `processing` → `done` / `error`
 - Lignes : total / ok / erreurs
@@ -42,17 +44,18 @@ Upload fichier brut → Parsing (Retab/n8n) → Normalisation PUID → Mère/Fil
 
 ### Règles de normalisation
 
-| Paramètre | Description | Valeur recommandée |
-|-----------|-------------|-------------------|
-| Stratégie de groupement | Comment détecter les familles | `parent_sku` |
-| Politique publication | Statut par défaut après import | `draft` (safe) |
-| Seuil confiance | Score minimum pour auto-publication | 75 |
-| Séparateur SKU | Séparateur prix/non-prix | `.` |
-| Axes prix-impact | Attributs qui changent le prix | `dimension,norme,finition` |
+| Paramètre               | Description                         | Valeur recommandée         |
+| ----------------------- | ----------------------------------- | -------------------------- |
+| Stratégie de groupement | Comment détecter les familles       | `parent_sku`               |
+| Politique publication   | Statut par défaut après import      | `draft` (safe)             |
+| Seuil confiance         | Score minimum pour auto-publication | 75                         |
+| Séparateur SKU          | Séparateur prix/non-prix            | `.`                        |
+| Axes prix-impact        | Attributs qui changent le prix      | `dimension,norme,finition` |
 
 ### Centre de contrôle IA
 
 Configure les modèles IA et prompts d'extraction/normalisation :
+
 - **Modèle extraction** : `claude-haiku-4-5-20251001` (rapide, économique)
 - **Modèle normalisation** : `claude-sonnet-4-6` (qualité supérieure)
 
@@ -74,6 +77,7 @@ Après apply PUID, regroupe les produits par `puid_root` en familles.
 ## 3) Onglet Mères / Filles
 
 Affiche l'audit temps réel des familles :
+
 - Familles actives, candidats en attente, suggestions potentielles, issues
 - Parents sans enfants (familles orphelines)
 - Orphelins parent_sku (enfants sans parent trouvé en base)
@@ -84,6 +88,7 @@ Bouton **Ouvrir module mères/filles** → `/admin/familles` pour gestion compl�
 ## 4) Onglet Tarification
 
 Vue macro du pricing sur l'ensemble du catalogue :
+
 - Total, publiés, promo active, PBQ activé, dégressif, lots, prix manquants
 
 Liens rapides vers Vue Excel et gestion Produits.
@@ -91,6 +96,7 @@ Liens rapides vers Vue Excel et gestion Produits.
 ## 5) Onglet Validation & Publication
 
 **Queue need_check** : produits avec anomalies détectées automatiquement :
+
 - SKU manquant
 - Prix invalide pour un produit publié
 - Description courte faible (< 20 caractères)

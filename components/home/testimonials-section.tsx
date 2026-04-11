@@ -51,7 +51,10 @@ const FALLBACK: Testimonial[] = [
 
 function Stars({ count }: { count: number }) {
   return (
-    <div className="flex gap-0.5 text-amber-400" aria-label={`${count} étoiles sur 5`}>
+    <div
+      className="flex gap-0.5 text-amber-400"
+      aria-label={`${count} étoiles sur 5`}
+    >
       {Array.from({ length: 5 }).map((_, i) => (
         <span key={i}>{i < count ? "★" : "☆"}</span>
       ))}
@@ -80,10 +83,10 @@ export async function TestimonialsSection() {
                 &ldquo;{t.content}&rdquo;
               </blockquote>
               <div className="mt-5 border-t border-gray-100 pt-4">
-                <p className="text-sm font-semibold text-gray-800">{t.author}</p>
-                {t.role && (
-                  <p className="text-xs text-gray-400">{t.role}</p>
-                )}
+                <p className="text-sm font-semibold text-gray-800">
+                  {t.author}
+                </p>
+                {t.role && <p className="text-xs text-gray-400">{t.role}</p>}
               </div>
             </div>
           ))}

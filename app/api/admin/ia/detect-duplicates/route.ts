@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("Authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  return token === (process.env.ADMIN_PASSWORD ?? "");
-}
+import { checkAdminAuth } from "lib/admin/auth";
+import { log } from "lib/logger";
 
 interface DuplicateGroup {
-  products: Array<{ id: string; title: string; handle: string; sku: string | null }>;
+  products: Array<{
+    id: string;
+    title: string;
+    handle: string;
+    sku: string | null;
+  }>;
   similarity: "title" | "sku";
 }
 
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) {
+  if (!checkAdminAuth(req)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -46,7 +47,10 @@ export async function GET(req: NextRequest) {
     }
     for (const [, group] of Object.entries(titleGroups)) {
       if (group.length >= 2) {
-        const ids = group.map((p) => p.id).sort().join(",");
+        const ids = group
+          .map((p) => p.id)
+          .sort()
+          .join(",");
         if (!seen.has(ids)) {
           seen.add(ids);
           groups.push({
@@ -72,7 +76,10 @@ export async function GET(req: NextRequest) {
     }
     for (const [, group] of Object.entries(skuGroups)) {
       if (group.length >= 2) {
-        const ids = group.map((p) => p.id).sort().join(",");
+        const ids = group
+          .map((p) => p.id)
+          .sort()
+          .join(",");
         if (!seen.has(ids)) {
           seen.add(ids);
           groups.push({
@@ -90,7 +97,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ groups: groups.slice(0, 50) });
   } catch (err) {
-    console.error("ia.detect_duplicates error", err);
+    log("error", "ia.detect_duplicates", { error: String(err) });
     return NextResponse.json({ error: "Erreur détection" }, { status: 500 });
   }
 }

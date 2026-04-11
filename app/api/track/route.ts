@@ -17,7 +17,11 @@ export async function POST(req: NextRequest) {
 
   const { event, payload } = body;
   const ALLOWED_EVENTS = ["product_view", "cart_event"] as const;
-  if (!event || !payload || !ALLOWED_EVENTS.includes(event as typeof ALLOWED_EVENTS[number])) {
+  if (
+    !event ||
+    !payload ||
+    !ALLOWED_EVENTS.includes(event as (typeof ALLOWED_EVENTS)[number])
+  ) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 

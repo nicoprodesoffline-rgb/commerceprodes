@@ -1,18 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkAdminAuth } from "lib/admin/auth";
 import { supabaseServer } from "lib/supabase/client";
-import { timingSafeEqual } from "crypto";
-
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  const expected = process.env.ADMIN_PASSWORD ?? "";
-  if (!token || !expected || token.length !== expected.length) return false;
-  try {
-    return timingSafeEqual(Buffer.from(token), Buffer.from(expected));
-  } catch {
-    return false;
-  }
-}
 
 interface ThematicItem {
   keywords: string;
@@ -34,7 +22,11 @@ async function callAnthropic(theme: string): Promise<AiResponse> {
       title: `Collection ${theme}`,
       intro: `Retrouvez nos produits sélectionnés pour le thème "${theme}".`,
       items: [
-        { keywords: theme, label: theme, pitch: `Produits adaptés pour ${theme}` },
+        {
+          keywords: theme,
+          label: theme,
+          pitch: `Produits adaptés pour ${theme}`,
+        },
       ],
     };
   }
@@ -69,7 +61,8 @@ async function callAnthropic(theme: string): Promise<AiResponse> {
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!checkAdminAuth(req))
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { theme } = await req.json();
   if (!theme || typeof theme !== "string" || theme.length > 100) {
@@ -80,12 +73,20 @@ export async function POST(req: NextRequest) {
   try {
     aiResult = await callAnthropic(theme);
   } catch (err) {
-    return NextResponse.json({ error: `IA error: ${String(err)}` }, { status: 500 });
+    return NextResponse.json(
+      { error: `IA error: ${String(err)}` },
+      { status: 500 },
+    );
   }
 
   // Fetch products for each item
   const client = supabaseServer();
-  const collectedProducts: Array<{ id: string; handle: string; title: string; image_url: string | null }> = [];
+  const collectedProducts: Array<{
+    id: string;
+    handle: string;
+    title: string;
+    image_url: string | null;
+  }> = [];
 
   for (const item of aiResult.items.slice(0, 8)) {
     const { data } = await client

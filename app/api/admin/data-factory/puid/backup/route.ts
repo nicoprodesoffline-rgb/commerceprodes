@@ -7,7 +7,9 @@ import { supabaseServer } from "lib/supabase/client";
  * POST — Restore from a backup JSON body { products: [...], variants: [...] }
  */
 
-async function hasPuidColumns(client: ReturnType<typeof supabaseServer>): Promise<boolean> {
+async function hasPuidColumns(
+  client: ReturnType<typeof supabaseServer>,
+): Promise<boolean> {
   const probe = await client.from("products").select("id, puid").limit(1);
   return !probe.error;
 }
@@ -18,7 +20,10 @@ export async function GET(req: NextRequest) {
   }
 
   const url = new URL(req.url);
-  const limit = Math.min(5000, Math.max(1, Number(url.searchParams.get("limit") || 5000)));
+  const limit = Math.min(
+    5000,
+    Math.max(1, Number(url.searchParams.get("limit") || 5000)),
+  );
   const client = supabaseServer();
 
   const puidAvailable = await hasPuidColumns(client);
@@ -102,7 +107,10 @@ export async function POST(req: NextRequest) {
   if (!dryRun) {
     // Restore products
     for (const row of body.products as Array<Record<string, unknown>>) {
-      if (!row.id) { result.skipped_products += 1; continue; }
+      if (!row.id) {
+        result.skipped_products += 1;
+        continue;
+      }
       const payload: Record<string, unknown> = { sku: row.sku ?? null };
       if (puidAvailable) {
         payload.puid = row.puid ?? null;
@@ -111,14 +119,23 @@ export async function POST(req: NextRequest) {
         payload.puid_style_branch = row.puid_style_branch ?? null;
         payload.puid_generated_at = row.puid_generated_at ?? null;
       }
-      const { error } = await client.from("products").update(payload).eq("id", String(row.id));
-      if (error) { result.errors.push(`product:${row.id}:${error.message}`); }
-      else { result.restored_products += 1; }
+      const { error } = await client
+        .from("products")
+        .update(payload)
+        .eq("id", String(row.id));
+      if (error) {
+        result.errors.push(`product:${row.id}:${error.message}`);
+      } else {
+        result.restored_products += 1;
+      }
     }
 
     // Restore variants
     for (const row of body.variants as Array<Record<string, unknown>>) {
-      if (!row.id) { result.skipped_variants += 1; continue; }
+      if (!row.id) {
+        result.skipped_variants += 1;
+        continue;
+      }
       const payload: Record<string, unknown> = { sku: row.sku ?? null };
       if (puidAvailable) {
         payload.puid = row.puid ?? null;
@@ -127,9 +144,15 @@ export async function POST(req: NextRequest) {
         payload.puid_style_branch = row.puid_style_branch ?? null;
         payload.puid_generated_at = row.puid_generated_at ?? null;
       }
-      const { error } = await client.from("variants").update(payload).eq("id", String(row.id));
-      if (error) { result.errors.push(`variant:${row.id}:${error.message}`); }
-      else { result.restored_variants += 1; }
+      const { error } = await client
+        .from("variants")
+        .update(payload)
+        .eq("id", String(row.id));
+      if (error) {
+        result.errors.push(`variant:${row.id}:${error.message}`);
+      } else {
+        result.restored_variants += 1;
+      }
     }
   } else {
     result.restored_products = body.products.length;

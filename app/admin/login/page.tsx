@@ -55,9 +55,7 @@ export default function AdminLoginPage() {
         <h1 className="text-xl font-bold text-center text-gray-900 mb-1">
           Administration PRODES
         </h1>
-        <p className="text-sm text-center text-gray-500 mb-8">
-          Espace réservé
-        </p>
+        <p className="text-sm text-center text-gray-500 mb-8">Espace réservé</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

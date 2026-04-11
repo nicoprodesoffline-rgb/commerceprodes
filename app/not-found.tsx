@@ -10,7 +10,8 @@ export default function NotFound() {
           Cette page n&apos;existe pas ou a été déplacée.
         </h1>
         <p className="mt-2 max-w-sm text-gray-500">
-          Le lien que vous avez suivi est peut-être incorrect ou la page a été supprimée.
+          Le lien que vous avez suivi est peut-être incorrect ou la page a été
+          supprimée.
         </p>
 
         {/* Barre de recherche */}

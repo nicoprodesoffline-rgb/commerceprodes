@@ -40,17 +40,17 @@
 
 ## Tests HTTP effectués
 
-| Route | Attendu | Notes |
-|-------|---------|-------|
-| HOME | 200 ✅ | |
-| CART | 200 ✅ | client component localStorage |
-| CHECKOUT | Dynamic ✅ | |
-| ADMIN | 307 → /admin/login ✅ | middleware redirige |
-| ADMIN_LOGIN | 200 ✅ | pas de boucle |
-| DEVIS | 200 ✅ | |
-| SEARCH_API | 200 ✅ | |
-| PDF API | 200 ✅ | génération jspdf |
-| DEVIS-EXPRESS | 200 ✅ | |
+| Route         | Attendu               | Notes                         |
+| ------------- | --------------------- | ----------------------------- |
+| HOME          | 200 ✅                |                               |
+| CART          | 200 ✅                | client component localStorage |
+| CHECKOUT      | Dynamic ✅            |                               |
+| ADMIN         | 307 → /admin/login ✅ | middleware redirige           |
+| ADMIN_LOGIN   | 200 ✅                | pas de boucle                 |
+| DEVIS         | 200 ✅                |                               |
+| SEARCH_API    | 200 ✅                |                               |
+| PDF API       | 200 ✅                | génération jspdf              |
+| DEVIS-EXPRESS | 200 ✅                |                               |
 
 ## Commits effectués
 

@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -80,7 +86,13 @@ export function CompareProvider({ children }: { children: ReactNode }) {
 
   return (
     <CompareContext.Provider
-      value={{ compareList, addToCompare, removeFromCompare, clearCompare, isInCompare }}
+      value={{
+        compareList,
+        addToCompare,
+        removeFromCompare,
+        clearCompare,
+        isInCompare,
+      }}
     >
       {children}
     </CompareContext.Provider>

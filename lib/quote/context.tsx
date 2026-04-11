@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import type { ReactNode } from "react";
 
 export interface QuoteItem {
@@ -15,7 +21,9 @@ export interface QuoteItem {
 interface QuoteContextType {
   quoteItems: QuoteItem[];
   quoteCount: number;
-  addToQuote: (item: Omit<QuoteItem, "quantity"> & { quantity?: number }) => void;
+  addToQuote: (
+    item: Omit<QuoteItem, "quantity"> & { quantity?: number },
+  ) => void;
   removeFromQuote: (handle: string) => void;
   updateQuantity: (handle: string, quantity: number) => void;
   clearQuote: () => void;
@@ -58,28 +66,39 @@ export function QuoteProvider({ children }: { children: ReactNode }) {
     setQuoteItems(items);
   }
 
-  const addToQuote = useCallback((item: Omit<QuoteItem, "quantity"> & { quantity?: number }) => {
-    setQuoteItems((prev) => {
-      const existing = prev.find((i) => i.handle === item.handle);
-      let next: QuoteItem[];
-      if (existing) {
-        next = prev.map((i) =>
-          i.handle === item.handle
-            ? { ...i, quantity: i.quantity + (item.quantity ?? 1) }
-            : i,
-        );
-      } else {
-        next = [...prev, { ...item, quantity: item.quantity ?? 1 }];
-      }
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
-      return next;
-    });
-  }, []);
+  const addToQuote = useCallback(
+    (item: Omit<QuoteItem, "quantity"> & { quantity?: number }) => {
+      setQuoteItems((prev) => {
+        const existing = prev.find((i) => i.handle === item.handle);
+        let next: QuoteItem[];
+        if (existing) {
+          next = prev.map((i) =>
+            i.handle === item.handle
+              ? { ...i, quantity: i.quantity + (item.quantity ?? 1) }
+              : i,
+          );
+        } else {
+          next = [...prev, { ...item, quantity: item.quantity ?? 1 }];
+        }
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        } catch {
+          /* ignore */
+        }
+        return next;
+      });
+    },
+    [],
+  );
 
   const removeFromQuote = useCallback((handle: string) => {
     setQuoteItems((prev) => {
       const next = prev.filter((i) => i.handle !== handle);
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
       return next;
     });
   }, []);
@@ -87,8 +106,14 @@ export function QuoteProvider({ children }: { children: ReactNode }) {
   const updateQuantity = useCallback((handle: string, quantity: number) => {
     if (quantity < 1) return;
     setQuoteItems((prev) => {
-      const next = prev.map((i) => (i.handle === handle ? { ...i, quantity } : i));
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      const next = prev.map((i) =>
+        i.handle === handle ? { ...i, quantity } : i,
+      );
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
       return next;
     });
   }, []);
@@ -97,20 +122,25 @@ export function QuoteProvider({ children }: { children: ReactNode }) {
     persist([]);
   }, []);
 
-  const isInQuote = useCallback((handle: string) => {
-    return quoteItems.some((i) => i.handle === handle);
-  }, [quoteItems]);
+  const isInQuote = useCallback(
+    (handle: string) => {
+      return quoteItems.some((i) => i.handle === handle);
+    },
+    [quoteItems],
+  );
 
   return (
-    <QuoteContext.Provider value={{
-      quoteItems,
-      quoteCount: quoteItems.reduce((sum, i) => sum + i.quantity, 0),
-      addToQuote,
-      removeFromQuote,
-      updateQuantity,
-      clearQuote,
-      isInQuote,
-    }}>
+    <QuoteContext.Provider
+      value={{
+        quoteItems,
+        quoteCount: quoteItems.reduce((sum, i) => sum + i.quantity, 0),
+        addToQuote,
+        removeFromQuote,
+        updateQuantity,
+        clearQuote,
+        isInQuote,
+      }}
+    >
       {children}
     </QuoteContext.Provider>
   );

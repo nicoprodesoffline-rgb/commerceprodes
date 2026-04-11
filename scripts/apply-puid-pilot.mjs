@@ -27,8 +27,7 @@ const LIMIT = Math.max(1, Number(argValue("--limit", "20")) || 20);
 const FOCUS = argValue("--focus", "");
 const PRODUCT_SKUS_RAW = argValue("--product-skus", "");
 const PRODUCT_SKUS = new Set(
-  PRODUCT_SKUS_RAW
-    .split(",")
+  PRODUCT_SKUS_RAW.split(",")
     .map((s) => s.trim())
     .filter(Boolean),
 );
@@ -83,9 +82,7 @@ const ALWAYS_NON_IMPACT = new Set([
   "couleurs-plateau",
   "les-lots",
 ]);
-const ALWAYS_IMPACT = new Set([
-  "option_2026",
-]);
+const ALWAYS_IMPACT = new Set(["option_2026"]);
 
 const GENERIC_WORDS = new Set([
   "chaise",
@@ -144,7 +141,10 @@ function loadEnv(filePath) {
     const k = m[1];
     if (process.env[k]) continue;
     let v = m[2].trim();
-    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+    if (
+      (v.startsWith('"') && v.endsWith('"')) ||
+      (v.startsWith("'") && v.endsWith("'"))
+    ) {
       v = v.slice(1, -1);
     }
     process.env[k] = v;
@@ -152,9 +152,7 @@ function loadEnv(filePath) {
 }
 
 function stripAccents(value) {
-  return (value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+  return (value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 function slugify(value) {
@@ -205,7 +203,12 @@ function extractModelCode(productSku, productName, supplier) {
   let parts = raw.split(/[^A-Z0-9]+/).filter(Boolean);
   if (parts.length) {
     if (parts[0].length <= 2) parts = parts.slice(1);
-    if (parts.length && ["NU", "IGNI", "BL", "NO", "BO", "VE", "GA", "BE"].includes(parts[parts.length - 1])) {
+    if (
+      parts.length &&
+      ["NU", "IGNI", "BL", "NO", "BO", "VE", "GA", "BE"].includes(
+        parts[parts.length - 1],
+      )
+    ) {
       parts = parts.slice(0, -1);
     }
     if (parts.length) {
@@ -213,8 +216,10 @@ function extractModelCode(productSku, productName, supplier) {
       if (supplier && candidate.startsWith(supplier)) {
         candidate = candidate.slice(supplier.length);
       }
-      if (candidate && candidate.length >= 6 && /\d/.test(candidate)) return candidate.slice(0, 12);
-      if (candidate && candidate.length >= 5 && /^[A-Z]+$/.test(candidate)) return candidate.slice(0, 12);
+      if (candidate && candidate.length >= 6 && /\d/.test(candidate))
+        return candidate.slice(0, 12);
+      if (candidate && candidate.length >= 5 && /^[A-Z]+$/.test(candidate))
+        return candidate.slice(0, 12);
     }
   }
 
@@ -252,7 +257,11 @@ function option2026Code(value) {
 function encodeAttrValue(attr, rawValue) {
   const valueSlug = slugify(rawValue);
   if (attr === "option_2026") return option2026Code(rawValue);
-  if (["coloris", "couleurs", "couleurs-pietements", "couleurs-plateau"].includes(attr)) {
+  if (
+    ["coloris", "couleurs", "couleurs-pietements", "couleurs-plateau"].includes(
+      attr,
+    )
+  ) {
     return COLOR_CODES[valueSlug] || tokenClean(rawValue).slice(0, 8);
   }
   if (attr === "pietement") {
@@ -288,7 +297,8 @@ function detectImpactSplit(variants) {
       valuesByAttr.get(attr).add(value);
       if (v.price !== null) {
         if (!priceMap.has(attr)) priceMap.set(attr, new Map());
-        if (!priceMap.get(attr).has(value)) priceMap.get(attr).set(value, new Set());
+        if (!priceMap.get(attr).has(value))
+          priceMap.get(attr).set(value, new Set());
         priceMap.get(attr).get(value).add(v.price);
       }
     }
@@ -378,7 +388,9 @@ function toCsv(rows) {
         (r.impact_attrs || []).join("|"),
         (r.non_impact_attrs || []).join("|"),
         JSON.stringify(r.attrs || {}),
-      ].map(esc).join(","),
+      ]
+        .map(esc)
+        .join(","),
     );
   }
   return lines.join("\n");
@@ -408,8 +420,13 @@ async function fetchAllProducts(supabase) {
 
 async function main() {
   loadEnv(ENV_FILE);
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local");
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local",
+    );
   }
 
   const supabase = createClient(
@@ -419,7 +436,10 @@ async function main() {
   );
 
   // Build global attribute maps once.
-  const [{ data: attrsData, error: attrsErr }, { data: termsData, error: termsErr }] = await Promise.all([
+  const [
+    { data: attrsData, error: attrsErr },
+    { data: termsData, error: termsErr },
+  ] = await Promise.all([
     supabase.from("attributes").select("id,slug,name"),
     supabase.from("attribute_terms").select("attribute_id,slug,name"),
   ]);
@@ -432,8 +452,7 @@ async function main() {
     termNameByAttrSlug.set(`${t.attribute_id}::${t.slug}`, t.name);
   }
 
-  const focusTokens = FOCUS
-    .split(",")
+  const focusTokens = FOCUS.split(",")
     .map((x) => x.trim().toLowerCase())
     .filter(Boolean);
 
@@ -468,11 +487,13 @@ async function main() {
       .from("variant_attributes")
       .select("variant_id,attribute_id,term_slug")
       .in("variant_id", variantIds);
-    if (vaErr) throw new Error(`variant_attributes ${product.sku}: ${vaErr.message}`);
+    if (vaErr)
+      throw new Error(`variant_attributes ${product.sku}: ${vaErr.message}`);
 
     const attrsByVariant = new Map();
     for (const va of varAttrs || []) {
-      if (!attrsByVariant.has(va.variant_id)) attrsByVariant.set(va.variant_id, []);
+      if (!attrsByVariant.has(va.variant_id))
+        attrsByVariant.set(va.variant_id, []);
       attrsByVariant.get(va.variant_id).push(va);
     }
 
@@ -481,7 +502,9 @@ async function main() {
       for (const row of attrsByVariant.get(v.id) || []) {
         const attr = attrById.get(row.attribute_id);
         if (!attr?.slug) continue;
-        const termName = termNameByAttrSlug.get(`${row.attribute_id}::${row.term_slug}`) || row.term_slug;
+        const termName =
+          termNameByAttrSlug.get(`${row.attribute_id}::${row.term_slug}`) ||
+          row.term_slug;
         attrs[attr.slug.replace(/^pa_/, "")] = termName;
       }
       return {
@@ -519,14 +542,20 @@ async function main() {
   }
 
   if (!plans.length) {
-    throw new Error("No pilot rows selected. Try broader --focus or higher --limit.");
+    throw new Error(
+      "No pilot rows selected. Try broader --focus or higher --limit.",
+    );
   }
 
   // Resolve collisions with existing DB SKUs.
-  const { data: allVariants, error: allVarErr } = await supabase.from("variants").select("id,sku");
+  const { data: allVariants, error: allVarErr } = await supabase
+    .from("variants")
+    .select("id,sku");
   if (allVarErr) throw new Error(`variants full list: ${allVarErr.message}`);
   const pilotIds = new Set(plans.map((p) => p.variant_id));
-  const used = new Set((allVariants || []).filter((v) => !pilotIds.has(v.id)).map((v) => v.sku));
+  const used = new Set(
+    (allVariants || []).filter((v) => !pilotIds.has(v.id)).map((v) => v.sku),
+  );
   for (const row of plans) {
     let candidate = row.proposed_sku;
     if (!candidate) candidate = row.current_sku;

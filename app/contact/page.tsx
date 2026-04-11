@@ -4,7 +4,9 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 
 export default function ContactPage() {
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -38,21 +40,28 @@ export default function ContactPage() {
         <div>
           <h2 className="text-2xl font-bold text-[#cc1818]">PRODES</h2>
           <p className="mt-3 text-gray-600 leading-relaxed">
-            Équipements pour collectivités et professionnels depuis plus de 20 ans.
-            Notre équipe vous répond du lundi au samedi.
+            Équipements pour collectivités et professionnels depuis plus de 20
+            ans. Notre équipe vous répond du lundi au samedi.
           </p>
 
           <div className="mt-6 space-y-4">
             {[
               { icon: "📞", label: "04 67 24 30 34", href: "tel:+33467243034" },
-              { icon: "✉️", label: "contact@prodes.fr", href: "mailto:contact@prodes.fr" },
+              {
+                icon: "✉️",
+                label: "contact@prodes.fr",
+                href: "mailto:contact@prodes.fr",
+              },
               { icon: "🕐", label: "Lun–Ven 8h30–19h / Sam 9h–13h" },
               { icon: "📍", label: "France métropolitaine" },
             ].map((item, i) => (
               <div key={i} className="flex items-start gap-3">
                 <span className="text-xl">{item.icon}</span>
                 {item.href ? (
-                  <a href={item.href} className="text-sm text-gray-700 hover:text-[#cc1818] transition-colors">
+                  <a
+                    href={item.href}
+                    className="text-sm text-gray-700 hover:text-[#cc1818] transition-colors"
+                  >
                     {item.label}
                   </a>
                 ) : (
@@ -183,7 +192,10 @@ export default function ContactPage() {
                 />
                 <label htmlFor="privacy" className="text-xs text-gray-600">
                   J&apos;accepte la{" "}
-                  <a href="/mentions-legales" className="text-[#cc1818] hover:underline">
+                  <a
+                    href="/mentions-legales"
+                    className="text-[#cc1818] hover:underline"
+                  >
                     politique de confidentialité
                   </a>
                 </label>
@@ -191,7 +203,8 @@ export default function ContactPage() {
 
               {status === "error" && (
                 <p className="text-sm text-red-600">
-                  Une erreur est survenue. Veuillez réessayer ou nous appeler au 04 67 24 30 34.
+                  Une erreur est survenue. Veuillez réessayer ou nous appeler au
+                  04 67 24 30 34.
                 </p>
               )}
 

@@ -7,10 +7,13 @@ import { checkAdminAuth } from "lib/admin/auth";
 import { checkVariationsDb } from "lib/admin/families-db";
 import { supabaseServer } from "lib/supabase/client";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function normalizeSku(value: unknown): string {
-  return String(value ?? "").trim().toUpperCase();
+  return String(value ?? "")
+    .trim()
+    .toUpperCase();
 }
 
 function isMeaningfulVariation(productSku: string, variation: any): boolean {
@@ -29,10 +32,12 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!checkAdminAuth(req)) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  if (!checkAdminAuth(req))
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const { id } = await params;
-  if (!UUID_RE.test(id)) return NextResponse.json({ error: "ID invalide" }, { status: 400 });
+  if (!UUID_RE.test(id))
+    return NextResponse.json({ error: "ID invalide" }, { status: 400 });
 
   const client = supabaseServer();
   const dbStatus = await checkVariationsDb();
@@ -85,18 +90,24 @@ export async function GET(
     .order("created_at", { ascending: true })
     .range((page - 1) * limit, page * limit - 1);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const variations = (data ?? []).map((v: any) => ({
-    ...v,
-    variant_attributes: (v.variant_attributes ?? []).map((va: any, idx: number) => ({
-      attribute_id: va.attribute_id,
-      term_slug: va.term_slug,
-      attribute_name: va.attributes?.name ?? va.attributes?.slug ?? va.attribute_id,
-      attribute_value: va.term_slug,
-      position: idx,
-    })),
-  })).filter((variation) => isMeaningfulVariation(productSku, variation));
+  const variations = (data ?? [])
+    .map((v: any) => ({
+      ...v,
+      variant_attributes: (v.variant_attributes ?? []).map(
+        (va: any, idx: number) => ({
+          attribute_id: va.attribute_id,
+          term_slug: va.term_slug,
+          attribute_name:
+            va.attributes?.name ?? va.attributes?.slug ?? va.attribute_id,
+          attribute_value: va.term_slug,
+          position: idx,
+        }),
+      ),
+    }))
+    .filter((variation) => isMeaningfulVariation(productSku, variation));
 
   return NextResponse.json({
     variations,

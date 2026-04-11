@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("Authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  return token === (process.env.ADMIN_PASSWORD ?? "");
-}
+import { checkAdminAuth } from "lib/admin/auth";
+import { log } from "lib/logger";
 
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) {
+  if (!checkAdminAuth(req)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -44,7 +40,7 @@ export async function GET(req: NextRequest) {
         .is("short_description", null),
     ] as const);
 
-    function extract(r: (typeof noDesc)) {
+    function extract(r: typeof noDesc) {
       if (r.status === "fulfilled") {
         return {
           count: (r.value as any).count ?? 0,
@@ -66,7 +62,7 @@ export async function GET(req: NextRequest) {
       noSku: extract(noSku),
     });
   } catch (err) {
-    console.error("ia.audit error", err);
+    log("error", "ia.audit", { error: String(err) });
     return NextResponse.json({ error: "Erreur audit" }, { status: 500 });
   }
 }

@@ -46,32 +46,42 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr" className={GeistSans.variable} suppressHydrationWarning={true}>
+    <html
+      lang="fr"
+      className={GeistSans.variable}
+      suppressHydrationWarning={true}
+    >
       <head>
-        <link rel="preconnect" href="https://mvnaeddtvyaqkdliivdk.supabase.co" />
-        <link rel="dns-prefetch" href="https://mvnaeddtvyaqkdliivdk.supabase.co" />
+        <link
+          rel="preconnect"
+          href="https://mvnaeddtvyaqkdliivdk.supabase.co"
+        />
+        <link
+          rel="dns-prefetch"
+          href="https://mvnaeddtvyaqkdliivdk.supabase.co"
+        />
       </head>
       <body className="bg-white text-black selection:bg-red-100">
         <CartProvider>
           <WishlistProvider>
-          <QuoteProvider>
-          <CompareProvider>
-            <Navbar />
-            <BuyerBanner />
-            <PromoBanner
-              text="Livraison incluse sur tous nos produits · Devis gratuit sous 24h"
-              active={true}
-            />
-            <main className="pb-16 md:pb-0">
-              {children}
-              <Toaster closeButton />
-              <WelcomeToast />
-              <WelcomeModal />
-            </main>
-            <CompareBar />
-            <MobileBottomNav />
-          </CompareProvider>
-          </QuoteProvider>
+            <QuoteProvider>
+              <CompareProvider>
+                <Navbar />
+                <BuyerBanner />
+                <PromoBanner
+                  text="Livraison incluse sur tous nos produits · Devis gratuit sous 24h"
+                  active={true}
+                />
+                <main className="pb-16 md:pb-0">
+                  {children}
+                  <Toaster closeButton />
+                  <WelcomeToast />
+                  <WelcomeModal />
+                </main>
+                <CompareBar />
+                <MobileBottomNav />
+              </CompareProvider>
+            </QuoteProvider>
           </WishlistProvider>
         </CartProvider>
       </body>

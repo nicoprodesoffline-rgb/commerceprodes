@@ -14,7 +14,10 @@ export interface DbStatus {
 /** Check that a given table exists by querying it with limit 0 */
 async function tableExists(table: string): Promise<boolean> {
   const client = supabaseServer();
-  const { error } = await client.from(table as never).select("id").limit(0);
+  const { error } = await client
+    .from(table as never)
+    .select("id")
+    .limit(0);
   // 42P01 = undefined_table
   if (error && error.code === "42P01") return false;
   return true;
@@ -56,7 +59,10 @@ export async function checkCommercialPricingDb(): Promise<DbStatus> {
     .from("product_promotion_layers")
     .select("id")
     .limit(0);
-  if (promoCheck.error && (promoCheck.error.code === "42703" || promoCheck.error.code === "42P01")) {
+  if (
+    promoCheck.error &&
+    (promoCheck.error.code === "42703" || promoCheck.error.code === "42P01")
+  ) {
     return {
       available: false,
       reason: "MIGRATION_REQUIRED",
@@ -68,7 +74,10 @@ export async function checkCommercialPricingDb(): Promise<DbStatus> {
     .from("pricing_attribute_rules")
     .select("id")
     .limit(0);
-  if (rulesCheck.error && (rulesCheck.error.code === "42703" || rulesCheck.error.code === "42P01")) {
+  if (
+    rulesCheck.error &&
+    (rulesCheck.error.code === "42703" || rulesCheck.error.code === "42P01")
+  ) {
     return {
       available: false,
       reason: "MIGRATION_REQUIRED",
@@ -86,7 +95,11 @@ export async function checkLotPricingDb(): Promise<DbStatus> {
     .from("product_pricing_profiles")
     .select("id")
     .limit(0);
-  if (profilesCheck.error && (profilesCheck.error.code === "42703" || profilesCheck.error.code === "42P01")) {
+  if (
+    profilesCheck.error &&
+    (profilesCheck.error.code === "42703" ||
+      profilesCheck.error.code === "42P01")
+  ) {
     return {
       available: false,
       reason: "MIGRATION_REQUIRED",
@@ -98,7 +111,10 @@ export async function checkLotPricingDb(): Promise<DbStatus> {
     .from("product_lot_offers")
     .select("id")
     .limit(0);
-  if (offersCheck.error && (offersCheck.error.code === "42703" || offersCheck.error.code === "42P01")) {
+  if (
+    offersCheck.error &&
+    (offersCheck.error.code === "42703" || offersCheck.error.code === "42P01")
+  ) {
     return {
       available: false,
       reason: "MIGRATION_REQUIRED",

@@ -59,7 +59,10 @@ export function WelcomeModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={() => setShow(false)} />
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={() => setShow(false)}
+      />
       <div className="relative z-10 mx-4 w-full max-w-md rounded-xl bg-white shadow-2xl">
         {/* Header */}
         <div className="rounded-t-xl bg-[#cc1818] px-8 py-6 text-center">
@@ -72,7 +75,9 @@ export function WelcomeModal() {
               className="object-contain brightness-0 invert"
             />
           </div>
-          <h2 className="text-xl font-bold text-white">Bienvenue chez PRODES</h2>
+          <h2 className="text-xl font-bold text-white">
+            Bienvenue chez PRODES
+          </h2>
           <p className="mt-1 text-sm text-red-100">
             Le spécialiste des équipements pour collectivités
           </p>
@@ -109,7 +114,9 @@ export function WelcomeModal() {
 }
 
 export function BuyerBanner() {
-  const [banner, setBanner] = useState<{ text: string; cls: string } | null>(null);
+  const [banner, setBanner] = useState<{ text: string; cls: string } | null>(
+    null,
+  );
   const [pagesViewed, setPagesViewed] = useState(0);
 
   useEffect(() => {
@@ -134,7 +141,9 @@ export function BuyerBanner() {
   if (!banner || pagesViewed > PAGE_LIMIT) return null;
 
   return (
-    <div className={`${banner.cls} px-4 py-2.5 text-center text-sm font-medium text-white`}>
+    <div
+      className={`${banner.cls} px-4 py-2.5 text-center text-sm font-medium text-white`}
+    >
       {banner.text}
     </div>
   );

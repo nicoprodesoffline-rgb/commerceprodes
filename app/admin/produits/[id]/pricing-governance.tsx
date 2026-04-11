@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { adminFetch } from "lib/admin/fetch";
 
 type PricingAttribute = {
@@ -32,7 +39,11 @@ type PromotionLayer = {
   id: string;
   pricing_profile_id: string | null;
   label: string;
-  mode: "lot" | "unit_flat_discount" | "unit_percent_discount" | "unit_sale_price";
+  mode:
+    | "lot"
+    | "unit_flat_discount"
+    | "unit_percent_discount"
+    | "unit_sale_price";
   discount_amount: number | null;
   discount_percent: number | null;
   override_unit_price_ht: number | null;
@@ -121,17 +132,28 @@ function defaultLotRows() {
 }
 
 function normalizeProfileKey(prefix: string): string {
-  return prefix.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, "");
+  return prefix
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
-function parseSkuPrefix(raw: string): { prefix: string; root: string; branch: string } | null {
-  const clean = String(raw || "").trim().toUpperCase();
+function parseSkuPrefix(
+  raw: string,
+): { prefix: string; root: string; branch: string } | null {
+  const clean = String(raw || "")
+    .trim()
+    .toUpperCase();
   if (!clean) return null;
   const beforeDot = clean.split(".")[0]?.trim() || "";
   if (!beforeDot) return null;
-  const tokens = beforeDot.split("-").map((t) => t.trim()).filter(Boolean);
+  const tokens = beforeDot
+    .split("-")
+    .map((t) => t.trim())
+    .filter(Boolean);
   if (tokens.length === 0) return null;
-  const rootTokens = tokens.length >= 3 ? tokens.slice(0, 3) : tokens.slice(0, 1);
+  const rootTokens =
+    tokens.length >= 3 ? tokens.slice(0, 3) : tokens.slice(0, 1);
   return {
     prefix: beforeDot,
     root: rootTokens.join("-"),
@@ -145,28 +167,39 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
   const [tab, setTab] = useState<"normal" | "promo">("normal");
 
   const [attributes, setAttributes] = useState<PricingAttribute[]>([]);
-  const [selectedAttributeIds, setSelectedAttributeIds] = useState<Set<string>>(new Set());
-  const [autoSuggestedIds, setAutoSuggestedIds] = useState<Set<string>>(new Set());
+  const [selectedAttributeIds, setSelectedAttributeIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [autoSuggestedIds, setAutoSuggestedIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [savingAttrs, setSavingAttrs] = useState(false);
 
   const [normalMode, setNormalMode] = useState<"flat" | "degressive">("flat");
   const [normalRegularPrice, setNormalRegularPrice] = useState("");
   const [normalSalePrice, setNormalSalePrice] = useState("");
-  const [normalDegressiveType, setNormalDegressiveType] = useState<"fixed" | "percentage">("fixed");
+  const [normalDegressiveType, setNormalDegressiveType] = useState<
+    "fixed" | "percentage"
+  >("fixed");
   const [normalTiers, setNormalTiers] = useState<TierRow[]>(defaultTierRows());
   const [savingNormal, setSavingNormal] = useState(false);
 
   const [layers, setLayers] = useState<PromotionLayer[]>([]);
   const [lotProfiles, setLotProfiles] = useState<LotProfile[]>([]);
-  const [branchCandidates, setBranchCandidates] = useState<BranchCandidate[]>([]);
+  const [branchCandidates, setBranchCandidates] = useState<BranchCandidate[]>(
+    [],
+  );
 
   const [promoLabel, setPromoLabel] = useState("Promo commerciale");
   const [promoStartsAt, setPromoStartsAt] = useState("");
   const [promoEndsAt, setPromoEndsAt] = useState("");
   const [promoMode, setPromoMode] = useState<PromoModeDraft>("flat");
   const [promoFlatPrice, setPromoFlatPrice] = useState("");
-  const [promoDegressiveType, setPromoDegressiveType] = useState<"fixed" | "percentage">("fixed");
-  const [promoDegressiveTiers, setPromoDegressiveTiers] = useState<TierRow[]>(defaultTierRows());
+  const [promoDegressiveType, setPromoDegressiveType] = useState<
+    "fixed" | "percentage"
+  >("fixed");
+  const [promoDegressiveTiers, setPromoDegressiveTiers] =
+    useState<TierRow[]>(defaultTierRows());
   const [promoLotSkuInput, setPromoLotSkuInput] = useState("");
   const [promoLotPrefix, setPromoLotPrefix] = useState("");
   const [promoLotBranchUnitPrice, setPromoLotBranchUnitPrice] = useState("");
@@ -179,10 +212,15 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
     [layers],
   );
   const selectedBranch = useMemo(
-    () => branchCandidates.find((branch) => branch.prefix === promoLotPrefix) ?? null,
+    () =>
+      branchCandidates.find((branch) => branch.prefix === promoLotPrefix) ??
+      null,
     [branchCandidates, promoLotPrefix],
   );
-  const parsedLotSku = useMemo(() => parseSkuPrefix(promoLotSkuInput), [promoLotSkuInput]);
+  const parsedLotSku = useMemo(
+    () => parseSkuPrefix(promoLotSkuInput),
+    [promoLotSkuInput],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -220,11 +258,16 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
       }
 
       if (!normalRes.ok) {
-        setError((prev) => prev ?? normalJson.error ?? "Erreur chargement tarif normal");
+        setError(
+          (prev) =>
+            prev ?? normalJson.error ?? "Erreur chargement tarif normal",
+        );
       } else {
         setNormalMode(normalJson.mode === "degressive" ? "degressive" : "flat");
         setNormalRegularPrice(
-          normalJson.regular_price != null ? String(normalJson.regular_price) : "",
+          normalJson.regular_price != null
+            ? String(normalJson.regular_price)
+            : "",
         );
         setNormalSalePrice(
           normalJson.sale_price != null ? String(normalJson.sale_price) : "",
@@ -239,7 +282,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
       }
 
       if (!promoRes.ok) {
-        setError((prev) => prev ?? promoJson.error ?? "Erreur chargement promos");
+        setError(
+          (prev) => prev ?? promoJson.error ?? "Erreur chargement promos",
+        );
       } else {
         setLayers(promoJson.layers ?? []);
       }
@@ -269,11 +314,14 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
     setSavingAttrs(true);
     setError(null);
     try {
-      const res = await adminFetch(`/api/admin/products/${productId}/pricing-attributes`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ attribute_ids: [...selectedAttributeIds] }),
-      });
+      const res = await adminFetch(
+        `/api/admin/products/${productId}/pricing-attributes`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ attribute_ids: [...selectedAttributeIds] }),
+        },
+      );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error ?? "Impossible d'enregistrer les attributs");
@@ -295,7 +343,8 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
         sale_price: toNumberOrNull(normalSalePrice),
         sale_price_start: null,
         sale_price_end: null,
-        pbq_pricing_type: normalMode === "degressive" ? normalDegressiveType : null,
+        pbq_pricing_type:
+          normalMode === "degressive" ? normalDegressiveType : null,
         tiers:
           normalMode === "degressive"
             ? normalTiers
@@ -311,11 +360,14 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
             : [],
       };
 
-      const res = await adminFetch(`/api/admin/products/${productId}/normal-pricing`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await adminFetch(
+        `/api/admin/products/${productId}/normal-pricing`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error ?? "Impossible d'enregistrer le tarif normal");
@@ -328,11 +380,14 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
   }
 
   async function toggleLayer(layer: PromotionLayer, active: boolean) {
-    const res = await adminFetch(`/api/admin/products/${productId}/promotions`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: layer.id, active }),
-    });
+    const res = await adminFetch(
+      `/api/admin/products/${productId}/promotions`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: layer.id, active }),
+      },
+    );
     if (res.ok) await load();
   }
 
@@ -347,20 +402,25 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
 
   async function ensureLotProfile(prefix: string): Promise<string> {
     const key = normalizeProfileKey(prefix);
-    const existing = lotProfiles.find((p) => normalizeProfileKey(p.profile_key) === key);
+    const existing = lotProfiles.find(
+      (p) => normalizeProfileKey(p.profile_key) === key,
+    );
     if (existing) return existing.id;
 
-    const created = await adminFetch(`/api/admin/products/${productId}/lot-pricing`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        kind: "profile",
-        profile_key: key,
-        label: `Branche ${prefix}`,
-        applies_to: "product",
-        axis: { sku_prefix: prefix },
-      }),
-    });
+    const created = await adminFetch(
+      `/api/admin/products/${productId}/lot-pricing`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "profile",
+          profile_key: key,
+          label: `Branche ${prefix}`,
+          applies_to: "product",
+          axis: { sku_prefix: prefix },
+        }),
+      },
+    );
     const json = await created.json().catch(() => ({}));
     if (!created.ok || !json.id) {
       throw new Error(json.error ?? "Impossible de créer le profil lot");
@@ -372,26 +432,33 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
     setCreatingPromo(true);
     setError(null);
     try {
-      const startsAt = promoStartsAt ? new Date(promoStartsAt).toISOString() : null;
+      const startsAt = promoStartsAt
+        ? new Date(promoStartsAt).toISOString()
+        : null;
       const endsAt = promoEndsAt ? new Date(promoEndsAt).toISOString() : null;
 
       if (promoMode === "flat") {
         const price = toNumberOrNull(promoFlatPrice);
-        if (price == null) throw new Error("Renseignez un prix promo unitaire.");
-        const res = await adminFetch(`/api/admin/products/${productId}/promotions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            label: promoLabel,
-            mode: "unit_sale_price",
-            override_unit_price_ht: price,
-            starts_at: startsAt,
-            ends_at: endsAt,
-            active: true,
-          }),
-        });
+        if (price == null)
+          throw new Error("Renseignez un prix promo unitaire.");
+        const res = await adminFetch(
+          `/api/admin/products/${productId}/promotions`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              label: promoLabel,
+              mode: "unit_sale_price",
+              override_unit_price_ht: price,
+              starts_at: startsAt,
+              ends_at: endsAt,
+              active: true,
+            }),
+          },
+        );
         const json = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(json.error ?? "Création promo flat impossible");
+        if (!res.ok)
+          throw new Error(json.error ?? "Création promo flat impossible");
       }
 
       if (promoMode === "degressive") {
@@ -399,37 +466,45 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
           .map((row) => ({
             min_quantity: Math.max(1, Math.round(row.min_quantity || 1)),
             max_quantity:
-              row.max_quantity != null ? Math.max(1, Math.round(row.max_quantity)) : null,
+              row.max_quantity != null
+                ? Math.max(1, Math.round(row.max_quantity))
+                : null,
             value: Number(row.value || 0),
           }))
           .sort((a, b) => a.min_quantity - b.min_quantity);
-        if (tiers.length === 0) throw new Error("Ajoutez au moins un palier promo.");
+        if (tiers.length === 0)
+          throw new Error("Ajoutez au moins un palier promo.");
 
-        const res = await adminFetch(`/api/admin/products/${productId}/promotions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            label: promoLabel,
-            mode: "unit_sale_price",
-            override_unit_price_ht: null,
-            starts_at: startsAt,
-            ends_at: endsAt,
-            active: true,
-            meta: {
-              pricing_mode: "degressive",
-              pbq_pricing_type: promoDegressiveType,
-              tiers,
-            },
-          }),
-        });
+        const res = await adminFetch(
+          `/api/admin/products/${productId}/promotions`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              label: promoLabel,
+              mode: "unit_sale_price",
+              override_unit_price_ht: null,
+              starts_at: startsAt,
+              ends_at: endsAt,
+              active: true,
+              meta: {
+                pricing_mode: "degressive",
+                pbq_pricing_type: promoDegressiveType,
+                tiers,
+              },
+            }),
+          },
+        );
         const json = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(json.error ?? "Création promo dégressive impossible");
+        if (!res.ok)
+          throw new Error(json.error ?? "Création promo dégressive impossible");
       }
 
       if (promoMode === "lot") {
         if (!promoLotPrefix) throw new Error("Choisissez un préfixe SKU.");
         const branchUnitPrice = toNumberOrNull(promoLotBranchUnitPrice);
-        if (branchUnitPrice == null) throw new Error("Renseignez le prix unitaire de la branche.");
+        if (branchUnitPrice == null)
+          throw new Error("Renseignez le prix unitaire de la branche.");
         const lotRows = promoLotRows
           .map((row) => ({
             label: row.label.trim(),
@@ -439,46 +514,53 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
             eco_included: row.eco_included !== false,
           }))
           .filter((row) => row.label && Number.isFinite(row.lot_price_ht));
-        if (lotRows.length === 0) throw new Error("Ajoutez au moins un lot valide.");
+        if (lotRows.length === 0)
+          throw new Error("Ajoutez au moins un lot valide.");
 
         const profileId = await ensureLotProfile(promoLotPrefix);
         for (const row of lotRows) {
-          const offerRes = await adminFetch(`/api/admin/products/${productId}/lot-pricing`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              kind: "offer",
-              pricing_profile_id: profileId,
-              label: row.label,
-              paid_units: row.paid_units,
-              bonus_units: row.bonus_units,
-              lot_price_ht: row.lot_price_ht,
-              eco_included: row.eco_included,
-            }),
-          });
+          const offerRes = await adminFetch(
+            `/api/admin/products/${productId}/lot-pricing`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                kind: "offer",
+                pricing_profile_id: profileId,
+                label: row.label,
+                paid_units: row.paid_units,
+                bonus_units: row.bonus_units,
+                lot_price_ht: row.lot_price_ht,
+                eco_included: row.eco_included,
+              }),
+            },
+          );
           const offerJson = await offerRes.json().catch(() => ({}));
           if (!offerRes.ok) {
             throw new Error(offerJson.error ?? `Lot "${row.label}" invalide`);
           }
         }
 
-        const layerRes = await adminFetch(`/api/admin/products/${productId}/promotions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            label: promoLabel,
-            mode: "lot",
-            pricing_profile_id: profileId,
-            starts_at: startsAt,
-            ends_at: endsAt,
-            active: true,
-            meta: {
-              pricing_mode: "lot",
-              sku_prefix: promoLotPrefix,
-              branch_unit_price_ht: branchUnitPrice,
-            },
-          }),
-        });
+        const layerRes = await adminFetch(
+          `/api/admin/products/${productId}/promotions`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              label: promoLabel,
+              mode: "lot",
+              pricing_profile_id: profileId,
+              starts_at: startsAt,
+              ends_at: endsAt,
+              active: true,
+              meta: {
+                pricing_mode: "lot",
+                sku_prefix: promoLotPrefix,
+                branch_unit_price_ht: branchUnitPrice,
+              },
+            }),
+          },
+        );
         const layerJson = await layerRes.json().catch(() => ({}));
         if (!layerRes.ok) {
           throw new Error(layerJson.error ?? "Création promo lot impossible");
@@ -498,14 +580,20 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
     index: number,
     patch: Partial<TierRow>,
   ) {
-    setter((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+    setter((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    );
   }
 
   function addTier(setter: Dispatch<SetStateAction<TierRow[]>>) {
     setter((prev) => [
       ...prev,
       {
-        min_quantity: prev.length > 0 ? (prev[prev.length - 1]!.max_quantity || prev[prev.length - 1]!.min_quantity + 1) : 2,
+        min_quantity:
+          prev.length > 0
+            ? prev[prev.length - 1]!.max_quantity ||
+              prev[prev.length - 1]!.min_quantity + 1
+            : 2,
         max_quantity: null,
         value: 0,
       },
@@ -515,7 +603,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
   return (
     <section className="rounded-lg border border-purple-200 bg-white">
       <div className="border-b border-purple-100 px-5 py-3">
-        <h2 className="text-sm font-semibold text-gray-800">Tarification commerciale</h2>
+        <h2 className="text-sm font-semibold text-gray-800">
+          Tarification commerciale
+        </h2>
         <p className="mt-1 text-xs text-gray-500">
           Normal: flat ou dégressif. Promotions: flat, dégressif ou lots.
         </p>
@@ -552,7 +642,11 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
 
       <div className="space-y-4 p-5">
         {loading && <p className="text-xs text-gray-400">Chargement…</p>}
-        {error && <p className="rounded bg-red-50 px-2 py-1 text-xs text-red-700">{error}</p>}
+        {error && (
+          <p className="rounded bg-red-50 px-2 py-1 text-xs text-red-700">
+            {error}
+          </p>
+        )}
 
         {tab === "normal" && (
           <>
@@ -562,7 +656,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                   Embranchements qui changent le prix
                 </h3>
                 <button
-                  onClick={() => setSelectedAttributeIds(new Set(autoSuggestedIds))}
+                  onClick={() =>
+                    setSelectedAttributeIds(new Set(autoSuggestedIds))
+                  }
                   className="text-xs text-purple-600 hover:text-purple-800"
                   type="button"
                 >
@@ -572,7 +668,10 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
 
               <div className="grid grid-cols-1 gap-1 md:grid-cols-2">
                 {attributes.map((attr) => (
-                  <label key={attr.id} className="flex items-center gap-2 text-xs text-gray-700">
+                  <label
+                    key={attr.id}
+                    className="flex items-center gap-2 text-xs text-gray-700"
+                  >
                     <input
                       type="checkbox"
                       checked={selectedAttributeIds.has(attr.id)}
@@ -587,7 +686,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                     />
                     <span className="font-medium">{attr.name}</span>
                     {attr.auto_impacts_price && (
-                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-700">auto</span>
+                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-700">
+                        auto
+                      </span>
                     )}
                   </label>
                 ))}
@@ -610,7 +711,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                 </label>
                 <select
                   value={normalMode}
-                  onChange={(e) => setNormalMode(e.target.value as "flat" | "degressive")}
+                  onChange={(e) =>
+                    setNormalMode(e.target.value as "flat" | "degressive")
+                  }
                   className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs"
                 >
                   <option value="flat">Flat</option>
@@ -621,7 +724,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
               {normalMode === "flat" && (
                 <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-xs text-gray-600">Prix unitaire base (HT)</label>
+                    <label className="mb-1 block text-xs text-gray-600">
+                      Prix unitaire base (HT)
+                    </label>
                     <input
                       type="number"
                       step="0.01"
@@ -631,7 +736,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-gray-600">Prix promo unitaire (HT)</label>
+                    <label className="mb-1 block text-xs text-gray-600">
+                      Prix promo unitaire (HT)
+                    </label>
                     <input
                       type="number"
                       step="0.01"
@@ -647,7 +754,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                 <div className="space-y-2">
                   <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                     <div>
-                      <label className="mb-1 block text-xs text-gray-600">Prix unitaire base (HT)</label>
+                      <label className="mb-1 block text-xs text-gray-600">
+                        Prix unitaire base (HT)
+                      </label>
                       <input
                         type="number"
                         step="0.01"
@@ -657,11 +766,15 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs text-gray-600">Type de dégressif</label>
+                      <label className="mb-1 block text-xs text-gray-600">
+                        Type de dégressif
+                      </label>
                       <select
                         value={normalDegressiveType}
                         onChange={(e) =>
-                          setNormalDegressiveType(e.target.value as "fixed" | "percentage")
+                          setNormalDegressiveType(
+                            e.target.value as "fixed" | "percentage",
+                          )
                         }
                         className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs"
                       >
@@ -673,28 +786,40 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
 
                   <div className="space-y-1">
                     {normalTiers.map((row, idx) => (
-                      <div key={idx} className="grid grid-cols-12 gap-2 rounded border border-gray-100 p-2">
+                      <div
+                        key={idx}
+                        className="grid grid-cols-12 gap-2 rounded border border-gray-100 p-2"
+                      >
                         <div className="col-span-3">
-                          <label className="mb-1 block text-[11px] text-gray-500">Qté min</label>
+                          <label className="mb-1 block text-[11px] text-gray-500">
+                            Qté min
+                          </label>
                           <input
                             type="number"
                             value={row.min_quantity}
                             onChange={(e) =>
                               setTierValue(setNormalTiers, idx, {
-                                min_quantity: Math.max(1, Number(e.target.value || 1)),
+                                min_quantity: Math.max(
+                                  1,
+                                  Number(e.target.value || 1),
+                                ),
                               })
                             }
                             className="w-full rounded border border-gray-200 px-2 py-1 text-xs"
                           />
                         </div>
                         <div className="col-span-3">
-                          <label className="mb-1 block text-[11px] text-gray-500">Qté max</label>
+                          <label className="mb-1 block text-[11px] text-gray-500">
+                            Qté max
+                          </label>
                           <input
                             type="number"
                             value={row.max_quantity ?? ""}
                             onChange={(e) =>
                               setTierValue(setNormalTiers, idx, {
-                                max_quantity: e.target.value ? Number(e.target.value) : null,
+                                max_quantity: e.target.value
+                                  ? Number(e.target.value)
+                                  : null,
                               })
                             }
                             className="w-full rounded border border-gray-200 px-2 py-1 text-xs"
@@ -702,7 +827,8 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                         </div>
                         <div className="col-span-4">
                           <label className="mb-1 block text-[11px] text-gray-500">
-                            Valeur ({normalDegressiveType === "percentage" ? "%" : "€"})
+                            Valeur (
+                            {normalDegressiveType === "percentage" ? "%" : "€"})
                           </label>
                           <input
                             type="number"
@@ -720,7 +846,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                           <button
                             type="button"
                             onClick={() =>
-                              setNormalTiers((prev) => prev.filter((_, i) => i !== idx))
+                              setNormalTiers((prev) =>
+                                prev.filter((_, i) => i !== idx),
+                              )
                             }
                             className="rounded border border-red-200 px-2 py-1 text-[11px] text-red-600 hover:bg-red-50"
                           >
@@ -770,21 +898,33 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
 
               <div className="space-y-2">
                 {layers.map((layer) => (
-                  <div key={layer.id} className="rounded-md border border-gray-100 p-2 text-xs">
+                  <div
+                    key={layer.id}
+                    className="rounded-md border border-gray-100 p-2 text-xs"
+                  >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-800">{layer.label}</p>
+                        <p className="font-medium text-gray-800">
+                          {layer.label}
+                        </p>
                         <p className="text-gray-500">{modeLabel[layer.mode]}</p>
                         {layer.meta &&
-                          String((layer.meta as any).pricing_mode || "") === "degressive" && (
+                          String((layer.meta as any).pricing_mode || "") ===
+                            "degressive" && (
                             <p className="text-[11px] text-indigo-600">
-                              Dégressif promo ({String((layer.meta as any).pbq_pricing_type || "fixed")})
+                              Dégressif promo (
+                              {String(
+                                (layer.meta as any).pbq_pricing_type || "fixed",
+                              )}
+                              )
                             </p>
                           )}
                         {layer.meta &&
-                          String((layer.meta as any).pricing_mode || "") === "lot" && (
+                          String((layer.meta as any).pricing_mode || "") ===
+                            "lot" && (
                             <p className="text-[11px] text-indigo-600">
-                              Préfixe: {String((layer.meta as any).sku_prefix || "—")}
+                              Préfixe:{" "}
+                              {String((layer.meta as any).sku_prefix || "—")}
                             </p>
                           )}
                       </div>
@@ -806,7 +946,8 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                       </div>
                     </div>
                     <p className="mt-1 text-[11px] text-gray-400">
-                      {localIso(layer.starts_at) || "immédiat"} → {localIso(layer.ends_at) || "illimité"}
+                      {localIso(layer.starts_at) || "immédiat"} →{" "}
+                      {localIso(layer.ends_at) || "illimité"}
                     </p>
                   </div>
                 ))}
@@ -840,10 +981,14 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
               </div>
 
               <div className="mt-2">
-                <label className="mb-1 block text-xs text-gray-600">Mode promo</label>
+                <label className="mb-1 block text-xs text-gray-600">
+                  Mode promo
+                </label>
                 <select
                   value={promoMode}
-                  onChange={(e) => setPromoMode(e.target.value as PromoModeDraft)}
+                  onChange={(e) =>
+                    setPromoMode(e.target.value as PromoModeDraft)
+                  }
                   className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs"
                 >
                   <option value="flat">Flat</option>
@@ -854,7 +999,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
 
               {promoMode === "flat" && (
                 <div className="mt-2">
-                  <label className="mb-1 block text-xs text-gray-600">Prix promo unitaire (HT)</label>
+                  <label className="mb-1 block text-xs text-gray-600">
+                    Prix promo unitaire (HT)
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -868,11 +1015,15 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
               {promoMode === "degressive" && (
                 <div className="mt-2 space-y-2">
                   <div>
-                    <label className="mb-1 block text-xs text-gray-600">Type de dégressif promo</label>
+                    <label className="mb-1 block text-xs text-gray-600">
+                      Type de dégressif promo
+                    </label>
                     <select
                       value={promoDegressiveType}
                       onChange={(e) =>
-                        setPromoDegressiveType(e.target.value as "fixed" | "percentage")
+                        setPromoDegressiveType(
+                          e.target.value as "fixed" | "percentage",
+                        )
                       }
                       className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs"
                     >
@@ -881,28 +1032,40 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                     </select>
                   </div>
                   {promoDegressiveTiers.map((row, idx) => (
-                    <div key={idx} className="grid grid-cols-12 gap-2 rounded border border-gray-100 p-2">
+                    <div
+                      key={idx}
+                      className="grid grid-cols-12 gap-2 rounded border border-gray-100 p-2"
+                    >
                       <div className="col-span-3">
-                        <label className="mb-1 block text-[11px] text-gray-500">Qté min</label>
+                        <label className="mb-1 block text-[11px] text-gray-500">
+                          Qté min
+                        </label>
                         <input
                           type="number"
                           value={row.min_quantity}
                           onChange={(e) =>
                             setTierValue(setPromoDegressiveTiers, idx, {
-                              min_quantity: Math.max(1, Number(e.target.value || 1)),
+                              min_quantity: Math.max(
+                                1,
+                                Number(e.target.value || 1),
+                              ),
                             })
                           }
                           className="w-full rounded border border-gray-200 px-2 py-1 text-xs"
                         />
                       </div>
                       <div className="col-span-3">
-                        <label className="mb-1 block text-[11px] text-gray-500">Qté max</label>
+                        <label className="mb-1 block text-[11px] text-gray-500">
+                          Qté max
+                        </label>
                         <input
                           type="number"
                           value={row.max_quantity ?? ""}
                           onChange={(e) =>
                             setTierValue(setPromoDegressiveTiers, idx, {
-                              max_quantity: e.target.value ? Number(e.target.value) : null,
+                              max_quantity: e.target.value
+                                ? Number(e.target.value)
+                                : null,
                             })
                           }
                           className="w-full rounded border border-gray-200 px-2 py-1 text-xs"
@@ -910,7 +1073,8 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                       </div>
                       <div className="col-span-4">
                         <label className="mb-1 block text-[11px] text-gray-500">
-                          Valeur ({promoDegressiveType === "percentage" ? "%" : "€"})
+                          Valeur (
+                          {promoDegressiveType === "percentage" ? "%" : "€"})
                         </label>
                         <input
                           type="number"
@@ -928,7 +1092,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                         <button
                           type="button"
                           onClick={() =>
-                            setPromoDegressiveTiers((prev) => prev.filter((_, i) => i !== idx))
+                            setPromoDegressiveTiers((prev) =>
+                              prev.filter((_, i) => i !== idx),
+                            )
                           }
                           className="rounded border border-red-200 px-2 py-1 text-[11px] text-red-600 hover:bg-red-50"
                         >
@@ -965,12 +1131,22 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                       className="w-full rounded border border-gray-200 px-2 py-1.5 font-mono text-xs"
                     />
                     <p className="mt-1 text-[11px] text-gray-500">
-                      Sélection: racine + variations qui changent le prix (avant le ".").
+                      Sélection: racine + variations qui changent le prix (avant
+                      le ".").
                     </p>
                     {parsedLotSku && (
                       <p className="mt-1 text-[11px] text-indigo-600">
-                        Détecté: <span className="rounded bg-amber-100 px-1 font-mono">{parsedLotSku.root}</span>
-                        {parsedLotSku.branch ? <span className="font-mono">-{parsedLotSku.branch}</span> : ""}
+                        Détecté:{" "}
+                        <span className="rounded bg-amber-100 px-1 font-mono">
+                          {parsedLotSku.root}
+                        </span>
+                        {parsedLotSku.branch ? (
+                          <span className="font-mono">
+                            -{parsedLotSku.branch}
+                          </span>
+                        ) : (
+                          ""
+                        )}
                       </p>
                     )}
                   </div>
@@ -999,54 +1175,88 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                             <span className="rounded bg-amber-100 px-1 font-mono text-amber-800">
                               {branch.root}
                             </span>
-                            {branch.branch ? <span className="font-mono">-{branch.branch}</span> : ""}
-                            <span className="ml-1 text-[10px] text-gray-400">[{branch.count}]</span>
+                            {branch.branch ? (
+                              <span className="font-mono">
+                                -{branch.branch}
+                              </span>
+                            ) : (
+                              ""
+                            )}
+                            <span className="ml-1 text-[10px] text-gray-400">
+                              [{branch.count}]
+                            </span>
                           </button>
                         );
                       })}
                     </div>
                     {selectedBranch && (
                       <p className="mt-2 text-[11px] text-gray-500">
-                        Préfixe actif: <span className="font-mono">{selectedBranch.prefix}</span>
+                        Préfixe actif:{" "}
+                        <span className="font-mono">
+                          {selectedBranch.prefix}
+                        </span>
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs text-gray-600">Prix unitaire branche (HT)</label>
+                    <label className="mb-1 block text-xs text-gray-600">
+                      Prix unitaire branche (HT)
+                    </label>
                     <input
                       type="number"
                       step="0.01"
                       value={promoLotBranchUnitPrice}
-                      onChange={(e) => setPromoLotBranchUnitPrice(e.target.value)}
+                      onChange={(e) =>
+                        setPromoLotBranchUnitPrice(e.target.value)
+                      }
                       className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs"
                     />
                   </div>
 
                   <div className="space-y-1">
                     {promoLotRows.map((row, idx) => (
-                      <div key={idx} className="grid grid-cols-12 gap-2 rounded border border-gray-100 p-2">
+                      <div
+                        key={idx}
+                        className="grid grid-cols-12 gap-2 rounded border border-gray-100 p-2"
+                      >
                         <div className="col-span-3">
-                          <label className="mb-1 block text-[11px] text-gray-500">Lot</label>
+                          <label className="mb-1 block text-[11px] text-gray-500">
+                            Lot
+                          </label>
                           <input
                             value={row.label}
                             onChange={(e) =>
                               setPromoLotRows((prev) =>
-                                prev.map((r, i) => (i === idx ? { ...r, label: e.target.value } : r)),
+                                prev.map((r, i) =>
+                                  i === idx
+                                    ? { ...r, label: e.target.value }
+                                    : r,
+                                ),
                               )
                             }
                             className="w-full rounded border border-gray-200 px-2 py-1 text-xs"
                           />
                         </div>
                         <div className="col-span-2">
-                          <label className="mb-1 block text-[11px] text-gray-500">Payées</label>
+                          <label className="mb-1 block text-[11px] text-gray-500">
+                            Payées
+                          </label>
                           <input
                             type="number"
                             value={row.paid_units}
                             onChange={(e) =>
                               setPromoLotRows((prev) =>
                                 prev.map((r, i) =>
-                                  i === idx ? { ...r, paid_units: Math.max(1, Number(e.target.value || 1)) } : r,
+                                  i === idx
+                                    ? {
+                                        ...r,
+                                        paid_units: Math.max(
+                                          1,
+                                          Number(e.target.value || 1),
+                                        ),
+                                      }
+                                    : r,
                                 ),
                               )
                             }
@@ -1054,14 +1264,24 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                           />
                         </div>
                         <div className="col-span-2">
-                          <label className="mb-1 block text-[11px] text-gray-500">Offertes</label>
+                          <label className="mb-1 block text-[11px] text-gray-500">
+                            Offertes
+                          </label>
                           <input
                             type="number"
                             value={row.bonus_units}
                             onChange={(e) =>
                               setPromoLotRows((prev) =>
                                 prev.map((r, i) =>
-                                  i === idx ? { ...r, bonus_units: Math.max(0, Number(e.target.value || 0)) } : r,
+                                  i === idx
+                                    ? {
+                                        ...r,
+                                        bonus_units: Math.max(
+                                          0,
+                                          Number(e.target.value || 0),
+                                        ),
+                                      }
+                                    : r,
                                 ),
                               )
                             }
@@ -1069,7 +1289,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                           />
                         </div>
                         <div className="col-span-3">
-                          <label className="mb-1 block text-[11px] text-gray-500">Prix promo lot (HT)</label>
+                          <label className="mb-1 block text-[11px] text-gray-500">
+                            Prix promo lot (HT)
+                          </label>
                           <input
                             type="number"
                             step="0.01"
@@ -1077,7 +1299,14 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                             onChange={(e) =>
                               setPromoLotRows((prev) =>
                                 prev.map((r, i) =>
-                                  i === idx ? { ...r, lot_price_ht: Number(e.target.value || 0) } : r,
+                                  i === idx
+                                    ? {
+                                        ...r,
+                                        lot_price_ht: Number(
+                                          e.target.value || 0,
+                                        ),
+                                      }
+                                    : r,
                                 ),
                               )
                             }
@@ -1092,7 +1321,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                               onChange={(e) =>
                                 setPromoLotRows((prev) =>
                                   prev.map((r, i) =>
-                                    i === idx ? { ...r, eco_included: e.target.checked } : r,
+                                    i === idx
+                                      ? { ...r, eco_included: e.target.checked }
+                                      : r,
                                   ),
                                 )
                               }
@@ -1103,7 +1334,9 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                           <button
                             type="button"
                             onClick={() =>
-                              setPromoLotRows((prev) => prev.filter((_, i) => i !== idx))
+                              setPromoLotRows((prev) =>
+                                prev.filter((_, i) => i !== idx),
+                              )
                             }
                             className="rounded border border-red-200 px-2 py-1 text-[11px] text-red-600 hover:bg-red-50"
                           >
@@ -1112,17 +1345,37 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                         </div>
                         <div className="col-span-12 rounded bg-gray-50 px-2 py-1 text-[11px] text-gray-600">
                           {(() => {
-                            const totalUnits = Math.max(1, Number(row.paid_units || 0)) + Math.max(0, Number(row.bonus_units || 0));
+                            const totalUnits =
+                              Math.max(1, Number(row.paid_units || 0)) +
+                              Math.max(0, Number(row.bonus_units || 0));
                             const unit = Number(promoLotBranchUnitPrice || 0);
                             const pseudoRegular = totalUnits * unit;
                             const lotPrice = Number(row.lot_price_ht || 0);
-                            const delta = pseudoRegular > 0 ? ((1 - lotPrice / pseudoRegular) * 100) : 0;
+                            const delta =
+                              pseudoRegular > 0
+                                ? (1 - lotPrice / pseudoRegular) * 100
+                                : 0;
                             return (
                               <>
-                                Qty totale: <span className="font-semibold">{totalUnits}</span>
-                                {" · "}Faux regular: <span className="font-semibold">{pseudoRegular.toFixed(2)} €</span>
-                                {" · "}Prix promo lot: <span className="font-semibold">{lotPrice.toFixed(2)} €</span>
-                                {" · "}Remise: <span className="font-semibold">{Number.isFinite(delta) ? delta.toFixed(1) : "0.0"}%</span>
+                                Qty totale:{" "}
+                                <span className="font-semibold">
+                                  {totalUnits}
+                                </span>
+                                {" · "}Faux regular:{" "}
+                                <span className="font-semibold">
+                                  {pseudoRegular.toFixed(2)} €
+                                </span>
+                                {" · "}Prix promo lot:{" "}
+                                <span className="font-semibold">
+                                  {lotPrice.toFixed(2)} €
+                                </span>
+                                {" · "}Remise:{" "}
+                                <span className="font-semibold">
+                                  {Number.isFinite(delta)
+                                    ? delta.toFixed(1)
+                                    : "0.0"}
+                                  %
+                                </span>
                               </>
                             );
                           })()}
@@ -1134,7 +1387,13 @@ export function PricingGovernanceCard({ productId }: { productId: string }) {
                       onClick={() =>
                         setPromoLotRows((prev) => [
                           ...prev,
-                          { label: "Nouveau lot", paid_units: 1, bonus_units: 0, lot_price_ht: 0, eco_included: true },
+                          {
+                            label: "Nouveau lot",
+                            paid_units: 1,
+                            bonus_units: 0,
+                            lot_price_ht: 0,
+                            eco_included: true,
+                          },
                         ])
                       }
                       className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"

@@ -2,13 +2,13 @@
 
 ## Pages testées
 
-| URL | HTTP | Statut |
-|-----|------|--------|
-| http://localhost:3000/ | 200 | ✅ Charge produits Supabase, images prodes.fr |
-| http://localhost:3000/search | 200 | ✅ Grille produits visible |
-| http://localhost:3000/search?q=chaise | 200 | ✅ Résultats réels (chaise-pliante-melilla-…) |
-| http://localhost:3000/product/panneau-electoral-1-candidat | 200 | ✅ Produit simple + PBQ |
-| http://localhost:3000/product/arceau-espace-vert | 200 | ✅ Produit variable (variants Ø20/Ø32/Ø50) |
+| URL                                                        | HTTP | Statut                                        |
+| ---------------------------------------------------------- | ---- | --------------------------------------------- |
+| http://localhost:3000/                                     | 200  | ✅ Charge produits Supabase, images prodes.fr |
+| http://localhost:3000/search                               | 200  | ✅ Grille produits visible                    |
+| http://localhost:3000/search?q=chaise                      | 200  | ✅ Résultats réels (chaise-pliante-melilla-…) |
+| http://localhost:3000/product/panneau-electoral-1-candidat | 200  | ✅ Produit simple + PBQ                       |
+| http://localhost:3000/product/arceau-espace-vert           | 200  | ✅ Produit variable (variants Ø20/Ø32/Ø50)    |
 
 ## Slugs réels utilisés
 

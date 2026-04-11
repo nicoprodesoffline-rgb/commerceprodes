@@ -210,7 +210,10 @@ function supplierCodeFromProduct(product: PuidProductRow): string {
   if (alpha.length >= 3) return alpha.slice(0, 3);
   if (alpha.length > 0) return alpha.padEnd(3, "X");
 
-  const refAlpha = cleanToken(String(product.supplier_ref || "")).replace(/[^A-Z]/g, "");
+  const refAlpha = cleanToken(String(product.supplier_ref || "")).replace(
+    /[^A-Z]/g,
+    "",
+  );
   if (refAlpha.length >= 3) return refAlpha.slice(0, 3);
 
   return "GEN";
@@ -227,7 +230,9 @@ function modelCodeFromSkuLike(value: string): string | null {
 
   if (parts.length === 0) return null;
 
-  const candidate = parts.find((part) => /[A-Z]/.test(part) && /\d/.test(part) && part.length >= 5);
+  const candidate = parts.find(
+    (part) => /[A-Z]/.test(part) && /\d/.test(part) && part.length >= 5,
+  );
   if (candidate) return candidate;
 
   const fallback = parts.find((part) => /[A-Z]/.test(part) && part.length >= 4);
@@ -249,7 +254,10 @@ function modelCodeFromName(name: string): string {
   return fallback || "MODEL";
 }
 
-function resolveModelCode(product: PuidProductRow): { model: string; reason: string } {
+function resolveModelCode(product: PuidProductRow): {
+  model: string;
+  reason: string;
+} {
   const fromParent = modelCodeFromSkuLike(String(product.parent_sku || ""));
   if (fromParent) return { model: fromParent, reason: "parent_sku" };
 
@@ -315,9 +323,12 @@ function encodeGeneric(raw: string): string {
 
 function encodeAttributeValue(attr: PuidVariantAttr): string {
   const label = String(attr.term_name || attr.term_slug || "");
-  const attrKey = normalizeText(String(attr.attribute_slug || attr.attribute_name || ""));
+  const attrKey = normalizeText(
+    String(attr.attribute_slug || attr.attribute_name || ""),
+  );
 
-  if (/COLOR|COULEUR|COLORIS|RAL/.test(attrKey)) return encodeColor(label) || encodeGeneric(label);
+  if (/COLOR|COULEUR|COLORIS|RAL/.test(attrKey))
+    return encodeColor(label) || encodeGeneric(label);
   if (/NORM/.test(attrKey)) return encodeNorm(label) || encodeGeneric(label);
   if (/DIM|TAILLE|SIZE|LARGEUR|LONGUEUR|HAUTEUR|DIAM|STRUCTURE/.test(attrKey)) {
     return encodeDimension(label) || encodeGeneric(label);
@@ -384,7 +395,8 @@ function inferPriceImpactAttrIds(
 
     const averages = [...byTerm.values()]
       .map((prices) => {
-        const avg = prices.reduce((acc, n) => acc + n, 0) / Math.max(1, prices.length);
+        const avg =
+          prices.reduce((acc, n) => acc + n, 0) / Math.max(1, prices.length);
         return Number(avg.toFixed(2));
       })
       .filter((n) => Number.isFinite(n));
@@ -470,7 +482,10 @@ export function buildPuidPlan(input: PuidPlanInput): PuidPlan {
       style_branch: null,
       supplier_code: supplier,
       model_code: model.model,
-      reasons: [`supplier=${supplier}`, `modele=${model.model} (${model.reason})`],
+      reasons: [
+        `supplier=${supplier}`,
+        `modele=${model.model} (${model.reason})`,
+      ],
       lot_candidate: productLotCandidate,
       confidence: model.reason === "name" ? 0.68 : 0.86,
     });
@@ -480,16 +495,29 @@ export function buildPuidPlan(input: PuidPlanInput): PuidPlan {
 
     const explicitRules = new Set<string>([
       ...(rulesByProduct.get(product.id) ?? []),
-      ...((product.parent_family_id && rulesByFamily.get(product.parent_family_id)) || []),
+      ...((product.parent_family_id &&
+        rulesByFamily.get(product.parent_family_id)) ||
+        []),
     ]);
-    const priceImpactAttrIds = inferPriceImpactAttrIds(product, children, explicitRules);
+    const priceImpactAttrIds = inferPriceImpactAttrIds(
+      product,
+      children,
+      explicitRules,
+    );
 
-    const branchMap = new Map<string, { count: number; styles: Set<string>; samples: string[] }>();
+    const branchMap = new Map<
+      string,
+      { count: number; styles: Set<string>; samples: string[] }
+    >();
 
     for (const variant of children) {
       const sortedAttrs = [...variant.attrs].sort((a, b) => {
-        const an = String(a.attribute_name || a.attribute_slug || a.attribute_id);
-        const bn = String(b.attribute_name || b.attribute_slug || b.attribute_id);
+        const an = String(
+          a.attribute_name || a.attribute_slug || a.attribute_id,
+        );
+        const bn = String(
+          b.attribute_name || b.attribute_slug || b.attribute_id,
+        );
         return an.localeCompare(bn);
       });
 
@@ -515,7 +543,8 @@ export function buildPuidPlan(input: PuidPlanInput): PuidPlan {
       const puidBase = `${uniqueRoot}${priceBranch !== "BASE" ? `-${priceBranch}` : ""}${styleBranch ? `.${styleBranch}` : ""}`;
       const puid = ensureUnique(puidBase, usedVariantPuid);
 
-      const lotCandidate = productLotCandidate || detectLotCandidate(variant.name, variant.sku);
+      const lotCandidate =
+        productLotCandidate || detectLotCandidate(variant.name, variant.sku);
       const reasons = [
         `racine=${uniqueRoot}`,
         normalizedPriceTokens.length > 0
@@ -568,7 +597,10 @@ export function buildPuidPlan(input: PuidPlanInput): PuidPlan {
 
   const collisions: PuidPlan["collisions"] = [];
 
-  function collectCollisions(level: "product" | "variant", rows: PuidSuggestion[]) {
+  function collectCollisions(
+    level: "product" | "variant",
+    rows: PuidSuggestion[],
+  ) {
     const map = new Map<string, string[]>();
     for (const row of rows) {
       const ids = map.get(row.suggested_puid) ?? [];
@@ -610,7 +642,13 @@ export async function loadPuidInput(
     includeDraft?: boolean;
   },
 ): Promise<PuidPlanInput> {
-  const { scope, sinceIso, limit, productIds = [], includeDraft = true } = options;
+  const {
+    scope,
+    sinceIso,
+    limit,
+    productIds = [],
+    includeDraft = true,
+  } = options;
 
   let productQuery = client
     .from("products")
@@ -641,7 +679,9 @@ export async function loadPuidInput(
     supplier_code: row.supplier_code ? String(row.supplier_code) : null,
     supplier_ref: row.supplier_ref ? String(row.supplier_ref) : null,
     family_role: row.family_role ? String(row.family_role) : null,
-    parent_family_id: row.parent_family_id ? String(row.parent_family_id) : null,
+    parent_family_id: row.parent_family_id
+      ? String(row.parent_family_id)
+      : null,
     regular_price: row.regular_price != null ? Number(row.regular_price) : null,
     status: row.status ? String(row.status) : null,
     updated_at: row.updated_at ? String(row.updated_at) : null,
@@ -675,8 +715,12 @@ export async function loadPuidInput(
     status: row.status ? String(row.status) : null,
     attrs: (row.variant_attributes || []).map((attr: any) => ({
       attribute_id: String(attr.attribute_id),
-      attribute_slug: attr.attributes?.slug ? String(attr.attributes.slug) : null,
-      attribute_name: attr.attributes?.name ? String(attr.attributes.name) : null,
+      attribute_slug: attr.attributes?.slug
+        ? String(attr.attributes.slug)
+        : null,
+      attribute_name: attr.attributes?.name
+        ? String(attr.attributes.name)
+        : null,
       term_slug: String(attr.term_slug || ""),
       term_name: null,
     })),

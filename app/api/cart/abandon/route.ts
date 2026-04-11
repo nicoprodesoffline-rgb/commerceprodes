@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseServer } from 'lib/supabase/client';
-import { rateLimit } from 'lib/rate-limit';
-import { log } from 'lib/logger';
-import { sanitizeString, sanitizeEmail, sanitizeNumber } from 'lib/validation';
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseServer } from "lib/supabase/client";
+import { rateLimit } from "lib/rate-limit";
+import { log } from "lib/logger";
+import { sanitizeString, sanitizeEmail, sanitizeNumber } from "lib/validation";
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
+  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
 
   if (!rateLimit(ip, 10, 60000)) {
     return NextResponse.json({ ok: false }, { status: 429 });
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
   const client = supabaseServer();
 
-  const { error } = await client.from('abandoned_carts').upsert(
+  const { error } = await client.from("abandoned_carts").upsert(
     {
       session_id: sessionId,
       email,
@@ -40,13 +40,13 @@ export async function POST(request: NextRequest) {
       total_items: totalItems,
       last_updated_at: new Date().toISOString(),
     },
-    { onConflict: 'session_id' },
+    { onConflict: "session_id" },
   );
 
   if (error) {
-    log('error', 'abandoned_cart.upsert_failed', { error: error.message });
+    log("error", "abandoned_cart.upsert_failed", { error: error.message });
   } else {
-    log('info', 'abandoned_cart.saved', { sessionId, totalHt, totalItems });
+    log("info", "abandoned_cart.saved", { sessionId, totalHt, totalItems });
   }
 
   return NextResponse.json({ ok: true });

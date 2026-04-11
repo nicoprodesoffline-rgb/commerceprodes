@@ -1,4 +1,5 @@
 # Morning Report — Session 4 PRODES
+
 **Date :** 22 février 2026
 **Durée :** Session complète
 
@@ -16,12 +17,14 @@
 ## Variantes — état de fonctionnement
 
 **Nouveau `variant-selector.tsx`** complètement réécrit :
+
 - Axe **coloris** → pastilles rondes (swatches) avec mapping RAL → CSS hex (20+ couleurs)
 - Autres axes (piètement, lots, etc.) → boutons pill texte rouge PRODES au survol/sélection
 - State local (useState) avec callback `onVariantChange` vers `product-description.tsx`
 - Pré-sélection du premier variant au chargement
 
 **Produits testés :**
+
 - `panneau-electoral-1-candidat` — simple + PBQ ✓
 - `arceau-espace-vert` — variable ✓
 - `table-ronde-diametre-150cm-pro-intens-8-10-places` — éco-contribution ✓
@@ -32,27 +35,29 @@
 
 ## Panier — fonctionnalités livrées
 
-| Fonctionnalité | Statut |
-|---|---|
-| Bouton "Ajouter au panier" sur fiche produit | ✅ |
-| Toast confirmation (vert, 3s) | ✅ |
-| Modal panier — texte français, lien /checkout | ✅ |
-| Calcul TVA 20% dans modal | ✅ |
-| Page /cart complète (server-side fetch) | ✅ |
-| Contrôles +/- quantité avec router.refresh() | ✅ |
-| Récapitulatif HT / TVA / TTC | ✅ |
-| Lien "Finaliser la commande" | ✅ |
+| Fonctionnalité                                | Statut |
+| --------------------------------------------- | ------ |
+| Bouton "Ajouter au panier" sur fiche produit  | ✅     |
+| Toast confirmation (vert, 3s)                 | ✅     |
+| Modal panier — texte français, lien /checkout | ✅     |
+| Calcul TVA 20% dans modal                     | ✅     |
+| Page /cart complète (server-side fetch)       | ✅     |
+| Contrôles +/- quantité avec router.refresh()  | ✅     |
+| Récapitulatif HT / TVA / TTC                  | ✅     |
+| Lien "Finaliser la commande"                  | ✅     |
 
 ---
 
 ## Checkout — modes de paiement implémentés
 
 **Page /checkout** — formulaire B2B en 3 sections :
+
 1. Coordonnées (prénom, nom, organisme, email, tel)
 2. Adresse livraison (rue, CP, ville, jours/horaires réception)
 3. Notes de commande
 
 **4 modes de paiement :**
+
 - ✅ **Virement bancaire** — instructions par email
 - ✅ **Paiement par chèque** — instructions par email
 - ✅ **Mandat administratif** — encadré informatif bleu, instructions spécifiques
@@ -61,6 +66,7 @@
 **Option livraison sur RDV** : +20,00 € HT calculé dynamiquement
 
 **API /api/checkout** :
+
 - Validation champs obligatoires
 - Sauvegarde `devis_requests` (référence PRODES-XXXXXXXX)
 - Email Resend si `RESEND_API_KEY` (mode dégradé si absent)
@@ -73,11 +79,13 @@
 ## Design — changements principaux
 
 ### Header PRODES — 3 niveaux
+
 1. **Barre rouge #cc1818** : tel, horaires, "Livraison gratuite", liens contact
 2. **Header blanc** : logo (h-44px), barre recherche (focus rouge), icône compte + panier
 3. **Nav catégories** : liens sous le header (hover souligné rouge)
 
 ### Autres changements
+
 - **Cartes produit** : hover bordure rouge, badge catégorie rouge léger, ratio 4:3, "Voir le produit" au hover
 - **Hero** : badge rouge, CTA rouge, accents rouge sur trust icons, dégradé blanc → #fef9f9
 - **Footer** : titres colonnes rouge, hover liens rouge, bande bas #111827
@@ -91,12 +99,15 @@
 **Statut : NON EFFECTUÉ** — vercel CLI non installé en session.
 
 Pour déployer manuellement :
+
 ```bash
 npm install -g vercel
 vercel login
 vercel --prod=false
 ```
+
 Variables à configurer dans le dashboard Vercel :
+
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SITE_NAME`

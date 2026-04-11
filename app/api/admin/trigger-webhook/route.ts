@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkAdminAuth } from "lib/admin/auth";
 import { triggerN8nWebhook } from "lib/admin/n8n-webhooks";
-
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("Authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  return token === (process.env.ADMIN_PASSWORD ?? "");
-}
+import { log } from "lib/logger";
 
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) {
+  if (!checkAdminAuth(req)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -20,7 +16,10 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await triggerN8nWebhook(body.webhook, body.payload);
-  console.log(JSON.stringify({ event: "n8n.trigger", webhook: body.webhook, success: result.success }));
+  log("info", "n8n.trigger", {
+    webhook: body.webhook,
+    success: result.success,
+  });
 
   if (result.success) {
     return NextResponse.json({

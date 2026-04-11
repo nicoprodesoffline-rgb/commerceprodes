@@ -9,7 +9,10 @@ export async function GET(request: NextRequest) {
   }
 
   const url = new URL(request.url);
-  const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit") || 10)));
+  const limit = Math.min(
+    50,
+    Math.max(1, Number(url.searchParams.get("limit") || 10)),
+  );
 
   try {
     const client = supabaseServer();
@@ -19,7 +22,9 @@ export async function GET(request: NextRequest) {
         .select("id, nom, email, produit, sku, status, created_at")
         .order("created_at", { ascending: false })
         .limit(limit),
-      client.from("devis_requests").select("id", { count: "exact", head: true }),
+      client
+        .from("devis_requests")
+        .select("id", { count: "exact", head: true }),
     ]);
 
     if (rowsRes.error) {

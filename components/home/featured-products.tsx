@@ -3,7 +3,11 @@ import Grid from "components/grid";
 import ProductGridItems from "components/layout/product-grid-items";
 import type { Product } from "lib/supabase/types";
 
-export default function FeaturedProducts({ products }: { products: Product[] }) {
+export default function FeaturedProducts({
+  products,
+}: {
+  products: Product[];
+}) {
   if (!products.length) return null;
 
   return (

@@ -6,9 +6,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
 import { checkFamiliesDb, degradedResponse } from "lib/admin/families-db";
+import { log } from "lib/logger";
 import { supabaseServer } from "lib/supabase/client";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function isUUID(v: unknown): v is string {
   return typeof v === "string" && UUID_RE.test(v);
@@ -28,15 +30,21 @@ function uniq(values: string[]): string[] {
   return [...new Set(values)];
 }
 
-function buildMotherName(provided: string | null, childNames: string[]): string {
+function buildMotherName(
+  provided: string | null,
+  childNames: string[],
+): string {
   const clean = provided?.trim();
   if (clean) return clean.slice(0, 200);
-  if (childNames.length === 0) return `Produit modèle ${new Date().toISOString().slice(0, 10)}`;
+  if (childNames.length === 0)
+    return `Produit modèle ${new Date().toISOString().slice(0, 10)}`;
   const first = childNames[0] || "";
   const tokens = first.split(/\s+/).filter(Boolean);
   const prefix: string[] = [];
   for (const token of tokens) {
-    const ok = childNames.every((name) => name.toLowerCase().includes(token.toLowerCase()));
+    const ok = childNames.every((name) =>
+      name.toLowerCase().includes(token.toLowerCase()),
+    );
     if (!ok) break;
     prefix.push(token);
     if (prefix.length >= 4) break;
@@ -51,10 +59,16 @@ function buildMotherShortDescription(childNames: string[]): string {
     picks.length > 0
       ? `Gamme disponible en plusieurs déclinaisons: ${picks.join(", ")}.`
       : "Gamme disponible en plusieurs déclinaisons.";
-  return `${head} Sélectionnez les options pour accéder à chaque référence.`.slice(0, 4000);
+  return `${head} Sélectionnez les options pour accéder à chaque référence.`.slice(
+    0,
+    4000,
+  );
 }
 
-function buildMotherDescription(childNames: string[], childSkus: string[]): string {
+function buildMotherDescription(
+  childNames: string[],
+  childSkus: string[],
+): string {
   const lines: string[] = [];
   lines.push("Produit modèle regroupant plusieurs déclinaisons.");
   if (childNames.length > 0) {
@@ -81,14 +95,20 @@ async function resolveMemberProductIdsFromVariants(
     .from("variants")
     .select("id, product_id")
     .in("id", variantIds);
-  return uniq((data || []).map((row: any) => String(row.product_id || "")).filter(Boolean));
+  return uniq(
+    (data || [])
+      .map((row: any) => String(row.product_id || ""))
+      .filter(Boolean),
+  );
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAdminAuth(req)) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  if (!checkAdminAuth(req))
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const db = await checkFamiliesDb();
-  if (!db.available) return NextResponse.json(degradedResponse(db), { status: 503 });
+  if (!db.available)
+    return NextResponse.json(degradedResponse(db), { status: 503 });
 
   let body: Record<string, unknown>;
   try {
@@ -98,15 +118,20 @@ export async function POST(req: NextRequest) {
   }
 
   const createParentProduct = body.create_parent_product === true;
-  const providedParentId = isUUID(body.parent_product_id) ? body.parent_product_id : null;
+  const providedParentId = isUUID(body.parent_product_id)
+    ? body.parent_product_id
+    : null;
   const familyIdExisting =
     typeof body.family_id === "string" && UUID_RE.test(body.family_id)
       ? body.family_id
       : null;
   const strategy = typeof body.strategy === "string" ? body.strategy : "manual";
-  const requestedFamilyName = typeof body.name === "string" ? body.name.trim().slice(0, 200) : "";
+  const requestedFamilyName =
+    typeof body.name === "string" ? body.name.trim().slice(0, 200) : "";
   const requestedParentName =
-    typeof body.parent_name === "string" ? body.parent_name.trim().slice(0, 200) : "";
+    typeof body.parent_name === "string"
+      ? body.parent_name.trim().slice(0, 200)
+      : "";
 
   const memberProductIdsRaw = Array.isArray(body.member_product_ids)
     ? (body.member_product_ids as unknown[]).filter(isUUID)
@@ -116,7 +141,11 @@ export async function POST(req: NextRequest) {
     : [];
 
   let memberProductIds = uniq(memberProductIdsRaw);
-  if (createParentProduct && providedParentId && !memberProductIds.includes(providedParentId)) {
+  if (
+    createParentProduct &&
+    providedParentId &&
+    !memberProductIds.includes(providedParentId)
+  ) {
     memberProductIds = [providedParentId, ...memberProductIds];
   }
   if (!createParentProduct && providedParentId) {
@@ -124,14 +153,24 @@ export async function POST(req: NextRequest) {
   }
 
   if (!createParentProduct && !providedParentId) {
-    return NextResponse.json({ error: "parent_product_id UUID requis" }, { status: 400 });
+    return NextResponse.json(
+      { error: "parent_product_id UUID requis" },
+      { status: 400 },
+    );
   }
   if (memberProductIds.length === 0 && memberVariantIds.length === 0) {
-    return NextResponse.json({ error: "Au moins un membre requis" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Au moins un membre requis" },
+      { status: 400 },
+    );
   }
 
   const client = supabaseServer();
-  const conflicts: Array<{ id: string; type: "product" | "variant"; family_name: string }> = [];
+  const conflicts: Array<{
+    id: string;
+    type: "product" | "variant";
+    family_name: string;
+  }> = [];
 
   if (memberProductIds.length > 0) {
     const { data: existing } = await client
@@ -194,7 +233,10 @@ export async function POST(req: NextRequest) {
       .map((p: any) => String(p.sku || "").trim())
       .filter(Boolean);
 
-    const parentName = buildMotherName(requestedParentName || requestedFamilyName, childNames);
+    const parentName = buildMotherName(
+      requestedParentName || requestedFamilyName,
+      childNames,
+    );
     const slug = `${slugify(parentName || "produit-modele")}-${Date.now()}`;
 
     const { data: createdParent, error: parentErr } = await client
@@ -233,7 +275,10 @@ export async function POST(req: NextRequest) {
 
   let familyId = familyIdExisting;
   if (!familyId) {
-    const familyName = requestedFamilyName || requestedParentName || `Famille ${new Date().toISOString().slice(0, 10)}`;
+    const familyName =
+      requestedFamilyName ||
+      requestedParentName ||
+      `Famille ${new Date().toISOString().slice(0, 10)}`;
     const slug = `${slugify(familyName || "famille")}-${Date.now()}`;
     const { data: fam, error: famErr } = await client
       .from("product_families")
@@ -249,7 +294,10 @@ export async function POST(req: NextRequest) {
       .select("id")
       .single();
     if (famErr || !fam?.id) {
-      return NextResponse.json({ error: famErr?.message ?? "Erreur création famille" }, { status: 500 });
+      return NextResponse.json(
+        { error: famErr?.message ?? "Erreur création famille" },
+        { status: 500 },
+      );
     }
     familyId = fam.id as string;
   } else {
@@ -262,7 +310,10 @@ export async function POST(req: NextRequest) {
       })
       .eq("id", familyId);
     if (famUpdateErr) {
-      return NextResponse.json({ error: famUpdateErr.message }, { status: 500 });
+      return NextResponse.json(
+        { error: famUpdateErr.message },
+        { status: 500 },
+      );
     }
   }
 
@@ -280,7 +331,8 @@ export async function POST(req: NextRequest) {
         .from("product_family_members")
         .update({ active: true, position: i, member_type: "product" })
         .eq("id", existing.id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error)
+        return NextResponse.json({ error: error.message }, { status: 500 });
       continue;
     }
 
@@ -291,7 +343,8 @@ export async function POST(req: NextRequest) {
       position: i,
       active: true,
     });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error)
+      return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   for (let i = 0; i < memberVariantIds.length; i++) {
@@ -309,7 +362,8 @@ export async function POST(req: NextRequest) {
         .from("product_family_members")
         .update({ active: true, position, member_type: "variant" })
         .eq("id", existing.id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error)
+        return NextResponse.json({ error: error.message }, { status: 500 });
       continue;
     }
 
@@ -320,38 +374,43 @@ export async function POST(req: NextRequest) {
       position,
       active: true,
     });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error)
+      return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const variantProductIds = await resolveMemberProductIdsFromVariants(memberVariantIds);
-  const childProductIds = uniq([...memberProductIds, ...variantProductIds]).filter(
-    (id) => id !== parentProductId,
-  );
+  const variantProductIds =
+    await resolveMemberProductIdsFromVariants(memberVariantIds);
+  const childProductIds = uniq([
+    ...memberProductIds,
+    ...variantProductIds,
+  ]).filter((id) => id !== parentProductId);
 
   if (childProductIds.length > 0) {
     const { error: childRoleErr } = await client
       .from("products")
       .update({ family_role: "child", parent_family_id: familyId })
       .in("id", childProductIds);
-    if (childRoleErr) return NextResponse.json({ error: childRoleErr.message }, { status: 500 });
+    if (childRoleErr)
+      return NextResponse.json(
+        { error: childRoleErr.message },
+        { status: 500 },
+      );
   }
 
   const { error: parentRoleErr } = await client
     .from("products")
     .update({ family_role: "parent", parent_family_id: null })
     .eq("id", parentProductId);
-  if (parentRoleErr) return NextResponse.json({ error: parentRoleErr.message }, { status: 500 });
+  if (parentRoleErr)
+    return NextResponse.json({ error: parentRoleErr.message }, { status: 500 });
 
-  console.log(
-    JSON.stringify({
-      event: "admin.family.assemble",
-      family_id: familyId,
-      parent_product_id: parentProductId,
-      parent_created: parentCreated,
-      products: memberProductIds.length,
-      variants: memberVariantIds.length,
-    }),
-  );
+  log("info", "admin.family.assemble", {
+    family_id: familyId,
+    parent_product_id: parentProductId,
+    parent_created: parentCreated,
+    products: memberProductIds.length,
+    variants: memberVariantIds.length,
+  });
 
   return NextResponse.json({
     ok: true,

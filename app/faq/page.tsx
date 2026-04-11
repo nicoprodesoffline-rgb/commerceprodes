@@ -82,7 +82,8 @@ const FAQ_GROUPS = [
     group: "Produits",
     items: [
       {
-        question: "Puis-je demander des échantillons ou des coloris spécifiques ?",
+        question:
+          "Puis-je demander des échantillons ou des coloris spécifiques ?",
         answer:
           "Oui, des échantillons de matériaux ou de coloris peuvent être fournis pour certaines gammes. Contactez-nous au 04 67 24 30 34 ou par email à contact@prodes.fr pour faire votre demande.",
       },
@@ -118,7 +119,9 @@ export default function FaqPage() {
         <span className="inline-block rounded-full bg-[#fef2f2] px-3 py-1 text-xs font-medium text-[#cc1818] mb-3">
           Support
         </span>
-        <h1 className="text-3xl font-bold text-gray-900">Questions fréquentes</h1>
+        <h1 className="text-3xl font-bold text-gray-900">
+          Questions fréquentes
+        </h1>
         <p className="mt-2 text-gray-500">
           Tout ce que vous devez savoir sur vos achats PRODES
         </p>
@@ -129,8 +132,12 @@ export default function FaqPage() {
 
       {/* CTA contact */}
       <div className="mt-12 rounded-xl border border-gray-200 bg-gray-50 p-6 text-center">
-        <p className="font-medium text-gray-800">Vous ne trouvez pas la réponse ?</p>
-        <p className="mt-1 text-sm text-gray-500">Notre équipe vous répond sous 24h ouvrées</p>
+        <p className="font-medium text-gray-800">
+          Vous ne trouvez pas la réponse ?
+        </p>
+        <p className="mt-1 text-sm text-gray-500">
+          Notre équipe vous répond sous 24h ouvrées
+        </p>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-center">
           <a
             href="tel:+33467243034"

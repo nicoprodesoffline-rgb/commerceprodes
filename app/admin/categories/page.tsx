@@ -20,7 +20,10 @@ export default function AdminCategoriesPage() {
   const [draftUrl, setDraftUrl] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
-  const password = typeof window !== "undefined" ? sessionStorage.getItem("admin_password") ?? "" : "";
+  const password =
+    typeof window !== "undefined"
+      ? (sessionStorage.getItem("admin_password") ?? "")
+      : "";
 
   useEffect(() => {
     fetch("/api/admin/ia/categories-list", {
@@ -69,7 +72,10 @@ export default function AdminCategoriesPage() {
     <div>
       <div className="mb-5 flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">
-          Catégories <span className="text-base font-normal text-gray-400">({categories.length})</span>
+          Catégories{" "}
+          <span className="text-base font-normal text-gray-400">
+            ({categories.length})
+          </span>
         </h1>
       </div>
 
@@ -93,7 +99,9 @@ export default function AdminCategoriesPage() {
                     <p className="text-xs text-gray-400">Sous-catégorie</p>
                   )}
                 </td>
-                <td className="px-4 py-3 font-mono text-xs text-gray-400">{cat.slug}</td>
+                <td className="px-4 py-3 font-mono text-xs text-gray-400">
+                  {cat.slug}
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-center">
                     {cat.cover_image_url ? (
@@ -105,7 +113,8 @@ export default function AdminCategoriesPage() {
                           className="object-cover"
                           sizes="80px"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
+                            (e.target as HTMLImageElement).style.display =
+                              "none";
                           }}
                         />
                       </div>
@@ -114,7 +123,9 @@ export default function AdminCategoriesPage() {
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-3 text-right text-gray-600">{cat.product_count}</td>
+                <td className="px-4 py-3 text-right text-gray-600">
+                  {cat.product_count}
+                </td>
                 <td className="px-4 py-3">
                   {editingId === cat.id ? (
                     <div className="flex items-center gap-2">
@@ -135,7 +146,8 @@ export default function AdminCategoriesPage() {
                             className="object-cover"
                             sizes="48px"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = "none";
+                              (e.target as HTMLImageElement).style.display =
+                                "none";
                             }}
                           />
                         </div>
@@ -148,7 +160,10 @@ export default function AdminCategoriesPage() {
                         {savingId === cat.id ? "…" : "✓"}
                       </button>
                       <button
-                        onClick={() => { setEditingId(null); setDraftUrl(""); }}
+                        onClick={() => {
+                          setEditingId(null);
+                          setDraftUrl("");
+                        }}
                         className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-500 hover:bg-gray-50"
                       >
                         ✕
@@ -157,7 +172,9 @@ export default function AdminCategoriesPage() {
                   ) : (
                     <div className="flex items-center gap-2">
                       {savedId === cat.id && (
-                        <span className="text-xs font-medium text-green-600">✓ Sauvegardé</span>
+                        <span className="text-xs font-medium text-green-600">
+                          ✓ Sauvegardé
+                        </span>
                       )}
                       <button
                         onClick={() => {

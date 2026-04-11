@@ -4,12 +4,12 @@
  */
 
 export function sanitizeString(s: unknown, maxLen = 500): string {
-  if (typeof s !== 'string') return '';
+  if (typeof s !== "string") return "";
   return s
     .trim()
     .slice(0, maxLen)
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/[<>]/g, '');
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/[<>]/g, "");
 }
 
 export function sanitizeEmail(s: unknown): string | null {
@@ -24,5 +24,5 @@ export function sanitizeNumber(s: unknown, min = 0, max = 999999): number {
 }
 
 export function sanitizeHandle(s: unknown, maxLen = 200): string {
-  return sanitizeString(s, maxLen).replace(/[^a-z0-9-]/g, '');
+  return sanitizeString(s, maxLen).replace(/[^a-z0-9-]/g, "");
 }

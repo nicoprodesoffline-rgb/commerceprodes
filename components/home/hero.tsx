@@ -36,9 +36,21 @@ export default function Hero() {
           {/* Right — trust icons */}
           <div className="grid grid-cols-2 gap-4 lg:w-80">
             {[
-              { icon: "🚚", title: "Livraison rapide", sub: "France métropolitaine" },
-              { icon: "🏛️", title: "Collectivités publiques", sub: "Mairies, régions, écoles" },
-              { icon: "💶", title: "Prix HT garantis", sub: "Facturation directe" },
+              {
+                icon: "🚚",
+                title: "Livraison rapide",
+                sub: "France métropolitaine",
+              },
+              {
+                icon: "🏛️",
+                title: "Collectivités publiques",
+                sub: "Mairies, régions, écoles",
+              },
+              {
+                icon: "💶",
+                title: "Prix HT garantis",
+                sub: "Facturation directe",
+              },
               { icon: "📄", title: "Devis sous 24h", sub: "Réponse rapide" },
             ].map((item) => (
               <div
@@ -46,7 +58,9 @@ export default function Hero() {
                 className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
               >
                 <div className="text-2xl mb-2">{item.icon}</div>
-                <p className="text-sm font-semibold text-gray-800">{item.title}</p>
+                <p className="text-sm font-semibold text-gray-800">
+                  {item.title}
+                </p>
                 <p className="text-xs text-[#cc1818] mt-0.5">{item.sub}</p>
               </div>
             ))}

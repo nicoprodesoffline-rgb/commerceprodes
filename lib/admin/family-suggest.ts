@@ -1,4 +1,8 @@
-export type FamilySuggestStrategy = "auto" | "parent_sku" | "sku_root" | "title_root";
+export type FamilySuggestStrategy =
+  | "auto"
+  | "parent_sku"
+  | "sku_root"
+  | "title_root";
 
 export interface ProductLite {
   id: string;
@@ -70,12 +74,17 @@ function normalizeTitleRoot(name: string): string {
 
   // Remove common dimension/volume tokens.
   s = s
-    .replace(/\b\d+(?:[.,]\d+)?\s?(?:x\s?\d+(?:[.,]\d+)?\s?)*(?:cm|mm|m|kg|l|cl)\b/g, " ")
+    .replace(
+      /\b\d+(?:[.,]\d+)?\s?(?:x\s?\d+(?:[.,]\d+)?\s?)*(?:cm|mm|m|kg|l|cl)\b/g,
+      " ",
+    )
     .replace(/\b\d+(?:[.,]\d+)?\s?(?:places?|flux)\b/g, " ");
 
   const tokens = s
     .split(/\s+/)
-    .filter((t) => t && !NOISE_WORDS.has(t) && !/^\d+$/.test(t) && t.length >= 2);
+    .filter(
+      (t) => t && !NOISE_WORDS.has(t) && !/^\d+$/.test(t) && t.length >= 2,
+    );
 
   return tokens.join(" ").trim();
 }
@@ -129,7 +138,10 @@ function scoreParentCandidate(
   return score;
 }
 
-function dedupeAndRank(suggestions: FamilySuggestion[], limit: number): FamilySuggestion[] {
+function dedupeAndRank(
+  suggestions: FamilySuggestion[],
+  limit: number,
+): FamilySuggestion[] {
   const sorted = [...suggestions].sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
     return b.children.length - a.children.length;
@@ -144,7 +156,10 @@ function dedupeAndRank(suggestions: FamilySuggestion[], limit: number): FamilySu
       (c) => c.id !== suggestion.parent.id && !usedChildren.has(c.id),
     );
     if (children.length === 0) continue;
-    const key = `${suggestion.parent.id}::${children.map((c) => c.id).sort().join(",")}`;
+    const key = `${suggestion.parent.id}::${children
+      .map((c) => c.id)
+      .sort()
+      .join(",")}`;
     if (seenKeys.has(key)) continue;
     seenKeys.add(key);
     children.forEach((c) => usedChildren.add(c.id));
@@ -155,7 +170,10 @@ function dedupeAndRank(suggestions: FamilySuggestion[], limit: number): FamilySu
   return unique;
 }
 
-function buildParentSkuSuggestions(products: ProductLite[], excludedChildren: Set<string>): FamilySuggestion[] {
+function buildParentSkuSuggestions(
+  products: ProductLite[],
+  excludedChildren: Set<string>,
+): FamilySuggestion[] {
   const bySku = new Map<string, ProductLite>();
   for (const p of products) {
     if (p.sku) bySku.set(p.sku.toUpperCase(), p);
@@ -189,7 +207,10 @@ function buildParentSkuSuggestions(products: ProductLite[], excludedChildren: Se
   return suggestions;
 }
 
-function buildSkuRootSuggestions(products: ProductLite[], excludedChildren: Set<string>): FamilySuggestion[] {
+function buildSkuRootSuggestions(
+  products: ProductLite[],
+  excludedChildren: Set<string>,
+): FamilySuggestion[] {
   const groups = new Map<string, ProductLite[]>();
   for (const p of products) {
     if (!p.sku || excludedChildren.has(p.id)) continue;
@@ -217,7 +238,10 @@ function buildSkuRootSuggestions(products: ProductLite[], excludedChildren: Set<
   return suggestions;
 }
 
-function buildTitleRootSuggestions(products: ProductLite[], excludedChildren: Set<string>): FamilySuggestion[] {
+function buildTitleRootSuggestions(
+  products: ProductLite[],
+  excludedChildren: Set<string>,
+): FamilySuggestion[] {
   const groups = new Map<string, ProductLite[]>();
   for (const p of products) {
     if (excludedChildren.has(p.id)) continue;
@@ -251,7 +275,11 @@ export function computeFamilySuggestions(
   strategy: FamilySuggestStrategy,
   excludedChildren: Set<string>,
   limit: number,
-): { suggestions: FamilySuggestion[]; strategy_used: FamilySuggestStrategy; breakdown: Record<string, number> } {
+): {
+  suggestions: FamilySuggestion[];
+  strategy_used: FamilySuggestStrategy;
+  breakdown: Record<string, number>;
+} {
   const parentSku = buildParentSkuSuggestions(products, excludedChildren);
   const skuRoot = buildSkuRootSuggestions(products, excludedChildren);
   const titleRoot = buildTitleRootSuggestions(products, excludedChildren);

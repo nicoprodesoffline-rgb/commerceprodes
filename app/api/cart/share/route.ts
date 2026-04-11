@@ -19,7 +19,10 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error("share cart error", error);
-      return NextResponse.json({ error: "Impossible de partager" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Impossible de partager" },
+        { status: 500 },
+      );
     }
 
     const host = req.headers.get("host") ?? "prodes.fr";

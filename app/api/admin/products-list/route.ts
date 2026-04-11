@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
 import { sanitizeString, sanitizeNumber } from "lib/validation";
+import { log } from "lib/logger";
 
-const SORT_WHITELIST = new Set(["created_at", "regular_price", "name", "updated_at"]);
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SORT_WHITELIST = new Set([
+  "created_at",
+  "regular_price",
+  "name",
+  "updated_at",
+]);
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function normalizeSku(value: unknown): string {
-  return String(value ?? "").trim().toUpperCase();
+  return String(value ?? "")
+    .trim()
+    .toUpperCase();
 }
 
 function isMeaningfulVariantRow(productSku: string, variant: any): boolean {
@@ -27,23 +36,47 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
   const { searchParams } = req.nextUrl;
-  const page = Math.max(0, sanitizeNumber(Number(searchParams.get("page") ?? 0), 0, 1000));
+  const page = Math.max(
+    0,
+    sanitizeNumber(Number(searchParams.get("page") ?? 0), 0, 1000),
+  );
   const search = sanitizeString(searchParams.get("search") ?? "", 200);
   const status = sanitizeString(searchParams.get("status") ?? "publish", 20);
-  const sortParam = sanitizeString(searchParams.get("sort") ?? "created_at-desc", 50);
-  const limitParam = sanitizeNumber(Number(searchParams.get("limit") ?? 0), 0, 1000);
+  const sortParam = sanitizeString(
+    searchParams.get("sort") ?? "created_at-desc",
+    50,
+  );
+  const limitParam = sanitizeNumber(
+    Number(searchParams.get("limit") ?? 0),
+    0,
+    1000,
+  );
   const categoryId = sanitizeString(searchParams.get("categoryId") ?? "", 64);
-  const minPrice = sanitizeNumber(Number(searchParams.get("minPrice") ?? ""), 0, 10_000_000);
-  const maxPrice = sanitizeNumber(Number(searchParams.get("maxPrice") ?? ""), 0, 10_000_000);
-  const hasMinPrice = searchParams.get("minPrice") !== null && searchParams.get("minPrice") !== "";
-  const hasMaxPrice = searchParams.get("maxPrice") !== null && searchParams.get("maxPrice") !== "";
+  const minPrice = sanitizeNumber(
+    Number(searchParams.get("minPrice") ?? ""),
+    0,
+    10_000_000,
+  );
+  const maxPrice = sanitizeNumber(
+    Number(searchParams.get("maxPrice") ?? ""),
+    0,
+    10_000_000,
+  );
+  const hasMinPrice =
+    searchParams.get("minPrice") !== null &&
+    searchParams.get("minPrice") !== "";
+  const hasMaxPrice =
+    searchParams.get("maxPrice") !== null &&
+    searchParams.get("maxPrice") !== "";
   const missingDescOnly = searchParams.get("missingDesc") === "true";
   const withVariantsOnly = searchParams.get("withVariants") === "true";
 
   const PAGE_SIZE = limitParam > 0 ? Math.min(limitParam, 1000) : 50;
 
   const [requestedSortField, sortDir] = sortParam.split("-");
-  const sortField = SORT_WHITELIST.has(requestedSortField ?? "") ? requestedSortField! : "created_at";
+  const sortField = SORT_WHITELIST.has(requestedSortField ?? "")
+    ? requestedSortField!
+    : "created_at";
   const ascending = sortDir === "asc";
 
   try {
@@ -159,22 +192,33 @@ export async function GET(req: NextRequest) {
     }
 
     // Family metadata enrichment (safe fallback if migration 016 isn't available).
-    const productIds = products.map((p: any) => p.id).filter((id: string) => UUID_RE.test(id));
+    const productIds = products
+      .map((p: any) => p.id)
+      .filter((id: string) => UUID_RE.test(id));
     const familyMetaByParent = new Map<
       string,
-      { family_id: string; family_name: string; family_children_count: number; family_strategy: string | null }
+      {
+        family_id: string;
+        family_name: string;
+        family_children_count: number;
+        family_strategy: string | null;
+      }
     >();
 
     if (productIds.length > 0) {
       const { data: familyRows, error: familyErr } = await client
         .from("product_families")
-        .select("id, name, strategy, parent_product_id, product_family_members(id, active)")
+        .select(
+          "id, name, strategy, parent_product_id, product_family_members(id, active)",
+        )
         .in("parent_product_id", productIds)
         .eq("active", true);
 
       if (!familyErr) {
         for (const fam of familyRows ?? []) {
-          const activeMembers = ((fam as any).product_family_members ?? []).filter((m: any) => m.active).length;
+          const activeMembers = (
+            (fam as any).product_family_members ?? []
+          ).filter((m: any) => m.active).length;
           familyMetaByParent.set((fam as any).parent_product_id, {
             family_id: (fam as any).id,
             family_name: (fam as any).name ?? "",
@@ -202,7 +246,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ products: enriched, total: count ?? 0 });
   } catch (err) {
-    console.error("admin.products_list error", err);
+    log("error", "admin.products_list", { error: String(err) });
     return NextResponse.json({ products: [], total: 0 });
   }
 }

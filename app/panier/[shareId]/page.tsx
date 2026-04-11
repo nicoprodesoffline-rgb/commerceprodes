@@ -39,7 +39,9 @@ export default async function SharedCartPage(props: {
   }
 
   const items = data.items_json as unknown[];
-  const expiresAt = new Date(data.expires_at as string).toLocaleDateString("fr-FR");
+  const expiresAt = new Date(data.expires_at as string).toLocaleDateString(
+    "fr-FR",
+  );
 
   return (
     <>
@@ -47,7 +49,9 @@ export default async function SharedCartPage(props: {
         <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
           🔗 Panier partagé — valable jusqu&apos;au {expiresAt}
         </div>
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Panier partagé</h1>
+        <h1 className="mb-6 text-2xl font-bold text-gray-900">
+          Panier partagé
+        </h1>
         <SharedCartLoader items={items} />
       </div>
       <Footer />

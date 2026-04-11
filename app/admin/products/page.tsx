@@ -93,13 +93,27 @@ export default async function AdminProductsPage(props: {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-4 py-3 text-left font-medium text-gray-500 w-12">Img</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">Titre</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500 hidden lg:table-cell">SKU</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">Catégorie</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">Prix HT</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">Statut</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500">Actions</th>
+              <th className="px-4 py-3 text-left font-medium text-gray-500 w-12">
+                Img
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-gray-500">
+                Titre
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-gray-500 hidden lg:table-cell">
+                SKU
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">
+                Catégorie
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">
+                Prix HT
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-gray-500">
+                Statut
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-gray-500">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -107,8 +121,7 @@ export default async function AdminProductsPage(props: {
               const imgs: any[] = (p.product_images || []).sort(
                 (a: any, b: any) => a.position - b.position,
               );
-              const img =
-                imgs.find((i) => i.is_featured) ?? imgs[0];
+              const img = imgs.find((i) => i.is_featured) ?? imgs[0];
               const cats = (p.product_categories || [])
                 .map((pc: any) => pc.categories?.name)
                 .filter(Boolean);

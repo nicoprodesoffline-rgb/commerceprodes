@@ -5,9 +5,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
 import { checkFamiliesDb, degradedResponse } from "lib/admin/families-db";
+import { log } from "lib/logger";
 import { supabaseServer } from "lib/supabase/client";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function slugify(input: string): string {
   return input
@@ -29,8 +31,12 @@ async function createDedicatedMother(
     .select("id, name, sku")
     .in("id", childIds);
 
-  const childNames = (children || []).map((c: any) => String(c.name || "")).filter(Boolean);
-  const childSkus = (children || []).map((c: any) => String(c.sku || "")).filter(Boolean);
+  const childNames = (children || [])
+    .map((c: any) => String(c.name || ""))
+    .filter(Boolean);
+  const childSkus = (children || [])
+    .map((c: any) => String(c.sku || ""))
+    .filter(Boolean);
   const short = `Gamme disponible en plusieurs déclinaisons: ${childNames.slice(0, 6).join(", ")}.`;
   const desc = [
     "Produit modèle regroupant plusieurs déclinaisons.",
@@ -67,10 +73,12 @@ async function createDedicatedMother(
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAdminAuth(req)) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  if (!checkAdminAuth(req))
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const db = await checkFamiliesDb();
-  if (!db.available) return NextResponse.json(degradedResponse(db), { status: 503 });
+  if (!db.available)
+    return NextResponse.json(degradedResponse(db), { status: 503 });
 
   let body: Record<string, unknown>;
   try {
@@ -86,7 +94,10 @@ export async function POST(req: NextRequest) {
     : [];
 
   if (candidateIds.length === 0) {
-    return NextResponse.json({ error: "candidate_ids requis" }, { status: 400 });
+    return NextResponse.json(
+      { error: "candidate_ids requis" },
+      { status: 400 },
+    );
   }
 
   const createParentProduct = body.create_parent_product === true;
@@ -99,14 +110,18 @@ export async function POST(req: NextRequest) {
     .eq("status", "pending");
 
   if (!candidates || candidates.length === 0) {
-    return NextResponse.json({ error: "Aucun candidat en attente trouvé" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Aucun candidat en attente trouvé" },
+      { status: 404 },
+    );
   }
 
   const byParent: Record<string, string[]> = {};
   for (const c of candidates) {
     const pid = c.suggested_parent_id as string;
     if (!byParent[pid]) byParent[pid] = [];
-    if (c.suggested_child_id) byParent[pid].push(c.suggested_child_id as string);
+    if (c.suggested_child_id)
+      byParent[pid].push(c.suggested_child_id as string);
   }
 
   const created: string[] = [];
@@ -178,13 +193,10 @@ export async function POST(req: NextRequest) {
     .update({ status: "applied" })
     .in("id", candidateIds);
 
-  console.log(
-    JSON.stringify({
-      event: "admin.family.suggest.apply",
-      families_created: created.length,
-      create_parent_product: createParentProduct,
-    }),
-  );
+  log("info", "admin.family.suggest.apply", {
+    families_created: created.length,
+    create_parent_product: createParentProduct,
+  });
   return NextResponse.json({
     ok: true,
     families_created: created.length,

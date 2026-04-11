@@ -8,8 +8,9 @@ import { useCart } from "components/cart/cart-context";
 
 function formatHT(amount: string | number): string {
   return (
-    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(Number(amount)) +
-    " € HT"
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(
+      Number(amount),
+    ) + " € HT"
   );
 }
 
@@ -172,7 +173,9 @@ export default function CartPage() {
                 </div>
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-gray-900">Total TTC</span>
+                    <span className="font-semibold text-gray-900">
+                      Total TTC
+                    </span>
                     <span className="text-lg font-bold text-gray-900">
                       {formatTTC(subtotalHT)}
                     </span>

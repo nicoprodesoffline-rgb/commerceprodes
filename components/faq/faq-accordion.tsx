@@ -53,14 +53,26 @@ export default function FaqAccordion({ groups }: FaqAccordionProps) {
                         isOpen ? "rotate-180" : ""
                       }`}
                     >
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      <svg
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19 9l-7 7-7-7"
+                        />
                       </svg>
                     </span>
                   </button>
                   {isOpen && (
                     <div className="bg-gray-50 px-5 pb-4 pt-1">
-                      <p className="text-sm leading-relaxed text-gray-600">{item.answer}</p>
+                      <p className="text-sm leading-relaxed text-gray-600">
+                        {item.answer}
+                      </p>
                     </div>
                   )}
                 </div>

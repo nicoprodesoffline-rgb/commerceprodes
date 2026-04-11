@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
 import { checkFamiliesDb, degradedResponse } from "lib/admin/families-db";
+import { log } from "lib/logger";
 import { supabaseServer } from "lib/supabase/client";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function parseBranchFromSku(rawSku: string): {
   root: string;
@@ -11,7 +13,9 @@ function parseBranchFromSku(rawSku: string): {
   styleBranch: string | null;
   fullPrefix: string;
 } | null {
-  const sku = String(rawSku || "").trim().toUpperCase();
+  const sku = String(rawSku || "")
+    .trim()
+    .toUpperCase();
   if (!sku) return null;
   const [beforeDotRaw, ...afterDot] = sku.split(".");
   const beforeDot = (beforeDotRaw || "").trim();
@@ -24,11 +28,13 @@ function parseBranchFromSku(rawSku: string): {
   if (tokens.length === 0) return null;
 
   // Default root: first 3 tokens (ex: P-GMC-MARCA). Fallbacks for shorter SKUs.
-  const rootTokens = tokens.length >= 3 ? tokens.slice(0, 3) : tokens.slice(0, 1);
+  const rootTokens =
+    tokens.length >= 3 ? tokens.slice(0, 3) : tokens.slice(0, 1);
   const root = rootTokens.join("-");
   const priceTokens = tokens.slice(rootTokens.length);
   const priceBranch = priceTokens.length > 0 ? priceTokens.join("-") : "BASE";
-  const styleBranch = afterDot.length > 0 ? afterDot.join(".").trim() || null : null;
+  const styleBranch =
+    afterDot.length > 0 ? afterDot.join(".").trim() || null : null;
 
   return {
     root,
@@ -84,10 +90,12 @@ function buildFamilyBranchSummary(family: any) {
 }
 
 export async function GET(req: NextRequest) {
-  if (!checkAdminAuth(req)) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  if (!checkAdminAuth(req))
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const db = await checkFamiliesDb();
-  if (!db.available) return NextResponse.json(degradedResponse(db), { status: 503 });
+  if (!db.available)
+    return NextResponse.json(degradedResponse(db), { status: 503 });
 
   const url = new URL(req.url);
   const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1"));
@@ -98,7 +106,8 @@ export async function GET(req: NextRequest) {
   const scope = url.searchParams.get("scope");
   const parentProductId = url.searchParams.get("parentProductId")?.trim() ?? "";
   const hasParentFilter = UUID_RE.test(parentProductId);
-  const importScope = scope === "latest_import" || scope === "latest" ? "latest_import" : "all";
+  const importScope =
+    scope === "latest_import" || scope === "latest" ? "latest_import" : "all";
 
   const client = supabaseServer();
   let sinceIso: string | null = null;
@@ -117,7 +126,8 @@ export async function GET(req: NextRequest) {
 
   let query = client
     .from("product_families")
-    .select(`
+    .select(
+      `
       id, name, slug, strategy, active, published_at, created_at, updated_at,
       parent_product_id,
       products!product_families_parent_product_id_fkey (id, name, slug, sku, status, updated_at),
@@ -126,7 +136,8 @@ export async function GET(req: NextRequest) {
         products!product_family_members_member_product_id_fkey (id, name, slug, sku, status),
         variants!product_family_members_member_variant_id_fkey (id, name, sku, stock_status, regular_price)
       )
-    `)
+    `,
+    )
     .order("created_at", { ascending: false });
 
   if (activeOnly) query = query.eq("active", true);
@@ -134,7 +145,8 @@ export async function GET(req: NextRequest) {
   if (hasParentFilter) query = query.eq("parent_product_id", parentProductId);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
 
   const families: any[] = [...((data ?? []) as any[])].filter((family) => {
     if (!sinceIso) return true;
@@ -153,14 +165,18 @@ export async function GET(req: NextRequest) {
 
     let nativeProductsQuery = client
       .from("products")
-      .select(`
+      .select(
+        `
         id, name, slug, sku, status, updated_at,
         variants(id, name, sku, stock_status, regular_price, position)
-      `)
+      `,
+      )
       .eq("status", "publish");
 
     if (search) {
-      nativeProductsQuery = nativeProductsQuery.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);
+      nativeProductsQuery = nativeProductsQuery.or(
+        `name.ilike.%${search}%,sku.ilike.%${search}%`,
+      );
     }
     if (hasParentFilter) {
       nativeProductsQuery = nativeProductsQuery.eq("id", parentProductId);
@@ -169,11 +185,13 @@ export async function GET(req: NextRequest) {
       nativeProductsQuery = nativeProductsQuery.gte("updated_at", sinceIso);
     }
 
-    const { data: nativeProducts, error: nativeError } = await nativeProductsQuery.limit(5000);
+    const { data: nativeProducts, error: nativeError } =
+      await nativeProductsQuery.limit(5000);
     if (!nativeError) {
       for (const product of nativeProducts ?? []) {
-        const variants = ((product as any).variants ?? [])
-          .sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0));
+        const variants = ((product as any).variants ?? []).sort(
+          (a: any, b: any) => (a.position ?? 0) - (b.position ?? 0),
+        );
         if (variants.length === 0) continue;
         if (existingParentIds.has((product as any).id)) continue;
 
@@ -194,23 +212,25 @@ export async function GET(req: NextRequest) {
             sku: (product as any).sku,
             status: (product as any).status,
           },
-          product_family_members: variants.map((variant: any, index: number) => ({
-            id: `native-${(product as any).id}-${variant.id}`,
-            member_product_id: null,
-            member_variant_id: variant.id,
-            member_type: "variant",
-            position: index,
-            active: true,
-            axes_summary: null,
-            products: null,
-            variants: {
-              id: variant.id,
-              name: variant.name,
-              sku: variant.sku,
-              stock_status: variant.stock_status,
-              regular_price: variant.regular_price,
-            },
-          })),
+          product_family_members: variants.map(
+            (variant: any, index: number) => ({
+              id: `native-${(product as any).id}-${variant.id}`,
+              member_product_id: null,
+              member_variant_id: variant.id,
+              member_type: "variant",
+              position: index,
+              active: true,
+              axes_summary: null,
+              products: null,
+              variants: {
+                id: variant.id,
+                name: variant.name,
+                sku: variant.sku,
+                stock_status: variant.stock_status,
+                regular_price: variant.regular_price,
+              },
+            }),
+          ),
         });
       }
     }
@@ -223,10 +243,12 @@ export async function GET(req: NextRequest) {
   });
 
   const total = sortedFamilies.length;
-  const paged = sortedFamilies.slice((page - 1) * limit, page * limit).map((family: any) => ({
-    ...family,
-    branch_summary: buildFamilyBranchSummary(family),
-  }));
+  const paged = sortedFamilies
+    .slice((page - 1) * limit, page * limit)
+    .map((family: any) => ({
+      ...family,
+      branch_summary: buildFamilyBranchSummary(family),
+    }));
 
   return NextResponse.json({
     families: paged,
@@ -241,40 +263,67 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAdminAuth(req)) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  if (!checkAdminAuth(req))
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const db = await checkFamiliesDb();
-  if (!db.available) return NextResponse.json(degradedResponse(db), { status: 503 });
+  if (!db.available)
+    return NextResponse.json(degradedResponse(db), { status: 503 });
 
   let body: Record<string, unknown>;
-  try { body = await req.json(); } catch {
+  try {
+    body = await req.json();
+  } catch {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
 
   const parent_product_id = body.parent_product_id;
-  const name = typeof body.name === "string" ? body.name.trim().slice(0, 200) : "";
+  const name =
+    typeof body.name === "string" ? body.name.trim().slice(0, 200) : "";
   const strategy = typeof body.strategy === "string" ? body.strategy : "manual";
 
-  if (!parent_product_id || typeof parent_product_id !== "string" || !UUID_RE.test(parent_product_id)) {
-    return NextResponse.json({ error: "parent_product_id UUID requis" }, { status: 400 });
+  if (
+    !parent_product_id ||
+    typeof parent_product_id !== "string" ||
+    !UUID_RE.test(parent_product_id)
+  ) {
+    return NextResponse.json(
+      { error: "parent_product_id UUID requis" },
+      { status: 400 },
+    );
   }
-  if (!name) return NextResponse.json({ error: "name requis" }, { status: 400 });
+  if (!name)
+    return NextResponse.json({ error: "name requis" }, { status: 400 });
 
   const validStrategies = ["parent_sku", "sku_root", "title_root", "manual"];
   if (!validStrategies.includes(strategy)) {
     return NextResponse.json({ error: "strategy invalide" }, { status: 400 });
   }
 
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + Date.now();
+  const slug =
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") +
+    "-" +
+    Date.now();
   const client = supabaseServer();
 
   const { data, error } = await client
     .from("product_families")
-    .insert({ parent_product_id, name, slug, strategy, active: true, published_at: new Date().toISOString() })
+    .insert({
+      parent_product_id,
+      name,
+      slug,
+      strategy,
+      active: true,
+      published_at: new Date().toISOString(),
+    })
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  console.log(JSON.stringify({ event: "admin.family.create", id: data.id, name }));
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  log("info", "admin.family.create", { id: data.id, name });
   return NextResponse.json({ family: data }, { status: 201 });
 }

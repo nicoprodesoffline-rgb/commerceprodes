@@ -17,7 +17,10 @@ export async function GET(
     .single();
 
   if (error || !data) {
-    return NextResponse.json({ error: "Commande introuvable" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Commande introuvable" },
+      { status: 404 },
+    );
   }
 
   return NextResponse.json({ order: data });

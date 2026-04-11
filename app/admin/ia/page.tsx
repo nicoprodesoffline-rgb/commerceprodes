@@ -17,15 +17,35 @@ interface ThematicResult {
 }
 
 interface AuditResult {
-  noDescription: { count: number; items: Array<{ id: string; title: string; handle: string }> };
-  noPrice: { count: number; items: Array<{ id: string; title: string; handle: string }> };
-  noImage: { count: number; items: Array<{ id: string; title: string; handle: string }> };
-  noCategory: { count: number; items: Array<{ id: string; title: string; handle: string }> };
-  noSku: { count: number; items: Array<{ id: string; title: string; handle: string }> };
+  noDescription: {
+    count: number;
+    items: Array<{ id: string; title: string; handle: string }>;
+  };
+  noPrice: {
+    count: number;
+    items: Array<{ id: string; title: string; handle: string }>;
+  };
+  noImage: {
+    count: number;
+    items: Array<{ id: string; title: string; handle: string }>;
+  };
+  noCategory: {
+    count: number;
+    items: Array<{ id: string; title: string; handle: string }>;
+  };
+  noSku: {
+    count: number;
+    items: Array<{ id: string; title: string; handle: string }>;
+  };
 }
 
 interface DuplicateGroup {
-  products: Array<{ id: string; title: string; handle: string; sku: string | null }>;
+  products: Array<{
+    id: string;
+    title: string;
+    handle: string;
+    sku: string | null;
+  }>;
   similarity: "title" | "sku";
 }
 
@@ -108,14 +128,19 @@ export default function AdminIAPage() {
   }, []);
 
   function authHeaders() {
-    return { Authorization: `Bearer ${password}`, "Content-Type": "application/json" };
+    return {
+      Authorization: `Bearer ${password}`,
+      "Content-Type": "application/json",
+    };
   }
 
   async function runAudit() {
     setAuditLoading(true);
     setAuditResult(null);
     try {
-      const res = await fetch("/api/admin/ia/audit", { headers: authHeaders() });
+      const res = await fetch("/api/admin/ia/audit", {
+        headers: authHeaders(),
+      });
       if (res.ok) setAuditResult(await res.json());
       else alert("Erreur audit — vérifiez le mot de passe admin");
     } finally {
@@ -127,7 +152,10 @@ export default function AdminIAPage() {
     setDescLoading(true);
     setDescResult(null);
     setDescProgress(0);
-    const timer = setInterval(() => setDescProgress((p) => Math.min(p + 10, 90)), 500);
+    const timer = setInterval(
+      () => setDescProgress((p) => Math.min(p + 10, 90)),
+      500,
+    );
     try {
       const res = await fetch("/api/admin/ia/generate-descriptions", {
         method: "POST",
@@ -137,7 +165,10 @@ export default function AdminIAPage() {
       clearInterval(timer);
       setDescProgress(100);
       if (res.ok) setDescResult(await res.json());
-      else alert("Erreur génération — vérifiez la configuration ANTHROPIC_API_KEY");
+      else
+        alert(
+          "Erreur génération — vérifiez la configuration ANTHROPIC_API_KEY",
+        );
     } finally {
       clearInterval(timer);
       setDescLoading(false);
@@ -148,7 +179,9 @@ export default function AdminIAPage() {
     setDupLoading(true);
     setDupGroups(null);
     try {
-      const res = await fetch("/api/admin/ia/detect-duplicates", { headers: authHeaders() });
+      const res = await fetch("/api/admin/ia/detect-duplicates", {
+        headers: authHeaders(),
+      });
       if (res.ok) {
         const d = await res.json();
         setDupGroups(d.groups);
@@ -168,7 +201,10 @@ export default function AdminIAPage() {
       const res = await fetch("/api/admin/ia/bulk-price-update", {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ categorySlug: priceCategory, percentage: pricePercent }),
+        body: JSON.stringify({
+          categorySlug: priceCategory,
+          percentage: pricePercent,
+        }),
       });
       if (res.ok) setPriceResult(await res.json());
       else alert("Erreur mise à jour — vérifiez les paramètres");
@@ -184,14 +220,27 @@ export default function AdminIAPage() {
   const [themeResult, setThemeResult] = useState<ThematicResult | null>(null);
   const [publishing, setPublishing] = useState(false);
 
-  const CHIPS = ["rentrée scolaire", "fête nationale", "élections municipales", "marchés de Noël", "aménagement terrasse"];
+  const CHIPS = [
+    "rentrée scolaire",
+    "fête nationale",
+    "élections municipales",
+    "marchés de Noël",
+    "aménagement terrasse",
+  ];
 
   // MODULE 6 — Familles & Variations IA
   const [famSuggestLoading, setFamSuggestLoading] = useState(false);
-  const [famSuggestStrategy, setFamSuggestStrategy] = useState<"parent_sku" | "sku_root">("parent_sku");
-  const [famSuggestions, setFamSuggestions] = useState<FamilySuggestion[] | null>(null);
+  const [famSuggestStrategy, setFamSuggestStrategy] = useState<
+    "parent_sku" | "sku_root"
+  >("parent_sku");
+  const [famSuggestions, setFamSuggestions] = useState<
+    FamilySuggestion[] | null
+  >(null);
   const [famApplyLoading, setFamApplyLoading] = useState(false);
-  const [famApplyResult, setFamApplyResult] = useState<{ created: number; skipped: number } | null>(null);
+  const [famApplyResult, setFamApplyResult] = useState<{
+    created: number;
+    skipped: number;
+  } | null>(null);
   const [famAuditLoading, setFamAuditLoading] = useState(false);
   const [famAudit, setFamAudit] = useState<FamilyAudit | null>(null);
   const [famDbAvailable, setFamDbAvailable] = useState<boolean | null>(null);
@@ -221,9 +270,17 @@ export default function AdminIAPage() {
       const res = await fetch("/api/admin/homepage-sections", {
         method: "POST",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ title: themeResult.title, intro: themeResult.intro, product_ids: productIds, position: 0 }),
+        body: JSON.stringify({
+          title: themeResult.title,
+          intro: themeResult.intro,
+          product_ids: productIds,
+          position: 0,
+        }),
       });
-      if (res.ok) alert("✅ Section publiée ! Elle apparaît en 1ère position sur la homepage.");
+      if (res.ok)
+        alert(
+          "✅ Section publiée ! Elle apparaît en 1ère position sur la homepage.",
+        );
       else alert("Erreur publication");
     } finally {
       setPublishing(false);
@@ -240,7 +297,10 @@ export default function AdminIAPage() {
         headers: authHeaders(),
         body: JSON.stringify({ strategy: famSuggestStrategy, limit: 50 }),
       });
-      if (res.status === 503) { setFamDbAvailable(false); return; }
+      if (res.status === 503) {
+        setFamDbAvailable(false);
+        return;
+      }
       setFamDbAvailable(true);
       if (res.ok) {
         const d = await res.json();
@@ -273,8 +333,13 @@ export default function AdminIAPage() {
     setFamAuditLoading(true);
     setFamAudit(null);
     try {
-      const res = await fetch("/api/admin/families/audit", { headers: authHeaders() });
-      if (res.status === 503) { setFamDbAvailable(false); return; }
+      const res = await fetch("/api/admin/families/audit", {
+        headers: authHeaders(),
+      });
+      if (res.status === 503) {
+        setFamDbAvailable(false);
+        return;
+      }
       setFamDbAvailable(true);
       if (res.ok) setFamAudit(await res.json());
       else alert("Erreur audit familles");
@@ -287,7 +352,9 @@ export default function AdminIAPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Outils IA</h1>
-        <p className="mt-1 text-sm text-gray-500">Optimisation automatique du catalogue</p>
+        <p className="mt-1 text-sm text-gray-500">
+          Optimisation automatique du catalogue
+        </p>
       </div>
 
       {/* Mot de passe admin */}
@@ -312,7 +379,9 @@ export default function AdminIAPage() {
         <div className="rounded-xl border border-gray-200 bg-white p-6">
           <div className="flex items-start justify-between mb-2">
             <div>
-              <h2 className="font-semibold text-gray-900">🔍 Audit du catalogue</h2>
+              <h2 className="font-semibold text-gray-900">
+                🔍 Audit du catalogue
+              </h2>
               <p className="text-xs text-gray-500 mt-0.5">
                 Détecte les produits incomplets ou problématiques
               </p>
@@ -328,13 +397,36 @@ export default function AdminIAPage() {
           {auditResult && (
             <div className="mt-4 space-y-2">
               {[
-                { label: "Sans description", data: auditResult.noDescription, color: "orange" },
-                { label: "Avec prix à 0", data: auditResult.noPrice, color: "red" },
-                { label: "Sans image", data: auditResult.noImage, color: "orange" },
-                { label: "Sans catégorie", data: auditResult.noCategory, color: "red" },
-                { label: "Variants sans SKU", data: auditResult.noSku, color: "gray" },
+                {
+                  label: "Sans description",
+                  data: auditResult.noDescription,
+                  color: "orange",
+                },
+                {
+                  label: "Avec prix à 0",
+                  data: auditResult.noPrice,
+                  color: "red",
+                },
+                {
+                  label: "Sans image",
+                  data: auditResult.noImage,
+                  color: "orange",
+                },
+                {
+                  label: "Sans catégorie",
+                  data: auditResult.noCategory,
+                  color: "red",
+                },
+                {
+                  label: "Variants sans SKU",
+                  data: auditResult.noSku,
+                  color: "gray",
+                },
               ].map((row) => (
-                <div key={row.label} className="flex items-center justify-between">
+                <div
+                  key={row.label}
+                  className="flex items-center justify-between"
+                >
                   <span className="text-xs text-gray-700">{row.label}</span>
                   <div className="flex items-center gap-2">
                     <span
@@ -345,7 +437,10 @@ export default function AdminIAPage() {
                     {row.data.count > 0 && (
                       <button
                         onClick={() =>
-                          setAuditModal({ title: row.label, items: row.data.items })
+                          setAuditModal({
+                            title: row.label,
+                            items: row.data.items,
+                          })
                         }
                         className="text-xs text-[#cc1818] hover:underline"
                       >
@@ -361,13 +456,25 @@ export default function AdminIAPage() {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
               <div className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900">{auditModal.title}</h3>
-                  <button onClick={() => setAuditModal(null)} className="text-gray-400 hover:text-gray-700">✕</button>
+                  <h3 className="font-semibold text-gray-900">
+                    {auditModal.title}
+                  </h3>
+                  <button
+                    onClick={() => setAuditModal(null)}
+                    className="text-gray-400 hover:text-gray-700"
+                  >
+                    ✕
+                  </button>
                 </div>
                 <div className="space-y-1">
                   {auditModal.items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700 line-clamp-1">{item.title}</span>
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span className="text-gray-700 line-clamp-1">
+                        {item.title}
+                      </span>
                       <a
                         href={`/product/${item.handle}`}
                         target="_blank"
@@ -385,7 +492,9 @@ export default function AdminIAPage() {
 
         {/* MODULE 2 — Descriptions */}
         <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="font-semibold text-gray-900">✍️ Génération de descriptions</h2>
+          <h2 className="font-semibold text-gray-900">
+            ✍️ Génération de descriptions
+          </h2>
           <p className="text-xs text-gray-500 mt-0.5">
             Génère des descriptions manquantes avec l&apos;IA Claude
           </p>
@@ -397,7 +506,9 @@ export default function AdminIAPage() {
             >
               <option value="">Toutes les catégories</option>
               {categories.map((c) => (
-                <option key={c.slug} value={c.slug}>{c.name}</option>
+                <option key={c.slug} value={c.slug}>
+                  {c.name}
+                </option>
               ))}
             </select>
             <div className="flex items-center gap-2">
@@ -409,7 +520,11 @@ export default function AdminIAPage() {
                 min={1}
                 max={20}
                 value={descLimit}
-                onChange={(e) => setDescLimit(Math.min(20, Math.max(1, Number(e.target.value))))}
+                onChange={(e) =>
+                  setDescLimit(
+                    Math.min(20, Math.max(1, Number(e.target.value))),
+                  )
+                }
                 className="w-16 rounded-lg border border-gray-200 px-2 py-1 text-sm focus:outline-none text-center"
               />
               <label className="text-xs text-gray-600">produits</label>
@@ -440,12 +555,16 @@ export default function AdminIAPage() {
                   ✅ {descResult.generated} description(s) générée(s)
                 </p>
                 {descResult.errors.length > 0 && (
-                  <p className="text-xs text-red-600">{descResult.errors.length} erreur(s)</p>
+                  <p className="text-xs text-red-600">
+                    {descResult.errors.length} erreur(s)
+                  </p>
                 )}
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {descResult.products.map((p, i) => (
                     <div key={i} className="rounded-lg bg-gray-50 p-2">
-                      <p className="text-xs font-medium text-gray-800 line-clamp-1">{p.title}</p>
+                      <p className="text-xs font-medium text-gray-800 line-clamp-1">
+                        {p.title}
+                      </p>
                       <p className="text-xs text-gray-600 line-clamp-2 mt-0.5">
                         {p.description.slice(0, 120)}…
                       </p>
@@ -459,7 +578,9 @@ export default function AdminIAPage() {
 
         {/* MODULE 3 — Doublons */}
         <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="font-semibold text-gray-900">🔄 Détection de doublons</h2>
+          <h2 className="font-semibold text-gray-900">
+            🔄 Détection de doublons
+          </h2>
           <p className="text-xs text-gray-500 mt-0.5">
             Repère les produits similaires potentiellement dupliqués
           </p>
@@ -488,15 +609,25 @@ export default function AdminIAPage() {
                       onClick={() => setDupOpen(dupOpen === i ? null : i)}
                     >
                       <span className="font-medium text-gray-700">
-                        Groupe {i + 1} — {g.similarity === "title" ? "Titre similaire" : "SKU similaire"}
+                        Groupe {i + 1} —{" "}
+                        {g.similarity === "title"
+                          ? "Titre similaire"
+                          : "SKU similaire"}
                       </span>
-                      <span className="text-gray-400">{dupOpen === i ? "▲" : "▼"}</span>
+                      <span className="text-gray-400">
+                        {dupOpen === i ? "▲" : "▼"}
+                      </span>
                     </button>
                     {dupOpen === i && (
                       <div className="border-t border-gray-100 px-3 pb-2">
                         {g.products.map((p) => (
-                          <div key={p.id} className="flex items-center justify-between py-1">
-                            <span className="text-xs text-gray-700 line-clamp-1">{p.title}</span>
+                          <div
+                            key={p.id}
+                            className="flex items-center justify-between py-1"
+                          >
+                            <span className="text-xs text-gray-700 line-clamp-1">
+                              {p.title}
+                            </span>
                             <a
                               href={`/product/${p.handle}`}
                               target="_blank"
@@ -517,7 +648,9 @@ export default function AdminIAPage() {
 
         {/* MODULE 4 — Prix en masse */}
         <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="font-semibold text-gray-900">💰 Mise à jour prix en masse</h2>
+          <h2 className="font-semibold text-gray-900">
+            💰 Mise à jour prix en masse
+          </h2>
           <p className="text-xs text-gray-500 mt-0.5">
             Applique une hausse ou remise sur une sélection
           </p>
@@ -529,11 +662,15 @@ export default function AdminIAPage() {
             >
               <option value="">Choisir une catégorie…</option>
               {categories.map((c) => (
-                <option key={c.slug} value={c.slug}>{c.name}</option>
+                <option key={c.slug} value={c.slug}>
+                  {c.name}
+                </option>
               ))}
             </select>
             <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-600 whitespace-nowrap">Variation (%)</label>
+              <label className="text-xs text-gray-600 whitespace-nowrap">
+                Variation (%)
+              </label>
               <input
                 type="number"
                 min={-50}
@@ -553,7 +690,10 @@ export default function AdminIAPage() {
                 onChange={(e) => setPriceConfirm(e.target.checked)}
                 className="mt-0.5 accent-[#cc1818]"
               />
-              <span>J&apos;ai bien vérifié les produits concernés et je confirme l&apos;opération</span>
+              <span>
+                J&apos;ai bien vérifié les produits concernés et je confirme
+                l&apos;opération
+              </span>
             </label>
             <button
               onClick={runBulkPriceUpdate}
@@ -580,9 +720,15 @@ export default function AdminIAPage() {
                   <tbody>
                     {priceResult.products.slice(0, 20).map((p, i) => (
                       <tr key={i} className="border-b border-gray-50">
-                        <td className="py-0.5 line-clamp-1 text-gray-700">{p.title}</td>
-                        <td className="py-0.5 text-right text-gray-500">{p.oldPrice.toFixed(2)} €</td>
-                        <td className="py-0.5 text-right font-medium text-gray-900">{p.newPrice.toFixed(2)} €</td>
+                        <td className="py-0.5 line-clamp-1 text-gray-700">
+                          {p.title}
+                        </td>
+                        <td className="py-0.5 text-right text-gray-500">
+                          {p.oldPrice.toFixed(2)} €
+                        </td>
+                        <td className="py-0.5 text-right font-medium text-gray-900">
+                          {p.newPrice.toFixed(2)} €
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -596,7 +742,8 @@ export default function AdminIAPage() {
         <div className="col-span-full rounded-xl border border-gray-200 bg-white p-6">
           <h2 className="font-semibold text-gray-900">✨ CTA Thématique IA</h2>
           <p className="text-xs text-gray-500 mt-0.5">
-            Tapez un thème → l&apos;IA sélectionne les produits et génère l&apos;accroche pour la homepage.
+            Tapez un thème → l&apos;IA sélectionne les produits et génère
+            l&apos;accroche pour la homepage.
           </p>
 
           {/* Chips suggestions */}
@@ -632,17 +779,27 @@ export default function AdminIAPage() {
 
           {themeResult && (
             <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
-              <h3 className="font-semibold text-gray-900">{themeResult.title}</h3>
+              <h3 className="font-semibold text-gray-900">
+                {themeResult.title}
+              </h3>
               <p className="mt-1 text-sm text-gray-600">{themeResult.intro}</p>
               <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-8">
                 {themeResult.products.map((p) => (
                   <div key={p.id} className="flex flex-col items-center gap-1">
                     <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-gray-200">
                       {p.image_url && (
-                        <Image src={p.image_url} alt={p.title} fill className="object-cover" sizes="64px" />
+                        <Image
+                          src={p.image_url}
+                          alt={p.title}
+                          fill
+                          className="object-cover"
+                          sizes="64px"
+                        />
                       )}
                     </div>
-                    <p className="line-clamp-2 text-center text-[10px] text-gray-500">{p.title}</p>
+                    <p className="line-clamp-2 text-center text-[10px] text-gray-500">
+                      {p.title}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -655,7 +812,11 @@ export default function AdminIAPage() {
                   {publishing ? "Publication…" : "🚀 Publier sur la homepage"}
                 </button>
                 <button
-                  onClick={() => navigator.clipboard.writeText(JSON.stringify(themeResult, null, 2))}
+                  onClick={() =>
+                    navigator.clipboard.writeText(
+                      JSON.stringify(themeResult, null, 2),
+                    )
+                  }
                   className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
                 >
                   📋 Copier le JSON
@@ -666,15 +827,20 @@ export default function AdminIAPage() {
         </div>
         {/* MODULE 6 — Familles & Variations IA */}
         <div className="col-span-full rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="font-semibold text-gray-900">🔗 Familles produits — Analyse automatique</h2>
+          <h2 className="font-semibold text-gray-900">
+            🔗 Familles produits — Analyse automatique
+          </h2>
           <p className="text-xs text-gray-500 mt-0.5">
-            Détecte les variantes liées par parent_sku ou préfixe SKU commun et les regroupe en familles.
+            Détecte les variantes liées par parent_sku ou préfixe SKU commun et
+            les regroupe en familles.
           </p>
 
           {famDbAvailable === false && (
             <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
               Migration 016 non appliquée — tables product_families manquantes.
-              Exécutez <code className="font-mono">016-product-families.sql</code> dans Supabase pour activer ce module.
+              Exécutez{" "}
+              <code className="font-mono">016-product-families.sql</code> dans
+              Supabase pour activer ce module.
             </div>
           )}
 
@@ -682,7 +848,9 @@ export default function AdminIAPage() {
             <div className="mt-4 grid gap-6 md:grid-cols-2">
               {/* Suggestions */}
               <div>
-                <p className="text-xs font-medium text-gray-700 mb-2">Stratégie de regroupement</p>
+                <p className="text-xs font-medium text-gray-700 mb-2">
+                  Stratégie de regroupement
+                </p>
                 <div className="flex gap-2 mb-3">
                   {(["parent_sku", "sku_root"] as const).map((s) => (
                     <button
@@ -694,7 +862,9 @@ export default function AdminIAPage() {
                           : "bg-white text-gray-600 border-gray-200 hover:border-[#cc1818]"
                       }`}
                     >
-                      {s === "parent_sku" ? "parent_sku (WooCommerce)" : "Préfixe SKU"}
+                      {s === "parent_sku"
+                        ? "parent_sku (WooCommerce)"
+                        : "Préfixe SKU"}
                     </button>
                   ))}
                 </div>
@@ -717,9 +887,15 @@ export default function AdminIAPage() {
                       <>
                         <div className="space-y-2 max-h-56 overflow-y-auto mb-3">
                           {famSuggestions.slice(0, 10).map((s, i) => (
-                            <div key={i} className="rounded-lg border border-gray-100 px-3 py-2 text-xs">
+                            <div
+                              key={i}
+                              className="rounded-lg border border-gray-100 px-3 py-2 text-xs"
+                            >
                               <p className="font-medium text-gray-800 truncate">
-                                Mère: {s.parent.name} <span className="text-gray-400">({s.parent.sku})</span>
+                                Mère: {s.parent.name}{" "}
+                                <span className="text-gray-400">
+                                  ({s.parent.sku})
+                                </span>
                               </p>
                               <p className="text-gray-500 mt-0.5">
                                 {s.children.length} fille(s) · score {s.score}
@@ -734,7 +910,8 @@ export default function AdminIAPage() {
                         </div>
                         {famApplyResult ? (
                           <p className="text-sm font-medium text-green-700">
-                            ✅ {famApplyResult.created} famille(s) créée(s), {famApplyResult.skipped} ignorée(s)
+                            ✅ {famApplyResult.created} famille(s) créée(s),{" "}
+                            {famApplyResult.skipped} ignorée(s)
                           </p>
                         ) : (
                           <button
@@ -742,7 +919,9 @@ export default function AdminIAPage() {
                             disabled={famApplyLoading}
                             className="rounded-lg border border-[#cc1818] px-4 py-2 text-sm font-medium text-[#cc1818] hover:bg-[#cc1818] hover:text-white disabled:opacity-60 transition-colors"
                           >
-                            {famApplyLoading ? "Application…" : `Appliquer les ${famSuggestions.length} suggestion(s)`}
+                            {famApplyLoading
+                              ? "Application…"
+                              : `Appliquer les ${famSuggestions.length} suggestion(s)`}
                           </button>
                         )}
                       </>
@@ -753,7 +932,9 @@ export default function AdminIAPage() {
 
               {/* Audit */}
               <div>
-                <p className="text-xs font-medium text-gray-700 mb-2">Audit du graphe familles</p>
+                <p className="text-xs font-medium text-gray-700 mb-2">
+                  Audit du graphe familles
+                </p>
                 <button
                   onClick={runFamAudit}
                   disabled={famAuditLoading}
@@ -764,15 +945,40 @@ export default function AdminIAPage() {
                 {famAudit && (
                   <div className="mt-4 space-y-2">
                     {[
-                      { label: "Familles actives", value: famAudit.total_active_families, color: "green" },
-                      { label: "Mères sans filles", value: famAudit.parents_without_children, color: "orange" },
-                      { label: "Produits orphelins", value: famAudit.orphan_products, color: "red" },
-                      { label: "Grandes familles (>10)", value: famAudit.large_families, color: "gray" },
-                      { label: "Candidats en attente", value: famAudit.pending_candidates, color: "blue" },
+                      {
+                        label: "Familles actives",
+                        value: famAudit.total_active_families,
+                        color: "green",
+                      },
+                      {
+                        label: "Mères sans filles",
+                        value: famAudit.parents_without_children,
+                        color: "orange",
+                      },
+                      {
+                        label: "Produits orphelins",
+                        value: famAudit.orphan_products,
+                        color: "red",
+                      },
+                      {
+                        label: "Grandes familles (>10)",
+                        value: famAudit.large_families,
+                        color: "gray",
+                      },
+                      {
+                        label: "Candidats en attente",
+                        value: famAudit.pending_candidates,
+                        color: "blue",
+                      },
                     ].map((row) => (
-                      <div key={row.label} className="flex items-center justify-between text-xs">
+                      <div
+                        key={row.label}
+                        className="flex items-center justify-between text-xs"
+                      >
                         <span className="text-gray-600">{row.label}</span>
-                        <span className={`rounded-full bg-${row.color}-100 px-2 py-0.5 font-medium text-${row.color}-700`}>
+                        <span
+                          className={`rounded-full bg-${row.color}-100 px-2 py-0.5 font-medium text-${row.color}-700`}
+                        >
                           {row.value}
                         </span>
                       </div>

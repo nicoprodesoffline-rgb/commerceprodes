@@ -7,7 +7,10 @@ import type { Product } from "lib/supabase/types";
 import { ProductCardImage } from "components/product-image";
 
 function formatPriceFR(price: number): string {
-  return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) + " € HT";
+  return (
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) +
+    " € HT"
+  );
 }
 
 function ProductPrice({ product }: { product: Product }) {
@@ -17,7 +20,9 @@ function ProductPrice({ product }: { product: Product }) {
     if (min === max) return <span>{formatPriceFR(min)}</span>;
     return (
       <span>
-        {formatPriceFR(min)}<span className="mx-1 text-gray-400">–</span>{formatPriceFR(max)}
+        {formatPriceFR(min)}
+        <span className="mx-1 text-gray-400">–</span>
+        {formatPriceFR(max)}
       </span>
     );
   }
@@ -33,7 +38,12 @@ interface ProductCarouselProps {
   viewAllHref: string;
 }
 
-export default function ProductCarousel({ title, subtitle, products, viewAllHref }: ProductCarouselProps) {
+export default function ProductCarousel({
+  title,
+  subtitle,
+  products,
+  viewAllHref,
+}: ProductCarouselProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
@@ -60,8 +70,18 @@ export default function ProductCarousel({ title, subtitle, products, viewAllHref
             className="hidden md:flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-colors"
             aria-label="Précédent"
           >
-            <svg className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            <svg
+              className="h-4 w-4 text-gray-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <button
@@ -69,11 +89,24 @@ export default function ProductCarousel({ title, subtitle, products, viewAllHref
             className="hidden md:flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-colors"
             aria-label="Suivant"
           >
-            <svg className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            <svg
+              className="h-4 w-4 text-gray-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
-          <Link href={viewAllHref} className="text-sm text-[#cc1818] hover:underline ml-1">
+          <Link
+            href={viewAllHref}
+            className="text-sm text-[#cc1818] hover:underline ml-1"
+          >
             Voir tout →
           </Link>
         </div>

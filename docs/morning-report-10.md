@@ -8,14 +8,14 @@
 
 ## Bilan par étape
 
-| Étape | Description | Statut |
-|---|---|---|
-| 12 | Filtres catalogue avancés — prix, stock, URL persistants | ✅ Livré |
-| 4 | Carousel PRO-INTENS homepage | ✅ Livré |
-| 4b | Sections homepage : IA CTA 3 étapes + témoignages | ✅ Livré |
-| 9 | Checkout création compte B2B | ⏭️ Non atteint |
-| 10 | CTA thématique IA (interface 3 étapes) | ✅ Intégré homepage |
-| 11 | IA descriptions produits sans texte | ⏭️ Non atteint |
+| Étape | Description                                              | Statut              |
+| ----- | -------------------------------------------------------- | ------------------- |
+| 12    | Filtres catalogue avancés — prix, stock, URL persistants | ✅ Livré            |
+| 4     | Carousel PRO-INTENS homepage                             | ✅ Livré            |
+| 4b    | Sections homepage : IA CTA 3 étapes + témoignages        | ✅ Livré            |
+| 9     | Checkout création compte B2B                             | ⏭️ Non atteint      |
+| 10    | CTA thématique IA (interface 3 étapes)                   | ✅ Intégré homepage |
+| 11    | IA descriptions produits sans texte                      | ⏭️ Non atteint      |
 
 ---
 
@@ -27,19 +27,20 @@
 
 ## Modifications de fichiers existants
 
-| Fichier | Modification |
-|---|---|
-| `lib/supabase/index.ts` | `getProducts` + `getCollectionProducts` : paramètres `minPrice`, `maxPrice`, `inStockOnly` |
-| `app/search/layout.tsx` | `CatalogFilters` ajouté dans la sidebar (Suspense) |
-| `app/search/page.tsx` | Lecture `minPrice`, `maxPrice`, `inStock` depuis `searchParams` |
-| `app/search/[collection]/page.tsx` | Idem pour la page catégorie |
-| `app/page.tsx` | Sections PRO-INTENS (carousel dark), IA CTA 3 étapes, témoignages statiques |
+| Fichier                            | Modification                                                                               |
+| ---------------------------------- | ------------------------------------------------------------------------------------------ |
+| `lib/supabase/index.ts`            | `getProducts` + `getCollectionProducts` : paramètres `minPrice`, `maxPrice`, `inStockOnly` |
+| `app/search/layout.tsx`            | `CatalogFilters` ajouté dans la sidebar (Suspense)                                         |
+| `app/search/page.tsx`              | Lecture `minPrice`, `maxPrice`, `inStock` depuis `searchParams`                            |
+| `app/search/[collection]/page.tsx` | Idem pour la page catégorie                                                                |
+| `app/page.tsx`                     | Sections PRO-INTENS (carousel dark), IA CTA 3 étapes, témoignages statiques                |
 
 ---
 
 ## Détail technique — Filtres catalogue (Step 12)
 
 ### Architecture
+
 - **Composant client** `CatalogFilters` avec `useSearchParams` + `useRouter`
 - Synchronisation bidirectionnelle URL ↔ état local via `useEffect`
 - Paramètres URL : `minPrice`, `maxPrice`, `inStock=1`
@@ -48,6 +49,7 @@
 - Badge récapitulatif des filtres actifs (ex : `≥ 50 € · En stock`)
 
 ### DB
+
 ```sql
 -- Filtres Supabase appliqués sur la table products :
 .gte("regular_price", minPrice)  -- prix minimum
@@ -60,17 +62,20 @@
 ## Détail technique — Homepage (Step 4)
 
 ### Section PRO-INTENS
+
 - Fetch via `getProducts({ query: "pro-intens", limit: 8 })` + fallback `"pro intens"`
 - Rendu conditionnel (section masquée si 0 produit)
 - Carousel horizontal scroll sur fond dark avec badge amber "PRO-INTENS"
 - Lien "Voir la gamme →" vers `/gamme-pro-intens`
 
 ### Section IA CTA 3 étapes
+
 - 3 cards colorées : Contexte (bleu) → Besoin (amber) → Devis (vert)
 - CTA "Commencer ma demande →" vers `/devis-express`
 - Statique, no JS requis
 
 ### Section témoignages
+
 - 3 témoignages statiques de collectivités (mairie, communauté de communes, conseil régional)
 - Design cards avec étoiles, citation, nom + organisation
 
@@ -85,4 +90,4 @@
 
 ---
 
-*Généré automatiquement — Session 10 PRODES Commerce*
+_Généré automatiquement — Session 10 PRODES Commerce_

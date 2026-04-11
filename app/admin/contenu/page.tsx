@@ -17,12 +17,17 @@ export default function AdminContenuPage() {
   const [config, setConfig] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [newT, setNewT] = useState({ author: "", role: "", content: "", rating: 5 });
+  const [newT, setNewT] = useState({
+    author: "",
+    role: "",
+    content: "",
+    rating: 5,
+  });
   const [addingT, setAddingT] = useState(false);
 
   const password =
     typeof window !== "undefined"
-      ? sessionStorage.getItem("admin_password") ?? ""
+      ? (sessionStorage.getItem("admin_password") ?? "")
       : "";
 
   const authH = { Authorization: `Bearer ${password}` };
@@ -95,7 +100,9 @@ export default function AdminContenuPage() {
 
       {/* Bandeau promotionnel */}
       <section className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="mb-4 font-semibold text-gray-900">📢 Bandeau promotionnel</h2>
+        <h2 className="mb-4 font-semibold text-gray-900">
+          📢 Bandeau promotionnel
+        </h2>
 
         {/* Aperçu */}
         {config.promo_banner_active === "true" && config.promo_banner_text && (
@@ -109,17 +116,22 @@ export default function AdminContenuPage() {
             <span className="text-sm text-gray-700 font-medium">Actif</span>
             <button
               onClick={() => {
-                const v = config.promo_banner_active === "true" ? "false" : "true";
+                const v =
+                  config.promo_banner_active === "true" ? "false" : "true";
                 setConfig((c) => ({ ...c, promo_banner_active: v }));
                 saveConfig("promo_banner_active", v);
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                config.promo_banner_active === "true" ? "bg-[#cc1818]" : "bg-gray-300"
+                config.promo_banner_active === "true"
+                  ? "bg-[#cc1818]"
+                  : "bg-gray-300"
               }`}
             >
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                  config.promo_banner_active === "true" ? "translate-x-6" : "translate-x-1"
+                  config.promo_banner_active === "true"
+                    ? "translate-x-6"
+                    : "translate-x-1"
                 }`}
               />
             </button>
@@ -134,11 +146,21 @@ export default function AdminContenuPage() {
                 type="text"
                 maxLength={120}
                 value={config.promo_banner_text ?? ""}
-                onChange={(e) => setConfig((c) => ({ ...c, promo_banner_text: e.target.value }))}
+                onChange={(e) =>
+                  setConfig((c) => ({
+                    ...c,
+                    promo_banner_text: e.target.value,
+                  }))
+                }
                 className={inputClass}
               />
               <button
-                onClick={() => saveConfig("promo_banner_text", config.promo_banner_text ?? "")}
+                onClick={() =>
+                  saveConfig(
+                    "promo_banner_text",
+                    config.promo_banner_text ?? "",
+                  )
+                }
                 disabled={saving === "promo_banner_text"}
                 className="rounded-lg bg-[#cc1818] px-4 py-2 text-sm font-semibold text-white hover:bg-[#aa1414] disabled:opacity-60 transition-colors whitespace-nowrap"
               >
@@ -158,12 +180,22 @@ export default function AdminContenuPage() {
               <input
                 type="text"
                 value={config.promo_banner_link ?? ""}
-                onChange={(e) => setConfig((c) => ({ ...c, promo_banner_link: e.target.value }))}
+                onChange={(e) =>
+                  setConfig((c) => ({
+                    ...c,
+                    promo_banner_link: e.target.value,
+                  }))
+                }
                 placeholder="/devis-express"
                 className={inputClass}
               />
               <button
-                onClick={() => saveConfig("promo_banner_link", config.promo_banner_link ?? "")}
+                onClick={() =>
+                  saveConfig(
+                    "promo_banner_link",
+                    config.promo_banner_link ?? "",
+                  )
+                }
                 disabled={saving === "promo_banner_link"}
                 className="rounded-lg bg-[#cc1818] px-4 py-2 text-sm font-semibold text-white hover:bg-[#aa1414] disabled:opacity-60 transition-colors whitespace-nowrap"
               >
@@ -176,21 +208,43 @@ export default function AdminContenuPage() {
 
       {/* Informations de contact */}
       <section className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="mb-4 font-semibold text-gray-900">📞 Informations de contact</h2>
+        <h2 className="mb-4 font-semibold text-gray-900">
+          📞 Informations de contact
+        </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {[
-            { key: "contact_phone", label: "Téléphone", placeholder: "04 67 24 30 34" },
-            { key: "contact_email", label: "Email", placeholder: "contact@prodes.fr" },
-            { key: "contact_address", label: "Adresse", placeholder: "PRODES — 34000 Montpellier" },
-            { key: "contact_hours", label: "Horaires", placeholder: "Lun–Sam 8h30–19h" },
+            {
+              key: "contact_phone",
+              label: "Téléphone",
+              placeholder: "04 67 24 30 34",
+            },
+            {
+              key: "contact_email",
+              label: "Email",
+              placeholder: "contact@prodes.fr",
+            },
+            {
+              key: "contact_address",
+              label: "Adresse",
+              placeholder: "PRODES — 34000 Montpellier",
+            },
+            {
+              key: "contact_hours",
+              label: "Horaires",
+              placeholder: "Lun–Sam 8h30–19h",
+            },
           ].map(({ key, label, placeholder }) => (
             <div key={key}>
-              <label className="mb-1 block text-sm font-medium text-gray-700">{label}</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                {label}
+              </label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={config[key] ?? ""}
-                  onChange={(e) => setConfig((c) => ({ ...c, [key]: e.target.value }))}
+                  onChange={(e) =>
+                    setConfig((c) => ({ ...c, [key]: e.target.value }))
+                  }
                   placeholder={placeholder}
                   className={inputClass}
                 />
@@ -217,16 +271,26 @@ export default function AdminContenuPage() {
             <div
               key={t.id}
               className={`flex items-start gap-4 rounded-lg border p-4 transition-colors ${
-                t.active ? "border-gray-200 bg-white" : "border-gray-100 bg-gray-50 opacity-60"
+                t.active
+                  ? "border-gray-200 bg-white"
+                  : "border-gray-100 bg-gray-50 opacity-60"
               }`}
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-gray-800">{t.author}</span>
-                  {t.role && <span className="text-xs text-gray-400">{t.role}</span>}
-                  <span className="text-xs text-amber-400">{"★".repeat(t.rating)}</span>
+                  <span className="text-sm font-semibold text-gray-800">
+                    {t.author}
+                  </span>
+                  {t.role && (
+                    <span className="text-xs text-gray-400">{t.role}</span>
+                  )}
+                  <span className="text-xs text-amber-400">
+                    {"★".repeat(t.rating)}
+                  </span>
                 </div>
-                <p className="mt-1 text-xs text-gray-600 line-clamp-2">{t.content}</p>
+                <p className="mt-1 text-xs text-gray-600 line-clamp-2">
+                  {t.content}
+                </p>
               </div>
               <button
                 onClick={() => toggleTestimonial(t)}
@@ -241,37 +305,66 @@ export default function AdminContenuPage() {
             </div>
           ))}
           {testimonials.length === 0 && (
-            <p className="text-sm text-gray-400">Aucun témoignage. La table Supabase doit être créée (008-site-config.sql).</p>
+            <p className="text-sm text-gray-400">
+              Aucun témoignage. La table Supabase doit être créée
+              (008-site-config.sql).
+            </p>
           )}
         </div>
 
         {/* Ajouter */}
         <div className="rounded-lg border border-dashed border-gray-300 p-4">
-          <h3 className="mb-3 text-sm font-medium text-gray-700">Ajouter un témoignage</h3>
+          <h3 className="mb-3 text-sm font-medium text-gray-700">
+            Ajouter un témoignage
+          </h3>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <input type="text" placeholder="Auteur *" value={newT.author}
-                onChange={(e) => setNewT((p) => ({ ...p, author: e.target.value }))}
-                className={inputClass} />
-              <input type="text" placeholder="Fonction / Organisme" value={newT.role}
-                onChange={(e) => setNewT((p) => ({ ...p, role: e.target.value }))}
-                className={inputClass} />
+              <input
+                type="text"
+                placeholder="Auteur *"
+                value={newT.author}
+                onChange={(e) =>
+                  setNewT((p) => ({ ...p, author: e.target.value }))
+                }
+                className={inputClass}
+              />
+              <input
+                type="text"
+                placeholder="Fonction / Organisme"
+                value={newT.role}
+                onChange={(e) =>
+                  setNewT((p) => ({ ...p, role: e.target.value }))
+                }
+                className={inputClass}
+              />
             </div>
-            <textarea rows={3} placeholder="Témoignage *" value={newT.content}
-              onChange={(e) => setNewT((p) => ({ ...p, content: e.target.value }))}
-              className={inputClass} />
+            <textarea
+              rows={3}
+              placeholder="Témoignage *"
+              value={newT.content}
+              onChange={(e) =>
+                setNewT((p) => ({ ...p, content: e.target.value }))
+              }
+              className={inputClass}
+            />
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Note :</span>
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <button key={n} onClick={() => setNewT((p) => ({ ...p, rating: n }))}
-                    className={`text-lg ${n <= newT.rating ? "text-amber-400" : "text-gray-300"}`}>
+                  <button
+                    key={n}
+                    onClick={() => setNewT((p) => ({ ...p, rating: n }))}
+                    className={`text-lg ${n <= newT.rating ? "text-amber-400" : "text-gray-300"}`}
+                  >
                     ★
                   </button>
                 ))}
               </div>
-              <button onClick={addTestimonial} disabled={addingT}
-                className="rounded-lg bg-[#cc1818] px-4 py-2 text-sm font-semibold text-white hover:bg-[#aa1414] disabled:opacity-60 transition-colors">
+              <button
+                onClick={addTestimonial}
+                disabled={addingT}
+                className="rounded-lg bg-[#cc1818] px-4 py-2 text-sm font-semibold text-white hover:bg-[#aa1414] disabled:opacity-60 transition-colors"
+              >
                 {addingT ? "…" : "Ajouter"}
               </button>
             </div>

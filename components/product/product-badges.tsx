@@ -13,7 +13,8 @@ function isNewProduct(product: Product): boolean {
   if ((product as any).createdAt) {
     const created = new Date((product as any).createdAt);
     const now = new Date();
-    const diffDays = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+    const diffDays =
+      (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
     return diffDays <= 30;
   }
   return false;
@@ -49,13 +50,21 @@ export function getProductBadges(product: Product): BadgeConfig[] {
   const badges: BadgeConfig[] = [];
 
   if (isNewProduct(product)) {
-    badges.push({ label: "NOUVEAU", bg: "bg-green-100", text: "text-green-700" });
+    badges.push({
+      label: "NOUVEAU",
+      bg: "bg-green-100",
+      text: "text-green-700",
+    });
   }
   if (isPromoProduct(product)) {
     badges.push({ label: "PROMO", bg: "bg-red-100", text: "text-red-700" });
   }
   if (isExclusifProduct(product)) {
-    badges.push({ label: "EXCLUSIF", bg: "bg-amber-100", text: "text-amber-700" });
+    badges.push({
+      label: "EXCLUSIF",
+      bg: "bg-amber-100",
+      text: "text-amber-700",
+    });
   }
   if (isLotProduct(product)) {
     badges.push({ label: "LOT", bg: "bg-blue-100", text: "text-blue-700" });

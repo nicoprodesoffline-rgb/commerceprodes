@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
 export function AbandonedCartRow({
   id,
@@ -34,7 +34,9 @@ export function AbandonedCartRow({
 
   const handleMarkRecovered = async () => {
     try {
-      await fetch(`/api/admin/paniers-abandonnes/${id}/recover`, { method: 'POST' });
+      await fetch(`/api/admin/paniers-abandonnes/${id}/recover`, {
+        method: "POST",
+      });
       setRecovered(true);
     } catch {
       // Ignore
@@ -48,10 +50,7 @@ export function AbandonedCartRow({
       <td className="whitespace-nowrap px-4 py-3 text-gray-500">{date}</td>
       <td className="px-4 py-3">
         {email ? (
-          <a
-            href={`mailto:${email}`}
-            className="text-blue-600 hover:underline"
-          >
+          <a href={`mailto:${email}`} className="text-blue-600 hover:underline">
             {email}
           </a>
         ) : (
@@ -61,10 +60,15 @@ export function AbandonedCartRow({
       <td className="hidden px-4 py-3 text-gray-700 max-w-xs lg:table-cell">
         <span className="line-clamp-1">{productList}</span>
         {moreCount > 0 && (
-          <span className="text-xs text-gray-400"> +{moreCount} autre{moreCount > 1 ? 's' : ''}</span>
+          <span className="text-xs text-gray-400">
+            {" "}
+            +{moreCount} autre{moreCount > 1 ? "s" : ""}
+          </span>
         )}
       </td>
-      <td className="px-4 py-3 text-right font-medium text-gray-900">{totalHt}</td>
+      <td className="px-4 py-3 text-right font-medium text-gray-900">
+        {totalHt}
+      </td>
       <td className="px-4 py-3 text-right">
         <div className="flex items-center justify-end gap-2">
           <button
@@ -72,7 +76,7 @@ export function AbandonedCartRow({
             title="Copier le message de relance"
             className="rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:border-[#cc1818] hover:text-[#cc1818] transition-colors"
           >
-            {copied ? '✓ Copié' : '📧 Relancer'}
+            {copied ? "✓ Copié" : "📧 Relancer"}
           </button>
           <button
             onClick={handleMarkRecovered}

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "lib/logger";
 
 export async function PATCH(
   req: NextRequest,
@@ -39,11 +40,14 @@ export async function PATCH(
       notes_internes as string | undefined,
     );
     if (!ok) {
-      return NextResponse.json({ error: "Mise à jour échouée" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Mise à jour échouée" },
+        { status: 500 },
+      );
     }
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("[ADMIN DEVIS] PATCH error:", err);
+    log("error", "admin.devis.patch", { error: String(err) });
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

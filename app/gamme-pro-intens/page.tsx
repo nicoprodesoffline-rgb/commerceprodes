@@ -35,15 +35,21 @@ export default async function GammeProIntensPage() {
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <div className="rounded-lg bg-white/10 px-5 py-3 text-sm text-white">
-              <span className="block text-2xl font-bold text-amber-400">10 ans</span>
+              <span className="block text-2xl font-bold text-amber-400">
+                10 ans
+              </span>
               Garantie structure
             </div>
             <div className="rounded-lg bg-white/10 px-5 py-3 text-sm text-white">
-              <span className="block text-2xl font-bold text-amber-400">NF</span>
+              <span className="block text-2xl font-bold text-amber-400">
+                NF
+              </span>
               Certifié collectivités
             </div>
             <div className="rounded-lg bg-white/10 px-5 py-3 text-sm text-white">
-              <span className="block text-2xl font-bold text-amber-400">Chorus</span>
+              <span className="block text-2xl font-bold text-amber-400">
+                Chorus
+              </span>
               Compatible Pro
             </div>
           </div>
@@ -71,7 +77,8 @@ export default async function GammeProIntensPage() {
           <>
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900">
-                {products.length} produit{products.length > 1 ? "s" : ""} PRO-INTENS
+                {products.length} produit{products.length > 1 ? "s" : ""}{" "}
+                PRO-INTENS
               </h2>
               <Link
                 href="/devis-express?ref=PRO-INTENS"
@@ -114,7 +121,9 @@ export default async function GammeProIntensPage() {
                       À partir de{" "}
                       {new Intl.NumberFormat("fr-FR", {
                         minimumFractionDigits: 2,
-                      }).format(Number(product.priceRange.minVariantPrice.amount))}{" "}
+                      }).format(
+                        Number(product.priceRange.minVariantPrice.amount),
+                      )}{" "}
                       € HT
                     </p>
                   )}

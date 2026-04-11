@@ -29,7 +29,8 @@ function isAnalyticsData(value: unknown): value is AnalyticsData {
 }
 
 function MiniChart({ data }: { data: DayData[] }) {
-  if (!data.length) return <p className="text-xs text-gray-400">Aucune donnée</p>;
+  if (!data.length)
+    return <p className="text-xs text-gray-400">Aucune donnée</p>;
 
   const max = Math.max(...data.map((d) => d.views), 1);
   const height = 60;
@@ -38,7 +39,11 @@ function MiniChart({ data }: { data: DayData[] }) {
 
   return (
     <div className="overflow-x-auto">
-      <svg viewBox={`0 0 ${width} ${height + 20}`} className="w-full" style={{ maxWidth: width }}>
+      <svg
+        viewBox={`0 0 ${width} ${height + 20}`}
+        className="w-full"
+        style={{ maxWidth: width }}
+      >
         {data.map((d, i) => {
           const barH = Math.max(2, Math.round((d.views / max) * height));
           const x = i * (barW + 2);
@@ -176,7 +181,9 @@ export function AnalyticsWidget() {
       {/* Top produits */}
       {data.topProducts.length > 0 && (
         <div>
-          <p className="mb-2 text-xs font-medium text-gray-500">Top produits vus</p>
+          <p className="mb-2 text-xs font-medium text-gray-500">
+            Top produits vus
+          </p>
           <ul className="space-y-1.5">
             {data.topProducts.map((p, i) => (
               <li key={p.handle} className="flex items-center gap-2">
@@ -202,7 +209,8 @@ export function AnalyticsWidget() {
 
       {data.totalViews === 0 && (
         <p className="text-xs text-gray-400 text-center py-2">
-          Aucune vue enregistrée — les données apparaîtront après les premières visites.
+          Aucune vue enregistrée — les données apparaîtront après les premières
+          visites.
         </p>
       )}
     </div>

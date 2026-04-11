@@ -39,7 +39,10 @@ function loadEnv(filePath) {
     const k = m[1];
     if (process.env[k]) continue;
     let v = m[2].trim();
-    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+    if (
+      (v.startsWith('"') && v.endsWith('"')) ||
+      (v.startsWith("'") && v.endsWith("'"))
+    ) {
       v = v.slice(1, -1);
     }
     process.env[k] = v;
@@ -48,7 +51,8 @@ function loadEnv(filePath) {
 
 loadEnv(path.join(ROOT, ".env.local"));
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const key =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 if (!url || !key) {
   console.error("Missing Supabase env vars");
   process.exit(1);

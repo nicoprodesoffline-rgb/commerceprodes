@@ -2,14 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { sanitizeString, sanitizeNumber } from "lib/validation";
 import { log } from "lib/logger";
 
-function checkAuth(req: NextRequest): boolean {
-  const auth = req.headers.get("Authorization") ?? "";
-  const token = auth.replace("Bearer ", "");
-  return token === (process.env.ADMIN_PASSWORD ?? "");
-}
+import { checkAdminAuth } from "lib/admin/auth";
 
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) {
+  if (!checkAdminAuth(req)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -40,7 +36,10 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (!cat) {
-      return NextResponse.json({ error: "Catégorie introuvable" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Catégorie introuvable" },
+        { status: 404 },
+      );
     }
 
     // Get products in category
@@ -66,11 +65,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ updated: 0, products: [] });
     }
 
-    const updates: Array<{ id: string; title: string; oldPrice: number; newPrice: number }> = [];
+    const updates: Array<{
+      id: string;
+      title: string;
+      oldPrice: number;
+      newPrice: number;
+    }> = [];
 
     for (const p of products) {
       const oldPrice = Number(p.regular_price);
-      const newPrice = Math.round(oldPrice * (1 + percentage / 100) * 100) / 100;
+      const newPrice =
+        Math.round(oldPrice * (1 + percentage / 100) * 100) / 100;
 
       await client
         .from("products")
@@ -88,7 +93,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ updated: updates.length, products: updates });
   } catch (err) {
-    console.error("ia.bulk_price_update error", err);
+    log("error", "ia.bulk_price_update", { error: String(err) });
     return NextResponse.json({ error: "Erreur mise à jour" }, { status: 500 });
   }
 }

@@ -6,7 +6,10 @@ import type { Product } from "lib/supabase/types";
 import { useCompare } from "lib/compare/context";
 
 function formatPriceFR(price: number): string {
-  return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) + " € HT";
+  return (
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) +
+    " € HT"
+  );
 }
 
 interface CompareClientProps {
@@ -20,7 +23,9 @@ export default function CompareClient({ products }: CompareClientProps) {
     return (
       <div className="mx-auto max-w-screen-lg px-4 py-16 text-center">
         <div className="text-4xl mb-4">⚖️</div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Comparateur de produits</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          Comparateur de produits
+        </h1>
         <p className="text-gray-500 mb-6">
           Sélectionnez au moins 2 produits pour les comparer côte à côte.
         </p>
@@ -35,15 +40,23 @@ export default function CompareClient({ products }: CompareClientProps) {
   }
 
   // Best price index
-  const prices = products.map((p) => p.priceMin ?? parseFloat(p.priceRange.minVariantPrice.amount) ?? 0);
+  const prices = products.map(
+    (p) => p.priceMin ?? parseFloat(p.priceRange.minVariantPrice.amount) ?? 0,
+  );
   const minPrice = Math.min(...prices.filter((p) => p > 0));
 
   function isBestPrice(product: Product): boolean {
-    const p = product.priceMin ?? parseFloat(product.priceRange.minVariantPrice.amount) ?? 0;
+    const p =
+      product.priceMin ??
+      parseFloat(product.priceRange.minVariantPrice.amount) ??
+      0;
     return p > 0 && p === minPrice;
   }
 
-  const rows: Array<{ label: string; getValue: (p: Product) => React.ReactNode }> = [
+  const rows: Array<{
+    label: string;
+    getValue: (p: Product) => React.ReactNode;
+  }> = [
     {
       label: "Photo",
       getValue: (p) => (
@@ -57,14 +70,18 @@ export default function CompareClient({ products }: CompareClientProps) {
               className="h-full w-full object-contain"
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-gray-300 text-3xl">📦</div>
+            <div className="flex h-full items-center justify-center text-gray-300 text-3xl">
+              📦
+            </div>
           )}
         </div>
       ),
     },
     {
       label: "Nom",
-      getValue: (p) => <span className="font-semibold text-gray-900">{p.title}</span>,
+      getValue: (p) => (
+        <span className="font-semibold text-gray-900">{p.title}</span>
+      ),
     },
     {
       label: "Référence / SKU",
@@ -75,7 +92,8 @@ export default function CompareClient({ products }: CompareClientProps) {
     {
       label: "Prix HT",
       getValue: (p) => {
-        const price = p.priceMin ?? parseFloat(p.priceRange.minVariantPrice.amount) ?? 0;
+        const price =
+          p.priceMin ?? parseFloat(p.priceRange.minVariantPrice.amount) ?? 0;
         const best = isBestPrice(p);
         return (
           <div className={best ? "rounded-md bg-[#fef2f2] px-2 py-1" : ""}>
@@ -106,7 +124,9 @@ export default function CompareClient({ products }: CompareClientProps) {
             Oui
           </span>
         ) : (
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">Non</span>
+          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+            Non
+          </span>
         ),
     },
     {
@@ -152,7 +172,9 @@ export default function CompareClient({ products }: CompareClientProps) {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Comparateur</h1>
-          <p className="text-sm text-gray-500">{products.length} produits comparés</p>
+          <p className="text-sm text-gray-500">
+            {products.length} produits comparés
+          </p>
         </div>
         <Link href="/search" className="text-sm text-[#cc1818] hover:underline">
           ← Retour au catalogue

@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
-import { checkCommercialPricingDb, degradedResponse } from "lib/admin/families-db";
+import {
+  checkCommercialPricingDb,
+  degradedResponse,
+} from "lib/admin/families-db";
+import { log } from "lib/logger";
 import { supabaseServer } from "lib/supabase/client";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MODES = new Set([
   "lot",
   "unit_flat_discount",
@@ -87,7 +92,8 @@ export async function GET(
 
   const layers = (data || []).map((row: any) => ({
     ...row,
-    is_active_now: Boolean(row.active) && isActiveNow(row.starts_at, row.ends_at),
+    is_active_now:
+      Boolean(row.active) && isActiveNow(row.starts_at, row.ends_at),
   }));
 
   return NextResponse.json({ product_id: productId, layers });
@@ -124,7 +130,8 @@ export async function POST(
     return NextResponse.json({ error: "mode invalide" }, { status: 400 });
   }
 
-  const label = typeof body.label === "string" ? body.label.trim().slice(0, 180) : "";
+  const label =
+    typeof body.label === "string" ? body.label.trim().slice(0, 180) : "";
   if (!label) {
     return NextResponse.json({ error: "label requis" }, { status: 400 });
   }
@@ -138,8 +145,19 @@ export async function POST(
   const forcePromotionsCategory = parseBoolean(body.force_promotions_category);
   const positionRaw = parseNumberOrNull(body.position);
 
-  if ([discountAmount, discountPercent, overrideUnitPrice, startsAt, endsAt].includes(undefined)) {
-    return NextResponse.json({ error: "Paramètres numériques ou dates invalides" }, { status: 400 });
+  if (
+    [
+      discountAmount,
+      discountPercent,
+      overrideUnitPrice,
+      startsAt,
+      endsAt,
+    ].includes(undefined)
+  ) {
+    return NextResponse.json(
+      { error: "Paramètres numériques ou dates invalides" },
+      { status: 400 },
+    );
   }
 
   const payload: Record<string, unknown> = {
@@ -155,10 +173,14 @@ export async function POST(
     force_promotions_category: forcePromotionsCategory ?? true,
     position: positionRaw != null ? Math.max(0, Math.round(positionRaw)) : 100,
     pricing_profile_id:
-      typeof body.pricing_profile_id === "string" && UUID_RE.test(body.pricing_profile_id)
+      typeof body.pricing_profile_id === "string" &&
+      UUID_RE.test(body.pricing_profile_id)
         ? body.pricing_profile_id
         : null,
-    meta: body.meta && typeof body.meta === "object" && !Array.isArray(body.meta) ? body.meta : {},
+    meta:
+      body.meta && typeof body.meta === "object" && !Array.isArray(body.meta)
+        ? body.meta
+        : {},
   };
 
   const client = supabaseServer();
@@ -174,14 +196,11 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  console.log(
-    JSON.stringify({
-      event: "admin.product.promotion_layer.created",
-      product_id: productId,
-      layer_id: data.id,
-      mode,
-    }),
-  );
+  log("info", "admin.product.promotion_layer.created", {
+    product_id: productId,
+    layer_id: data.id,
+    mode,
+  });
 
   return NextResponse.json({ ok: true, layer: data }, { status: 201 });
 }
@@ -235,59 +254,88 @@ export async function PATCH(
 
   if ("discount_amount" in body) {
     const val = parseNumberOrNull(body.discount_amount);
-    if (val === undefined) return NextResponse.json({ error: "discount_amount invalide" }, { status: 400 });
+    if (val === undefined)
+      return NextResponse.json(
+        { error: "discount_amount invalide" },
+        { status: 400 },
+      );
     updates.discount_amount = val;
   }
 
   if ("discount_percent" in body) {
     const val = parseNumberOrNull(body.discount_percent);
-    if (val === undefined) return NextResponse.json({ error: "discount_percent invalide" }, { status: 400 });
+    if (val === undefined)
+      return NextResponse.json(
+        { error: "discount_percent invalide" },
+        { status: 400 },
+      );
     updates.discount_percent = val;
   }
 
   if ("override_unit_price_ht" in body) {
     const val = parseNumberOrNull(body.override_unit_price_ht);
-    if (val === undefined) return NextResponse.json({ error: "override_unit_price_ht invalide" }, { status: 400 });
+    if (val === undefined)
+      return NextResponse.json(
+        { error: "override_unit_price_ht invalide" },
+        { status: 400 },
+      );
     updates.override_unit_price_ht = val;
   }
 
   if ("starts_at" in body) {
     const val = parseIsoOrNull(body.starts_at);
-    if (val === undefined) return NextResponse.json({ error: "starts_at invalide" }, { status: 400 });
+    if (val === undefined)
+      return NextResponse.json(
+        { error: "starts_at invalide" },
+        { status: 400 },
+      );
     updates.starts_at = val;
   }
 
   if ("ends_at" in body) {
     const val = parseIsoOrNull(body.ends_at);
-    if (val === undefined) return NextResponse.json({ error: "ends_at invalide" }, { status: 400 });
+    if (val === undefined)
+      return NextResponse.json({ error: "ends_at invalide" }, { status: 400 });
     updates.ends_at = val;
   }
 
   if ("active" in body) {
     const val = parseBoolean(body.active);
-    if (val === undefined) return NextResponse.json({ error: "active invalide" }, { status: 400 });
+    if (val === undefined)
+      return NextResponse.json({ error: "active invalide" }, { status: 400 });
     updates.active = val;
   }
 
   if ("force_promotions_category" in body) {
     const val = parseBoolean(body.force_promotions_category);
-    if (val === undefined) return NextResponse.json({ error: "force_promotions_category invalide" }, { status: 400 });
+    if (val === undefined)
+      return NextResponse.json(
+        { error: "force_promotions_category invalide" },
+        { status: 400 },
+      );
     updates.force_promotions_category = val;
   }
 
   if ("position" in body) {
     const val = parseNumberOrNull(body.position);
-    if (val === undefined || val === null) return NextResponse.json({ error: "position invalide" }, { status: 400 });
+    if (val === undefined || val === null)
+      return NextResponse.json({ error: "position invalide" }, { status: 400 });
     updates.position = Math.max(0, Math.round(val));
   }
 
   if ("pricing_profile_id" in body) {
     if (body.pricing_profile_id === null || body.pricing_profile_id === "") {
       updates.pricing_profile_id = null;
-    } else if (typeof body.pricing_profile_id === "string" && UUID_RE.test(body.pricing_profile_id)) {
+    } else if (
+      typeof body.pricing_profile_id === "string" &&
+      UUID_RE.test(body.pricing_profile_id)
+    ) {
       updates.pricing_profile_id = body.pricing_profile_id;
     } else {
-      return NextResponse.json({ error: "pricing_profile_id invalide" }, { status: 400 });
+      return NextResponse.json(
+        { error: "pricing_profile_id invalide" },
+        { status: 400 },
+      );
     }
   }
 
@@ -302,7 +350,10 @@ export async function PATCH(
   }
 
   if (Object.keys(updates).length === 0) {
-    return NextResponse.json({ error: "Aucun champ à mettre à jour" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Aucun champ à mettre à jour" },
+      { status: 400 },
+    );
   }
 
   const client = supabaseServer();
@@ -320,14 +371,11 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  console.log(
-    JSON.stringify({
-      event: "admin.product.promotion_layer.updated",
-      product_id: productId,
-      layer_id: layerId,
-      fields: Object.keys(updates),
-    }),
-  );
+  log("info", "admin.product.promotion_layer.updated", {
+    product_id: productId,
+    layer_id: layerId,
+    fields: Object.keys(updates),
+  });
 
   return NextResponse.json({ ok: true, layer: data });
 }
@@ -367,13 +415,10 @@ export async function DELETE(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  console.log(
-    JSON.stringify({
-      event: "admin.product.promotion_layer.deleted",
-      product_id: productId,
-      layer_id: layerId,
-    }),
-  );
+  log("info", "admin.product.promotion_layer.deleted", {
+    product_id: productId,
+    layer_id: layerId,
+  });
 
   return NextResponse.json({ ok: true });
 }

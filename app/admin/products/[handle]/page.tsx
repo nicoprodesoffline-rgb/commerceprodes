@@ -53,7 +53,10 @@ export default async function AdminProductDetailPage(props: {
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center gap-4">
-        <Link href="/admin/products" className="text-sm text-gray-500 hover:text-blue-600">
+        <Link
+          href="/admin/products"
+          className="text-sm text-gray-500 hover:text-blue-600"
+        >
           ← Retour aux produits
         </Link>
       </div>
@@ -70,12 +73,20 @@ export default async function AdminProductDetailPage(props: {
           />
         )}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{(product as any).name}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {(product as any).name}
+          </h1>
           <div className="flex gap-3 mt-1 text-sm text-gray-500">
             <span>SKU : {(product as any).sku || "—"}</span>
             <span>
               Statut :{" "}
-              <span className={(product as any).status === "publish" ? "text-green-600" : "text-gray-500"}>
+              <span
+                className={
+                  (product as any).status === "publish"
+                    ? "text-green-600"
+                    : "text-gray-500"
+                }
+              >
                 {(product as any).status === "publish" ? "Publié" : "Brouillon"}
               </span>
             </span>
@@ -99,7 +110,9 @@ export default async function AdminProductDetailPage(props: {
             Variantes ({variants.length})
           </h2>
           {variants.length === 0 ? (
-            <p className="text-sm text-gray-500">Produit simple (pas de variantes)</p>
+            <p className="text-sm text-gray-500">
+              Produit simple (pas de variantes)
+            </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
@@ -113,15 +126,22 @@ export default async function AdminProductDetailPage(props: {
                 <tbody className="divide-y divide-gray-50">
                   {variants.map((v: any) => (
                     <tr key={v.id}>
-                      <td className="py-1.5 font-mono text-gray-600">{v.sku}</td>
+                      <td className="py-1.5 font-mono text-gray-600">
+                        {v.sku}
+                      </td>
                       <td className="py-1.5 text-gray-500">
                         {(v.variant_attributes || [])
-                          .map((va: any) => `${va.attributes?.name}: ${va.term_slug}`)
+                          .map(
+                            (va: any) =>
+                              `${va.attributes?.name}: ${va.term_slug}`,
+                          )
                           .join(", ") || "—"}
                       </td>
                       <td className="py-1.5 text-right text-gray-800">
                         {v.regular_price
-                          ? new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(v.regular_price) + " €"
+                          ? new Intl.NumberFormat("fr-FR", {
+                              minimumFractionDigits: 2,
+                            }).format(v.regular_price) + " €"
                           : "—"}
                       </td>
                     </tr>
@@ -134,7 +154,9 @@ export default async function AdminProductDetailPage(props: {
           {/* Price tiers */}
           {tiers.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Tarifs dégressifs</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Tarifs dégressifs
+              </h3>
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b text-gray-500">
@@ -148,10 +170,12 @@ export default async function AdminProductDetailPage(props: {
                       <td className="py-1">{t.min_quantity}+</td>
                       <td className="py-1 text-right">
                         {t.price != null
-                          ? new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(t.price) + " €"
+                          ? new Intl.NumberFormat("fr-FR", {
+                              minimumFractionDigits: 2,
+                            }).format(t.price) + " €"
                           : t.discount_percent != null
-                          ? `-${t.discount_percent}%`
-                          : "—"}
+                            ? `-${t.discount_percent}%`
+                            : "—"}
                       </td>
                     </tr>
                   ))}
@@ -163,10 +187,15 @@ export default async function AdminProductDetailPage(props: {
           {/* Catégories */}
           {cats.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Catégories</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Catégories
+              </h3>
               <div className="flex flex-wrap gap-1">
                 {cats.map((cat: any) => (
-                  <span key={cat.id} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                  <span
+                    key={cat.id}
+                    className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                  >
                     {cat.name}
                   </span>
                 ))}

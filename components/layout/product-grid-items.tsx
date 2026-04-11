@@ -7,7 +7,10 @@ import { Product } from "lib/supabase/types";
 import Link from "next/link";
 
 function formatPriceFR(price: number): string {
-  return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) + " € HT";
+  return (
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) +
+    " € HT"
+  );
 }
 
 function PriceRange({ product }: { product: Product }) {
@@ -30,7 +33,11 @@ function PriceRange({ product }: { product: Product }) {
   return <span className="text-gray-400">Sur devis</span>;
 }
 
-export default function ProductGridItems({ products }: { products: Product[] }) {
+export default function ProductGridItems({
+  products,
+}: {
+  products: Product[];
+}) {
   return (
     <>
       {products.map((product) => (
@@ -51,7 +58,12 @@ export default function ProductGridItems({ products }: { products: Product[] }) 
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-gray-300">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                  <svg
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
                     <path d="M4 5h16v14H4V5zm2 2v10h12V7H6zm3 3a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm-1 7 2.5-3.5L13 16l2.5-3.5L18 17H6z" />
                   </svg>
                 </div>

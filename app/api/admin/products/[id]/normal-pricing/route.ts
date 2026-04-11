@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
+import { log } from "lib/logger";
 import { supabaseServer } from "lib/supabase/client";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type TierInput = {
   min_quantity: number;
@@ -34,11 +36,16 @@ async function resolveProductId(idOrSlug: string): Promise<string | null> {
   return data?.id ?? null;
 }
 
-function normalizeTiers(rows: any[], pbqType: "fixed" | "percentage"): TierInput[] {
+function normalizeTiers(
+  rows: any[],
+  pbqType: "fixed" | "percentage",
+): TierInput[] {
   const sorted = [...rows].sort((a, b) => a.min_quantity - b.min_quantity);
   return sorted.map((row: any, index) => {
     const min = Number(row.min_quantity || 1);
-    const nextMin = sorted[index + 1] ? Number(sorted[index + 1].min_quantity) : null;
+    const nextMin = sorted[index + 1]
+      ? Number(sorted[index + 1].min_quantity)
+      : null;
     return {
       min_quantity: min,
       max_quantity: nextMin ? Math.max(min, nextMin - 1) : null,
@@ -65,25 +72,30 @@ export async function GET(
   }
 
   const client = supabaseServer();
-  const [{ data: product, error: productError }, { data: tiers, error: tiersError }] =
-    await Promise.all([
-      client
-        .from("products")
-        .select(
-          "id, regular_price, sale_price, sale_price_start, sale_price_end, pbq_enabled, pbq_pricing_type, pbq_min_quantity, pbq_max_quantity",
-        )
-        .eq("id", productId)
-        .single(),
-      client
-        .from("price_tiers")
-        .select("id, min_quantity, price, discount_percent, position")
-        .eq("product_id", productId)
-        .is("variant_id", null)
-        .order("min_quantity", { ascending: true }),
-    ]);
+  const [
+    { data: product, error: productError },
+    { data: tiers, error: tiersError },
+  ] = await Promise.all([
+    client
+      .from("products")
+      .select(
+        "id, regular_price, sale_price, sale_price_start, sale_price_end, pbq_enabled, pbq_pricing_type, pbq_min_quantity, pbq_max_quantity",
+      )
+      .eq("id", productId)
+      .single(),
+    client
+      .from("price_tiers")
+      .select("id, min_quantity, price, discount_percent, position")
+      .eq("product_id", productId)
+      .is("variant_id", null)
+      .order("min_quantity", { ascending: true }),
+  ]);
 
   if (productError || !product) {
-    return NextResponse.json({ error: productError?.message ?? "Produit introuvable" }, { status: 404 });
+    return NextResponse.json(
+      { error: productError?.message ?? "Produit introuvable" },
+      { status: 404 },
+    );
   }
   if (tiersError) {
     return NextResponse.json({ error: tiersError.message }, { status: 500 });
@@ -176,8 +188,7 @@ export async function PATCH(
     updates.pbq_enabled = true;
     updates.pbq_pricing_type = pbqType;
     updates.pbq_min_quantity = tiers[0]?.min_quantity ?? 1;
-    updates.pbq_max_quantity =
-      tiers[tiers.length - 1]?.max_quantity ?? null;
+    updates.pbq_max_quantity = tiers[tiers.length - 1]?.max_quantity ?? null;
 
     const { error: delErr } = await client
       .from("price_tiers")
@@ -225,13 +236,10 @@ export async function PATCH(
     return NextResponse.json({ error: updateErr.message }, { status: 500 });
   }
 
-  console.log(
-    JSON.stringify({
-      event: "admin.product.normal_pricing.updated",
-      product_id: productId,
-      mode,
-    }),
-  );
+  log("info", "admin.product.normal_pricing.updated", {
+    product_id: productId,
+    mode,
+  });
 
   const [{ data: product }, { data: tiers }] = await Promise.all([
     client

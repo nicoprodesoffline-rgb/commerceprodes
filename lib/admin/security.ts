@@ -17,7 +17,10 @@ const SAFE_ERROR_MESSAGES: Record<string, string> = {
  * In production: never expose internal details (Supabase errors, stack traces, etc.)
  * In development: returns the original message.
  */
-export function safeErrorMessage(err: unknown, fallback = "Une erreur serveur s'est produite"): string {
+export function safeErrorMessage(
+  err: unknown,
+  fallback = "Une erreur serveur s'est produite",
+): string {
   if (process.env.NODE_ENV !== "production") {
     // In dev, return full error for debugging
     if (err instanceof Error) return err.message;
@@ -32,7 +35,11 @@ export function safeErrorMessage(err: unknown, fallback = "Une erreur serveur s'
     // Detect and allow auth messages
     if (msg === "Non autorisé" || msg === "Unauthorized") return "Non autorisé";
     // Detect migration messages (safe to expose)
-    if (msg.toLowerCase().includes("migration") || msg.includes("MIGRATION_REQUIRED")) return msg;
+    if (
+      msg.toLowerCase().includes("migration") ||
+      msg.includes("MIGRATION_REQUIRED")
+    )
+      return msg;
   }
 
   return fallback;
@@ -88,9 +95,5 @@ export function adminRateLimit(
 export function getClientIp(req: Request): string {
   const forwarded = (req.headers as Headers).get("x-forwarded-for") ?? "";
   const realIp = (req.headers as Headers).get("x-real-ip") ?? "";
-  return (
-    forwarded.split(",")[0]?.trim() ||
-    realIp ||
-    "unknown"
-  );
+  return forwarded.split(",")[0]?.trim() || realIp || "unknown";
 }

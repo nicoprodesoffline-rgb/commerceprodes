@@ -1,6 +1,11 @@
 "use client";
 
-import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
+import {
+  Dialog,
+  DialogBackdrop,
+  DialogPanel,
+  DialogTitle,
+} from "@headlessui/react";
 
 interface MandatModalProps {
   open: boolean;
@@ -9,7 +14,12 @@ interface MandatModalProps {
   productSku?: string;
 }
 
-export function MandatModal({ open, onClose, productTitle, productSku }: MandatModalProps) {
+export function MandatModal({
+  open,
+  onClose,
+  productTitle,
+  productSku,
+}: MandatModalProps) {
   return (
     <Dialog open={open} onClose={onClose} className="relative z-50">
       <DialogBackdrop className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
@@ -24,13 +34,16 @@ export function MandatModal({ open, onClose, productTitle, productSku }: MandatM
               {productTitle}
             </p>
             {productSku && (
-              <p className="text-xs text-blue-600 dark:text-blue-400">Réf : {productSku}</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400">
+                Réf : {productSku}
+              </p>
             )}
           </div>
 
           <p className="mb-4 text-sm text-neutral-700 dark:text-neutral-300">
-            Vous êtes un organisme public (collectivité, établissement scolaire, hôpital,
-            administration…) et souhaitez régler par <strong>mandat administratif</strong> ?
+            Vous êtes un organisme public (collectivité, établissement scolaire,
+            hôpital, administration…) et souhaitez régler par{" "}
+            <strong>mandat administratif</strong> ?
           </p>
           <p className="mb-4 text-sm text-neutral-700 dark:text-neutral-300">
             Contactez-nous directement pour établir un bon de commande :
@@ -43,7 +56,9 @@ export function MandatModal({ open, onClose, productTitle, productSku }: MandatM
                 <p className="text-sm font-medium text-neutral-900 dark:text-white">
                   04 67 24 30 34
                 </p>
-                <p className="text-xs text-neutral-500">Du lundi au vendredi, 9h–17h</p>
+                <p className="text-xs text-neutral-500">
+                  Du lundi au vendredi, 9h–17h
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -55,14 +70,16 @@ export function MandatModal({ open, onClose, productTitle, productSku }: MandatM
                 >
                   contact@prodes.fr
                 </a>
-                <p className="text-xs text-neutral-500">Réponse sous 24h ouvrées</p>
+                <p className="text-xs text-neutral-500">
+                  Réponse sous 24h ouvrées
+                </p>
               </div>
             </div>
           </div>
 
           <p className="mt-4 text-xs text-neutral-500 dark:text-neutral-400">
-            Merci de préciser la référence produit, la quantité souhaitée et les coordonnées
-            de votre organisme (nom, SIRET, adresse de livraison).
+            Merci de préciser la référence produit, la quantité souhaitée et les
+            coordonnées de votre organisme (nom, SIRET, adresse de livraison).
           </p>
 
           <div className="mt-6 flex justify-end">

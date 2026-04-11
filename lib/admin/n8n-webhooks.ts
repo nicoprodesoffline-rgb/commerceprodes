@@ -26,7 +26,10 @@ export async function triggerN8nWebhook(
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, triggered_at: new Date().toISOString() }),
+      body: JSON.stringify({
+        ...payload,
+        triggered_at: new Date().toISOString(),
+      }),
     });
     return { success: res.ok };
   } catch (err) {

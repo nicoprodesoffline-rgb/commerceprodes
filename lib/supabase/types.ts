@@ -137,7 +137,11 @@ export type ProductPricingProfile = {
 export type ProductPromotionLayer = {
   id: string;
   label: string;
-  mode: "lot" | "unit_flat_discount" | "unit_percent_discount" | "unit_sale_price";
+  mode:
+    | "lot"
+    | "unit_flat_discount"
+    | "unit_percent_discount"
+    | "unit_sale_price";
   discountAmount?: number | null;
   discountPercent?: number | null;
   overrideUnitPriceHt?: number | null;
@@ -304,7 +308,11 @@ export type DbProductPromotionLayer = {
   product_id: string;
   pricing_profile_id: string | null;
   label: string;
-  mode: "lot" | "unit_flat_discount" | "unit_percent_discount" | "unit_sale_price";
+  mode:
+    | "lot"
+    | "unit_flat_discount"
+    | "unit_percent_discount"
+    | "unit_sale_price";
   discount_amount: number | null;
   discount_percent: number | null;
   override_unit_price_ht: number | null;

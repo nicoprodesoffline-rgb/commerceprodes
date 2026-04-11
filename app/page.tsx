@@ -28,19 +28,26 @@ export default async function HomePage() {
   let featuredProducts: Awaited<ReturnType<typeof getFeaturedProducts>> = [];
   let promoProducts: Awaited<ReturnType<typeof getPromoProducts>> = [];
   let newProducts: Awaited<ReturnType<typeof getNewProducts>> = [];
-  let homepageCategories: Awaited<ReturnType<typeof getHomepageCategories>> = [];
+  let homepageCategories: Awaited<ReturnType<typeof getHomepageCategories>> =
+    [];
   let proIntensProducts: Awaited<ReturnType<typeof getProducts>> = [];
 
   try {
-    [categories, featuredProducts, promoProducts, newProducts, homepageCategories, proIntensProducts] =
-      await Promise.all([
-        getRootCategories(),
-        getFeaturedProducts(12),
-        getPromoProducts(12),
-        getNewProducts(12),
-        getHomepageCategories(),
-        getProducts({ query: "pro-intens", limit: 8 }),
-      ]);
+    [
+      categories,
+      featuredProducts,
+      promoProducts,
+      newProducts,
+      homepageCategories,
+      proIntensProducts,
+    ] = await Promise.all([
+      getRootCategories(),
+      getFeaturedProducts(12),
+      getPromoProducts(12),
+      getNewProducts(12),
+      getHomepageCategories(),
+      getProducts({ query: "pro-intens", limit: 8 }),
+    ]);
     // Fallback PRO-INTENS avec espace
     if (proIntensProducts.length === 0) {
       proIntensProducts = await getProducts({ query: "pro intens", limit: 8 });
@@ -59,15 +66,25 @@ export default async function HomePage() {
         <div className="mx-auto max-w-screen-2xl px-4 py-4 lg:px-6">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {[
-              { icon: "🚚", title: "Livraison incluse", sub: "Sur la gamme PUB26" },
+              {
+                icon: "🚚",
+                title: "Livraison incluse",
+                sub: "Sur la gamme PUB26",
+              },
               { icon: "📋", title: "Devis sous 24h", sub: "Réponse garantie" },
-              { icon: "🏛️", title: "Mandat administratif", sub: "Organismes publics" },
+              {
+                icon: "🏛️",
+                title: "Mandat administratif",
+                sub: "Organismes publics",
+              },
               { icon: "📞", title: "04 67 24 30 34", sub: "Lun–Sam 8h30–19h" },
             ].map((item) => (
               <div key={item.title} className="flex items-center gap-2.5">
                 <span className="text-2xl">{item.icon}</span>
                 <div>
-                  <p className="text-sm font-semibold text-gray-800">{item.title}</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {item.title}
+                  </p>
                   <p className="text-xs text-gray-500">{item.sub}</p>
                 </div>
               </div>
@@ -80,7 +97,9 @@ export default async function HomePage() {
         {/* Section 3 — Grille catégories */}
         {homepageCategories.length > 0 && (
           <section className="mx-auto max-w-screen-2xl px-4 py-12 lg:px-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Nos univers produits</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">
+              Nos univers produits
+            </h2>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               {homepageCategories.map((cat) => {
                 const imgUrl = cat.cover_image_url ?? cat.image_url;
@@ -108,8 +127,12 @@ export default async function HomePage() {
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
                       <div>
-                        <p className="font-semibold text-white text-sm leading-tight">{cat.name}</p>
-                        <p className="text-xs text-white/70">{cat.product_count} produits</p>
+                        <p className="font-semibold text-white text-sm leading-tight">
+                          {cat.name}
+                        </p>
+                        <p className="text-xs text-white/70">
+                          {cat.product_count} produits
+                        </p>
                       </div>
                     </div>
                   </Link>
@@ -159,7 +182,8 @@ export default async function HomePage() {
                   </div>
                   <h2 className="text-xl font-bold text-white">PRO-INTENS</h2>
                   <p className="text-sm text-gray-300 mt-0.5">
-                    Mobilier haute résistance pour collectivités — Garantie 10 ans
+                    Mobilier haute résistance pour collectivités — Garantie 10
+                    ans
                   </p>
                 </div>
                 <Link
@@ -200,7 +224,10 @@ export default async function HomePage() {
                       </p>
                       {(product.priceMin ?? 0) > 0 && (
                         <p className="mt-1 text-xs font-bold text-amber-400">
-                          {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(product.priceMin!)} € HT
+                          {new Intl.NumberFormat("fr-FR", {
+                            minimumFractionDigits: 2,
+                          }).format(product.priceMin!)}{" "}
+                          € HT
                         </p>
                       )}
                     </Link>
@@ -244,7 +271,8 @@ export default async function HomePage() {
                 Trouvez le produit idéal en 3 étapes
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                Décrivez votre besoin, nous suggérons les produits adaptés à votre collectivité
+                Décrivez votre besoin, nous suggérons les produits adaptés à
+                votre collectivité
               </p>
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -274,15 +302,24 @@ export default async function HomePage() {
                   badge: "bg-green-600",
                 },
               ].map((item) => (
-                <div key={item.step} className={`rounded-xl border p-5 ${item.color}`}>
+                <div
+                  key={item.step}
+                  className={`rounded-xl border p-5 ${item.color}`}
+                >
                   <div className="mb-3 flex items-center gap-3">
-                    <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white ${item.badge}`}>
+                    <div
+                      className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white ${item.badge}`}
+                    >
                       {item.step}
                     </div>
                     <span className="text-xl">{item.icon}</span>
                   </div>
-                  <h3 className="mb-1 text-sm font-semibold text-gray-900">{item.title}</h3>
-                  <p className="text-xs text-gray-600 leading-relaxed">{item.desc}</p>
+                  <h3 className="mb-1 text-sm font-semibold text-gray-900">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    {item.desc}
+                  </p>
                 </div>
               ))}
             </div>
@@ -299,7 +336,9 @@ export default async function HomePage() {
 
         {/* Section 9 — Témoignages clients */}
         <section className="mx-auto max-w-screen-2xl px-4 pb-12 lg:px-6">
-          <h2 className="mb-6 text-xl font-bold text-gray-900 text-center">Ils nous font confiance</h2>
+          <h2 className="mb-6 text-xl font-bold text-gray-900 text-center">
+            Ils nous font confiance
+          </h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {[
               {
@@ -324,17 +363,24 @@ export default async function HomePage() {
                 stars: 5,
               },
             ].map((t) => (
-              <div key={t.name} className="rounded-xl border border-gray-200 bg-white p-5">
+              <div
+                key={t.name}
+                className="rounded-xl border border-gray-200 bg-white p-5"
+              >
                 <div className="mb-3 flex gap-0.5">
                   {Array.from({ length: t.stars }).map((_, i) => (
-                    <span key={i} className="text-amber-400 text-sm">★</span>
+                    <span key={i} className="text-amber-400 text-sm">
+                      ★
+                    </span>
                   ))}
                 </div>
                 <p className="text-sm text-gray-700 leading-relaxed italic mb-4">
                   &ldquo;{t.text}&rdquo;
                 </p>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">{t.name}</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {t.name}
+                  </p>
                   <p className="text-xs text-gray-500">{t.role}</p>
                   <p className="text-xs font-medium text-[#cc1818]">{t.org}</p>
                 </div>

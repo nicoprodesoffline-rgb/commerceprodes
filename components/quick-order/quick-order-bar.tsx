@@ -15,7 +15,9 @@ export function QuickOrderBar() {
     if (!sku.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/product-by-sku?sku=${encodeURIComponent(sku.trim())}`);
+      const res = await fetch(
+        `/api/product-by-sku?sku=${encodeURIComponent(sku.trim())}`,
+      );
       if (!res.ok) {
         toast.error(`SKU "${sku}" introuvable — essayez la recherche`);
         return;
@@ -32,21 +34,36 @@ export function QuickOrderBar() {
         id: product.id,
         handle: product.handle,
         title: product.title,
-        featuredImage: { url: product.featured_image_url ?? "", altText: product.title, width: 400, height: 400 },
+        featuredImage: {
+          url: product.featured_image_url ?? "",
+          altText: product.title,
+          width: 400,
+          height: 400,
+        },
         availableForSale: true,
         description: "",
         descriptionHtml: "",
         options: [],
         priceRange: {
-          maxVariantPrice: { amount: String(product.regular_price), currencyCode: "EUR" },
-          minVariantPrice: { amount: String(product.regular_price), currencyCode: "EUR" },
+          maxVariantPrice: {
+            amount: String(product.regular_price),
+            currencyCode: "EUR",
+          },
+          minVariantPrice: {
+            amount: String(product.regular_price),
+            currencyCode: "EUR",
+          },
         },
         variants: [variant],
         images: [],
         tags: [],
         seo: { title: "", description: "" },
       } as unknown as Parameters<typeof addCartItem>[1];
-      addCartItem(variant as Parameters<typeof addCartItem>[0], productData, qty);
+      addCartItem(
+        variant as Parameters<typeof addCartItem>[0],
+        productData,
+        qty,
+      );
       toast.success(`✓ ${product.title} ajouté au panier`);
       setSku("");
       setQty(1);

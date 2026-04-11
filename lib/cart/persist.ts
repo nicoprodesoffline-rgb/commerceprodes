@@ -3,9 +3,9 @@
  * Used for abandoned cart recovery (B2B sales follow-up).
  */
 
-import type { Cart } from 'lib/supabase/types';
+import type { Cart } from "lib/supabase/types";
 
-const SESSION_KEY = 'prodes_cart_session_id';
+const SESSION_KEY = "prodes_cart_session_id";
 
 function getOrCreateSessionId(): string {
   try {
@@ -16,7 +16,7 @@ function getOrCreateSessionId(): string {
     }
     return sid;
   } catch {
-    return 'anon-' + Date.now();
+    return "anon-" + Date.now();
   }
 }
 
@@ -41,9 +41,9 @@ export async function persistAbandonedCart(
   }));
 
   try {
-    await fetch('/api/cart/abandon', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/cart/abandon", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         session_id: sessionId,
         email: email ?? null,

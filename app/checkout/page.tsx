@@ -49,12 +49,18 @@ export default function CheckoutPage() {
       <div className="mx-auto max-w-screen-2xl px-4 py-8 lg:px-6">
         {/* Breadcrumb */}
         <nav className="mb-6 flex items-center gap-1.5 text-sm text-gray-500">
-          <a href="/cart" className="hover:text-[#cc1818] transition-colors">Panier</a>
+          <a href="/cart" className="hover:text-[#cc1818] transition-colors">
+            Panier
+          </a>
           <span>/</span>
-          <span className="text-gray-900 font-medium">Finaliser la commande</span>
+          <span className="text-gray-900 font-medium">
+            Finaliser la commande
+          </span>
         </nav>
 
-        <h1 className="mb-8 text-2xl font-bold text-gray-900">Finaliser la commande</h1>
+        <h1 className="mb-8 text-2xl font-bold text-gray-900">
+          Finaliser la commande
+        </h1>
 
         <CheckoutForm cartSummary={cartSummary} />
       </div>

@@ -1,15 +1,25 @@
 type KpiColor = "blue" | "green" | "orange" | "purple" | "gray";
 
-const colorMap: Record<
-  KpiColor,
-  { bg: string; text: string; iconBg: string }
-> = {
-  blue: { bg: "bg-blue-50", text: "text-blue-700", iconBg: "bg-blue-100" },
-  green: { bg: "bg-green-50", text: "text-green-700", iconBg: "bg-green-100" },
-  orange: { bg: "bg-orange-50", text: "text-orange-700", iconBg: "bg-orange-100" },
-  purple: { bg: "bg-purple-50", text: "text-purple-700", iconBg: "bg-purple-100" },
-  gray: { bg: "bg-gray-50", text: "text-gray-700", iconBg: "bg-gray-100" },
-};
+const colorMap: Record<KpiColor, { bg: string; text: string; iconBg: string }> =
+  {
+    blue: { bg: "bg-blue-50", text: "text-blue-700", iconBg: "bg-blue-100" },
+    green: {
+      bg: "bg-green-50",
+      text: "text-green-700",
+      iconBg: "bg-green-100",
+    },
+    orange: {
+      bg: "bg-orange-50",
+      text: "text-orange-700",
+      iconBg: "bg-orange-100",
+    },
+    purple: {
+      bg: "bg-purple-50",
+      text: "text-purple-700",
+      iconBg: "bg-purple-100",
+    },
+    gray: { bg: "bg-gray-50", text: "text-gray-700", iconBg: "bg-gray-100" },
+  };
 
 export default function KpiCard({
   title,

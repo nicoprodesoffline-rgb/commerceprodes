@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide-assistant",
+        "--project-from-cwd",
+        "--enable-web-dashboard",
+        "true",
+        "--open-web-dashboard",
+        "false"
+      ]
+    },
+    "tavily": {
+      "command": "npx",
+      "args": ["-y", "tavily-mcp@latest"]
+    },
+    "retab": {
+      "type": "http",
+      "url": "https://mcp.retab.com/mcp",
+      "headers": {
+        "Api-Key": "${RETAB_API_KEY}"
+      }
+    }
+  }
+}

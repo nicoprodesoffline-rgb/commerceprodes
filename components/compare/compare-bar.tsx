@@ -27,7 +27,9 @@ export default function CompareBar() {
                 key={handle}
                 className="flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
               >
-                <span className="max-w-[80px] truncate">{handle.replace(/-/g, " ")}</span>
+                <span className="max-w-[80px] truncate">
+                  {handle.replace(/-/g, " ")}
+                </span>
                 <button
                   onClick={() => removeFromCompare(handle)}
                   className="ml-0.5 text-gray-400 hover:text-gray-700 transition-colors"

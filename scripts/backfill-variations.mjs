@@ -51,7 +51,9 @@ const SUPABASE_URL = envVal("NEXT_PUBLIC_SUPABASE_URL");
 const SERVICE_KEY = envVal("SUPABASE_SERVICE_ROLE_KEY");
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
-  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  console.error(
+    "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
+  );
   process.exit(1);
 }
 
@@ -65,8 +67,12 @@ function parseCsvLine(line) {
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
-      else { inQuotes = !inQuotes; }
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
     } else if (ch === "," && !inQuotes) {
       result.push(cur);
       cur = "";
@@ -126,7 +132,10 @@ async function main() {
         .from("products")
         .update({ parent_sku: parentSku })
         .eq("sku", row.sku);
-      if (error) { errors++; continue; }
+      if (error) {
+        errors++;
+        continue;
+      }
     }
     productUpdates++;
   }
@@ -138,7 +147,9 @@ async function main() {
 
     const patch = {};
 
-    const eco = parseFloat(row["meta:eco_part"] || row["meta:_eco_contribution"] || "");
+    const eco = parseFloat(
+      row["meta:eco_part"] || row["meta:_eco_contribution"] || "",
+    );
     if (!isNaN(eco) && eco > 0) patch.eco_contribution = eco;
 
     const supplierRef = (row["meta:ref_fournisseur"] || "").trim();
@@ -148,12 +159,21 @@ async function main() {
     if (supplierName) patch.supplier_name = supplierName;
 
     const purchasePrice = parseFloat(row["meta:prix_achat"] || "");
-    if (!isNaN(purchasePrice) && purchasePrice > 0) patch.supplier_purchase_price = purchasePrice;
+    if (!isNaN(purchasePrice) && purchasePrice > 0)
+      patch.supplier_purchase_price = purchasePrice;
 
-    const minQty = parseInt(row["meta:_min_order_quantity"] || row["meta:min_quantity"] || "");
+    const minQty = parseInt(
+      row["meta:_min_order_quantity"] || row["meta:min_quantity"] || "",
+    );
     if (!isNaN(minQty) && minQty > 1) patch.min_quantity = minQty;
 
-    const gtin = (row["meta:gtin"] || row["meta:ean"] || row["meta:upc"] || row["meta:isbn"] || "").trim();
+    const gtin = (
+      row["meta:gtin"] ||
+      row["meta:ean"] ||
+      row["meta:upc"] ||
+      row["meta:isbn"] ||
+      ""
+    ).trim();
     if (gtin) patch.gtin_upc_ean_isbn = gtin;
 
     if (Object.keys(patch).length === 0) continue;
@@ -163,7 +183,10 @@ async function main() {
         .from("variants")
         .update(patch)
         .eq("sku", row.sku);
-      if (error) { errors++; continue; }
+      if (error) {
+        errors++;
+        continue;
+      }
     } else {
       console.log(`  [dry] variant ${row.sku}:`, patch);
     }
@@ -174,11 +197,16 @@ async function main() {
   console.log("[3/3] Backfilling default_attribute_values…");
   for (const row of products) {
     if (!row.sku) continue;
-    const raw = row["meta:default_attributes"] || row["meta:_default_attributes"] || "";
+    const raw =
+      row["meta:default_attributes"] || row["meta:_default_attributes"] || "";
     if (!raw) continue;
 
     let parsed = null;
-    try { parsed = JSON.parse(raw); } catch { /* ignore */ }
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      /* ignore */
+    }
     if (!parsed) continue;
 
     if (!dryRun) {
@@ -186,7 +214,10 @@ async function main() {
         .from("products")
         .update({ default_attribute_values: parsed })
         .eq("sku", row.sku);
-      if (error) { errors++; continue; }
+      if (error) {
+        errors++;
+        continue;
+      }
     }
     productUpdates++;
   }
@@ -197,4 +228,7 @@ async function main() {
   console.log(`   Errors: ${errors}`);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

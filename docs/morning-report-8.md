@@ -7,34 +7,36 @@
 
 ## Bilan par étape
 
-| Étape | Description | Statut |
-|---|---|---|
-| 0 | PDF fiche technique | ✅ Existait déjà (session 5) — vérifié |
-| 1 | Gamme PRO-INTENS + produits complémentaires | ✅ Page créée, produits complémentaires existaient |
-| 2 | Devis-express enrichi | ✅ type_organisme, Chorus Pro badge, préremplissage URL |
-| 3 | Admin devis enrichi + import fournisseur | ✅ Status endpoint + drag-drop import + import_logs |
-| 4 | Catalogue filtres avancés URL persistants | ⏭️ Non atteint (scope trop large, hors priorité 1-3) |
-| 5 | Pages 404/500 branded + breadcrumbs SEO | ✅ 404 PRODES rouge + barre recherche + breadcrumbs JSON-LD |
-| 6 | Analytics tracking | ✅ tracker.ts + /api/track + SQL 007 |
-| 7 | CTA thématique IA + sections homepage | ✅ Module 5 admin IA + API + SQL 004 |
-| 8 | Bandeau promotionnel configurable | ✅ PromoBanner + /api/admin/site-config + admin/contenu |
-| 9 | Mobile bottom nav + skeleton loading | ✅ MobileBottomNav + Skeleton + ProductCardSkeleton |
-| 10 | Historique commandes + comparateur print/CSV | ✅ mes-commandes (localStorage) — comparateur print ⏭️ |
-| 11 | Témoignages + homepage éditoriale | ✅ TestimonialsSection + backoffice admin/contenu |
-| 12 | Accessibilité + CSS print | ✅ focus-visible #cc1818 + @media print globals.css |
-| 13 | Rapport + commit final | ✅ |
+| Étape | Description                                  | Statut                                                      |
+| ----- | -------------------------------------------- | ----------------------------------------------------------- |
+| 0     | PDF fiche technique                          | ✅ Existait déjà (session 5) — vérifié                      |
+| 1     | Gamme PRO-INTENS + produits complémentaires  | ✅ Page créée, produits complémentaires existaient          |
+| 2     | Devis-express enrichi                        | ✅ type_organisme, Chorus Pro badge, préremplissage URL     |
+| 3     | Admin devis enrichi + import fournisseur     | ✅ Status endpoint + drag-drop import + import_logs         |
+| 4     | Catalogue filtres avancés URL persistants    | ⏭️ Non atteint (scope trop large, hors priorité 1-3)        |
+| 5     | Pages 404/500 branded + breadcrumbs SEO      | ✅ 404 PRODES rouge + barre recherche + breadcrumbs JSON-LD |
+| 6     | Analytics tracking                           | ✅ tracker.ts + /api/track + SQL 007                        |
+| 7     | CTA thématique IA + sections homepage        | ✅ Module 5 admin IA + API + SQL 004                        |
+| 8     | Bandeau promotionnel configurable            | ✅ PromoBanner + /api/admin/site-config + admin/contenu     |
+| 9     | Mobile bottom nav + skeleton loading         | ✅ MobileBottomNav + Skeleton + ProductCardSkeleton         |
+| 10    | Historique commandes + comparateur print/CSV | ✅ mes-commandes (localStorage) — comparateur print ⏭️      |
+| 11    | Témoignages + homepage éditoriale            | ✅ TestimonialsSection + backoffice admin/contenu           |
+| 12    | Accessibilité + CSS print                    | ✅ focus-visible #cc1818 + @media print globals.css         |
+| 13    | Rapport + commit final                       | ✅                                                          |
 
 ---
 
 ## Nouveaux fichiers créés
 
 ### App routes
+
 - `app/gamme-pro-intens/page.tsx` — page premium PRO-INTENS avec fallback 0 produits
 - `app/mes-commandes/page.tsx` — historique devis localStorage avec suivi + recommander
 - `app/admin/import/page.tsx` — drag-drop upload + n8n + logs récents
 - `app/admin/contenu/page.tsx` — bandeau éditeur + contacts + témoignages inline
 
 ### API routes
+
 - `app/api/track/route.ts` — POST analytics (product_views + cart_events)
 - `app/api/admin/devis/[id]/status/route.ts` — PATCH statut avec Bearer auth
 - `app/api/admin/import-logs/route.ts` — GET/POST logs d'import
@@ -45,6 +47,7 @@
 - `app/api/admin/homepage-sections/route.ts` — GET/POST/PATCH sections dynamiques
 
 ### Components
+
 - `components/layout/breadcrumbs.tsx` — Breadcrumbs SEO + JSON-LD BreadcrumbList
 - `components/layout/promo-banner.tsx` — bandeau configurable rouge, fermable localStorage
 - `components/layout/mobile-bottom-nav.tsx` — bottom nav fixed mobile avec badge panier
@@ -53,12 +56,14 @@
 - `components/home/testimonials-section.tsx` — grille témoignages Supabase + fallback
 
 ### SQL Migrations
+
 - `004-homepage-sections.sql` — table homepage_sections
 - `006-import-logs.sql` — table import_logs
 - `007-analytics.sql` — tables product_views + cart_events
 - `008-site-config.sql` — table site_config + seed + table testimonials
 
 ### Lib
+
 - `lib/analytics/tracker.ts` — trackProductView() + trackCartEvent() fire-and-forget
 
 ---
@@ -86,6 +91,7 @@ docs/sql-migrations/006-import-logs.sql         (logs d'import)
 docs/sql-migrations/007-analytics.sql           (tracking vues + panier)
 docs/sql-migrations/008-site-config.sql         (config + témoignages)
 ```
+
 Note : 005-competitive-watch.sql déjà exécuté ✅
 
 ---
@@ -107,4 +113,4 @@ Toutes déjà listées en session 7. Aucune nouvelle requise.
 
 ---
 
-*Généré automatiquement — Session 8 PRODES Commerce*
+_Généré automatiquement — Session 8 PRODES Commerce_

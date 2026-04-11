@@ -3,7 +3,10 @@
 import { PriceTierDisplay } from "lib/supabase/types";
 
 function formatPriceFR(price: number): string {
-  return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) + " € HT";
+  return (
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) +
+    " € HT"
+  );
 }
 
 export function PriceGrid({
@@ -53,12 +56,18 @@ export function PriceGrid({
               if (pricingType === "fixed" && tier.price != null) {
                 // tier.price = discount amount, not final price
                 unitPrice = basePrice - tier.price;
-              } else if (pricingType === "percentage" && tier.discountPercent != null) {
+              } else if (
+                pricingType === "percentage" &&
+                tier.discountPercent != null
+              ) {
                 unitPrice = basePrice * (1 - tier.discountPercent / 100);
               }
 
               // Guard against corrupt data
-              if (unitPrice !== null && (unitPrice <= 0 || unitPrice >= basePrice)) {
+              if (
+                unitPrice !== null &&
+                (unitPrice <= 0 || unitPrice >= basePrice)
+              ) {
                 unitPrice = null;
               }
 

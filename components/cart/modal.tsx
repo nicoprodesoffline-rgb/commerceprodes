@@ -65,7 +65,11 @@ export default function CartModal() {
                   <p className="mt-6 text-center text-xl font-semibold text-gray-700">
                     Votre panier est vide
                   </p>
-                  <Link href="/search" onClick={closeCart} className="mt-4 text-sm text-[#cc1818] hover:underline">
+                  <Link
+                    href="/search"
+                    onClick={closeCart}
+                    className="mt-4 text-sm text-[#cc1818] hover:underline"
+                  >
                     Voir le catalogue →
                   </Link>
                 </div>
@@ -187,11 +191,16 @@ export default function CartModal() {
                       <p className="text-right text-gray-700">À calculer</p>
                     </div>
                     <div className="mb-3 flex items-center justify-between">
-                      <p className="font-semibold text-gray-800">Total TTC (TVA 20%)</p>
+                      <p className="font-semibold text-gray-800">
+                        Total TTC (TVA 20%)
+                      </p>
                       <p className="text-right font-bold text-gray-900">
-                        {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(
-                          Number(cart.cost.totalAmount.amount) * 1.2
-                        )} €
+                        {new Intl.NumberFormat("fr-FR", {
+                          minimumFractionDigits: 2,
+                        }).format(
+                          Number(cart.cost.totalAmount.amount) * 1.2,
+                        )}{" "}
+                        €
                       </p>
                     </div>
                   </div>
@@ -244,7 +253,11 @@ function CheckoutButton() {
       type="submit"
       disabled={pending}
     >
-      {pending ? <LoadingDots className="bg-white" /> : "Finaliser la commande →"}
+      {pending ? (
+        <LoadingDots className="bg-white" />
+      ) : (
+        "Finaliser la commande →"
+      )}
     </button>
   );
 }

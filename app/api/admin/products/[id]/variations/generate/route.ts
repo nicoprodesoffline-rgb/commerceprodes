@@ -5,9 +5,11 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
+import { log } from "lib/logger";
 import { supabaseServer } from "lib/supabase/client";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function cartesian(arrays: string[][]): string[][] {
   return arrays.reduce<string[][]>(
@@ -27,13 +29,19 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!checkAdminAuth(req)) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  if (!checkAdminAuth(req))
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   const { id } = await params;
-  if (!UUID_RE.test(id)) return NextResponse.json({ error: "ID invalide" }, { status: 400 });
+  if (!UUID_RE.test(id))
+    return NextResponse.json({ error: "ID invalide" }, { status: 400 });
 
   let body: Record<string, unknown> = {};
-  try { body = await req.json(); } catch { /* optional body */ }
+  try {
+    body = await req.json();
+  } catch {
+    /* optional body */
+  }
 
   const client = supabaseServer();
   const maxNew = Math.max(1, Math.min(500, Number(body.max_new ?? 200)));
@@ -45,7 +53,8 @@ export async function POST(
     .eq("id", id)
     .single();
 
-  if (!product) return NextResponse.json({ error: "Produit non trouvé" }, { status: 404 });
+  if (!product)
+    return NextResponse.json({ error: "Produit non trouvé" }, { status: 404 });
 
   // Source of truth for generated combinations: product_attributes(is_variation=true)
   const { data: productAttrs, error: attrsError } = await client
@@ -67,7 +76,10 @@ export async function POST(
     .filter((a: { terms: string[] }) => a.terms.length > 0);
 
   if (attributeDefs.length === 0) {
-    return NextResponse.json({ error: "Aucun attribut défini pour générer des variations" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Aucun attribut défini pour générer des variations" },
+      { status: 400 },
+    );
   }
 
   // Get existing combinations to avoid duplicates
@@ -81,10 +93,14 @@ export async function POST(
 
   // Guard against accidental combinatorial explosion
   if (combinations.length > 5000 && body.force !== true) {
-    return NextResponse.json({
-      error: "Trop de combinaisons potentielles. Ajoutez {\"force\":true} ou réduisez les attributs.",
-      total_combinations: combinations.length,
-    }, { status: 400 });
+    return NextResponse.json(
+      {
+        error:
+          'Trop de combinaisons potentielles. Ajoutez {"force":true} ou réduisez les attributs.',
+        total_combinations: combinations.length,
+      },
+      { status: 400 },
+    );
   }
 
   const existingKeys = new Set<string>();
@@ -98,7 +114,9 @@ export async function POST(
     if (key) existingKeys.add(key);
   }
 
-  const usedSkus = new Set((existingVariants ?? []).map((v: any) => String(v.sku)));
+  const usedSkus = new Set(
+    (existingVariants ?? []).map((v: any) => String(v.sku)),
+  );
 
   let created = 0;
   let skipped = 0;
@@ -153,7 +171,10 @@ export async function POST(
       .select("id")
       .single();
 
-    if (error || !newVariant) { skipped++; continue; }
+    if (error || !newVariant) {
+      skipped++;
+      continue;
+    }
 
     // Insert attribute values on canonical schema (attribute_id + term_slug)
     const attrRows = combo.map((val, j) => ({
@@ -161,7 +182,9 @@ export async function POST(
       attribute_id: attrIds[j],
       term_slug: val,
     }));
-    const { error: attrsInsertError } = await client.from("variant_attributes").insert(attrRows as never);
+    const { error: attrsInsertError } = await client
+      .from("variant_attributes")
+      .insert(attrRows as never);
     if (attrsInsertError) {
       // Cleanup variant if attributes insertion fails
       await client.from("variants").delete().eq("id", newVariant.id);
@@ -173,15 +196,14 @@ export async function POST(
     created++;
   }
 
-  console.log(JSON.stringify({
-    event: "admin.variations.generate",
+  log("info", "admin.variations.generate", {
     product_id: id,
     created,
     skipped,
     attempts,
     total_combinations: combinations.length,
     max_new: maxNew,
-  }));
+  });
   return NextResponse.json({
     ok: true,
     created,

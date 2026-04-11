@@ -6,7 +6,8 @@ import CompareClient from "./compare-client";
 
 export const metadata: Metadata = {
   title: "Comparateur produits | PRODES",
-  description: "Comparez côte à côte les caractéristiques et les prix de nos produits.",
+  description:
+    "Comparez côte à côte les caractéristiques et les prix de nos produits.",
   robots: { index: false, follow: false },
 };
 

@@ -22,11 +22,17 @@ type CartSummary = {
 };
 
 function formatHT(n: number) {
-  return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) + " € HT";
+  return (
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) +
+    " € HT"
+  );
 }
 
 function formatTTC(n: number) {
-  return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) + " € TTC";
+  return (
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) +
+    " € TTC"
+  );
 }
 
 const MODES_PAIEMENT = [
@@ -43,7 +49,8 @@ const MODES_PAIEMENT = [
   {
     id: "mandat",
     label: "Mandat administratif",
-    description: "Réservé aux organismes publics (mairies, écoles, administrations)",
+    description:
+      "Réservé aux organismes publics (mairies, écoles, administrations)",
   },
   {
     id: "carte",
@@ -93,11 +100,13 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
         });
         const data = await res.json();
         if (!res.ok) {
-          setError(data.error ?? "Une erreur est survenue. Veuillez réessayer.");
+          setError(
+            data.error ?? "Une erreur est survenue. Veuillez réessayer.",
+          );
           return;
         }
         router.push(
-          `/checkout/confirmation?orderId=${encodeURIComponent(data.orderId)}&mode=${encodeURIComponent(data.modePaiement)}`
+          `/checkout/confirmation?orderId=${encodeURIComponent(data.orderId)}&mode=${encodeURIComponent(data.modePaiement)}`,
         );
       } catch {
         setError("Erreur de connexion. Veuillez réessayer.");
@@ -113,28 +122,73 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
           {/* Section 1 — Coordonnées */}
           <section className="rounded-lg border border-gray-200 bg-white">
             <div className="border-b border-gray-100 px-5 py-3">
-              <h2 className="text-sm font-semibold text-gray-800">1. Vos coordonnées</h2>
+              <h2 className="text-sm font-semibold text-gray-800">
+                1. Vos coordonnées
+              </h2>
             </div>
             <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Prénom *</label>
-                <input name="prenom" required type="text" className={inputClass} placeholder="Jean" />
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Prénom *
+                </label>
+                <input
+                  name="prenom"
+                  required
+                  type="text"
+                  className={inputClass}
+                  placeholder="Jean"
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Nom *</label>
-                <input name="nom" required type="text" className={inputClass} placeholder="Dupont" />
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Nom *
+                </label>
+                <input
+                  name="nom"
+                  required
+                  type="text"
+                  className={inputClass}
+                  placeholder="Dupont"
+                />
               </div>
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-gray-700">Nom de votre organisme *</label>
-                <input name="organisme" required type="text" className={inputClass} placeholder="Mairie de Lyon" />
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Nom de votre organisme *
+                </label>
+                <input
+                  name="organisme"
+                  required
+                  type="text"
+                  className={inputClass}
+                  placeholder="Mairie de Lyon"
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Email *</label>
-                <input name="email" required type="email" className={inputClass} placeholder="jean.dupont@mairie.fr" />
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Email *
+                </label>
+                <input
+                  name="email"
+                  required
+                  type="email"
+                  className={inputClass}
+                  placeholder="jean.dupont@mairie.fr"
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Téléphone portable * <span className="font-normal text-gray-400">(obligatoire pour la livraison)</span></label>
-                <input name="telephone" required type="tel" className={inputClass} placeholder="06 12 34 56 78" />
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Téléphone portable *{" "}
+                  <span className="font-normal text-gray-400">
+                    (obligatoire pour la livraison)
+                  </span>
+                </label>
+                <input
+                  name="telephone"
+                  required
+                  type="tel"
+                  className={inputClass}
+                  placeholder="06 12 34 56 78"
+                />
               </div>
             </div>
           </section>
@@ -142,32 +196,82 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
           {/* Section 2 — Adresse */}
           <section className="rounded-lg border border-gray-200 bg-white">
             <div className="border-b border-gray-100 px-5 py-3">
-              <h2 className="text-sm font-semibold text-gray-800">2. Adresse de livraison</h2>
+              <h2 className="text-sm font-semibold text-gray-800">
+                2. Adresse de livraison
+              </h2>
             </div>
             <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-gray-700">Numéro et nom de rue *</label>
-                <input name="adresse" required type="text" className={inputClass} placeholder="15 rue de la Mairie" />
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Numéro et nom de rue *
+                </label>
+                <input
+                  name="adresse"
+                  required
+                  type="text"
+                  className={inputClass}
+                  placeholder="15 rue de la Mairie"
+                />
               </div>
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-gray-700">Bâtiment, appartement, lot (optionnel)</label>
-                <input name="complement" type="text" className={inputClass} placeholder="Bâtiment A, 2ème étage" />
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Bâtiment, appartement, lot (optionnel)
+                </label>
+                <input
+                  name="complement"
+                  type="text"
+                  className={inputClass}
+                  placeholder="Bâtiment A, 2ème étage"
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Code postal *</label>
-                <input name="codePostal" required type="text" className={inputClass} placeholder="69001" pattern="[0-9]{5}" />
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Code postal *
+                </label>
+                <input
+                  name="codePostal"
+                  required
+                  type="text"
+                  className={inputClass}
+                  placeholder="69001"
+                  pattern="[0-9]{5}"
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Ville *</label>
-                <input name="ville" required type="text" className={inputClass} placeholder="Lyon" />
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Ville *
+                </label>
+                <input
+                  name="ville"
+                  required
+                  type="text"
+                  className={inputClass}
+                  placeholder="Lyon"
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Jours de réception *</label>
-                <input name="joursReception" required type="text" className={inputClass} placeholder="Du lundi au vendredi" />
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Jours de réception *
+                </label>
+                <input
+                  name="joursReception"
+                  required
+                  type="text"
+                  className={inputClass}
+                  placeholder="Du lundi au vendredi"
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Horaires de réception *</label>
-                <input name="horairesReception" required type="text" className={inputClass} placeholder="De 9h à 13h" />
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Horaires de réception *
+                </label>
+                <input
+                  name="horairesReception"
+                  required
+                  type="text"
+                  className={inputClass}
+                  placeholder="De 9h à 13h"
+                />
               </div>
             </div>
           </section>
@@ -175,7 +279,9 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
           {/* Section 3 — Notes */}
           <section className="rounded-lg border border-gray-200 bg-white">
             <div className="border-b border-gray-100 px-5 py-3">
-              <h2 className="text-sm font-semibold text-gray-800">3. Notes de commande (optionnel)</h2>
+              <h2 className="text-sm font-semibold text-gray-800">
+                3. Notes de commande (optionnel)
+              </h2>
             </div>
             <div className="p-5">
               <textarea
@@ -194,21 +300,35 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
             {/* Récapitulatif */}
             <div className="rounded-lg border border-gray-200 bg-white">
               <div className="border-b border-gray-100 px-5 py-3">
-                <h2 className="text-sm font-semibold text-gray-800">Récapitulatif</h2>
+                <h2 className="text-sm font-semibold text-gray-800">
+                  Récapitulatif
+                </h2>
               </div>
               <div className="divide-y divide-gray-50 px-5 py-2">
                 {cartSummary.lines.map((line, i) => (
                   <div key={i} className="flex items-center gap-3 py-3">
                     <div className="h-10 w-10 flex-none overflow-hidden rounded border border-gray-100 bg-gray-50">
                       {line.imageUrl ? (
-                        <Image src={line.imageUrl} alt={line.title} width={40} height={40} className="h-full w-full object-contain" />
+                        <Image
+                          src={line.imageUrl}
+                          alt={line.title}
+                          width={40}
+                          height={40}
+                          className="h-full w-full object-contain"
+                        />
                       ) : (
                         <div className="h-full w-full bg-gray-100" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-800 truncate">{line.title}</p>
-                      {line.variant && <p className="text-xs text-gray-400 truncate">{line.variant}</p>}
+                      <p className="text-xs font-medium text-gray-800 truncate">
+                        {line.title}
+                      </p>
+                      {line.variant && (
+                        <p className="text-xs text-gray-400 truncate">
+                          {line.variant}
+                        </p>
+                      )}
                       <p className="text-xs text-gray-500">× {line.quantity}</p>
                     </div>
                     <p className="text-xs font-semibold text-gray-900 whitespace-nowrap">
@@ -242,7 +362,9 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
             {/* Mode de paiement */}
             <div className="rounded-lg border border-gray-200 bg-white">
               <div className="border-b border-gray-100 px-5 py-3">
-                <h2 className="text-sm font-semibold text-gray-800">Mode de paiement</h2>
+                <h2 className="text-sm font-semibold text-gray-800">
+                  Mode de paiement
+                </h2>
               </div>
               <div className="divide-y divide-gray-50 px-5 py-2">
                 {MODES_PAIEMENT.map((mode) => (
@@ -255,13 +377,19 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
                       name="modePaiement"
                       value={mode.id}
                       checked={modePaiement === mode.id}
-                      onChange={() => !mode.disabled && setModePaiement(mode.id)}
+                      onChange={() =>
+                        !mode.disabled && setModePaiement(mode.id)
+                      }
                       disabled={mode.disabled}
                       className="mt-0.5 accent-[#cc1818]"
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-800">{mode.label}</p>
-                      <p className="text-xs text-gray-500">{mode.description}</p>
+                      <p className="text-sm font-medium text-gray-800">
+                        {mode.label}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {mode.description}
+                      </p>
                     </div>
                   </label>
                 ))}
@@ -270,8 +398,17 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
               {/* Info mandat */}
               {modePaiement === "mandat" && (
                 <div className="mx-5 mb-4 rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800">
-                  Cette option est réservée aux organismes publics (mairies, écoles, administrations). Votre commande sera traitée à réception du bon de commande daté, signé et tamponné. Envoyez-le signé à{" "}
-                  <a href="mailto:contact@prodes.fr" className="font-medium underline">contact@prodes.fr</a>.
+                  Cette option est réservée aux organismes publics (mairies,
+                  écoles, administrations). Votre commande sera traitée à
+                  réception du bon de commande daté, signé et tamponné.
+                  Envoyez-le signé à{" "}
+                  <a
+                    href="mailto:contact@prodes.fr"
+                    className="font-medium underline"
+                  >
+                    contact@prodes.fr
+                  </a>
+                  .
                 </div>
               )}
             </div>
@@ -287,7 +424,9 @@ export function CheckoutForm({ cartSummary }: { cartSummary: CartSummary }) {
                 />
                 <span className="text-sm text-gray-700">
                   Livraison sur rendez-vous{" "}
-                  <span className="font-medium text-gray-900">(+20,00 € HT)</span>
+                  <span className="font-medium text-gray-900">
+                    (+20,00 € HT)
+                  </span>
                 </span>
               </label>
             </div>

@@ -43,7 +43,11 @@ const COLOR_KEYWORDS: [string, string][] = [
 ];
 
 function getColorHex(value: string): string {
-  const lower = value.toLowerCase().replace(/-/g, " ").replace(/ral \d+/gi, "").trim();
+  const lower = value
+    .toLowerCase()
+    .replace(/-/g, " ")
+    .replace(/ral \d+/gi, "")
+    .trim();
   for (const [keyword, hex] of COLOR_KEYWORDS) {
     if (lower.includes(keyword)) return hex;
   }
@@ -52,18 +56,20 @@ function getColorHex(value: string): string {
 
 function isColorOption(name: string): boolean {
   const n = name.toLowerCase();
-  return n === "coloris" || n === "couleur" || n === "color" || n.includes("coloris");
+  return (
+    n === "coloris" || n === "couleur" || n === "color" || n.includes("coloris")
+  );
 }
 
 function formatOptionName(name: string): string {
   const overrides: Record<string, string> = {
     "pa_les-lots": "Choix du lot",
     "pa-les-lots": "Choix du lot",
-    "pietement": "Piètement",
-    "coloris": "Coloris",
-    "couleur": "Couleur",
-    "taille": "Taille",
-    "dimension": "Dimension",
+    pietement: "Piètement",
+    coloris: "Coloris",
+    couleur: "Couleur",
+    taille: "Taille",
+    dimension: "Dimension",
   };
   const lower = name.toLowerCase();
   if (overrides[lower]) return overrides[lower]!;
@@ -91,7 +97,9 @@ export function VariantSelector({
   const multiValueOptions = options.filter((o) => o.values.length >= 2);
   const hasNoOptionsOrJustOneOption = multiValueOptions.length === 0;
 
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
+  const [selectedOptions, setSelectedOptions] = useState<
+    Record<string, string>
+  >(() => {
     // Pre-select first value of each option (including single-value ones for matching)
     const initial: Record<string, string> = {};
     for (const option of options) {

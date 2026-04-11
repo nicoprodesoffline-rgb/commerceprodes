@@ -28,14 +28,23 @@ async function fetchDashboardStats() {
 
   const results = await Promise.allSettled([
     // 0 — produits actifs
-    client.from("products").select("id", { count: "exact", head: true }).eq("status", "publish"),
+    client
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "publish"),
     // 1 — devis en attente
-    client.from("devis_requests").select("id", { count: "exact", head: true }).eq("status", "nouveau"),
+    client
+      .from("devis_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "nouveau"),
     // 2 — paniers abandonnés 7j
     client
       .from("abandoned_carts")
       .select("id", { count: "exact", head: true })
-      .gt("created_at", new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString())
+      .gt(
+        "created_at",
+        new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString(),
+      )
       .is("recovered_at", null),
     // 3 — nouvelles demandes 24h
     client
@@ -170,7 +179,9 @@ export default async function AdminDashboard() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         {statBlocks.map((s) => {
           const cls =
-            s.highlight && s.color ? colorClasses[s.color] : "border-gray-200 bg-white";
+            s.highlight && s.color
+              ? colorClasses[s.color]
+              : "border-gray-200 bg-white";
           return (
             <Link
               key={s.title}
@@ -180,7 +191,9 @@ export default async function AdminDashboard() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-medium text-gray-500">{s.title}</p>
-                  <p className="mt-1 text-2xl font-bold text-gray-900">{s.value}</p>
+                  <p className="mt-1 text-2xl font-bold text-gray-900">
+                    {s.value}
+                  </p>
                 </div>
                 <span className="text-2xl">{s.icon}</span>
               </div>
@@ -192,8 +205,13 @@ export default async function AdminDashboard() {
       {/* Derniers devis */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Dernières demandes de devis</h2>
-          <Link href="/admin/devis" className="text-sm text-[#cc1818] hover:underline">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Dernières demandes de devis
+          </h2>
+          <Link
+            href="/admin/devis"
+            className="text-sm text-[#cc1818] hover:underline"
+          >
             Voir toutes →
           </Link>
         </div>
@@ -207,11 +225,21 @@ export default async function AdminDashboard() {
             <table className="w-full text-sm">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Date</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Nom</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">Email</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Produit</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Statut</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">
+                    Date
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">
+                    Nom
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">
+                    Email
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">
+                    Produit
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">
+                    Statut
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -220,9 +248,15 @@ export default async function AdminDashboard() {
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                       {formatDate(d.created_at)}
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{d.nom}</td>
-                    <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{d.email}</td>
-                    <td className="px-4 py-3 text-gray-700 max-w-xs truncate">{d.produit}</td>
+                    <td className="px-4 py-3 font-medium text-gray-800">
+                      {d.nom}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 hidden md:table-cell">
+                      {d.email}
+                    </td>
+                    <td className="px-4 py-3 text-gray-700 max-w-xs truncate">
+                      {d.produit}
+                    </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={d.status} />
                     </td>
@@ -239,11 +273,21 @@ export default async function AdminDashboard() {
 
       {/* Quick links */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Accès rapides</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          Accès rapides
+        </h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
           {[
-            { href: "/admin/produits", label: "Gérer les produits", icon: "📦" },
-            { href: "/admin/categories", label: "Gérer les catégories", icon: "🗂️" },
+            {
+              href: "/admin/produits",
+              label: "Gérer les produits",
+              icon: "📦",
+            },
+            {
+              href: "/admin/categories",
+              label: "Gérer les catégories",
+              icon: "🗂️",
+            },
             { href: "/admin/devis", label: "Toutes les demandes", icon: "📋" },
             { href: "/admin/ia", label: "Outils IA", icon: "🤖" },
           ].map((item) => (
@@ -253,7 +297,9 @@ export default async function AdminDashboard() {
               className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 hover:border-[#cc1818] hover:shadow-sm transition-all"
             >
               <span className="text-2xl">{item.icon}</span>
-              <span className="font-medium text-gray-800 text-sm">{item.label}</span>
+              <span className="font-medium text-gray-800 text-sm">
+                {item.label}
+              </span>
             </Link>
           ))}
         </div>

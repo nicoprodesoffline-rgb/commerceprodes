@@ -16,7 +16,9 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("products")
-    .select("id, name, slug, sku, regular_price, featured_image_url")
+    .select(
+      "id, name, slug, sku, regular_price, product_images (url, alt_text, is_featured, position)",
+    )
     .in("slug", handles)
     .eq("status", "publish");
 
@@ -24,14 +26,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const products = (data ?? []).map((p: any) => ({
-    id: p.id,
-    handle: p.slug,
-    title: p.name,
-    sku: p.sku,
-    regular_price: Number(p.regular_price) || 0,
-    featured_image_url: p.featured_image_url,
-  }));
+  const products = (data ?? []).map((p: any) => {
+    const images: Array<{
+      url: string;
+      alt_text: string | null;
+      is_featured: boolean;
+      position: number;
+    }> = Array.isArray(p.product_images) ? p.product_images : [];
+    const featuredImage =
+      images.find((img) => img.is_featured) ?? images[0] ?? null;
+    return {
+      id: p.id,
+      handle: p.slug,
+      title: p.name,
+      sku: p.sku,
+      regular_price: Number(p.regular_price) || 0,
+      featured_image_url: featuredImage?.url ?? null,
+    };
+  });
 
   // Preserve input order
   const orderedProducts = handles

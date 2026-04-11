@@ -29,11 +29,13 @@
 Aucune erreur bloquante. Le build compile sans erreur.
 
 Avertissements non bloquants :
+
 - `[baseline-browser-mapping] The data in this module is over two months old` → npm warning sur un package tiers, sans impact.
 
 ## Commits effectués
 
 1. `e3b891e5` — `feat(supabase): replace Shopify with Supabase integration (étapes 1-8)`
+
    - Crée `lib/supabase/{client,types,price,index}.ts`
    - Remplace tous les imports `lib/shopify` par `lib/supabase` (30 fichiers)
    - Types compatibles Shopify → 0 breaking change dans les composants

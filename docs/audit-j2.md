@@ -2,14 +2,14 @@
 
 ## Pages testées
 
-| URL | HTTP | Statut |
-|-----|------|--------|
-| http://localhost:3000/ | 200 | ✅ Homepage charge produits |
-| http://localhost:3000/search?q=chaise | 200 | ✅ 109 résultats |
-| http://localhost:3000/search/mobilier-urbain | 200 | ✅ Catégorie fonctionnelle |
-| http://localhost:3000/search/affichage-et-signalisation | 200 | ✅ Catégorie fonctionnelle |
-| http://localhost:3000/search/sport-et-loisirs | 200 | ✅ Catégorie fonctionnelle |
-| http://localhost:3000/product/panneau-electoral-1-candidat | 200 | ✅ Produit simple |
+| URL                                                        | HTTP | Statut                      |
+| ---------------------------------------------------------- | ---- | --------------------------- |
+| http://localhost:3000/                                     | 200  | ✅ Homepage charge produits |
+| http://localhost:3000/search?q=chaise                      | 200  | ✅ 109 résultats            |
+| http://localhost:3000/search/mobilier-urbain               | 200  | ✅ Catégorie fonctionnelle  |
+| http://localhost:3000/search/affichage-et-signalisation    | 200  | ✅ Catégorie fonctionnelle  |
+| http://localhost:3000/search/sport-et-loisirs              | 200  | ✅ Catégorie fonctionnelle  |
+| http://localhost:3000/product/panneau-electoral-1-candidat | 200  | ✅ Produit simple           |
 
 ## Problèmes identifiés
 

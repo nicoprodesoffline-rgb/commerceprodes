@@ -14,10 +14,10 @@ interface ImportLog {
 }
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
-  pending:    { label: "En attente", cls: "bg-gray-100 text-gray-700" },
-  processing: { label: "En cours",   cls: "bg-amber-100 text-amber-700" },
-  done:       { label: "Terminé",    cls: "bg-green-100 text-green-700" },
-  error:      { label: "Erreur",     cls: "bg-red-100 text-red-700" },
+  pending: { label: "En attente", cls: "bg-gray-100 text-gray-700" },
+  processing: { label: "En cours", cls: "bg-amber-100 text-amber-700" },
+  done: { label: "Terminé", cls: "bg-green-100 text-green-700" },
+  error: { label: "Erreur", cls: "bg-red-100 text-red-700" },
 };
 
 export default function AdminImportPage() {
@@ -29,7 +29,7 @@ export default function AdminImportPage() {
 
   const password =
     typeof window !== "undefined"
-      ? sessionStorage.getItem("admin_password") ?? ""
+      ? (sessionStorage.getItem("admin_password") ?? "")
       : "";
 
   const fetchLogs = async () => {
@@ -92,7 +92,11 @@ export default function AdminImportPage() {
         },
         body: JSON.stringify({
           webhook: "import_supplier",
-          payload: { filename: file.name, logId, uploadedAt: new Date().toISOString() },
+          payload: {
+            filename: file.name,
+            logId,
+            uploadedAt: new Date().toISOString(),
+          },
         }),
       });
       const webhookData = await webhookRes.json();
@@ -114,18 +118,25 @@ export default function AdminImportPage() {
 
       {/* Zone drag-drop */}
       <div
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         className={`rounded-xl border-2 border-dashed p-10 text-center transition-colors ${
-          dragging ? "border-[#cc1818] bg-red-50" : "border-gray-300 bg-white hover:border-gray-400"
+          dragging
+            ? "border-[#cc1818] bg-red-50"
+            : "border-gray-300 bg-white hover:border-gray-400"
         }`}
       >
         {file ? (
           <div className="flex flex-col items-center gap-3">
             <div className="rounded-lg bg-green-100 px-4 py-2 text-sm font-medium text-green-800">
               📄 {file.name}{" "}
-              <span className="text-green-600">({(file.size / 1024).toFixed(0)} Ko)</span>
+              <span className="text-green-600">
+                ({(file.size / 1024).toFixed(0)} Ko)
+              </span>
             </div>
             <button
               onClick={() => setFile(null)}
@@ -141,7 +152,9 @@ export default function AdminImportPage() {
             <p className="text-sm font-medium text-gray-700">
               Déposez votre fichier Excel ou CSV ici
             </p>
-            <p className="mt-1 text-xs text-gray-400">.xlsx, .xls, .csv, .ods</p>
+            <p className="mt-1 text-xs text-gray-400">
+              .xlsx, .xls, .csv, .ods
+            </p>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:border-gray-400 hover:bg-gray-50 transition-colors"
@@ -155,7 +168,10 @@ export default function AdminImportPage() {
           type="file"
           accept=".xlsx,.xls,.csv,.ods"
           className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleFile(f);
+          }}
         />
       </div>
 
@@ -172,14 +188,17 @@ export default function AdminImportPage() {
       {/* Config info */}
       {!process.env.NEXT_PUBLIC_N8N_CONFIGURED && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          ⚙️ Configurez <code className="rounded bg-amber-100 px-1">N8N_WEBHOOK_IMPORT</code> pour
-          activer le traitement automatique des imports.
+          ⚙️ Configurez{" "}
+          <code className="rounded bg-amber-100 px-1">N8N_WEBHOOK_IMPORT</code>{" "}
+          pour activer le traitement automatique des imports.
         </div>
       )}
 
       {/* Logs récents */}
       <div>
-        <h2 className="mb-3 text-sm font-semibold text-gray-900">Imports récents</h2>
+        <h2 className="mb-3 text-sm font-semibold text-gray-900">
+          Imports récents
+        </h2>
         {logs.length === 0 ? (
           <p className="text-sm text-gray-400">Aucun import enregistré.</p>
         ) : (
@@ -187,18 +206,34 @@ export default function AdminImportPage() {
             <table className="w-full text-sm">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Fichier</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Statut</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Lignes</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Notes</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    Date
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    Fichier
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    Statut
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">
+                    Lignes
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    Notes
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {logs.map((log) => {
-                  const s = STATUS_LABELS[log.status] ?? { label: log.status, cls: "bg-gray-100 text-gray-700" };
+                  const s = STATUS_LABELS[log.status] ?? {
+                    label: log.status,
+                    cls: "bg-gray-100 text-gray-700",
+                  };
                   return (
-                    <tr key={log.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={log.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
                       <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
                         {new Date(log.created_at).toLocaleDateString("fr-FR")}
                       </td>
@@ -206,7 +241,9 @@ export default function AdminImportPage() {
                         {log.filename ?? "—"}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.cls}`}>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.cls}`}
+                        >
                           {s.label}
                         </span>
                       </td>

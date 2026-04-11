@@ -19,7 +19,10 @@ interface WishlistProduct {
 }
 
 function formatHT(n: number) {
-  return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) + " € HT";
+  return (
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(n) +
+    " € HT"
+  );
 }
 
 export default function WishlistPage() {
@@ -54,14 +57,25 @@ export default function WishlistPage() {
         id: p.id,
         handle: p.handle,
         title: p.title,
-        featuredImage: { url: p.featured_image_url ?? "", altText: p.title, width: 400, height: 400 },
+        featuredImage: {
+          url: p.featured_image_url ?? "",
+          altText: p.title,
+          width: 400,
+          height: 400,
+        },
         availableForSale: true,
         description: "",
         descriptionHtml: "",
         options: [],
         priceRange: {
-          maxVariantPrice: { amount: String(p.regular_price), currencyCode: "EUR" },
-          minVariantPrice: { amount: String(p.regular_price), currencyCode: "EUR" },
+          maxVariantPrice: {
+            amount: String(p.regular_price),
+            currencyCode: "EUR",
+          },
+          minVariantPrice: {
+            amount: String(p.regular_price),
+            currencyCode: "EUR",
+          },
         },
         variants: [variant],
         images: [],
@@ -84,7 +98,10 @@ export default function WishlistPage() {
             id: p.id,
             quantity: 1,
             cost: {
-              totalAmount: { amount: String(p.regular_price), currencyCode: "EUR" },
+              totalAmount: {
+                amount: String(p.regular_price),
+                currencyCode: "EUR",
+              },
             },
             merchandise: {
               id: p.id,
@@ -94,7 +111,12 @@ export default function WishlistPage() {
                 id: p.id,
                 handle: p.handle,
                 title: p.title,
-                featuredImage: { url: p.featured_image_url ?? "", altText: p.title, width: 400, height: 400 },
+                featuredImage: {
+                  url: p.featured_image_url ?? "",
+                  altText: p.title,
+                  width: 400,
+                  height: 400,
+                },
               },
             },
           })),
@@ -145,7 +167,8 @@ export default function WishlistPage() {
               Votre sélection est vide
             </p>
             <p className="mb-6 text-sm text-gray-500">
-              Cliquez sur ♥ sur n&apos;importe quel produit pour l&apos;ajouter.
+              Cliquez sur ♥ sur n&apos;importe quel produit pour
+              l&apos;ajouter.
             </p>
             <Link
               href="/search"
@@ -189,7 +212,9 @@ export default function WishlistPage() {
                       {p.title}
                     </p>
                     {p.sku && (
-                      <p className="mt-0.5 font-mono text-xs text-gray-400">Réf : {p.sku}</p>
+                      <p className="mt-0.5 font-mono text-xs text-gray-400">
+                        Réf : {p.sku}
+                      </p>
                     )}
                     <p className="mt-1 font-semibold text-gray-900">
                       {formatHT(p.regular_price)}

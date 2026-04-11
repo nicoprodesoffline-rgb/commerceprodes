@@ -34,7 +34,8 @@ export default function CategorySidebar({
       )
       .map((cat) => cat.id),
   );
-  const [openCategories, setOpenCategories] = useState<Set<string>>(initialOpen);
+  const [openCategories, setOpenCategories] =
+    useState<Set<string>>(initialOpen);
 
   const toggle = (id: string) => {
     setOpenCategories((prev) => {
@@ -189,7 +190,9 @@ export default function CategorySidebar({
                 <Link
                   href={catPath}
                   className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                    active ? "bg-[#cc1818] text-white" : "bg-gray-100 text-gray-700"
+                    active
+                      ? "bg-[#cc1818] text-white"
+                      : "bg-gray-100 text-gray-700"
                   }`}
                 >
                   {cat.name}

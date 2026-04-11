@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminAuth } from "lib/admin/auth";
+import { safeErrorMessage } from "lib/admin/security";
 import { supabaseServer } from "lib/supabase/client";
 import { buildPuidPlan, loadPuidInput, type PuidScope } from "lib/admin/puid";
 
@@ -13,10 +14,14 @@ function parseBool(value: unknown, fallback = false): boolean {
 }
 
 function parseScope(value: unknown): PuidScope {
-  return value === "latest_import" || value === "latest" ? "latest_import" : "all";
+  return value === "latest_import" || value === "latest"
+    ? "latest_import"
+    : "all";
 }
 
-async function resolveLatestImportSince(client: ReturnType<typeof supabaseServer>): Promise<string | null> {
+async function resolveLatestImportSince(
+  client: ReturnType<typeof supabaseServer>,
+): Promise<string | null> {
   const latestImport = await client
     .from("import_logs")
     .select("created_at")
@@ -28,7 +33,9 @@ async function resolveLatestImportSince(client: ReturnType<typeof supabaseServer
   return String(latestImport.data.created_at);
 }
 
-async function hasPuidColumns(client: ReturnType<typeof supabaseServer>): Promise<boolean> {
+async function hasPuidColumns(
+  client: ReturnType<typeof supabaseServer>,
+): Promise<boolean> {
   const probe = await client.from("products").select("id, puid").limit(1);
   if (!probe.error) return true;
   return false;
@@ -60,7 +67,11 @@ async function querySkuConflicts(
   return conflictMap;
 }
 
-function buildPreviewResponse(plan: ReturnType<typeof buildPuidPlan>, since: string | null, scope: PuidScope) {
+function buildPreviewResponse(
+  plan: ReturnType<typeof buildPuidPlan>,
+  since: string | null,
+  scope: PuidScope,
+) {
   return {
     scope: {
       mode: scope,
@@ -82,10 +93,14 @@ export async function GET(req: NextRequest) {
   const client = supabaseServer();
   const url = new URL(req.url);
   const scope = parseScope(url.searchParams.get("scope"));
-  const limit = Math.min(3000, Math.max(1, Number(url.searchParams.get("limit") || 300)));
+  const limit = Math.min(
+    3000,
+    Math.max(1, Number(url.searchParams.get("limit") || 300)),
+  );
   const includeDraft = parseBool(url.searchParams.get("include_draft"), true);
 
-  const since = scope === "latest_import" ? await resolveLatestImportSince(client) : null;
+  const since =
+    scope === "latest_import" ? await resolveLatestImportSince(client) : null;
 
   try {
     const input = await loadPuidInput(client, {
@@ -103,7 +118,10 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(buildPreviewResponse(plan, since, scope));
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Erreur preview PUID" }, { status: 500 });
+    return NextResponse.json(
+      { error: safeErrorMessage(error, "Erreur PUID") },
+      { status: 500 },
+    );
   }
 }
 
@@ -133,7 +151,8 @@ export async function PATCH(req: NextRequest) {
     ? (body.product_ids as unknown[]).map((id) => String(id)).filter(Boolean)
     : [];
 
-  const since = scope === "latest_import" ? await resolveLatestImportSince(client) : null;
+  const since =
+    scope === "latest_import" ? await resolveLatestImportSince(client) : null;
 
   try {
     const input = await loadPuidInput(client, {
@@ -155,7 +174,8 @@ export async function PATCH(req: NextRequest) {
     if (!puidColumnsAvailable && !applyToSku) {
       return NextResponse.json(
         {
-          error: "Colonnes PUID absentes. Appliquez la migration 021 avant écriture.",
+          error:
+            "Colonnes PUID absentes. Appliquez la migration 021 avant écriture.",
           migration: "commerce/docs/sql-migrations/021-puid-identity.sql",
           preview: buildPreviewResponse(plan, since, scope),
         },
@@ -163,7 +183,9 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const productMap = new Map(input.products.map((product) => [product.id, product]));
+    const productMap = new Map(
+      input.products.map((product) => [product.id, product]),
+    );
 
     const productRows = applyProducts ? plan.product_suggestions : [];
     const variantRows = applyVariants ? plan.variant_suggestions : [];
@@ -176,10 +198,20 @@ export async function PATCH(req: NextRequest) {
       : [];
 
     const productSkuConflicts = applyToSku
-      ? await querySkuConflicts(client, "products", productRows.map((row) => row.id), productSkuTargets)
+      ? await querySkuConflicts(
+          client,
+          "products",
+          productRows.map((row) => row.id),
+          productSkuTargets,
+        )
       : new Map<string, string[]>();
     const variantSkuConflicts = applyToSku
-      ? await querySkuConflicts(client, "variants", variantRows.map((row) => row.id), variantSkuTargets)
+      ? await querySkuConflicts(
+          client,
+          "variants",
+          variantRows.map((row) => row.id),
+          variantSkuTargets,
+        )
       : new Map<string, string[]>();
 
     if (dryRun) {
@@ -251,7 +283,10 @@ export async function PATCH(req: NextRequest) {
 
       if (Object.keys(payload).length === 0) continue;
 
-      const { error } = await client.from("products").update(payload).eq("id", row.id);
+      const { error } = await client
+        .from("products")
+        .update(payload)
+        .eq("id", row.id);
       if (error) {
         result.errors.push(`products:${row.id}:${error.message}`);
         continue;
@@ -280,7 +315,10 @@ export async function PATCH(req: NextRequest) {
 
       if (Object.keys(payload).length === 0) continue;
 
-      const { error } = await client.from("variants").update(payload).eq("id", row.id);
+      const { error } = await client
+        .from("variants")
+        .update(payload)
+        .eq("id", row.id);
       if (error) {
         result.errors.push(`variants:${row.id}:${error.message}`);
         continue;
@@ -289,8 +327,12 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (cleanupLotCandidates) {
-      const lotProducts = productRows.filter((row) => row.lot_candidate).map((row) => row.id);
-      const lotVariants = variantRows.filter((row) => row.lot_candidate).map((row) => row.id);
+      const lotProducts = productRows
+        .filter((row) => row.lot_candidate)
+        .map((row) => row.id);
+      const lotVariants = variantRows
+        .filter((row) => row.lot_candidate)
+        .map((row) => row.id);
       if (lotProducts.length > 0) {
         const { error } = await client
           .from("products")
@@ -319,6 +361,9 @@ export async function PATCH(req: NextRequest) {
       result,
     });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Erreur apply PUID" }, { status: 500 });
+    return NextResponse.json(
+      { error: safeErrorMessage(error, "Erreur PUID") },
+      { status: 500 },
+    );
   }
 }

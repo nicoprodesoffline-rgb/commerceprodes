@@ -33,7 +33,11 @@ export function PromoBanner({ text, link, active = true }: PromoBannerProps) {
   };
 
   const content = (
-    <span className={text.length > 60 ? "inline-block animate-marquee whitespace-nowrap" : ""}>
+    <span
+      className={
+        text.length > 60 ? "inline-block animate-marquee whitespace-nowrap" : ""
+      }
+    >
       {text}
     </span>
   );

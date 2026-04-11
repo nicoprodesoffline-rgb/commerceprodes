@@ -72,7 +72,10 @@ const SORT_OPTIONS = [
 
 function formatPriceFR(price: number | null): string {
   if (price == null || Number.isNaN(price)) return "—";
-  return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) + " €";
+  return (
+    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) +
+    " €"
+  );
 }
 
 function formatDateFR(iso: string | null): string {
@@ -107,8 +110,12 @@ export default function AdminProduitsPage() {
   const [loading, setLoading] = useState(true);
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [detailByProduct, setDetailByProduct] = useState<Record<string, ProductDetailState>>({});
-  const [variantDrafts, setVariantDrafts] = useState<Record<string, Partial<AdminVariant>>>({});
+  const [detailByProduct, setDetailByProduct] = useState<
+    Record<string, ProductDetailState>
+  >({});
+  const [variantDrafts, setVariantDrafts] = useState<
+    Record<string, Partial<AdminVariant>>
+  >({});
   const [variantSaving, setVariantSaving] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -156,12 +163,19 @@ export default function AdminProduitsPage() {
     }));
 
     try {
-      const res = await adminFetch(`/api/admin/products/${productId}/variations?page=1&limit=250`);
+      const res = await adminFetch(
+        `/api/admin/products/${productId}/variations?page=1&limit=250`,
+      );
       const data = await res.json();
       if (!res.ok) {
         setDetailByProduct((prev) => ({
           ...prev,
-          [productId]: { loading: false, error: data.error ?? "Erreur chargement variantes", variations: [], total: 0 },
+          [productId]: {
+            loading: false,
+            error: data.error ?? "Erreur chargement variantes",
+            variations: [],
+            total: 0,
+          },
         }));
         return;
       }
@@ -177,7 +191,12 @@ export default function AdminProduitsPage() {
     } catch {
       setDetailByProduct((prev) => ({
         ...prev,
-        [productId]: { loading: false, error: "Erreur réseau", variations: [], total: 0 },
+        [productId]: {
+          loading: false,
+          error: "Erreur réseau",
+          variations: [],
+          total: 0,
+        },
       }));
     }
   }, []);
@@ -212,9 +231,16 @@ export default function AdminProduitsPage() {
     return `${productId}:${variantId}`;
   }
 
-  function patchVariantDraft(productId: string, variantId: string, patch: Partial<AdminVariant>) {
+  function patchVariantDraft(
+    productId: string,
+    variantId: string,
+    patch: Partial<AdminVariant>,
+  ) {
     const key = draftKey(productId, variantId);
-    setVariantDrafts((prev) => ({ ...prev, [key]: { ...(prev[key] ?? {}), ...patch } }));
+    setVariantDrafts((prev) => ({
+      ...prev,
+      [key]: { ...(prev[key] ?? {}), ...patch },
+    }));
   }
 
   async function saveVariant(productId: string, variant: AdminVariant) {
@@ -223,18 +249,23 @@ export default function AdminProduitsPage() {
     if (Object.keys(draft).length === 0) return;
     setVariantSaving((prev) => new Set(prev).add(key));
     try {
-      const res = await adminFetch(`/api/admin/products/${productId}/variations/${variant.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(draft),
-      });
+      const res = await adminFetch(
+        `/api/admin/products/${productId}/variations/${variant.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(draft),
+        },
+      );
       if (!res.ok) return;
       const data = await res.json();
       setDetailByProduct((prev) => {
         const state = prev[productId];
         if (!state) return prev;
         const updated = state.variations.map((item) =>
-          item.id === variant.id ? { ...item, ...(data.variation ?? {}) } : item,
+          item.id === variant.id
+            ? { ...item, ...(data.variation ?? {}) }
+            : item,
         );
         return { ...prev, [productId]: { ...state, variations: updated } };
       });
@@ -258,7 +289,9 @@ export default function AdminProduitsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Produits</h1>
           <p className="mt-0.5 text-sm text-gray-500">
-            {total > 0 ? `${total.toLocaleString("fr-FR")} produits` : "Chargement…"}
+            {total > 0
+              ? `${total.toLocaleString("fr-FR")} produits`
+              : "Chargement…"}
           </p>
         </div>
         <div className="flex gap-2">
@@ -337,24 +370,48 @@ export default function AdminProduitsPage() {
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-gray-400">Chargement…</div>
+          <div className="flex items-center justify-center py-16 text-gray-400">
+            Chargement…
+          </div>
         ) : products.length === 0 ? (
-          <div className="py-16 text-center text-gray-500">Aucun produit trouvé.</div>
+          <div className="py-16 text-center text-gray-500">
+            Aucun produit trouvé.
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  <th className="px-2 py-3 text-left font-medium text-gray-500 w-10">+</th>
-                  <th className="px-3 py-3 text-left font-medium text-gray-500 w-14">Photo</th>
-                  <th className="px-3 py-3 text-left font-medium text-gray-500">Produit</th>
-                  <th className="px-3 py-3 text-left font-medium text-gray-500 hidden md:table-cell">SKU</th>
-                  <th className="px-3 py-3 text-left font-medium text-gray-500 hidden lg:table-cell">Type</th>
-                  <th className="px-3 py-3 text-left font-medium text-gray-500">Prix HT</th>
-                  <th className="px-3 py-3 text-left font-medium text-gray-500 hidden lg:table-cell">Stock</th>
-                  <th className="px-3 py-3 text-left font-medium text-gray-500">Structure</th>
-                  <th className="px-3 py-3 text-left font-medium text-gray-500">Statut</th>
-                  <th className="px-3 py-3 text-left font-medium text-gray-500">Actions</th>
+                  <th className="px-2 py-3 text-left font-medium text-gray-500 w-10">
+                    +
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium text-gray-500 w-14">
+                    Photo
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium text-gray-500">
+                    Produit
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium text-gray-500 hidden md:table-cell">
+                    SKU
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium text-gray-500 hidden lg:table-cell">
+                    Type
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium text-gray-500">
+                    Prix HT
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium text-gray-500 hidden lg:table-cell">
+                    Stock
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium text-gray-500">
+                    Structure
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium text-gray-500">
+                    Statut
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium text-gray-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -404,48 +461,78 @@ export default function AdminProduitsPage() {
                           </Link>
                           <div className="mt-1 text-xs text-gray-500">
                             {p.categories || "Sans catégorie"}
-                            {p.parent_sku ? <span className="ml-2">· parent_sku: {p.parent_sku}</span> : null}
+                            {p.parent_sku ? (
+                              <span className="ml-2">
+                                · parent_sku: {p.parent_sku}
+                              </span>
+                            ) : null}
                           </div>
                           <div className="mt-1 text-[11px] text-gray-400">
                             Maj: {formatDateFR(p.updated_at)}
                           </div>
                         </td>
                         <td className="px-3 py-2 hidden md:table-cell">
-                          <span className="font-mono text-xs text-gray-500">{p.sku || "—"}</span>
+                          <span className="font-mono text-xs text-gray-500">
+                            {p.sku || "—"}
+                          </span>
                         </td>
                         <td className="px-3 py-2 hidden lg:table-cell">
-                          <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">{p.type || "—"}</span>
+                          <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                            {p.type || "—"}
+                          </span>
                         </td>
-                        <td className="px-3 py-2 font-semibold text-gray-800 whitespace-nowrap">{formatPriceFR(p.regular_price)}</td>
+                        <td className="px-3 py-2 font-semibold text-gray-800 whitespace-nowrap">
+                          {formatPriceFR(p.regular_price)}
+                        </td>
                         <td className="px-3 py-2 hidden lg:table-cell text-xs text-gray-600">
-                          {p.stock_quantity != null ? `${p.stock_quantity}` : "—"} · {p.stock_status || "—"}
-                          {p.supplier_ref ? <div className="text-[11px] text-gray-400">Fourn.: {p.supplier_ref}</div> : null}
+                          {p.stock_quantity != null
+                            ? `${p.stock_quantity}`
+                            : "—"}{" "}
+                          · {p.stock_status || "—"}
+                          {p.supplier_ref ? (
+                            <div className="text-[11px] text-gray-400">
+                              Fourn.: {p.supplier_ref}
+                            </div>
+                          ) : null}
                         </td>
                         <td className="px-3 py-2">
                           <div className="space-y-1">
                             <div className="text-xs text-gray-700">
                               {hasVariants ? (
-                                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700">{p.variant_count} variantes</span>
+                                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700">
+                                  {p.variant_count} variantes
+                                </span>
                               ) : (
-                                <span className="text-gray-400">Sans variante</span>
+                                <span className="text-gray-400">
+                                  Sans variante
+                                </span>
                               )}
                             </div>
                             {hasFamily ? (
                               <div className="text-xs text-green-700">
-                                Famille: {p.family_name} ({p.family_children_count} filles)
+                                Famille: {p.family_name} (
+                                {p.family_children_count} filles)
                               </div>
                             ) : hasVariants ? (
-                              <div className="text-xs text-gray-400">Famille non assemblée</div>
+                              <div className="text-xs text-gray-400">
+                                Famille non assemblée
+                              </div>
                             ) : (
-                              <div className="text-xs text-gray-400">Produit simple</div>
+                              <div className="text-xs text-gray-400">
+                                Produit simple
+                              </div>
                             )}
                           </div>
                         </td>
                         <td className="px-3 py-2">
                           {p.status === "publish" ? (
-                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Publié</span>
+                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                              Publié
+                            </span>
                           ) : (
-                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">Brouillon</span>
+                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                              Brouillon
+                            </span>
                           )}
                         </td>
                         <td className="px-3 py-2">
@@ -492,115 +579,226 @@ export default function AdminProduitsPage() {
                                     </span>
                                   ) : (
                                     <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">
-                                      Aucune famille DB (variantes natives seulement)
+                                      Aucune famille DB (variantes natives
+                                      seulement)
                                     </span>
                                   )}
-                                  <Link href="/admin/familles" className="text-blue-600 hover:underline">
+                                  <Link
+                                    href="/admin/familles"
+                                    className="text-blue-600 hover:underline"
+                                  >
                                     Ouvrir l&apos;onglet Mères / Filles
                                   </Link>
                                 </div>
                               </div>
 
                               {detail?.loading ? (
-                                <p className="text-sm text-gray-400">Chargement des variantes…</p>
+                                <p className="text-sm text-gray-400">
+                                  Chargement des variantes…
+                                </p>
                               ) : detail?.error ? (
-                                <p className="text-sm text-red-600">{detail.error}</p>
+                                <p className="text-sm text-red-600">
+                                  {detail.error}
+                                </p>
                               ) : (detail?.variations ?? []).length === 0 ? (
-                                <p className="text-sm text-gray-500">Aucune variante technique trouvée.</p>
+                                <p className="text-sm text-gray-500">
+                                  Aucune variante technique trouvée.
+                                </p>
                               ) : (
                                 <div className="overflow-x-auto">
                                   <table className="w-full text-xs">
                                     <thead className="bg-gray-50 text-gray-500">
                                       <tr>
-                                        <th className="px-2 py-2 text-left">SKU</th>
-                                        <th className="px-2 py-2 text-left">Options</th>
-                                        <th className="px-2 py-2 text-right">Prix</th>
-                                        <th className="px-2 py-2 text-center">Stock</th>
-                                        <th className="px-2 py-2 text-center">Qté</th>
-                                        <th className="px-2 py-2 text-center">Lot min</th>
-                                        <th className="px-2 py-2 text-left">Fournisseur</th>
-                                        <th className="px-2 py-2 text-center">Action</th>
+                                        <th className="px-2 py-2 text-left">
+                                          SKU
+                                        </th>
+                                        <th className="px-2 py-2 text-left">
+                                          Options
+                                        </th>
+                                        <th className="px-2 py-2 text-right">
+                                          Prix
+                                        </th>
+                                        <th className="px-2 py-2 text-center">
+                                          Stock
+                                        </th>
+                                        <th className="px-2 py-2 text-center">
+                                          Qté
+                                        </th>
+                                        <th className="px-2 py-2 text-center">
+                                          Lot min
+                                        </th>
+                                        <th className="px-2 py-2 text-left">
+                                          Fournisseur
+                                        </th>
+                                        <th className="px-2 py-2 text-center">
+                                          Action
+                                        </th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                      {(detail?.variations ?? []).map((variant) => {
-                                        const key = draftKey(p.id, variant.id);
-                                        const draft = variantDrafts[key] ?? {};
-                                        const saving = variantSaving.has(key);
-                                        return (
-                                          <tr key={variant.id}>
-                                            <td className="px-2 py-1.5 font-mono text-[11px] text-gray-600">
-                                              {variant.sku || "—"}
-                                            </td>
-                                            <td className="px-2 py-1.5 text-gray-700">{getVariantLabel(variant)}</td>
-                                            <td className="px-2 py-1.5">
-                                              <input
-                                                type="number"
-                                                step="0.01"
-                                                value={String(draft.regular_price ?? variant.regular_price ?? "")}
-                                                onChange={(e) =>
-                                                  patchVariantDraft(p.id, variant.id, {
-                                                    regular_price: e.target.value === "" ? null : Number(e.target.value),
-                                                  })
-                                                }
-                                                className="w-24 rounded border border-gray-200 px-2 py-1 text-right text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                              />
-                                            </td>
-                                            <td className="px-2 py-1.5">
-                                              <select
-                                                value={String(draft.stock_status ?? variant.stock_status ?? "instock")}
-                                                onChange={(e) => patchVariantDraft(p.id, variant.id, { stock_status: e.target.value })}
-                                                className="rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                              >
-                                                <option value="instock">En stock</option>
-                                                <option value="outofstock">Épuisé</option>
-                                                <option value="onbackorder">Sur commande</option>
-                                              </select>
-                                            </td>
-                                            <td className="px-2 py-1.5">
-                                              <input
-                                                type="number"
-                                                value={String(draft.stock_quantity ?? variant.stock_quantity ?? "")}
-                                                onChange={(e) =>
-                                                  patchVariantDraft(p.id, variant.id, {
-                                                    stock_quantity: e.target.value === "" ? null : Number(e.target.value),
-                                                  })
-                                                }
-                                                className="w-16 rounded border border-gray-200 px-2 py-1 text-center text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                              />
-                                            </td>
-                                            <td className="px-2 py-1.5">
-                                              <input
-                                                type="number"
-                                                value={String(draft.group_of_quantity ?? variant.group_of_quantity ?? 1)}
-                                                onChange={(e) =>
-                                                  patchVariantDraft(p.id, variant.id, {
-                                                    group_of_quantity: e.target.value === "" ? null : Number(e.target.value),
-                                                  })
-                                                }
-                                                className="w-16 rounded border border-gray-200 px-2 py-1 text-center text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                              />
-                                            </td>
-                                            <td className="px-2 py-1.5">
-                                              <input
-                                                type="text"
-                                                value={String(draft.supplier_ref ?? variant.supplier_ref ?? "")}
-                                                onChange={(e) => patchVariantDraft(p.id, variant.id, { supplier_ref: e.target.value })}
-                                                className="w-32 rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                              />
-                                            </td>
-                                            <td className="px-2 py-1.5 text-center">
-                                              <button
-                                                onClick={() => saveVariant(p.id, variant)}
-                                                disabled={saving || Object.keys(draft).length === 0}
-                                                className="rounded bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
-                                              >
-                                                {saving ? "…" : "Sauver"}
-                                              </button>
-                                            </td>
-                                          </tr>
-                                        );
-                                      })}
+                                      {(detail?.variations ?? []).map(
+                                        (variant) => {
+                                          const key = draftKey(
+                                            p.id,
+                                            variant.id,
+                                          );
+                                          const draft =
+                                            variantDrafts[key] ?? {};
+                                          const saving = variantSaving.has(key);
+                                          return (
+                                            <tr key={variant.id}>
+                                              <td className="px-2 py-1.5 font-mono text-[11px] text-gray-600">
+                                                {variant.sku || "—"}
+                                              </td>
+                                              <td className="px-2 py-1.5 text-gray-700">
+                                                {getVariantLabel(variant)}
+                                              </td>
+                                              <td className="px-2 py-1.5">
+                                                <input
+                                                  type="number"
+                                                  step="0.01"
+                                                  value={String(
+                                                    draft.regular_price ??
+                                                      variant.regular_price ??
+                                                      "",
+                                                  )}
+                                                  onChange={(e) =>
+                                                    patchVariantDraft(
+                                                      p.id,
+                                                      variant.id,
+                                                      {
+                                                        regular_price:
+                                                          e.target.value === ""
+                                                            ? null
+                                                            : Number(
+                                                                e.target.value,
+                                                              ),
+                                                      },
+                                                    )
+                                                  }
+                                                  className="w-24 rounded border border-gray-200 px-2 py-1 text-right text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                                />
+                                              </td>
+                                              <td className="px-2 py-1.5">
+                                                <select
+                                                  value={String(
+                                                    draft.stock_status ??
+                                                      variant.stock_status ??
+                                                      "instock",
+                                                  )}
+                                                  onChange={(e) =>
+                                                    patchVariantDraft(
+                                                      p.id,
+                                                      variant.id,
+                                                      {
+                                                        stock_status:
+                                                          e.target.value,
+                                                      },
+                                                    )
+                                                  }
+                                                  className="rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                                >
+                                                  <option value="instock">
+                                                    En stock
+                                                  </option>
+                                                  <option value="outofstock">
+                                                    Épuisé
+                                                  </option>
+                                                  <option value="onbackorder">
+                                                    Sur commande
+                                                  </option>
+                                                </select>
+                                              </td>
+                                              <td className="px-2 py-1.5">
+                                                <input
+                                                  type="number"
+                                                  value={String(
+                                                    draft.stock_quantity ??
+                                                      variant.stock_quantity ??
+                                                      "",
+                                                  )}
+                                                  onChange={(e) =>
+                                                    patchVariantDraft(
+                                                      p.id,
+                                                      variant.id,
+                                                      {
+                                                        stock_quantity:
+                                                          e.target.value === ""
+                                                            ? null
+                                                            : Number(
+                                                                e.target.value,
+                                                              ),
+                                                      },
+                                                    )
+                                                  }
+                                                  className="w-16 rounded border border-gray-200 px-2 py-1 text-center text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                                />
+                                              </td>
+                                              <td className="px-2 py-1.5">
+                                                <input
+                                                  type="number"
+                                                  value={String(
+                                                    draft.group_of_quantity ??
+                                                      variant.group_of_quantity ??
+                                                      1,
+                                                  )}
+                                                  onChange={(e) =>
+                                                    patchVariantDraft(
+                                                      p.id,
+                                                      variant.id,
+                                                      {
+                                                        group_of_quantity:
+                                                          e.target.value === ""
+                                                            ? null
+                                                            : Number(
+                                                                e.target.value,
+                                                              ),
+                                                      },
+                                                    )
+                                                  }
+                                                  className="w-16 rounded border border-gray-200 px-2 py-1 text-center text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                                />
+                                              </td>
+                                              <td className="px-2 py-1.5">
+                                                <input
+                                                  type="text"
+                                                  value={String(
+                                                    draft.supplier_ref ??
+                                                      variant.supplier_ref ??
+                                                      "",
+                                                  )}
+                                                  onChange={(e) =>
+                                                    patchVariantDraft(
+                                                      p.id,
+                                                      variant.id,
+                                                      {
+                                                        supplier_ref:
+                                                          e.target.value,
+                                                      },
+                                                    )
+                                                  }
+                                                  className="w-32 rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                                />
+                                              </td>
+                                              <td className="px-2 py-1.5 text-center">
+                                                <button
+                                                  onClick={() =>
+                                                    saveVariant(p.id, variant)
+                                                  }
+                                                  disabled={
+                                                    saving ||
+                                                    Object.keys(draft)
+                                                      .length === 0
+                                                  }
+                                                  className="rounded bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+                                                >
+                                                  {saving ? "…" : "Sauver"}
+                                                </button>
+                                              </td>
+                                            </tr>
+                                          );
+                                        },
+                                      )}
                                     </tbody>
                                   </table>
                                 </div>

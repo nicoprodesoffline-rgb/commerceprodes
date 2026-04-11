@@ -50,7 +50,8 @@ async function runCheck(
       const values = Object.values(payload).join(" ").toLowerCase();
       if (
         response.status === 503 &&
-        (values.includes("migration_required") || values.includes("migration requise"))
+        (values.includes("migration_required") ||
+          values.includes("migration requise"))
       ) {
         error = "migration_required";
       }
@@ -90,7 +91,11 @@ export async function GET(request: NextRequest) {
   }
 
   const checks = await Promise.all([
-    runCheck(request, "products-list", "/api/admin/products-list?page=1&limit=1"),
+    runCheck(
+      request,
+      "products-list",
+      "/api/admin/products-list?page=1&limit=1",
+    ),
     runCheck(request, "products-status", "/api/admin/products/status"),
     runCheck(request, "devis", "/api/admin/devis?limit=1"),
     runCheck(request, "analytics", "/api/admin/analytics"),

@@ -31,8 +31,8 @@ export function StripeButton({
       </button>
       {showInfo && (
         <div className="mt-2 rounded-md bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-          Le paiement en ligne sera bientôt disponible. En attendant, utilisez le formulaire
-          de devis ou contactez-nous par téléphone.
+          Le paiement en ligne sera bientôt disponible. En attendant, utilisez
+          le formulaire de devis ou contactez-nous par téléphone.
           <button
             onClick={() => setShowInfo(false)}
             className="ml-2 font-medium underline"
