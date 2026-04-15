@@ -38,6 +38,9 @@ yarn-error.log*
 next-env.d.ts
 .env*.local
 
+# personal Claude Code config (private, not shared)
+CLAUDE.local.md
+
 # backups
 *.bak
 
