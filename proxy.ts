@@ -59,17 +59,48 @@ function isGatePublic(pathname: string): boolean {
   );
 }
 
+function getBearerToken(request: NextRequest): string | null {
+  const auth = request.headers.get("Authorization") ?? "";
+  return auth.startsWith("Bearer ") ? auth.slice(7) : null;
+}
+
+function hasValidAdminBearer(request: NextRequest): boolean {
+  const token = getBearerToken(request);
+  const expected = process.env.ADMIN_PASSWORD ?? "";
+  if (!token || !expected || token.length !== expected.length) return false;
+
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) {
+    diff |= token.charCodeAt(i) ^ expected.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isAdminApi = pathname.startsWith("/api/admin");
 
   // ── 1. Password gate ──
   const sitePassword = process.env.SITE_PASSWORD;
   if (sitePassword && !isGatePublic(pathname)) {
-    const cookie = request.cookies.get("site-access");
-    if (!cookie || cookie.value !== "granted") {
-      const gateUrl = request.nextUrl.clone();
-      gateUrl.pathname = "/gate";
-      return NextResponse.redirect(gateUrl);
+    if (isAdminApi) {
+      const bearerToken = getBearerToken(request);
+      if (bearerToken && hasValidAdminBearer(request)) {
+        // Let bearer-authenticated API calls reach their route-level auth.
+      } else if (bearerToken) {
+        return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+      } else {
+        const gateUrl = request.nextUrl.clone();
+        gateUrl.pathname = "/gate";
+        return NextResponse.redirect(gateUrl);
+      }
+    } else {
+      const cookie = request.cookies.get("site-access");
+      if (!cookie || cookie.value !== "granted") {
+        const gateUrl = request.nextUrl.clone();
+        gateUrl.pathname = "/gate";
+        return NextResponse.redirect(gateUrl);
+      }
     }
   }
 
@@ -92,7 +123,7 @@ export function proxy(request: NextRequest) {
   }
 
   // ── 3. Rate limiting on admin API routes ──
-  if (pathname.startsWith("/api/admin")) {
+  if (isAdminApi) {
     // Auth route: very strict (10 req/min per IP)
     if (pathname === "/api/admin/auth") {
       const ip =
