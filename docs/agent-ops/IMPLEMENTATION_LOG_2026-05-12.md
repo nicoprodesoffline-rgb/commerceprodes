@@ -119,3 +119,13 @@ npm test
 ```
 
 Reason: repo-wide Prettier backlog remains outside this branch's scope. After formatting the agent-ops files, `npm test` still reports style issues in 136 existing files across `app/`, `components/`, `docs/`, `lib/`, `proxy.ts`, and `scripts/import-woocommerce.mjs`.
+
+## CI Transition Note
+
+The targeted GitHub Actions workflow is stored as a template at:
+
+```text
+docs/agent-ops/ci/agent-ops.github-actions.example.yml
+```
+
+It is not active yet because the current GitHub token cannot push `.github/workflows/*` without the `workflow` scope. Activation path: copy the template to `.github/workflows/agent-ops.yml` from an authenticated environment with workflow permission.

@@ -13,7 +13,8 @@ Read in this order:
 7. `docs/agent-ops/MEMORY.md`
 8. `docs/agent-ops/ERRORS.md`
 9. `docs/agent-ops/eval-runs/README.md`
-10. `docs/agent-ops/IMPLEMENTATION_LOG_2026-05-12.md`
+10. `docs/agent-ops/ci/agent-ops.github-actions.example.yml`
+11. `docs/agent-ops/IMPLEMENTATION_LOG_2026-05-12.md`
 
 Useful commands:
 
@@ -24,3 +25,8 @@ node scripts/agent_ops/review-pack.mjs
 node scripts/agent_ops/run-skill-evals.mjs --dry-run --split optimization
 node --test tests/agent-ops/*.test.mjs
 ```
+
+CI template:
+
+- `docs/agent-ops/ci/agent-ops.github-actions.example.yml`
+- Copy it to `.github/workflows/agent-ops.yml` when the GitHub token has the `workflow` scope.
