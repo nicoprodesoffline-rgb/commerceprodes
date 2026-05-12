@@ -85,3 +85,24 @@ next: command not found
 ```
 
 Post-merge plan: rerun `npm test` and `npm run build` in `/Users/nico/Desktop/commerce`, where `node_modules` exists.
+
+## Post-Merge Verification In Main
+
+Passed in `/Users/nico/Desktop/commerce`:
+
+```bash
+node --test tests/agent-ops/*.test.mjs
+npx prettier --check AGENTS.md CLAUDE.md docs/agent-ops/*.md docs/agent-ops/claude-settings.local.example.json scripts/agent_ops/*.mjs tests/agent-ops/*.mjs package.json
+npm run build
+python3 -m json.tool docs/agent-ops/claude-settings.local.example.json
+python3 -m json.tool .claude/settings.local.json
+scripts/agent_ops/pre-commit-secret-scan.sh
+```
+
+Still failing in main:
+
+```bash
+npm test
+```
+
+Reason: repo-wide Prettier backlog remains outside this branch's scope. After formatting the agent-ops files, `npm test` still reports style issues in 136 existing files across `app/`, `components/`, `docs/`, `lib/`, `proxy.ts`, and `scripts/import-woocommerce.mjs`.
