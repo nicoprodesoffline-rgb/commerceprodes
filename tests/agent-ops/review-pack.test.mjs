@@ -9,11 +9,11 @@ test("review pack groups commerce agent ops files", () => {
       "AGENTS.md",
       "scripts/agent_ops/context-loader.mjs",
       "tests/agent-ops/context-loader.test.mjs",
-      "docs/agent-ops/CONTEXT_LOADING.md"
+      "docs/agent-ops/CONTEXT_LOADING.md",
     ],
     diffStat: "4 files changed",
     qualityCommands: ["node --test tests/agent-ops/*.test.mjs"],
-    baselineNotes: ["pnpm is unavailable in this shell"]
+    baselineNotes: ["pnpm is unavailable in this shell"],
   });
 
   assert.match(rendered, /agent contracts\/docs/);
@@ -23,7 +23,11 @@ test("review pack groups commerce agent ops files", () => {
 });
 
 test("review pack blocks empty merges", () => {
-  const rendered = renderReviewPack({ changedFiles: [], diffStat: "", qualityCommands: [] });
+  const rendered = renderReviewPack({
+    changedFiles: [],
+    diffStat: "",
+    qualityCommands: [],
+  });
 
   assert.match(rendered, /No changed files detected/);
   assert.match(rendered, /Do not merge/);

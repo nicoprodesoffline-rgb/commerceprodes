@@ -27,7 +27,7 @@ export function renderPreflight(taskType) {
     ...context.verify.map((command) => `- \`${command}\``),
     "",
     "## Reminder",
-    "- Do not touch unrelated dirty files or read secret files."
+    "- Do not touch unrelated dirty files or read secret files.",
   ];
   return `${lines.join("\n")}\n`;
 }
@@ -36,7 +36,9 @@ function main(argv) {
   const taskTypeIndex = argv.indexOf("--task-type");
   const taskType = taskTypeIndex >= 0 ? argv[taskTypeIndex + 1] : undefined;
   if (!taskType) {
-    console.error("Usage: node scripts/agent_ops/preflight.mjs --task-type <type>");
+    console.error(
+      "Usage: node scripts/agent_ops/preflight.mjs --task-type <type>",
+    );
     return 2;
   }
   process.stdout.write(renderPreflight(taskType));

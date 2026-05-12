@@ -13,16 +13,33 @@ export function groupChangedFiles(changedFiles) {
 }
 
 function classify(file) {
-  if (file === "AGENTS.md" || file === "CLAUDE.md" || file.startsWith("docs/agent-ops/")) return "agent contracts/docs";
+  if (
+    file === "AGENTS.md" ||
+    file === "CLAUDE.md" ||
+    file.startsWith("docs/agent-ops/")
+  )
+    return "agent contracts/docs";
   if (file.startsWith("scripts/agent_ops/")) return "agent ops scripts";
   if (file.startsWith("tests/agent-ops/")) return "agent ops tests";
-  if (file.startsWith("docs/sql-migrations/") || file.startsWith("data/")) return "data/sql";
+  if (file.startsWith("docs/sql-migrations/") || file.startsWith("data/"))
+    return "data/sql";
   if (file.startsWith("app/") || file.startsWith("components/")) return "ui";
-  if (file === "package.json" || file === "next.config.ts" || file === "vercel.json" || file === "proxy.ts") return "infra";
+  if (
+    file === "package.json" ||
+    file === "next.config.ts" ||
+    file === "vercel.json" ||
+    file === "proxy.ts"
+  )
+    return "infra";
   return "other";
 }
 
-export function renderReviewPack({ changedFiles, diffStat, qualityCommands, baselineNotes = [] }) {
+export function renderReviewPack({
+  changedFiles,
+  diffStat,
+  qualityCommands,
+  baselineNotes = [],
+}) {
   const lines = ["# Commerce Agent Ops Review Pack", ""];
 
   if (!changedFiles.length) {
@@ -34,7 +51,7 @@ export function renderReviewPack({ changedFiles, diffStat, qualityCommands, base
       "## Merge guidance",
       "",
       "Do not merge: there is nothing to review.",
-      ""
+      "",
     ].join("\n");
   }
 
@@ -45,16 +62,32 @@ export function renderReviewPack({ changedFiles, diffStat, qualityCommands, base
   }
   lines.push("", "## Diff stat", diffStat.trim() || "No diff stat available.");
   lines.push("", "## Recommended verification");
-  lines.push(...(qualityCommands.length ? qualityCommands.map((command) => `- \`${command}\``) : ["- No quality commands supplied."]));
+  lines.push(
+    ...(qualityCommands.length
+      ? qualityCommands.map((command) => `- \`${command}\``)
+      : ["- No quality commands supplied."]),
+  );
   lines.push("", "## Baseline notes");
-  lines.push(...(baselineNotes.length ? baselineNotes.map((note) => `- ${note}`) : ["- No baseline notes supplied."]));
-  lines.push("", "## Merge guidance", "", "Merge after recommended verification passes or after Nico accepts documented residual risk. Keep unrelated dirty files out of this branch.");
+  lines.push(
+    ...(baselineNotes.length
+      ? baselineNotes.map((note) => `- ${note}`)
+      : ["- No baseline notes supplied."]),
+  );
+  lines.push(
+    "",
+    "## Merge guidance",
+    "",
+    "Merge after recommended verification passes or after Nico accepts documented residual risk. Keep unrelated dirty files out of this branch.",
+  );
   return `${lines.join("\n")}\n`;
 }
 
 function gitLines(args) {
   const output = execFileSync("git", args, { encoding: "utf8" });
-  return output.split("\n").map((line) => line.trimEnd()).filter(Boolean);
+  return output
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter(Boolean);
 }
 
 export function changedFilesFromGit() {
@@ -66,20 +99,36 @@ export function changedFilesFromGit() {
 }
 
 export function diffStatFromGit() {
-  const diff = execFileSync("git", ["diff", "--stat"], { encoding: "utf8" }).trimEnd();
-  const untrackedCount = gitLines(["ls-files", "--others", "--exclude-standard"]).length;
-  return untrackedCount ? `${diff}\nUntracked files: ${untrackedCount}\n` : `${diff}\n`;
+  const diff = execFileSync("git", ["diff", "--stat"], {
+    encoding: "utf8",
+  }).trimEnd();
+  const untrackedCount = gitLines([
+    "ls-files",
+    "--others",
+    "--exclude-standard",
+  ]).length;
+  return untrackedCount
+    ? `${diff}\nUntracked files: ${untrackedCount}\n`
+    : `${diff}\n`;
 }
 
 function main(argv) {
   const baselineNotes = [];
   for (let i = 0; i < argv.length; i += 1) {
-    if (argv[i] === "--baseline-note" && argv[i + 1]) baselineNotes.push(argv[i + 1]);
+    if (argv[i] === "--baseline-note" && argv[i + 1])
+      baselineNotes.push(argv[i + 1]);
   }
 
   const changedFiles = changedFilesFromGit();
   const plan = buildQualityPlan(changedFiles);
-  process.stdout.write(renderReviewPack({ changedFiles, diffStat: diffStatFromGit(), qualityCommands: plan.commands, baselineNotes }));
+  process.stdout.write(
+    renderReviewPack({
+      changedFiles,
+      diffStat: diffStatFromGit(),
+      qualityCommands: plan.commands,
+      baselineNotes,
+    }),
+  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -6,28 +6,54 @@ export const agentOpsTestCommand = "node --test tests/agent-ops/*.test.mjs";
 const rules = [
   {
     reason: "agent-ops",
-    matches: ["AGENTS.md", "CLAUDE.md", "docs/agent-ops/", "scripts/agent_ops/", "tests/agent-ops/", ".claude/"],
-    commands: [agentOpsTestCommand]
+    matches: [
+      "AGENTS.md",
+      "CLAUDE.md",
+      "docs/agent-ops/",
+      "scripts/agent_ops/",
+      "tests/agent-ops/",
+      ".claude/",
+    ],
+    commands: [agentOpsTestCommand],
   },
   {
     reason: "storefront",
     matches: ["app/", "components/", "lib/", "public/", "app/page.tsx"],
-    commands: ["npm run build"]
+    commands: ["npm run build"],
   },
   {
     reason: "data-sql",
-    matches: ["docs/sql-migrations/", "docs/sql-backoffice.sql", "data/", "scripts/import-woocommerce.mjs", ".sql"],
-    commands: ["node scripts/agent_ops/review-pack.mjs", "Nico review before production SQL/data application"]
+    matches: [
+      "docs/sql-migrations/",
+      "docs/sql-backoffice.sql",
+      "data/",
+      "scripts/import-woocommerce.mjs",
+      ".sql",
+    ],
+    commands: [
+      "node scripts/agent_ops/review-pack.mjs",
+      "Nico review before production SQL/data application",
+    ],
   },
   {
     reason: "infra",
-    matches: ["next.config.ts", "vercel.json", "package.json", "package-lock.json", "pnpm-lock.yaml", "proxy.ts", ".env.example"],
-    commands: ["npm run build", "npm test if package tooling is available"]
-  }
+    matches: [
+      "next.config.ts",
+      "vercel.json",
+      "package.json",
+      "package-lock.json",
+      "pnpm-lock.yaml",
+      "proxy.ts",
+      ".env.example",
+    ],
+    commands: ["npm run build", "npm test if package tooling is available"],
+  },
 ];
 
 export function buildQualityPlan(changedFiles) {
-  const files = changedFiles.map((path) => path.trim().replace(/^\.\//, "")).filter(Boolean);
+  const files = changedFiles
+    .map((path) => path.trim().replace(/^\.\//, ""))
+    .filter(Boolean);
   const reasons = [];
   const commands = [];
 
@@ -46,17 +72,23 @@ export function buildQualityPlan(changedFiles) {
   return {
     changedFiles: files,
     reasons: Array.from(new Set(reasons)),
-    commands: Array.from(new Set(commands))
+    commands: Array.from(new Set(commands)),
   };
 }
 
 function matchesAny(file, patterns) {
-  return patterns.some((pattern) => file === pattern || file.startsWith(pattern) || file.includes(pattern));
+  return patterns.some(
+    (pattern) =>
+      file === pattern || file.startsWith(pattern) || file.includes(pattern),
+  );
 }
 
 function gitLines(args) {
   const output = execFileSync("git", args, { encoding: "utf8" });
-  return output.split("\n").map((line) => line.trimEnd()).filter(Boolean);
+  return output
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter(Boolean);
 }
 
 export function changedFilesFromGit() {
@@ -84,9 +116,12 @@ export function renderPlan(plan) {
 function main(argv) {
   const asJson = argv.includes("--json");
   const filesIndex = argv.indexOf("--files");
-  const files = filesIndex >= 0 ? argv.slice(filesIndex + 1) : changedFilesFromGit();
+  const files =
+    filesIndex >= 0 ? argv.slice(filesIndex + 1) : changedFilesFromGit();
   const plan = buildQualityPlan(files);
-  process.stdout.write(asJson ? `${JSON.stringify(plan, null, 2)}\n` : renderPlan(plan));
+  process.stdout.write(
+    asJson ? `${JSON.stringify(plan, null, 2)}\n` : renderPlan(plan),
+  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 import { writeFileSync } from "node:fs";
 
-export const universalLoad = ["AGENTS.md", "CLAUDE.md", "README.md", "package.json"];
+export const universalLoad = [
+  "AGENTS.md",
+  "CLAUDE.md",
+  "README.md",
+  "package.json",
+];
 
 export const avoid = [
-  "Do not read .env, .env.local, .vercel, credential files, node_modules, .next, or large generated outputs by default."
+  "Do not read .env, .env.local, .vercel, credential files, node_modules, .next, or large generated outputs by default.",
 ];
 
 export const taskContexts = {
@@ -15,41 +20,65 @@ export const taskContexts = {
       "docs/agent-ops/HARNESS_RATCHET.md",
       "docs/agent-ops/SECURITY_AND_ENFORCEMENT.md",
       "scripts/agent_ops/",
-      "tests/agent-ops/"
+      "tests/agent-ops/",
     ],
-    verify: ["node --test tests/agent-ops/*.test.mjs"]
+    verify: ["node --test tests/agent-ops/*.test.mjs"],
   },
   storefront: {
-    load: ["app/page.tsx", "relevant app route", "relevant components/", "relevant lib/ helper"],
-    verify: ["npm run build", "browser check for visible UI when applicable"]
+    load: [
+      "app/page.tsx",
+      "relevant app route",
+      "relevant components/",
+      "relevant lib/ helper",
+    ],
+    verify: ["npm run build", "browser check for visible UI when applicable"],
   },
   admin: {
-    load: ["relevant admin route", "proxy.ts or middleware if auth/routing changed", "relevant lib/ helper"],
-    verify: ["npm run build", "manual auth/routing check when applicable"]
+    load: [
+      "relevant admin route",
+      "proxy.ts or middleware if auth/routing changed",
+      "relevant lib/ helper",
+    ],
+    verify: ["npm run build", "manual auth/routing check when applicable"],
   },
   "data-sql": {
-    load: ["touched migration or data file", "data/supabase_schema.sql", "scripts/import-woocommerce.mjs if import behavior changed"],
-    verify: ["node scripts/agent_ops/review-pack.mjs", "Nico review before production application"]
+    load: [
+      "touched migration or data file",
+      "data/supabase_schema.sql",
+      "scripts/import-woocommerce.mjs if import behavior changed",
+    ],
+    verify: [
+      "node scripts/agent_ops/review-pack.mjs",
+      "Nico review before production application",
+    ],
   },
   infra: {
-    load: ["next.config.ts", "vercel.json", "package.json", "proxy.ts", ".env.example if public env shape changed"],
-    verify: ["npm run build", "npm test if package tooling is available"]
+    load: [
+      "next.config.ts",
+      "vercel.json",
+      "package.json",
+      "proxy.ts",
+      ".env.example if public env shape changed",
+    ],
+    verify: ["npm run build", "npm test if package tooling is available"],
   },
   docs: {
     load: ["target doc", "one upstream doc", "one linked downstream doc"],
-    verify: ["Check links, commands, and stale local paths manually."]
-  }
+    verify: ["Check links, commands, and stale local paths manually."],
+  },
 };
 
 export function getContextForTask(taskType) {
   const task = taskContexts[taskType];
   if (!task) {
-    throw new Error(`Unknown task type: ${taskType}. Valid task types: ${Object.keys(taskContexts).sort().join(", ")}`);
+    throw new Error(
+      `Unknown task type: ${taskType}. Valid task types: ${Object.keys(taskContexts).sort().join(", ")}`,
+    );
   }
   return {
     load: Array.from(new Set([...universalLoad, ...task.load])),
     verify: [...task.verify],
-    avoid: [...avoid]
+    avoid: [...avoid],
   };
 }
 
@@ -70,11 +99,15 @@ function main(argv) {
   const writePath = writePathIndex >= 0 ? argv[writePathIndex + 1] : undefined;
 
   if (!taskType) {
-    console.error("Usage: node scripts/agent_ops/context-loader.mjs --task-type <type> [--json] [--write <path>]");
+    console.error(
+      "Usage: node scripts/agent_ops/context-loader.mjs --task-type <type> [--json] [--write <path>]",
+    );
     return 2;
   }
 
-  const output = asJson ? `${JSON.stringify(getContextForTask(taskType), null, 2)}\n` : renderContext(taskType);
+  const output = asJson
+    ? `${JSON.stringify(getContextForTask(taskType), null, 2)}\n`
+    : renderContext(taskType);
   if (writePath) {
     writeFileSync(writePath, output, "utf8");
   } else {

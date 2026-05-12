@@ -4,15 +4,15 @@ Every costly repeated agent mistake becomes a durable improvement, and every dur
 
 ## Failure Mode Taxonomy
 
-| Failure | Durable fix |
-|---|---|
-| Tokenized remote URL | remove credential from remote and add merge checklist item |
-| `.env` read or leak risk | deny rule, doc warning, dummy test values |
-| Hidden build tooling mismatch | log baseline, improve package scripts or setup docs |
-| UI claim without browser proof | browser check requirement |
-| SQL applied without review | data-sql quality gate |
-| Lost context in long task | memory entry or checkpoint |
-| Untracked files missed in review | review pack includes `git ls-files --others` |
+| Failure                          | Durable fix                                                |
+| -------------------------------- | ---------------------------------------------------------- |
+| Tokenized remote URL             | remove credential from remote and add merge checklist item |
+| `.env` read or leak risk         | deny rule, doc warning, dummy test values                  |
+| Hidden build tooling mismatch    | log baseline, improve package scripts or setup docs        |
+| UI claim without browser proof   | browser check requirement                                  |
+| SQL applied without review       | data-sql quality gate                                      |
+| Lost context in long task        | memory entry or checkpoint                                 |
+| Untracked files missed in review | review pack includes `git ls-files --others`               |
 
 ## Current Entries
 

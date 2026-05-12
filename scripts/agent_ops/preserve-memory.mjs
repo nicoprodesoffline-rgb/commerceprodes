@@ -2,11 +2,19 @@
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
-const validKinds = new Set(["decision", "failure-mode", "tool-verdict", "handoff", "checkpoint"]);
+const validKinds = new Set([
+  "decision",
+  "failure-mode",
+  "tool-verdict",
+  "handoff",
+  "checkpoint",
+]);
 
 export function buildEntry({ kind, title, body, repo = "commerce" }) {
   if (!validKinds.has(kind)) {
-    throw new Error(`Unknown memory kind: ${kind}. Valid kinds: ${Array.from(validKinds).sort().join(", ")}`);
+    throw new Error(
+      `Unknown memory kind: ${kind}. Valid kinds: ${Array.from(validKinds).sort().join(", ")}`,
+    );
   }
   const today = new Date().toISOString().slice(0, 10);
   return `\n## ${today} — ${title}\n\nKind: \`${kind}\`\n\nRepo: \`${repo}\`\n\n${body.trim()}\n`;
@@ -29,7 +37,9 @@ function main(argv) {
   const body = valueAfter(argv, "--body");
   const path = valueAfter(argv, "--path") || "docs/agent-ops/MEMORY.md";
   if (!kind || !title || !body) {
-    console.error("Usage: node scripts/agent_ops/preserve-memory.mjs --kind decision --title <title> --body <body>");
+    console.error(
+      "Usage: node scripts/agent_ops/preserve-memory.mjs --kind decision --title <title> --body <body>",
+    );
     return 2;
   }
   appendEntry(path, buildEntry({ kind, title, body }));

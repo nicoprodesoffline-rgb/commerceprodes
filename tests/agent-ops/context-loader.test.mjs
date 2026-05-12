@@ -1,14 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getContextForTask, renderContext } from "../../scripts/agent_ops/context-loader.mjs";
+import {
+  getContextForTask,
+  renderContext,
+} from "../../scripts/agent_ops/context-loader.mjs";
 
 test("commerce context loader combines universal and task context", () => {
   const context = getContextForTask("agent-ops");
 
   assert.ok(context.load.includes("AGENTS.md"));
   assert.ok(context.load.includes("CLAUDE.md"));
-  assert.ok(context.load.includes("docs/agent-ops/AGENT_OPERATING_PROTOCOL.md"));
+  assert.ok(
+    context.load.includes("docs/agent-ops/AGENT_OPERATING_PROTOCOL.md"),
+  );
   assert.ok(context.verify.some((command) => command.includes("node --test")));
 });
 
