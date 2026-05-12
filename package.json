@@ -6,7 +6,10 @@
     "start": "next start",
     "prettier": "prettier --write --ignore-unknown .",
     "prettier:check": "prettier --check --ignore-unknown .",
-    "test": "pnpm prettier:check"
+    "test": "npm run prettier:check",
+    "agent-ops:test": "node --test tests/agent-ops/*.test.mjs",
+    "agent-ops:quality": "node scripts/agent_ops/quality-gate.mjs",
+    "agent-ops:review": "node scripts/agent_ops/review-pack.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

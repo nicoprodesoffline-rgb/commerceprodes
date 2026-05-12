@@ -1,0 +1,31 @@
+{
+  "spinnerTipsEnabled": false,
+  "permissions": {
+    "deny": [
+      "Read(**/.env*)",
+      "Read(**/.vercel/**)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/secrets/**)",
+      "Read(**/credentials/**)",
+      "Read(**/.aws/**)",
+      "Read(**/.ssh/**)",
+      "Read(**/.npmrc)",
+      "Read(**/.pypirc)",
+      "Write(**/.env*)",
+      "Write(**/.vercel/**)",
+      "Write(**/secrets/**)",
+      "Write(**/credentials/**)",
+      "Write(**/.ssh/**)",
+      "Write(.github/workflows/*)",
+      "Bash(rm -rf *)",
+      "Bash(sudo *)",
+      "Bash(git reset --hard*)",
+      "Bash(git push --force*)",
+      "Bash(npm publish*)",
+      "Bash(curl * | sh)",
+      "Bash(wget * | sh)",
+      "Bash(vercel env pull*)"
+    ]
+  }
+}

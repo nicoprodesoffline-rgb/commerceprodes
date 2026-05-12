@@ -43,3 +43,7 @@ next-env.d.ts
 
 # screenshots
 docs/screenshots/
+
+# local agent worktrees and settings
+.worktrees/
+.claude/settings.local.json
