@@ -9,7 +9,8 @@
     "test": "npm run prettier:check",
     "agent-ops:test": "node --test tests/agent-ops/*.test.mjs",
     "agent-ops:quality": "node scripts/agent_ops/quality-gate.mjs",
-    "agent-ops:review": "node scripts/agent_ops/review-pack.mjs"
+    "agent-ops:review": "node scripts/agent_ops/review-pack.mjs",
+    "agent-ops:evals": "node scripts/agent_ops/run-skill-evals.mjs --dry-run --split optimization"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

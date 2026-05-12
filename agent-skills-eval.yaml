@@ -1,0 +1,24 @@
+root: ./agent-skills
+workspace: ./.agent-runs/agent-skills-eval
+baseline: true
+target: gpt-4o-mini
+judge: gpt-4o-mini
+baseUrl: https://api.openai.com/v1
+apiKeyEnv: OPENAI_API_KEY
+include:
+  - "commerce-agent-ops"
+exclude:
+  - "**/draft-*"
+concurrency: 2
+layout: iteration
+strict: true
+report:
+  enabled: true
+  title: Commerce Agent Skills Report
+logging:
+  format: pretty
+  verbose: false
+targetParams:
+  temperature: 0
+judgeParams:
+  temperature: 0

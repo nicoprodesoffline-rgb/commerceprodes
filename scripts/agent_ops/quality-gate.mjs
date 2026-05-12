@@ -13,8 +13,14 @@ const rules = [
       "scripts/agent_ops/",
       "tests/agent-ops/",
       ".claude/",
+      "agent-skills/",
+      "agent-skills-eval.yaml",
+      ".github/workflows/agent-ops.yml",
     ],
-    commands: [agentOpsTestCommand],
+    commands: [
+      agentOpsTestCommand,
+      "node scripts/agent_ops/run-skill-evals.mjs --dry-run --split optimization",
+    ],
   },
   {
     reason: "storefront",
@@ -51,9 +57,7 @@ const rules = [
 ];
 
 export function buildQualityPlan(changedFiles) {
-  const files = changedFiles
-    .map((path) => path.trim().replace(/^\.\//, ""))
-    .filter(Boolean);
+  const files = changedFiles.map(normalizePath).filter(Boolean);
   const reasons = [];
   const commands = [];
 
@@ -74,6 +78,11 @@ export function buildQualityPlan(changedFiles) {
     reasons: Array.from(new Set(reasons)),
     commands: Array.from(new Set(commands)),
   };
+}
+
+function normalizePath(path) {
+  const clean = path.trim();
+  return clean.startsWith("./") ? clean.slice(2) : clean;
 }
 
 function matchesAny(file, patterns) {

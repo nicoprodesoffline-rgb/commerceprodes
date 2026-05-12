@@ -39,6 +39,9 @@ failed in the sibling worktree because `next` is not installed there.
 - add a secret scan script
 - add future `.worktrees/` ignore rule
 - update `package.json` so `npm test` no longer delegates to unavailable `pnpm`
+- add `agent-skills-eval` config with optimization/holdout examples
+- add `ERRORS.md`, eval run summaries, and `.agent-runs/` ignored raw run storage
+- add targeted GitHub Actions CI for agent-ops paths
 
 ## Merge Guidance
 
@@ -85,6 +88,16 @@ next: command not found
 ```
 
 Post-merge plan: rerun `npm test` and `npm run build` in `/Users/nico/Desktop/commerce`, where `node_modules` exists.
+
+## Eval VNext
+
+Added after the initial port:
+
+```bash
+node scripts/agent_ops/run-skill-evals.mjs --dry-run --split optimization
+```
+
+Full eval runs require `OPENAI_API_KEY` and accepted model spend. Raw artifacts stay in `.agent-runs/`; only compact summaries belong in `docs/agent-ops/eval-runs/`.
 
 ## Post-Merge Verification In Main
 

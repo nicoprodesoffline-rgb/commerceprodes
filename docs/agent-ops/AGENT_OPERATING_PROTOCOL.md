@@ -58,6 +58,7 @@ When an agent mistake appears:
 2. Add the smallest durable improvement.
 3. Verify that improvement.
 4. Record the reason in `HARNESS_RATCHET.md` or `MEMORY.md`.
+5. If an approach took repeated attempts, record it in `ERRORS.md`.
 
 ## 6. Merge Standard
 
@@ -68,3 +69,11 @@ Before merge:
 - recommended checks from the quality gate, or documented reason they cannot run
 - no unrelated dirty files
 - no tokenized remote URL
+
+When agent skills or evals changed, also run:
+
+```bash
+node scripts/agent_ops/run-skill-evals.mjs --dry-run --split optimization
+```
+
+Run the full eval only when `OPENAI_API_KEY` is available and model spend is accepted.

@@ -45,3 +45,14 @@ Observed: the staged secret scanner initially matched token-pattern literals in 
 Fix: make token patterns less literal and exclude the scanner's own source file from staged-diff content scanning.
 
 Verification: `scripts/agent_ops/pre-commit-secret-scan.sh` passed after the patch.
+
+## Eval Hill-Climbing
+
+Agent skills use evals as the learning signal:
+
+- `optimization` split: examples we are allowed to improve against.
+- `holdout` split: examples used to catch overfitting and regressions.
+- `.agent-runs/`: raw run artifacts, ignored.
+- `eval-runs/`: committed human summaries of meaningful eval runs.
+
+Do not accept harness changes only because they improve optimization examples. Holdout regressions must be reviewed explicitly.

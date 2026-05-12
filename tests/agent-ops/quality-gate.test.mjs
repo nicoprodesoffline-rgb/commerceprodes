@@ -45,3 +45,13 @@ test("unknown docs-only changes fall back to review pack", () => {
   assert.ok(plan.reasons.includes("fallback"));
   assert.deepEqual(plan.commands, ["node scripts/agent_ops/review-pack.mjs"]);
 });
+
+test("hidden paths keep their dot prefix", () => {
+  const plan = buildQualityPlan([
+    ".gitignore",
+    "./.github/workflows/agent-ops.yml",
+  ]);
+
+  assert.ok(plan.changedFiles.includes(".gitignore"));
+  assert.ok(plan.changedFiles.includes(".github/workflows/agent-ops.yml"));
+});

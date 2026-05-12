@@ -23,12 +23,15 @@ Load:
 - `docs/agent-ops/CONTEXT_LOADING.md`
 - `docs/agent-ops/HARNESS_RATCHET.md`
 - `docs/agent-ops/SECURITY_AND_ENFORCEMENT.md`
+- `docs/agent-ops/ERRORS.md` if a similar task has failed before
 - `scripts/agent_ops/`
 - `tests/agent-ops/`
+- touched skill/eval files under `agent-skills/`
 
 Verify:
 
 - `node --test tests/agent-ops/*.test.mjs`
+- `node scripts/agent_ops/run-skill-evals.mjs --dry-run --split optimization` when skills/evals changed
 
 ### `storefront`
 

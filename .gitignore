@@ -47,3 +47,4 @@ docs/screenshots/
 # local agent worktrees and settings
 .worktrees/
 .claude/settings.local.json
+.agent-runs/

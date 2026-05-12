@@ -1,0 +1,39 @@
+name: Agent Ops
+
+on:
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - "agent-skills/**"
+      - "agent-skills-eval.yaml"
+      - "docs/agent-ops/**"
+      - "scripts/agent_ops/**"
+      - "tests/agent-ops/**"
+      - ".github/workflows/agent-ops.yml"
+  push:
+    branches: [main]
+    paths:
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - "agent-skills/**"
+      - "agent-skills-eval.yaml"
+      - "docs/agent-ops/**"
+      - "scripts/agent_ops/**"
+      - "tests/agent-ops/**"
+      - ".github/workflows/agent-ops.yml"
+
+jobs:
+  agent-ops:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Agent-ops tests
+        run: node --test tests/agent-ops/*.test.mjs
+      - name: Skill eval dry-run
+        run: node scripts/agent_ops/run-skill-evals.mjs --dry-run --split optimization
+      - name: Secret scan
+        run: scripts/agent_ops/pre-commit-secret-scan.sh
