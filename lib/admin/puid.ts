@@ -137,6 +137,30 @@ const NOISE_WORDS = new Set([
   "AUX",
 ]);
 
+const V4_MODEL_NOISE_WORDS = new Set([
+  "DE",
+  "DU",
+  "DES",
+  "LA",
+  "LE",
+  "LES",
+  "UN",
+  "UNE",
+  "A",
+  "AU",
+  "AUX",
+  "ET",
+  "AVEC",
+  "SANS",
+  "VERSION",
+  "COLORIS",
+  "COULEUR",
+  "STRUCTURE",
+  "DIMENSION",
+  "DIMENSIONS",
+  "NORME",
+]);
+
 const COLOR_CODES: Record<string, string> = {
   BLANC: "BLAN",
   BLEU: "BLEU",
@@ -254,10 +278,121 @@ function modelCodeFromName(name: string): string {
   return fallback || "MODEL";
 }
 
+function stripSupplierPrefixFromRef(ref: string, supplier: string): string {
+  const normalizedRef = asciiUpper(ref)
+    .replace(/[–—_]+/g, "-")
+    .trim();
+  const supplierToken = cleanToken(supplier);
+  if (!supplierToken) return normalizedRef;
+
+  const cleanRef = cleanToken(normalizedRef);
+  if (cleanRef === supplierToken) return "";
+
+  const prefixMatch = normalizedRef.match(/^([A-Z0-9]+)([-.\s]+)(.*)$/);
+  if (
+    prefixMatch &&
+    (cleanToken(prefixMatch[1] || "") === supplierToken ||
+      cleanToken(prefixMatch[1] || "").startsWith(supplierToken))
+  ) {
+    return prefixMatch[3] || "";
+  }
+
+  if (cleanRef.startsWith(supplierToken)) {
+    return normalizedRef.slice(supplierToken.length).replace(/^[-.\s]+/, "");
+  }
+
+  return normalizedRef;
+}
+
+function modelRefTokensV4(ref: string, supplier: string): string[] {
+  const stripped = stripSupplierPrefixFromRef(ref, supplier).replace(
+    /([A-Z]*\d+)\.(\d+)/g,
+    "$1$2",
+  );
+  const rawTokens = stripped
+    .split(/[^A-Z0-9]+/)
+    .map((token) => cleanToken(token))
+    .filter((token) => token && !V4_MODEL_NOISE_WORDS.has(token));
+
+  const tokens: string[] = [];
+  for (const token of rawTokens) {
+    const previous = tokens[tokens.length - 1];
+    if (
+      /^\d+$/.test(token) &&
+      previous &&
+      /[A-Z]/.test(previous) &&
+      /\d/.test(previous)
+    ) {
+      tokens[tokens.length - 1] = `${previous}${token}`;
+      continue;
+    }
+    tokens.push(token);
+  }
+  return tokens.slice(0, 8);
+}
+
+function modelAllocations(count: number): number[] {
+  if (count <= 1) return [8];
+  if (count === 2) return [4, 4];
+  if (count === 3) return [4, 2, 2];
+  if (count === 4) return [2, 2, 2, 2];
+  const allocations = Array(count).fill(1);
+  let remaining = 8 - count;
+  for (let i = 0; i < allocations.length && remaining > 0; i += 1) {
+    allocations[i] += 1;
+    remaining -= 1;
+  }
+  return allocations;
+}
+
+function compactModelToken(token: string, size: number): string {
+  const cleaned = cleanToken(token);
+  if (size <= 0 || !cleaned) return "";
+  if (cleaned.length <= size) return cleaned;
+  if (size <= 2) {
+    const consonants = cleaned.replace(/[AEIOUY]/g, "");
+    if (consonants.length >= size) return consonants.slice(0, size);
+  }
+  return cleaned.slice(0, size);
+}
+
+function modelCodeFromSupplierRefV4(
+  ref: string,
+  supplier: string,
+): string | null {
+  const tokens = modelRefTokensV4(ref, supplier);
+  if (tokens.length === 0) return null;
+
+  const allocations = modelAllocations(tokens.length);
+  let deficitBeforeLast = 0;
+  const parts = tokens.map((token, index) => {
+    const isLast = index === tokens.length - 1;
+    const baseAllocation = allocations[index] ?? 1;
+    const allocation = baseAllocation + (isLast ? deficitBeforeLast : 0);
+    const part = compactModelToken(token, allocation);
+    if (!isLast && part.length < baseAllocation) {
+      deficitBeforeLast += baseAllocation - part.length;
+    }
+    return part;
+  });
+
+  const compact = cleanToken(parts.join(""));
+  return compact ? compact.slice(0, 8) : null;
+}
+
 function resolveModelCode(product: PuidProductRow): {
   model: string;
   reason: string;
 } {
+  const supplier = supplierCodeFromProduct(product);
+  const fromSupplierRef = modelCodeFromSupplierRefV4(
+    String(product.supplier_ref || ""),
+    supplier,
+  );
+  if (fromSupplierRef) {
+    return { model: fromSupplierRef, reason: "supplier_ref_v4" };
+  }
+
   const fromParent = modelCodeFromSkuLike(String(product.parent_sku || ""));
   if (fromParent) return { model: fromParent, reason: "parent_sku" };
 

@@ -15,6 +15,7 @@ function PathFilterItem({ item }: { item: PathFilterItem }) {
   const DynamicTag = active ? "p" : Link;
 
   newParams.delete("q");
+  newParams.delete("page");
 
   return (
     <li className="mt-2 flex text-black dark:text-white" key={item.title}>
@@ -37,14 +38,13 @@ function SortFilterItem({ item }: { item: SortFilterItem }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const active = searchParams.get("sort") === item.slug;
-  const q = searchParams.get("q");
-  const href = createUrl(
-    pathname,
-    new URLSearchParams({
-      ...(q && { q }),
-      ...(item.slug && item.slug.length && { sort: item.slug }),
-    }),
-  );
+  const params = new URLSearchParams(searchParams.toString());
+  params.delete("page");
+
+  if (item.slug && item.slug.length > 0) params.set("sort", item.slug);
+  else params.delete("sort");
+
+  const href = createUrl(pathname, params);
   const DynamicTag = active ? "p" : Link;
 
   return (

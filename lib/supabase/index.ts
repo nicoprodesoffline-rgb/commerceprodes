@@ -681,6 +681,198 @@ const PRODUCT_LIST_SELECT = `
   product_categories (categories (name, slug))
 `;
 
+type ProductListFilters = {
+  query?: string;
+  productIds?: string[];
+  childIds?: Set<string>;
+  sortKey?: string;
+  reverse?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+  inStockOnly?: boolean;
+  supplier?: string;
+  ecoOnly?: boolean;
+};
+
+export type PaginatedProductsResult = {
+  products: Product[];
+  total: number;
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+};
+
+function buildProductListQuery({
+  query,
+  productIds,
+  childIds = new Set<string>(),
+  sortKey = "RELEVANCE",
+  reverse = false,
+  minPrice,
+  maxPrice,
+  inStockOnly = false,
+  supplier,
+  ecoOnly = false,
+  withCount = false,
+}: ProductListFilters & { withCount?: boolean }) {
+  let dbQuery = supabase
+    .from("products")
+    .select(PRODUCT_LIST_SELECT, withCount ? { count: "exact" } : undefined)
+    .eq("status", "publish");
+
+  if (query) dbQuery = dbQuery.ilike("name", `%${query}%`);
+
+  if (productIds !== undefined) {
+    if (productIds.length === 0) return null;
+    dbQuery = dbQuery.in("id", productIds);
+  }
+
+  if (minPrice != null) dbQuery = dbQuery.gte("regular_price", minPrice);
+  if (maxPrice != null) dbQuery = dbQuery.lte("regular_price", maxPrice);
+  if (inStockOnly) dbQuery = dbQuery.eq("stock_status", "instock");
+  if (supplier) dbQuery = dbQuery.eq("supplier_code", supplier);
+  if (ecoOnly) dbQuery = dbQuery.gt("eco_contribution", 0);
+
+  const ascending = !reverse;
+  switch (sortKey) {
+    case "PRICE":
+      dbQuery = dbQuery.order("regular_price", { ascending });
+      break;
+    case "CREATED_AT":
+      dbQuery = dbQuery.order("created_at", { ascending });
+      break;
+    case "BEST_SELLING":
+      dbQuery = dbQuery
+        .order("featured", { ascending: false })
+        .order("created_at", { ascending: false });
+      break;
+    default:
+      dbQuery = dbQuery.order("created_at", { ascending: false });
+  }
+
+  if (childIds.size > 0) {
+    dbQuery = dbQuery.not("id", "in", `(${[...childIds].join(",")})`);
+  }
+
+  return dbQuery;
+}
+
+async function getCollectionProductIds(collection: string): Promise<string[]> {
+  const { data: mainCat } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("slug", collection)
+    .single();
+
+  if (!mainCat) return [];
+
+  const { data: subCats } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("parent_id", mainCat.id);
+
+  const categoryIds = [mainCat.id, ...(subCats || []).map((c: any) => c.id)];
+
+  const { data: catProducts } = await supabase
+    .from("product_categories")
+    .select("product_id")
+    .in("category_id", categoryIds);
+
+  return [...new Set((catProducts || []).map((cp: any) => cp.product_id))] as
+    string[];
+}
+
+async function getPaginatedProductList({
+  page,
+  pageSize,
+  ...filters
+}: ProductListFilters & {
+  page: number;
+  pageSize: number;
+}): Promise<PaginatedProductsResult> {
+  "use cache";
+  cacheTag(TAGS.collections, TAGS.products);
+  cacheLife("days");
+
+  const currentPage = Math.max(1, page);
+  const safePageSize = Math.max(1, pageSize);
+  const start = (currentPage - 1) * safePageSize;
+  const end = start + safePageSize - 1;
+  const childIds = await getFamilyChildIds();
+
+  const dbQuery = buildProductListQuery({
+    ...filters,
+    childIds,
+    withCount: true,
+  });
+
+  if (!dbQuery) {
+    return {
+      products: [],
+      total: 0,
+      currentPage,
+      totalPages: 0,
+      pageSize: safePageSize,
+    };
+  }
+
+  const { data: products, error, count } = await dbQuery.range(start, end);
+  if (error || !products) {
+    return {
+      products: [],
+      total: 0,
+      currentPage,
+      totalPages: 0,
+      pageSize: safePageSize,
+    };
+  }
+
+  const total = count ?? 0;
+  const totalPages = total === 0 ? 0 : Math.ceil(total / safePageSize);
+
+  if (total > 0 && products.length === 0 && currentPage > totalPages) {
+    const lastPage = Math.max(1, totalPages);
+    const lastStart = (lastPage - 1) * safePageSize;
+    const lastEnd = lastStart + safePageSize - 1;
+    const fallbackQuery = buildProductListQuery({
+      ...filters,
+      childIds,
+      withCount: false,
+    });
+
+    if (!fallbackQuery) {
+      return {
+        products: [],
+        total,
+        currentPage: lastPage,
+        totalPages,
+        pageSize: safePageSize,
+      };
+    }
+
+    const { data: fallbackProducts, error: fallbackError } =
+      await fallbackQuery.range(lastStart, lastEnd);
+
+    if (!fallbackError && fallbackProducts) {
+      return {
+        products: fallbackProducts.map(buildProductSummary),
+        total,
+        currentPage: lastPage,
+        totalPages,
+        pageSize: safePageSize,
+      };
+    }
+  }
+
+  return {
+    products: products.map(buildProductSummary),
+    total,
+    currentPage,
+    totalPages,
+    pageSize: safePageSize,
+  };
+}
+
 export async function getProducts({
   query,
   category,
@@ -728,51 +920,93 @@ export async function getProducts({
     }
   }
 
-  let dbQuery = supabase
-    .from("products")
-    .select(PRODUCT_LIST_SELECT)
-    .eq("status", "publish");
-
-  if (query) dbQuery = dbQuery.ilike("name", `%${query}%`);
-
-  if (productIds !== null) {
-    if (productIds.length === 0) return [];
-    dbQuery = dbQuery.in("id", productIds);
-  }
-
-  if (minPrice != null) dbQuery = dbQuery.gte("regular_price", minPrice);
-  if (maxPrice != null) dbQuery = dbQuery.lte("regular_price", maxPrice);
-  if (inStockOnly) dbQuery = dbQuery.eq("stock_status", "instock");
-  if (supplier) dbQuery = dbQuery.eq("supplier_code", supplier);
-  if (ecoOnly) dbQuery = dbQuery.gt("eco_contribution", 0);
-
-  const ascending = !reverse;
-  switch (sortKey) {
-    case "PRICE":
-      dbQuery = dbQuery.order("regular_price", { ascending });
-      break;
-    case "CREATED_AT":
-      dbQuery = dbQuery.order("created_at", { ascending });
-      break;
-    case "BEST_SELLING":
-      dbQuery = dbQuery
-        .order("featured", { ascending: false })
-        .order("created_at", { ascending: false });
-      break;
-    default:
-      dbQuery = dbQuery.order("created_at", { ascending: false });
-  }
-
-  // Exclude family children — only "mère" products appear in public listings
   const childIds = await getFamilyChildIds();
-  if (childIds.size > 0) {
-    dbQuery = dbQuery.not("id", "in", `(${[...childIds].join(",")})`);
-  }
+  const dbQuery = buildProductListQuery({
+    query,
+    productIds: productIds === null ? undefined : productIds,
+    childIds,
+    sortKey,
+    reverse,
+    minPrice,
+    maxPrice,
+    inStockOnly,
+    supplier,
+    ecoOnly,
+  });
+
+  if (!dbQuery) return [];
 
   const { data: products, error } = await dbQuery.limit(limit);
   if (error || !products) return [];
 
   return products.map(buildProductSummary);
+}
+
+export async function getProductsPage({
+  page,
+  pageSize,
+  query,
+  category,
+  sortKey = "RELEVANCE",
+  reverse = false,
+  minPrice,
+  maxPrice,
+  inStockOnly = false,
+  supplier,
+  ecoOnly = false,
+}: {
+  page: number;
+  pageSize: number;
+  query?: string;
+  category?: string;
+  sortKey?: string;
+  reverse?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+  inStockOnly?: boolean;
+  supplier?: string;
+  ecoOnly?: boolean;
+}): Promise<PaginatedProductsResult> {
+  let productIds: string[] | undefined;
+
+  if (category) {
+    const { data: cat } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("slug", category)
+      .single();
+
+    if (!cat) {
+      return {
+        products: [],
+        total: 0,
+        currentPage: Math.max(1, page),
+        totalPages: 0,
+        pageSize: Math.max(1, pageSize),
+      };
+    }
+
+    const { data: catProducts } = await supabase
+      .from("product_categories")
+      .select("product_id")
+      .eq("category_id", cat.id);
+
+    productIds = (catProducts || []).map((cp: any) => cp.product_id);
+  }
+
+  return getPaginatedProductList({
+    page,
+    pageSize,
+    query,
+    productIds,
+    sortKey,
+    reverse,
+    minPrice,
+    maxPrice,
+    inStockOnly,
+    supplier,
+    ecoOnly,
+  });
 }
 
 export async function getProductRecommendations(
@@ -898,65 +1132,82 @@ export async function getCollectionProducts({
     return getProducts({ sortKey: "CREATED_AT", reverse: true, limit: 12 });
   }
 
-  // Get category + its subcategories (one level deep)
-  const { data: mainCat } = await supabase
-    .from("categories")
-    .select("id")
-    .eq("slug", collection)
-    .single();
-
-  if (!mainCat) return [];
-
-  const { data: subCats } = await supabase
-    .from("categories")
-    .select("id")
-    .eq("parent_id", mainCat.id);
-
-  const categoryIds = [mainCat.id, ...(subCats || []).map((c: any) => c.id)];
-
-  const { data: catProducts } = await supabase
-    .from("product_categories")
-    .select("product_id")
-    .in("category_id", categoryIds);
-
-  const productIds = [
-    ...new Set((catProducts || []).map((cp: any) => cp.product_id)),
-  ] as string[];
+  const productIds = await getCollectionProductIds(collection);
 
   if (productIds.length === 0) return [];
 
-  const ascending = !reverse;
-  let dbQuery = supabase
-    .from("products")
-    .select(PRODUCT_LIST_SELECT)
-    .in("id", productIds)
-    .eq("status", "publish");
-
-  if (minPrice != null) dbQuery = dbQuery.gte("regular_price", minPrice);
-  if (maxPrice != null) dbQuery = dbQuery.lte("regular_price", maxPrice);
-  if (inStockOnly) dbQuery = dbQuery.eq("stock_status", "instock");
-  if (supplier) dbQuery = dbQuery.eq("supplier_code", supplier);
-  if (ecoOnly) dbQuery = dbQuery.gt("eco_contribution", 0);
-
-  switch (sortKey) {
-    case "PRICE":
-      dbQuery = dbQuery.order("regular_price", { ascending });
-      break;
-    case "CREATED_AT":
-      dbQuery = dbQuery.order("created_at", { ascending });
-      break;
-    default:
-      dbQuery = dbQuery.order("created_at", { ascending: false });
-  }
-
-  // Exclude family children — only "mère" products appear in public listings
   const childIds = await getFamilyChildIds();
-  if (childIds.size > 0) {
-    dbQuery = dbQuery.not("id", "in", `(${[...childIds].join(",")})`);
-  }
+  const dbQuery = buildProductListQuery({
+    productIds,
+    childIds,
+    sortKey,
+    reverse,
+    minPrice,
+    maxPrice,
+    inStockOnly,
+    supplier,
+    ecoOnly,
+  });
+
+  if (!dbQuery) return [];
 
   const { data: products } = await dbQuery.limit(250);
   return (products || []).map(buildProductSummary);
+}
+
+export async function getCollectionProductsPage({
+  collection,
+  page,
+  pageSize,
+  reverse = false,
+  sortKey = "RELEVANCE",
+  minPrice,
+  maxPrice,
+  inStockOnly = false,
+  supplier,
+  ecoOnly = false,
+}: {
+  collection: string;
+  page: number;
+  pageSize: number;
+  reverse?: boolean;
+  sortKey?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStockOnly?: boolean;
+  supplier?: string;
+  ecoOnly?: boolean;
+}): Promise<PaginatedProductsResult> {
+  if (collection.startsWith("hidden-")) {
+    const products = await getProducts({
+      sortKey: "CREATED_AT",
+      reverse: true,
+      limit: 12,
+    });
+
+    return {
+      products,
+      total: products.length,
+      currentPage: 1,
+      totalPages: products.length > 0 ? 1 : 0,
+      pageSize,
+    };
+  }
+
+  const productIds = await getCollectionProductIds(collection);
+
+  return getPaginatedProductList({
+    page,
+    pageSize,
+    productIds,
+    sortKey,
+    reverse,
+    minPrice,
+    maxPrice,
+    inStockOnly,
+    supplier,
+    ecoOnly,
+  });
 }
 
 type CatalogFilterOptions = {

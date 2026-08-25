@@ -48,8 +48,20 @@ const input: PuidPlanInput = {
       regular_price: 18.08,
       status: "publish",
       attrs: [
-        { attribute_id: "classement_feu", attribute_slug: "classement_feu", attribute_name: "classement_feu", term_slug: "M4", term_name: "M4" },
-        { attribute_id: "accroches", attribute_slug: "accroches", attribute_name: "accroches", term_slug: "sans accroches", term_name: "sans accroches" },
+        {
+          attribute_id: "classement_feu",
+          attribute_slug: "classement_feu",
+          attribute_name: "classement_feu",
+          term_slug: "M4",
+          term_name: "M4",
+        },
+        {
+          attribute_id: "accroches",
+          attribute_slug: "accroches",
+          attribute_name: "accroches",
+          term_slug: "sans accroches",
+          term_name: "sans accroches",
+        },
         // No diametre_tube on the base variant.
       ],
     },
@@ -63,9 +75,27 @@ const input: PuidPlanInput = {
       regular_price: 18.48, // 18.08 + 0.40
       status: "publish",
       attrs: [
-        { attribute_id: "classement_feu", attribute_slug: "classement_feu", attribute_name: "classement_feu", term_slug: "M4", term_name: "M4" },
-        { attribute_id: "accroches", attribute_slug: "accroches", attribute_name: "accroches", term_slug: "sans accroches", term_name: "sans accroches" },
-        { attribute_id: "diametre_tube", attribute_slug: "diametre_tube", attribute_name: "diametre_tube", term_slug: "22", term_name: "22" },
+        {
+          attribute_id: "classement_feu",
+          attribute_slug: "classement_feu",
+          attribute_name: "classement_feu",
+          term_slug: "M4",
+          term_name: "M4",
+        },
+        {
+          attribute_id: "accroches",
+          attribute_slug: "accroches",
+          attribute_name: "accroches",
+          term_slug: "sans accroches",
+          term_name: "sans accroches",
+        },
+        {
+          attribute_id: "diametre_tube",
+          attribute_slug: "diametre_tube",
+          attribute_name: "diametre_tube",
+          term_slug: "22",
+          term_name: "22",
+        },
       ],
     },
   ],
@@ -99,7 +129,9 @@ const input: PuidPlanInput = {
 
 const plan = buildPuidPlan(input);
 
-console.log("=== INPUT (what the dashboard would build from expanded.json) ===\n");
+console.log(
+  "=== INPUT (what the dashboard would build from expanded.json) ===\n",
+);
 console.log(JSON.stringify(input, null, 2));
 
 console.log("\n=== PUID PLAN OUTPUT ===\n");
@@ -108,6 +140,9 @@ console.log(JSON.stringify(plan, null, 2));
 console.log("\n=== SUMMARY ===\n");
 const productSug = plan.product_suggestions[0];
 const variantSug = plan.variant_suggestions[0];
+if (!productSug || !variantSug) {
+  throw new Error("PUID simulation did not produce expected suggestions");
+}
 
 console.log(`Product-level PUID (root): ${productSug.suggested_puid}`);
 console.log(`  supplier_code   : ${productSug.supplier_code}`);

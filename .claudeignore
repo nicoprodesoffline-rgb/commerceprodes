@@ -1,0 +1,8 @@
+docs/morning-report*.md
+docs/screenshots/**
+docs/sql-migrations/**
+docs/superpowers/plans/**
+docs/agent-ops/**
+.claude/completions/**
+.claude/sessions/**
+

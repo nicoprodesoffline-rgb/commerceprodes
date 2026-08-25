@@ -108,6 +108,7 @@ export function CatalogFilters() {
     : boundsMax;
 
   function pushParams(params: URLSearchParams) {
+    params.delete("page");
     const qs = params.toString();
     startTransition(() => {
       router.push(qs ? `${pathname}?${qs}` : pathname);

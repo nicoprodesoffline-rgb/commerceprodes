@@ -1,17 +1,36 @@
+import type { Metadata } from "next";
 import Grid from "components/grid";
+import CatalogPagination from "components/layout/search/catalog-pagination";
 import ProductGridItems from "components/layout/product-grid-items";
 import { defaultSort, sorting } from "lib/constants";
-import { getProducts } from "lib/supabase";
+import {
+  buildCatalogPageUrl,
+  CATALOG_PAGE_SIZE,
+  normalizePageParam,
+} from "lib/search-pagination";
+import { getProductsPage } from "lib/supabase";
+import { baseUrl } from "lib/utils";
 
-export const metadata = {
-  title: "Catalogue – PRODES",
-  description: "Recherchez parmi nos équipements pour collectivités.",
-};
+export async function generateMetadata(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}): Promise<Metadata> {
+  const searchParams = (await props.searchParams) ?? {};
+  const currentPage = normalizePageParam(searchParams.page);
+  const canonicalPath = buildCatalogPageUrl("/search", searchParams, currentPage);
+
+  return {
+    title: "Catalogue – PRODES",
+    description: "Recherchez parmi nos équipements pour collectivités.",
+    alternates: {
+      canonical: `${baseUrl}${canonicalPath}`,
+    },
+  };
+}
 
 export default async function SearchPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const searchParams = await props.searchParams;
+  const searchParams = (await props.searchParams) ?? {};
   const {
     sort,
     q: searchValue,
@@ -21,10 +40,13 @@ export default async function SearchPage(props: {
     supplier,
     eco,
   } = searchParams as { [key: string]: string };
+  const currentPage = normalizePageParam(searchParams.page);
   const { sortKey, reverse } =
     sorting.find((item) => item.slug === sort) || defaultSort;
 
-  const products = await getProducts({
+  const result = await getProductsPage({
+    page: currentPage,
+    pageSize: CATALOG_PAGE_SIZE,
     sortKey,
     reverse,
     query: searchValue,
@@ -34,7 +56,8 @@ export default async function SearchPage(props: {
     supplier: supplier || undefined,
     ecoOnly: eco === "1",
   });
-  const resultsText = products.length > 1 ? "résultats" : "résultat";
+  const { products, total, totalPages, currentPage: resolvedPage } = result;
+  const resultsText = total > 1 ? "résultats" : "résultat";
 
   return (
     <>
@@ -45,19 +68,28 @@ export default async function SearchPage(props: {
       </h1>
       {searchValue ? (
         <p className="mb-6 text-sm text-gray-500">
-          {products.length === 0
+          {total === 0
             ? "Aucun produit ne correspond à cette recherche."
-            : `${products.length} ${resultsText}`}
+            : `${total} ${resultsText}`}
         </p>
       ) : (
         <p className="mb-6 text-sm text-gray-500">
-          {products.length} produit{products.length !== 1 ? "s" : ""}
+          {total} produit{total !== 1 ? "s" : ""}
         </p>
       )}
       {products.length > 0 ? (
-        <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <ProductGridItems products={products} />
-        </Grid>
+        <>
+          <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            <ProductGridItems products={products} />
+          </Grid>
+          <CatalogPagination
+            pathname="/search"
+            searchParams={searchParams}
+            currentPage={resolvedPage}
+            totalPages={totalPages}
+            totalItems={total}
+          />
+        </>
       ) : null}
     </>
   );
