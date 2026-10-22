@@ -1,0 +1,26 @@
+## grep -rniE 'supabase|shopify' app components lib (sources)
+app/contact/page.tsx:9:  // BC1-B : /api/contact (Supabase + Resend) supprimé. Aucun envoi n'est fait :
+components/layout/navbar/index.tsx:10:  // Menu = catégories racines du snapshot (BC1-B : plus de menu Supabase).
+matches=2
+
+## imports lib/supabase|lib/shopify|@supabase
+matches=0
+
+## 'use server' (actions serveur)
+matches=0
+
+## cartId
+components/cart/cart-context.tsx:5:// les revalide contre le snapshot. Aucun cookie cartId, aucune action serveur.
+matches=1
+
+## bundle compilé .next/server + .next/static : fichiers contenant 'supabase' (insensible à la casse)
+.next/server/chunks/ssr/app_contact_page_tsx_16aynztz86v2g._.js.map
+.next/server/chunks/ssr/_1ysu7ycgt3kys._.js.map
+files=2
+
+## node_modules/@supabase présent ?
+ls: node_modules/@supabase: No such file or directory
+
+## env Supabase au moment du build
+0
+non-map bundle files with supabase: 0

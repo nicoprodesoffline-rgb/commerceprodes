@@ -1,0 +1,105 @@
+[A] Error: The Server Reference ID did not match the expected format. Received "0000000000000000000000000000000000000000".
+Read more: https://nextjs.org/docs/messages/failed-to-find-server-action
+    at ignore-listed frames
+Cas                                                  | Attendu                                                                | Obtenu                                                                 | Verdict
+S05-qty1                                             | 200, RATE-PI-SIMPLE001-BASE-1, unit 189.00, ligne 189.00, total 189.00 | 200, RATE-PI-SIMPLE001-BASE-1, unit 189.00, ligne 189.00, total 189.00 | PASS
+S05-qty10                                            | 200, RATE-PI-SIMPLE001-BASE-2, unit 179.50, ligne 1795.00, total 1795.00 | 200, RATE-PI-SIMPLE001-BASE-2, unit 179.50, ligne 1795.00, total 1795.00 | PASS
+S05-qty20                                            | 200, RATE-PI-SIMPLE001-BASE-3, unit 169.90, ligne 3398.00, total 3398.00 | 200, RATE-PI-SIMPLE001-BASE-3, unit 169.90, ligne 3398.00, total 3398.00 | PASS
+S05-frontiere-q10                                    | 409 PRICE_CHANGED, attendu RATE-PI-SIMPLE001-BASE-2                    | 409 PRICE_CHANGED, attendu RATE-PI-SIMPLE001-BASE-2                    | PASS
+S05-frontiere-q9                                     | 409 PRICE_CHANGED, attendu RATE-PI-SIMPLE001-BASE-1                    | 409 PRICE_CHANGED, attendu RATE-PI-SIMPLE001-BASE-1                    | PASS
+S05-frontiere-q20                                    | 409 PRICE_CHANGED, attendu RATE-PI-SIMPLE001-BASE-3                    | 409 PRICE_CHANGED, attendu RATE-PI-SIMPLE001-BASE-3                    | PASS
+S05-frontiere-q19                                    | 409 PRICE_CHANGED, attendu RATE-PI-SIMPLE001-BASE-2                    | 409 PRICE_CHANGED, attendu RATE-PI-SIMPLE001-BASE-2                    | PASS
+S05-somme-exacte                                     | 200, total 2132.70                                                     | 200, total 2132.70                                                     | PASS
+S06-ligne-sans-prix-affiche                          | 400 INVALID_REQUEST (rate_id + unit_amount affichés obligatoires)      | 400 INVALID_REQUEST                                                    | PASS
+S06-panier-vide                                      | 400 INVALID_REQUEST                                                    | 400 INVALID_REQUEST                                                    | PASS
+S06-ligne-dupliquee                                  | 400 DUPLICATE_LINE                                                     | 400 DUPLICATE_LINE                                                     | PASS
+S06-pas-de-cookie /                                  | 200, aucun Set-Cookie, aucune mention cartId                           | 200, set-cookie=absent, cartId=false                                   | PASS
+S06-pas-de-cookie /cart                              | 200, aucun Set-Cookie, aucune mention cartId                           | 200, set-cookie=absent, cartId=false                                   | PASS
+S06-pas-de-cookie /product/etabli-atelier-simple     | 200, aucun Set-Cookie, aucune mention cartId                           | 200, set-cookie=absent, cartId=false                                   | PASS
+S06-reponse-sans-cookie                              | 200, aucun Set-Cookie                                                  | 200, set-cookie=absent                                                 | PASS
+S06-next-action-forgee                               | pas de 200 / pas de success:true                                       | 400, success:true=false                                                | PASS
+S07-devis-recu                                       | 200, simulation:true, persistence NONE_CONTRACTUAL_SIMULATION, kind QUOTE | 200, simulation:true, NONE_CONTRACTUAL_SIMULATION, QUOTE               | PASS
+S07-meme-cle-meme-payload                            | 200, même receipt_id SIM-QUOTE-19b11626-65df-495f-bf5e-1623309ee14f    | 200, SIM-QUOTE-19b11626-65df-495f-bf5e-1623309ee14f, replay=true       | PASS
+S07-meme-cle-payload-different                       | 409 DUPLICATE_KEY_DIFFERENT_PAYLOAD                                    | 409 DUPLICATE_KEY_DIFFERENT_PAYLOAD                                    | PASS
+S07-autre-cle-nouveau-recu                           | 200, receipt_id différent                                              | 200, SIM-QUOTE-74ef81e5-0605-46dd-a372-94ac1727bbff                    | PASS
+S07-cle-absente                                      | 400 MISSING_IDEMPOTENCY_KEY                                            | 400 MISSING_IDEMPOTENCY_KEY                                            | PASS
+S07-json-invalide                                    | 400 INVALID_REQUEST                                                    | 400 INVALID_REQUEST                                                    | PASS
+S08-commande-acceptee                                | 200 ORDER, ligne 62.00, simulation                                     | 200 ORDER, ligne 62.00, sim=true                                       | PASS
+S08-montant-falsifie                                 | 409 PRICE_CHANGED, attendu 12.40                                       | 409 PRICE_CHANGED, attendu 12.40                                       | PASS
+S08-meme-montant-autre-ecriture                      | 200 (12.4 == 12.40 en centimes)                                        | 200                                                                    | PASS
+S08-interdit-acrylique-400                           | 400 INVALID_VARIANT                                                    | 400 INVALID_VARIANT                                                    | PASS
+S08-absent-bleu-L                                    | 400 INVALID_VARIANT                                                    | 400 INVALID_VARIANT                                                    | PASS
+S08-item-inconnu                                     | 400 INVALID_VARIANT                                                    | 400 INVALID_VARIANT                                                    | PASS
+S08-axes-manquants                                   | 400 INVALID_VARIANT                                                    | 400 INVALID_VARIANT                                                    | PASS
+S08-hors-fenetre (instance C 2025-12-01)             | 409 PRICE_WINDOW_UNAVAILABLE                                           | 409 PRICE_WINDOW_UNAVAILABLE                                           | PASS
+S08-quantite-zero                                    | 400 INVALID_QUANTITY                                                   | 400 INVALID_QUANTITY                                                   | PASS
+S08-une-ligne-invalide-pas-de-recu                   | 400, aucun receipt_id                                                  | 400, receipt_id=absent                                                 | PASS
+S03-promo-future-refusee (A)                         | 409 PRICE_CHANGED, attendu BASE-1                                      | 409 PRICE_CHANGED, RATE-PI-GMCE0001-BASE-1                             | PASS
+S03-promo-active-acceptee (B)                        | 200, PROMO-1 9.99                                                      | 200, RATE-PI-GMCE0001-PROMO-1 9.99                                     | PASS
+S03-base-perimee-pendant-promo (B)                   | 409 PRICE_CHANGED, attendu PROMO-1                                     | 409 PRICE_CHANGED, RATE-PI-GMCE0001-PROMO-1                            | PASS
+S09 GET /admin                                       | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /admin                                      | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /admin/login                                 | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /admin/login                                | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /admin/produits                              | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /admin/produits                             | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /admin/devis                                 | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /admin/devis                                | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /admin/catalogue                             | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /admin/catalogue                            | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/admin/auth                              | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/admin/auth                             | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/admin/products-list                     | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/admin/products-list                    | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/admin/export-products                   | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/admin/export-products                  | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/admin/ia/categories-list                | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/admin/ia/categories-list               | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/admin/paniers-abandonnes/1/recover      | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/admin/paniers-abandonnes/1/recover     | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/admin/products/1                        | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/admin/products/1                       | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/admin/devis/1                           | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/admin/devis/1                          | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/admin/site-config                       | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/admin/site-config                      | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/checkout                                | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/checkout                               | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /checkout                                    | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /checkout                                   | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /checkout/confirmation                       | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /checkout/confirmation                      | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/devis                                   | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/devis                                  | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/devis-express                           | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/devis-express                          | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /devis-express                               | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /devis-express                              | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/revalidate                              | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/revalidate                             | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/track                                   | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/track                                  | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /mes-commandes                               | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /mes-commandes                              | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /mon-devis/PRODES-1                          | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /mon-devis/PRODES-1                         | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /panier/abc                                  | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /panier/abc                                 | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/cart/share                              | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/cart/share                             | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/cart/abandon                            | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/cart/abandon                           | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/contact                                 | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/contact                                | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/search                                  | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/search                                 | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/product-pdf/x                           | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/product-pdf/x                          | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/products-by-handles                     | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/products-by-handles                    | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/devis-status/1                          | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 POST /api/devis-status/1                         | 404, pas de success:true                                               | 404                                                                    | PASS
+S09 GET /api/site/quote                              | 405 (POST seul)                                                        | 405                                                                    | PASS
+
+Total 98 cas, 98 PASS, 0 FAIL
+{"S05":{"PASS":8,"FAIL":0},"S06":{"PASS":8,"FAIL":0},"S07":{"PASS":6,"FAIL":0},"S08":{"PASS":10,"FAIL":0},"S03":{"PASS":3,"FAIL":0},"S09":{"PASS":63,"FAIL":0}}

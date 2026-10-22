@@ -1,0 +1,181 @@
+[
+  {
+    "name": "S01-accueil-d",
+    "url": "http://127.0.0.1:4720/",
+    "size": "1440,900",
+    "mode": "cli"
+  },
+  {
+    "name": "S02-simple-d",
+    "url": "http://127.0.0.1:4720/product/etabli-atelier-simple",
+    "size": "1440,900",
+    "mode": "cli"
+  },
+  {
+    "name": "S03-gmce-rougeM-promo-future-d",
+    "url": "http://127.0.0.1:4720/product/gant-manutention-gmce?couleur=rouge&taille=M&image=1",
+    "size": "1440,900",
+    "mode": "cli"
+  },
+  {
+    "name": "S03-gmce-rougeM-promo-active-d",
+    "url": "http://127.0.0.1:4721/product/gant-manutention-gmce?couleur=rouge&taille=M&image=1",
+    "size": "1440,900",
+    "mode": "cli"
+  },
+  {
+    "name": "S01-accueil-t",
+    "url": "http://127.0.0.1:4720/",
+    "size": "1024,768",
+    "mode": "cli"
+  },
+  {
+    "name": "S02-simple-t",
+    "url": "http://127.0.0.1:4720/product/etabli-atelier-simple",
+    "size": "1024,768",
+    "mode": "cli"
+  },
+  {
+    "name": "S03-gmce-rougeM-promo-future-t",
+    "url": "http://127.0.0.1:4720/product/gant-manutention-gmce?couleur=rouge&taille=M&image=1",
+    "size": "1024,768",
+    "mode": "cli"
+  },
+  {
+    "name": "S03-gmce-rougeM-promo-active-t",
+    "url": "http://127.0.0.1:4721/product/gant-manutention-gmce?couleur=rouge&taille=M&image=1",
+    "size": "1024,768",
+    "mode": "cli"
+  },
+  {
+    "name": "S01-accueil-m",
+    "url": "http://127.0.0.1:4720/",
+    "size": "390,844",
+    "mode": "cli"
+  },
+  {
+    "name": "S02-simple-m",
+    "url": "http://127.0.0.1:4720/product/etabli-atelier-simple",
+    "size": "390,844",
+    "mode": "cli"
+  },
+  {
+    "name": "S03-gmce-rougeM-promo-future-m",
+    "url": "http://127.0.0.1:4720/product/gant-manutention-gmce?couleur=rouge&taille=M&image=1",
+    "size": "390,844",
+    "mode": "cli"
+  },
+  {
+    "name": "S03-gmce-rougeM-promo-active-m",
+    "url": "http://127.0.0.1:4721/product/gant-manutention-gmce?couleur=rouge&taille=M&image=1",
+    "size": "390,844",
+    "mode": "cli"
+  },
+  {
+    "name": "S03-gmce-rougeM-promo-future-long",
+    "url": "http://127.0.0.1:4720/product/gant-manutention-gmce?couleur=rouge&taille=M&image=1",
+    "size": "1440,1500",
+    "mode": "cli"
+  },
+  {
+    "name": "S03-gmce-rougeM-promo-active-long",
+    "url": "http://127.0.0.1:4721/product/gant-manutention-gmce?couleur=rouge&taille=M&image=1",
+    "size": "1440,1500",
+    "mode": "cli"
+  },
+  {
+    "name": "S01-catalogue-d",
+    "url": "http://127.0.0.1:4720/search",
+    "size": "1440,900",
+    "mode": "cli"
+  },
+  {
+    "name": "S03-gmce-bleuM-L-non-proposee-d",
+    "url": "http://127.0.0.1:4720/product/gant-manutention-gmce?couleur=bleu&taille=M",
+    "size": "1440,900",
+    "mode": "cli"
+  },
+  {
+    "name": "S03-gmce-url-bleuL-forcee-d",
+    "url": "http://127.0.0.1:4720/product/gant-manutention-gmce?couleur=bleu&taille=L",
+    "size": "1440,900",
+    "mode": "cli"
+  },
+  {
+    "name": "S04-esunny-acrylique300-d",
+    "url": "http://127.0.0.1:4720/product/store-exterieur-esunny?toile=acrylique&largeur=300",
+    "size": "1440,900",
+    "mode": "cli"
+  },
+  {
+    "name": "S04-esunny-url-acrylique400-forcee-d",
+    "url": "http://127.0.0.1:4720/product/store-exterieur-esunny?toile=acrylique&largeur=400",
+    "size": "1440,900",
+    "mode": "cli"
+  },
+  {
+    "name": "S04-esunny-acrylique300-m",
+    "url": "http://127.0.0.1:4720/product/store-exterieur-esunny?toile=acrylique&largeur=300",
+    "size": "390,844",
+    "mode": "cli"
+  },
+  {
+    "name": "S05-panier-qty1-d",
+    "size": "1440,900",
+    "mode": "cdp"
+  },
+  {
+    "name": "S05-panier-qty1-t",
+    "size": "1024,768",
+    "mode": "cdp"
+  },
+  {
+    "name": "S05-panier-qty1-m",
+    "size": "390,844",
+    "mode": "cdp"
+  },
+  {
+    "name": "S05-panier-qty10-d",
+    "size": "1440,900",
+    "mode": "cdp"
+  },
+  {
+    "name": "S05-panier-qty10-t",
+    "size": "1024,768",
+    "mode": "cdp"
+  },
+  {
+    "name": "S05-panier-qty10-m",
+    "size": "390,844",
+    "mode": "cdp"
+  },
+  {
+    "name": "S05-panier-qty20-d",
+    "size": "1440,900",
+    "mode": "cdp"
+  },
+  {
+    "name": "S05-panier-qty20-t",
+    "size": "1024,768",
+    "mode": "cdp"
+  },
+  {
+    "name": "S05-panier-qty20-m",
+    "size": "390,844",
+    "mode": "cdp"
+  },
+  {
+    "name": "S07-avant-envoi-d",
+    "size": "1440,900",
+    "mode": "cdp"
+  },
+  {
+    "name": "S07-recu-simulation-d",
+    "size": "1440,900",
+    "mode": "cdp"
+  },
+  {
+    "ui_receipt": "SIMULATION · NONE_CONTRACTUAL_SIMULATION · HTTP 200\n\nReçu simulé de devis : SIM-QUOTE-71845cc7-391a-4896-a75c-cc3beea26ce7\n\nSomme des lignes revalidée\n\n3 398,00 € HT\n\nNon qualifié : TVA, frais de port, remise, délai. Instant serveur : 2026-10-22T20:00:00Z.\n\nSIMULATION : aucun devis ni aucune commande n'a été enregistré ni transmis. Reçu conservé en mémoire du processus uniquement.",
+    "ui_replay": "SIMULATION · NONE_CONTRACTUAL_SIMULATION · HTTP 200\n\nReçu simulé de devis : SIM-QUOTE-71845cc7-391a-4896-a75c-cc3beea26ce7 (rejeu idempotent : même reçu)\n\nSomme des lignes revalidée\n\n3 398,00 € HT\n\nNon qualifié : TVA, frais de port, remise, délai. Instant serveur : 2026-10-22T20:00:00Z.\n\nSIMULATION : aucun devis ni aucune commande n'a été enregistré ni transmis. Reçu conservé en mémoire du processus uniquement."
+  }
+]
