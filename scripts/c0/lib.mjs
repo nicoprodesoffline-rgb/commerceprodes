@@ -27,8 +27,13 @@ export const ARCHIVE_PATHS = [
 // sinon sync.mjs refuse avec C0_FROZEN_CODE_MISMATCH. c0/python n'est pas vendu mais fait partie du gel.
 export const FROZEN_CODE_PATHS = ["c0/fixtures", "c0/python", "c0/ts/src", "c0/ts/test"];
 
-// Répertoires régénérables exclus de l'empreinte (à toute profondeur sous c0/).
-export const EXCLUDED_DIRS = new Set(["dist", "node_modules"]);
+// Configuration de compilation vendue : ses blobs doivent aussi être identiques aux deux SHA (contrôle
+// fait par sync.mjs, non consigné dans le manifeste v1 pour ne pas en changer les octets).
+export const FROZEN_CONFIG_PATHS = ["c0/ts/package-lock.json", "c0/ts/package.json", "c0/ts/tsconfig.json"];
+
+// Répertoires régénérables exclus de l'empreinte : uniquement ces chemins exacts (un dist/ ou un
+// node_modules/ ailleurs sous c0/ est un fichier ajouté comme un autre).
+export const EXCLUDED_DIRS = new Set(["c0/ts/dist", "c0/ts/node_modules"]);
 
 export const SHA_RE = /^[0-9a-f]{40}$/;
 
@@ -57,7 +62,7 @@ export function walkC0(root) {
       const rel = `${relDir}/${name}`;
       const st = lstatSync(abs);
       if (st.isDirectory()) {
-        if (EXCLUDED_DIRS.has(name)) continue;
+        if (EXCLUDED_DIRS.has(rel)) continue;
         visit(abs, rel);
       } else if (st.isFile()) {
         if (rel === MANIFEST_REL) continue;
