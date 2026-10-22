@@ -1,1 +1,2 @@
+npx tsc --noEmit  1,61s user 0,22s system 152% cpu 1,200 total
 tsc rc=0 errors=0

@@ -1,0 +1,10 @@
+
+> start
+> next start -p 4730
+
+▲ Next.js 16.4.0
+- Local:         http://localhost:4730
+- Network:       http://100.94.73.85:4730
+✓ Ready in 119ms
+✓ Running next.config.ts took 56ms
+GET / -> 200 en 0.009705s
