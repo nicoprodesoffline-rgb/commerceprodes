@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import type { CategoryWithCount } from "lib/supabase/types";
+import type { CategoryView } from "lib/site-dto/types";
+
+export type CategoryNode = CategoryView & { children?: CategoryView[] };
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
@@ -22,7 +24,7 @@ function ChevronIcon({ open }: { open: boolean }) {
 export default function CategorySidebar({
   categories,
 }: {
-  categories: CategoryWithCount[];
+  categories: CategoryNode[];
 }) {
   const pathname = usePathname();
 
@@ -32,7 +34,7 @@ export default function CategorySidebar({
       .filter((cat) =>
         cat.children?.some((child) => pathname === `/search/${child.slug}`),
       )
-      .map((cat) => cat.id),
+      .map((cat) => cat.category_key),
   );
   const [openCategories, setOpenCategories] = useState<Set<string>>(initialOpen);
 
@@ -74,15 +76,16 @@ export default function CategorySidebar({
           const catPath = `/search/${cat.slug}`;
           const isActive = pathname === catPath;
           const hasChildren = cat.children && cat.children.length > 0;
-          const isOpen = openCategories.has(cat.id);
+          const isOpen = openCategories.has(cat.category_key);
 
           return (
-            <li key={cat.id}>
+            <li key={cat.category_key}>
               {hasChildren ? (
                 <>
                   {/* Header cliquable */}
                   <button
-                    onClick={() => toggle(cat.id)}
+                    onClick={() => toggle(cat.category_key)}
+                    aria-expanded={isOpen}
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
                       isActive
                         ? "bg-red-50 font-semibold text-[#cc1818]"
@@ -91,9 +94,9 @@ export default function CategorySidebar({
                   >
                     <span className="flex items-start gap-1.5 min-w-0">
                       <span className="text-left leading-snug">{cat.name}</span>
-                      {cat.product_count > 0 && (
+                      {cat.family_count > 0 && (
                         <span className="ml-1 text-xs text-gray-400 flex-none">
-                          ({cat.product_count})
+                          ({cat.family_count})
                         </span>
                       )}
                     </span>
@@ -120,7 +123,7 @@ export default function CategorySidebar({
                         const childPath = `/search/${child.slug}`;
                         const childActive = pathname === childPath;
                         return (
-                          <li key={child.id}>
+                          <li key={child.category_key}>
                             <Link
                               href={childPath}
                               className={`flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors ${
@@ -130,9 +133,9 @@ export default function CategorySidebar({
                               }`}
                             >
                               <span className="truncate">{child.name}</span>
-                              {child.product_count > 0 && (
+                              {child.family_count > 0 && (
                                 <span className="ml-1 text-xs text-gray-400 flex-none">
-                                  ({child.product_count})
+                                  ({child.family_count})
                                 </span>
                               )}
                             </Link>
@@ -152,9 +155,9 @@ export default function CategorySidebar({
                   }`}
                 >
                   <span className="text-left leading-snug">{cat.name}</span>
-                  {cat.product_count > 0 && (
+                  {cat.family_count > 0 && (
                     <span className="ml-1 text-xs text-gray-400 flex-none">
-                      ({cat.product_count})
+                      ({cat.family_count})
                     </span>
                   )}
                 </Link>
@@ -185,7 +188,7 @@ export default function CategorySidebar({
               pathname === catPath ||
               cat.children?.some((c) => pathname === `/search/${c.slug}`);
             return (
-              <li key={cat.id}>
+              <li key={cat.category_key}>
                 <Link
                   href={catPath}
                   className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${

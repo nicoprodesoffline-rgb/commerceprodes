@@ -1,16 +1,16 @@
 import CartModal from "components/cart/modal";
-import { getMenu } from "lib/supabase";
-import { Menu } from "lib/supabase/types";
+import { getCategories } from "lib/site-dto";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
-import MobileMenu from "./mobile-menu";
-import { SearchSkeleton } from "./search";
-import { LiveSearch } from "components/search/live-search";
-import { QuoteButton } from "components/quote/quote-bar";
+import MobileMenu, { type Menu } from "./mobile-menu";
+import Search, { SearchSkeleton } from "./search";
 
-export async function Navbar() {
-  const menu = await getMenu("next-js-frontend-header-menu");
+export function Navbar() {
+  // Menu = catégories racines du snapshot (BC1-B : plus de menu Supabase).
+  const menu: Menu[] = getCategories()
+    .filter((c) => c.parent_key === null)
+    .map((c) => ({ title: c.name, path: `/search/${c.slug}` }));
 
   return (
     <header className="sticky top-0 z-40 w-full">
@@ -28,11 +28,6 @@ export async function Navbar() {
             <span className="hidden sm:inline text-red-200">·</span>
             <span className="hidden sm:inline text-red-100">Lun–Sam 8h30–19h</span>
           </div>
-
-          {/* Centre : message */}
-          <span className="hidden md:inline font-medium">
-            Livraison gratuite sur toute la gamme
-          </span>
 
           {/* Droite : liens */}
           <div className="flex items-center gap-3">
@@ -76,19 +71,12 @@ export async function Navbar() {
           {/* Search bar — centre avec autocomplete */}
           <div className="flex-1 hidden md:block">
             <Suspense fallback={<SearchSkeleton />}>
-              <LiveSearch placeholder="Rechercher un produit, une référence..." />
+              <Search />
             </Suspense>
           </div>
 
           {/* Droite : liens + devis groupé + panier */}
           <div className="flex items-center gap-2 ml-auto md:ml-0">
-            <Link
-              href="/devis-express"
-              className="hidden lg:inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-[#cc1818] transition-colors"
-            >
-              Devis express
-            </Link>
-            <QuoteButton />
             <CartModal />
           </div>
         </div>

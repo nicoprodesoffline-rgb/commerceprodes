@@ -6,13 +6,12 @@ import { useCart } from "components/cart/cart-context";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const { cart, openCart } = useCart();
-  const count = cart.totalQuantity;
+  const { totalQuantity: count, openCart } = useCart();
 
   const tabs = [
     { href: "/", label: "Accueil", icon: "🏠" },
     { href: "/search", label: "Catalogue", icon: "🔍" },
-    { href: "/devis-express", label: "Devis", icon: "📋" },
+    { href: "/cart", label: "Devis", icon: "📋" },
   ];
 
   return (

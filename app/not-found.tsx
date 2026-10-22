@@ -43,7 +43,7 @@ export default function NotFound() {
             Voir le catalogue
           </Link>
           <Link
-            href="/devis-express"
+            href="/cart"
             className="rounded-lg bg-[#cc1818] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#aa1414] transition-colors"
           >
             📋 Demander un devis

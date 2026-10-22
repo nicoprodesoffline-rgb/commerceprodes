@@ -8,14 +8,14 @@ export default function Hero() {
           {/* Left — copy */}
           <div className="flex-1">
             <span className="inline-block mb-4 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-[#cc1818] tracking-wide uppercase">
-              B2B · Prix HT · Devis gratuit
+              B2B · Prix HT
             </span>
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 lg:text-5xl">
               Équipements pour collectivités
             </h1>
             <p className="mt-4 text-lg text-gray-600 max-w-lg">
-              Mobilier, signalisation, sport — livraison directe aux organismes
-              publics. Catalogue de 983 références.
+              Mobilier, équipements de protection, extérieur — pour les organismes
+              publics. Catalogue de démonstration.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
@@ -25,7 +25,7 @@ export default function Hero() {
                 Voir le catalogue
               </Link>
               <Link
-                href="/search"
+                href="/cart"
                 className="inline-flex items-center rounded-lg border border-[#cc1818] px-6 py-3 text-sm font-semibold text-[#cc1818] hover:bg-red-50 transition-colors"
               >
                 Demander un devis
@@ -36,10 +36,10 @@ export default function Hero() {
           {/* Right — trust icons */}
           <div className="grid grid-cols-2 gap-4 lg:w-80">
             {[
-              { icon: "🚚", title: "Livraison rapide", sub: "France métropolitaine" },
               { icon: "🏛️", title: "Collectivités publiques", sub: "Mairies, régions, écoles" },
-              { icon: "💶", title: "Prix HT garantis", sub: "Facturation directe" },
-              { icon: "📄", title: "Devis sous 24h", sub: "Réponse rapide" },
+              { icon: "💶", title: "Prix HT affichés", sub: "Tarifs par quantité" },
+              { icon: "📄", title: "Devis en ligne", sub: "Simulation (démo)" },
+              { icon: "🧾", title: "Commande en ligne", sub: "Simulation (démo)" },
             ].map((item) => (
               <div
                 key={item.title}

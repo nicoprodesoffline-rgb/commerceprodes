@@ -38,23 +38,18 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/search/mobilier-urbain" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
-                  Mobilier urbain
+                <Link href="/search/cat-mobilier" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
+                  Mobilier
                 </Link>
               </li>
               <li>
-                <Link href="/search/affichage-et-signalisation" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
-                  Signalisation
+                <Link href="/search/cat-exterieur" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
+                  Extérieur
                 </Link>
               </li>
               <li>
                 <Link href="/cart" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
                   Panier
-                </Link>
-              </li>
-              <li>
-                <Link href="/devis-express" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
-                  Devis express
                 </Link>
               </li>
               <li>

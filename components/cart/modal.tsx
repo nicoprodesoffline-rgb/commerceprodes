@@ -3,31 +3,24 @@
 import clsx from "clsx";
 import { Dialog, Transition } from "@headlessui/react";
 import { ShoppingCartIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import LoadingDots from "components/loading-dots";
 import Price from "components/price";
-import { DEFAULT_OPTION } from "lib/constants";
 import { createUrl } from "lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment } from "react";
-import { useFormStatus } from "react-dom";
-import { useCart } from "./cart-context";
-import { ShareCartButton } from "./share-cart-button";
+import { axesLabel, useCart } from "./cart-context";
 import { DeleteItemButton } from "./delete-item-button";
 import { EditItemQuantityButton } from "./edit-item-quantity-button";
 import OpenCart from "./open-cart";
 
-type MerchandiseSearchParams = {
-  [key: string]: string;
-};
-
 export default function CartModal() {
-  const { cart, updateCartItem, isOpen, openCart, closeCart } = useCart();
+  const { displayed, totalQuantity, displayedTotal, updateLine, isOpen, openCart, closeCart } =
+    useCart();
 
   return (
     <>
-      <button aria-label="Open cart" onClick={openCart}>
-        <OpenCart quantity={cart?.totalQuantity} />
+      <button aria-label="Ouvrir le panier" onClick={openCart}>
+        <OpenCart quantity={totalQuantity} />
       </button>
       <Transition show={isOpen}>
         <Dialog onClose={closeCart} className="relative z-50">
@@ -59,7 +52,7 @@ export default function CartModal() {
                 </button>
               </div>
 
-              {!cart || cart.lines.length === 0 ? (
+              {displayed.length === 0 ? (
                 <div className="mt-20 flex w-full flex-col items-center justify-center overflow-hidden">
                   <ShoppingCartIcon className="h-16 text-gray-300" />
                   <p className="mt-6 text-center text-xl font-semibold text-gray-700">
@@ -72,146 +65,107 @@ export default function CartModal() {
               ) : (
                 <div className="flex h-full flex-col justify-between overflow-hidden p-1">
                   <ul className="grow overflow-auto py-4">
-                    {cart.lines
-                      .sort((a, b) =>
-                        a.merchandise.product.title.localeCompare(
-                          b.merchandise.product.title,
-                        ),
-                      )
-                      .map((item, i) => {
-                        const merchandiseSearchParams =
-                          {} as MerchandiseSearchParams;
-
-                        item.merchandise.selectedOptions.forEach(
-                          ({ name, value }) => {
-                            if (value !== DEFAULT_OPTION) {
-                              merchandiseSearchParams[name.toLowerCase()] =
-                                value;
-                            }
-                          },
-                        );
-
-                        const merchandiseUrl = createUrl(
-                          `/product/${item.merchandise.product.handle}`,
-                          new URLSearchParams(merchandiseSearchParams),
-                        );
-
-                        return (
-                          <li
-                            key={i}
-                            className="flex w-full flex-col border-b border-neutral-300 dark:border-neutral-700"
-                          >
-                            <div className="relative flex w-full flex-row justify-between px-1 py-4">
-                              <div className="absolute z-40 -ml-1 -mt-2">
-                                <DeleteItemButton
-                                  item={item}
-                                  optimisticUpdate={updateCartItem}
+                    {displayed.map((item) => {
+                      const merchandiseUrl = createUrl(
+                        `/product/${item.family_slug}`,
+                        new URLSearchParams(item.variant_axes),
+                      );
+                      return (
+                        <li
+                          key={item.public_item_key}
+                          className="flex w-full flex-col border-b border-neutral-300 dark:border-neutral-700"
+                        >
+                          <div className="relative flex w-full flex-row justify-between px-1 py-4">
+                            <div className="absolute z-40 -ml-1 -mt-2">
+                              <DeleteItemButton
+                                itemKey={item.public_item_key}
+                                optimisticUpdate={updateLine}
+                              />
+                            </div>
+                            <div className="flex flex-row">
+                              <div className="relative h-16 w-16 overflow-hidden rounded-md border border-neutral-300 bg-neutral-300 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800">
+                                <Image
+                                  className="h-full w-full object-cover"
+                                  width={64}
+                                  height={64}
+                                  alt={item.family_name}
+                                  src={item.image_url}
                                 />
                               </div>
-                              <div className="flex flex-row">
-                                <div className="relative h-16 w-16 overflow-hidden rounded-md border border-neutral-300 bg-neutral-300 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800">
-                                  <Image
-                                    className="h-full w-full object-cover"
-                                    width={64}
-                                    height={64}
-                                    alt={
-                                      item.merchandise.product.featuredImage
-                                        .altText ||
-                                      item.merchandise.product.title
-                                    }
-                                    src={
-                                      item.merchandise.product.featuredImage.url
-                                    }
-                                  />
+                              <Link
+                                href={merchandiseUrl}
+                                onClick={closeCart}
+                                className="z-30 ml-2 flex flex-row space-x-4"
+                              >
+                                <div className="flex flex-1 flex-col text-base">
+                                  <span className="leading-tight">{item.family_name}</span>
+                                  <p className="text-xs text-neutral-500">
+                                    {item.public_item_key}
+                                    {Object.keys(item.variant_axes).length > 0
+                                      ? ` · ${axesLabel(item.variant_axes)}`
+                                      : ""}
+                                  </p>
                                 </div>
-                                <Link
-                                  href={merchandiseUrl}
-                                  onClick={closeCart}
-                                  className="z-30 ml-2 flex flex-row space-x-4"
-                                >
-                                  <div className="flex flex-1 flex-col text-base">
-                                    <span className="leading-tight">
-                                      {item.merchandise.product.title}
-                                    </span>
-                                    {item.merchandise.title !==
-                                    DEFAULT_OPTION ? (
-                                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                        {item.merchandise.title}
-                                      </p>
-                                    ) : null}
-                                  </div>
-                                </Link>
-                              </div>
-                              <div className="flex h-16 flex-col justify-between">
+                              </Link>
+                            </div>
+                            <div className="flex h-16 flex-col justify-between">
+                              {item.line_amount !== null && item.price.ok ? (
                                 <Price
                                   className="flex justify-end space-y-2 text-right text-sm"
-                                  amount={item.cost.totalAmount.amount}
-                                  currencyCode={
-                                    item.cost.totalAmount.currencyCode
-                                  }
+                                  amount={item.line_amount}
+                                  currencyCode={item.price.price.currency}
                                 />
-                                <div className="ml-auto flex h-9 flex-row items-center rounded-full border border-neutral-200 dark:border-neutral-700">
-                                  <EditItemQuantityButton
-                                    item={item}
-                                    type="minus"
-                                    optimisticUpdate={updateCartItem}
-                                  />
-                                  <p className="w-6 text-center">
-                                    <span className="w-full text-sm">
-                                      {item.quantity}
-                                    </span>
-                                  </p>
-                                  <EditItemQuantityButton
-                                    item={item}
-                                    type="plus"
-                                    optimisticUpdate={updateCartItem}
-                                  />
-                                </div>
+                              ) : (
+                                <p className="text-right text-xs font-semibold text-amber-700">
+                                  Prix indisponible
+                                </p>
+                              )}
+                              <div className="ml-auto flex h-9 flex-row items-center rounded-full border border-neutral-200 dark:border-neutral-700">
+                                <EditItemQuantityButton
+                                  itemKey={item.public_item_key}
+                                  type="minus"
+                                  optimisticUpdate={updateLine}
+                                />
+                                <p className="w-6 text-center">
+                                  <span className="w-full text-sm">{item.quantity}</span>
+                                </p>
+                                <EditItemQuantityButton
+                                  itemKey={item.public_item_key}
+                                  type="plus"
+                                  optimisticUpdate={updateLine}
+                                />
                               </div>
                             </div>
-                          </li>
-                        );
-                      })}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                   <div className="py-4 text-sm text-gray-500">
                     <div className="mb-2 flex items-center justify-between border-b border-gray-100 pb-2">
-                      <p>Total HT</p>
-                      <Price
-                        className="text-right text-base font-semibold text-gray-900"
-                        amount={cart.cost.subtotalAmount.amount}
-                        currencyCode={cart.cost.subtotalAmount.currencyCode}
-                      />
+                      <p>Somme des lignes</p>
+                      {displayedTotal !== null ? (
+                        <Price
+                          className="text-right text-base font-semibold text-gray-900"
+                          amount={displayedTotal}
+                          currencyCode="EUR"
+                        />
+                      ) : (
+                        <p className="text-right text-amber-700">Prix indisponible</p>
+                      )}
                     </div>
-                    <div className="mb-2 flex items-center justify-between border-b border-gray-100 pb-2">
-                      <p>Livraison</p>
-                      <p className="text-right text-gray-700">À calculer</p>
-                    </div>
-                    <div className="mb-3 flex items-center justify-between">
-                      <p className="font-semibold text-gray-800">Total TTC (TVA 20%)</p>
-                      <p className="text-right font-bold text-gray-900">
-                        {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(
-                          Number(cart.cost.totalAmount.amount) * 1.2
-                        )} €
-                      </p>
-                    </div>
+                    <p className="text-xs text-gray-500">
+                      TVA et frais de port : non qualifiés. Montant affiché indicatif, revalidé
+                      par le serveur.
+                    </p>
                   </div>
-                  <Link
-                    href="/checkout"
-                    onClick={closeCart}
-                    className="block w-full rounded-md bg-[#cc1818] p-3 text-center text-sm font-semibold text-white hover:bg-[#aa1414] transition-colors"
-                  >
-                    Finaliser la commande →
-                  </Link>
                   <Link
                     href="/cart"
                     onClick={closeCart}
-                    className="mt-2 block w-full rounded-md border border-gray-300 p-2.5 text-center text-sm text-gray-600 hover:border-gray-400 transition-colors"
+                    className="block w-full rounded-md bg-[#cc1818] p-3 text-center text-sm font-semibold text-white hover:bg-[#aa1414] transition-colors"
                   >
-                    Voir le panier complet
+                    Voir le panier — devis ou commande (simulation)
                   </Link>
-                  <div className="mt-2 flex justify-center">
-                    <ShareCartButton className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors" />
-                  </div>
                 </div>
               )}
             </Dialog.Panel>
@@ -232,19 +186,5 @@ function CloseCart({ className }: { className?: string }) {
         )}
       />
     </div>
-  );
-}
-
-function CheckoutButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      className="block w-full rounded-md bg-[#cc1818] p-3 text-center text-sm font-semibold text-white hover:bg-[#aa1414] transition-colors"
-      type="submit"
-      disabled={pending}
-    >
-      {pending ? <LoadingDots className="bg-white" /> : "Finaliser la commande →"}
-    </button>
   );
 }

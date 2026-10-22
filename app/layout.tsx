@@ -1,20 +1,14 @@
 import { CartProvider } from "components/cart/cart-context";
 import { Navbar } from "components/layout/navbar";
-import { WelcomeToast } from "components/welcome-toast";
-import { CompareProvider } from "lib/compare/context";
-import CompareBar from "components/compare/compare-bar";
-import { WishlistProvider } from "lib/wishlist/context";
-import { QuoteProvider } from "lib/quote/context";
-import { WelcomeModal, BuyerBanner } from "components/onboarding/welcome-modal";
-import { PromoBanner } from "components/layout/promo-banner";
 import { MobileBottomNav } from "components/layout/mobile-bottom-nav";
 import { GeistSans } from "geist/font/sans";
 import { ReactNode } from "react";
-import { Toaster } from "sonner";
 import "./globals.css";
 import { baseUrl } from "lib/utils";
+import { getNowUtc, getSnapshotMeta } from "lib/site-dto";
 
-const { SITE_NAME } = process.env;
+// Instant de référence lu à chaque requête (SPIKE_NOW_UTC) : rendu dynamique.
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   metadataBase: new URL(baseUrl),
@@ -22,20 +16,11 @@ export const metadata = {
     default: "PRODES — Équipements pour collectivités",
     template: "%s | PRODES",
   },
-  description:
-    "PRODES, spécialiste des équipements pour mairies, écoles et collectivités. 7 000+ références. Devis gratuit sous 24h.",
-  keywords: [
-    "équipements collectivités",
-    "mobilier urbain",
-    "devis gratuit",
-    "mandat administratif",
-    "mairie",
-    "école",
-    "signalisation",
-  ],
+  description: "PRODES, spécialiste des équipements pour mairies, écoles et collectivités.",
+  // Spike sur fixture provisoire : jamais indexé.
   robots: {
-    follow: true,
-    index: true,
+    follow: false,
+    index: false,
   },
   openGraph: {
     siteName: "PRODES",
@@ -45,34 +30,22 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  const nowUtc = getNowUtc();
+  const meta = getSnapshotMeta();
   return (
     <html lang="fr" className={GeistSans.variable} suppressHydrationWarning={true}>
-      <head>
-        <link rel="preconnect" href="https://mvnaeddtvyaqkdliivdk.supabase.co" />
-        <link rel="dns-prefetch" href="https://mvnaeddtvyaqkdliivdk.supabase.co" />
-      </head>
       <body className="bg-white text-black selection:bg-red-100">
-        <CartProvider>
-          <WishlistProvider>
-          <QuoteProvider>
-          <CompareProvider>
-            <Navbar />
-            <BuyerBanner />
-            <PromoBanner
-              text="Livraison incluse sur tous nos produits · Devis gratuit sous 24h"
-              active={true}
-            />
-            <main className="pb-16 md:pb-0">
-              {children}
-              <Toaster closeButton />
-              <WelcomeToast />
-              <WelcomeModal />
-            </main>
-            <CompareBar />
-            <MobileBottomNav />
-          </CompareProvider>
-          </QuoteProvider>
-          </WishlistProvider>
+        <CartProvider nowUtc={nowUtc}>
+          <div
+            role="note"
+            className="bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-amber-950"
+          >
+            SIMULATION — données de démonstration ({meta.contract_version}, {meta.publication_id}) ·
+            instant {nowUtc} · devis et commandes non enregistrés
+          </div>
+          <Navbar />
+          <main className="pb-16 md:pb-0">{children}</main>
+          <MobileBottomNav />
         </CartProvider>
       </body>
     </html>

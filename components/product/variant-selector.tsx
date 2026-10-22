@@ -1,7 +1,7 @@
 "use client";
 
-import { ProductOption, ProductVariant } from "lib/supabase/types";
-import { useState, useEffect } from "react";
+import type { FamilyView, VariantAxes } from "lib/site-dto/types";
+import { axisValueState, type AxisValueState } from "lib/site-dto/variants";
 
 // ── Mapping couleur → CSS color ──────────────────────────────────────────────
 const COLOR_KEYWORDS: [string, string][] = [
@@ -78,66 +78,51 @@ function formatOptionValue(value: string): string {
     .trim();
 }
 
+const STATE_NOTE: Record<Exclude<AxisValueState, "available">, string> = {
+  absent: "non proposée",
+  forbidden: "combinaison interdite",
+};
+
+// BC1-B : piloté par le DTO. Une valeur n'est cliquable que si la combinaison
+// (avec les autres axes sélectionnés) correspond à un item READY ; absente ou
+// interdite = désactivée, avec la raison affichée (jamais sélectionnable).
 export function VariantSelector({
-  options,
-  variants,
-  onVariantChange,
+  family,
+  selection,
+  onSelect,
 }: {
-  options: ProductOption[];
-  variants: ProductVariant[];
-  onVariantChange?: (variant: ProductVariant | null) => void;
+  family: FamilyView;
+  selection: VariantAxes;
+  onSelect: (axis: string, value: string) => void;
 }) {
-  // Only show axes that have ≥ 2 distinct values (single-value axes go to specs)
-  const multiValueOptions = options.filter((o) => o.values.length >= 2);
-  const hasNoOptionsOrJustOneOption = multiValueOptions.length === 0;
-
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
-    // Pre-select first value of each option (including single-value ones for matching)
-    const initial: Record<string, string> = {};
-    for (const option of options) {
-      if (option.values.length > 0) {
-        initial[option.name] = option.values[0]!;
-      }
-    }
-    return initial;
-  });
-
-  // Find matching variant whenever selectedOptions changes
-  useEffect(() => {
-    if (!onVariantChange) return;
-    const matched = variants.find((v) =>
-      Object.entries(selectedOptions).every(([name, value]) =>
-        v.selectedOptions.some((o) => o.name === name && o.value === value),
-      ),
-    );
-    onVariantChange(matched ?? null);
-  }, [selectedOptions, variants, onVariantChange]);
-
-  if (hasNoOptionsOrJustOneOption) return null;
-
-  const selectOption = (optionName: string, value: string) => {
-    setSelectedOptions((prev) => ({ ...prev, [optionName]: value }));
-  };
+  const axes = family.variant_axes_schema.filter((o) => o.values.length >= 1);
+  if (axes.length === 0) return null;
 
   return (
     <div className="mb-6 space-y-5">
-      {multiValueOptions.map((option) => {
-        const isColor = isColorOption(option.name);
-        const selectedValue = selectedOptions[option.name];
+      {axes.map((option) => {
+        const isColor = isColorOption(option.axis);
+        const selectedValue = selection[option.axis];
 
         return (
-          <div key={option.id}>
-            <p className="mb-2 text-sm font-medium text-gray-700">
-              {formatOptionName(option.name)}
+          <fieldset key={option.axis}>
+            <legend className="mb-2 text-sm font-medium text-gray-700">
+              {formatOptionName(option.axis)}
               {selectedValue && (
                 <span className="ml-2 font-normal text-gray-500">
                   — {formatOptionValue(selectedValue)}
                 </span>
               )}
-            </p>
+            </legend>
             <div className="flex flex-wrap gap-2">
               {option.values.map((value) => {
                 const isActive = selectedValue === value;
+                const state = isActive
+                  ? "available"
+                  : axisValueState(family, selection, option.axis, value);
+                const disabled = state !== "available";
+                const note = disabled ? STATE_NOTE[state as "absent" | "forbidden"] : null;
+                const label = `${formatOptionName(option.axis)} ${formatOptionValue(value)}${note ? ` (${note})` : ""}`;
 
                 if (isColor) {
                   const colorHex = getColorHex(value);
@@ -147,20 +132,26 @@ export function VariantSelector({
                     colorHex === "#e5e7eb" ||
                     colorHex === "#d4b896";
                   return (
-                    <button
-                      key={value}
-                      type="button"
-                      title={formatOptionValue(value)}
-                      onClick={() => selectOption(option.name, value)}
-                      style={{ backgroundColor: colorHex }}
-                      className={[
-                        "h-8 w-8 rounded-full transition-all",
-                        isActive
-                          ? "ring-2 ring-offset-2 ring-[#cc1818] scale-110 shadow-md"
-                          : "ring-1 ring-gray-300 hover:ring-gray-500 hover:scale-105",
-                        isLight ? "border border-gray-300" : "",
-                      ].join(" ")}
-                    />
+                    <span key={value} className="flex flex-col items-center gap-1">
+                      <button
+                        type="button"
+                        title={label}
+                        aria-label={label}
+                        aria-pressed={isActive}
+                        disabled={disabled}
+                        onClick={() => onSelect(option.axis, value)}
+                        style={{ backgroundColor: colorHex }}
+                        className={[
+                          "h-8 w-8 rounded-full transition-all",
+                          isActive
+                            ? "ring-2 ring-offset-2 ring-[#cc1818] scale-110 shadow-md"
+                            : "ring-1 ring-gray-300 hover:ring-gray-500 hover:scale-105",
+                          isLight ? "border border-gray-300" : "",
+                          disabled ? "cursor-not-allowed opacity-30" : "",
+                        ].join(" ")}
+                      />
+                      {note && <span className="text-[10px] text-gray-500">{note}</span>}
+                    </span>
                   );
                 }
 
@@ -168,20 +159,26 @@ export function VariantSelector({
                   <button
                     key={value}
                     type="button"
-                    onClick={() => selectOption(option.name, value)}
+                    aria-label={label}
+                    aria-pressed={isActive}
+                    disabled={disabled}
+                    onClick={() => onSelect(option.axis, value)}
                     className={[
                       "rounded-md px-3 py-1.5 text-sm border transition-all",
                       isActive
                         ? "bg-[#cc1818] text-white border-[#cc1818] font-medium"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-500",
+                        : disabled
+                          ? "cursor-not-allowed border-dashed border-gray-300 bg-gray-50 text-gray-400 line-through"
+                          : "bg-white text-gray-700 border-gray-300 hover:border-gray-500",
                     ].join(" ")}
                   >
                     {formatOptionValue(value)}
+                    {note && <span className="ml-1 text-[10px] no-underline">({note})</span>}
                   </button>
                 );
               })}
             </div>
-          </div>
+          </fieldset>
         );
       })}
     </div>

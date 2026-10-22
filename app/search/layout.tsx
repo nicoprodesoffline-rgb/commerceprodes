@@ -1,19 +1,18 @@
 import { Suspense } from "react";
 import Footer from "components/layout/footer";
-import FilterList from "components/layout/search/filter";
-import CategorySidebar from "components/layout/category-sidebar";
-import { CatalogFilters } from "components/layout/search/catalog-filters";
-import { QuickOrderBar } from "components/quick-order/quick-order-bar";
-import { sorting } from "lib/constants";
-import { getRootCategories } from "lib/supabase/index";
+import CategorySidebar, { type CategoryNode } from "components/layout/category-sidebar";
+import { getCategories } from "lib/site-dto";
 import ChildrenWrapper from "./children-wrapper";
 
-export default async function SearchLayout({
+export default function SearchLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const categories = await getRootCategories();
+  const all = getCategories();
+  const categories: CategoryNode[] = all
+    .filter((c) => c.parent_key === null)
+    .map((c) => ({ ...c, children: all.filter((k) => k.parent_key === c.category_key) }));
 
   return (
     <>
@@ -23,22 +22,13 @@ export default async function SearchLayout({
           <Suspense fallback={null}>
             <CategorySidebar categories={categories} />
           </Suspense>
-          <Suspense fallback={null}>
-            <CatalogFilters />
-          </Suspense>
-          <QuickOrderBar />
         </aside>
 
         {/* Contenu principal */}
-        <div className="order-last min-h-screen w-full md:order-none">
+        <div className="order-last min-h-screen w-full md:order-none md:pt-4">
           <Suspense fallback={null}>
             <ChildrenWrapper>{children}</ChildrenWrapper>
           </Suspense>
-        </div>
-
-        {/* Filtre tri */}
-        <div className="order-none flex-none md:order-last md:w-32 md:pt-4">
-          <FilterList list={sorting} title="Trier par" />
         </div>
       </div>
       <Footer />

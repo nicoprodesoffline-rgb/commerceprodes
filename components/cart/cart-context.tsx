@@ -1,6 +1,10 @@
 "use client";
 
-import type { Cart, CartItem, Product, ProductVariant } from "lib/supabase/types";
+// PANIER UNIQUE (brouillon UX côté client). Il ne fait foi de rien : toute
+// demande serveur (devis, commande) envoie les lignes affichées et le serveur
+// les revalide contre le snapshot. Aucun cookie cartId, aucune action serveur.
+import { multiplyAmount, selectWindow, sumAmounts } from "lib/site-dto/pricing";
+import type { PriceResult, PriceWindow, VariantAxes } from "lib/site-dto/types";
 import React, {
   createContext,
   useCallback,
@@ -8,34 +12,68 @@ import React, {
   useEffect,
   useMemo,
   useReducer,
-  useRef,
   useState,
 } from "react";
-import { persistAbandonedCart } from "lib/cart/persist";
 
-const CART_KEY = "prodes_cart";
+const CART_KEY = "prodes_site_cart_v1";
+const LEGACY_KEYS = ["prodes_cart", "prodes_quote", "prodes_wishlist", "prodes_compare"];
+
+export type CartLine = {
+  public_item_key: string;
+  public_family_key: string;
+  family_slug: string;
+  family_name: string;
+  variant_axes: VariantAxes;
+  image_url: string;
+  quantity: number;
+  windows: PriceWindow[]; // copie des fenêtres publiques, pour l'affichage seulement
+};
+
+export type DisplayedLine = CartLine & { price: PriceResult; line_amount: string | null };
 
 type UpdateType = "plus" | "minus" | "delete";
 
 type CartAction =
-  | {
-      type: "UPDATE_ITEM";
-      payload: { merchandiseId: string; updateType: UpdateType };
+  | { type: "ADD"; line: CartLine }
+  | { type: "UPDATE"; itemKey: string; updateType: UpdateType }
+  | { type: "SET"; lines: CartLine[] }
+  | { type: "CLEAR" };
+
+function reducer(state: CartLine[], action: CartAction): CartLine[] {
+  switch (action.type) {
+    case "SET":
+      return action.lines;
+    case "CLEAR":
+      return [];
+    case "ADD": {
+      const existing = state.find((l) => l.public_item_key === action.line.public_item_key);
+      if (!existing) return [...state, action.line];
+      return state.map((l) =>
+        l.public_item_key === action.line.public_item_key
+          ? { ...action.line, quantity: l.quantity + action.line.quantity }
+          : l,
+      );
     }
-  | {
-      type: "ADD_ITEM";
-      payload: { variant: ProductVariant; product: Product; quantity?: number };
-    }
-  | {
-      type: "SET_CART";
-      payload: Cart;
-    }
-  | { type: "CLEAR_CART" };
+    case "UPDATE":
+      return state
+        .map((l) => {
+          if (l.public_item_key !== action.itemKey) return l;
+          if (action.updateType === "delete") return null;
+          const q = action.updateType === "plus" ? l.quantity + 1 : l.quantity - 1;
+          return q <= 0 ? null : { ...l, quantity: q };
+        })
+        .filter((l): l is CartLine => l !== null);
+  }
+}
 
 type CartContextType = {
-  cart: Cart;
-  updateCartItem: (merchandiseId: string, updateType: UpdateType) => void;
-  addCartItem: (variant: ProductVariant, product: Product, quantity?: number) => void;
+  lines: CartLine[];
+  displayed: DisplayedLine[];
+  totalQuantity: number;
+  displayedTotal: string | null; // null si au moins une ligne sans prix
+  nowUtc: string;
+  addLine: (line: CartLine) => void;
+  updateLine: (itemKey: string, updateType: UpdateType) => void;
   clearCart: () => void;
   isOpen: boolean;
   openCart: () => void;
@@ -44,224 +82,79 @@ type CartContextType = {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-function calculateItemCost(quantity: number, price: string): string {
-  return (Number(price) * quantity).toString();
-}
-
-function createEmptyCart(): Cart {
-  return {
-    id: undefined,
-    checkoutUrl: "",
-    totalQuantity: 0,
-    lines: [],
-    cost: {
-      subtotalAmount: { amount: "0", currencyCode: "EUR" },
-      totalAmount: { amount: "0", currencyCode: "EUR" },
-      totalTaxAmount: { amount: "0", currencyCode: "EUR" },
-    },
-  };
-}
-
-function updateCartTotals(lines: CartItem[]): Pick<Cart, "totalQuantity" | "cost"> {
-  const totalQuantity = lines.reduce((sum, item) => sum + item.quantity, 0);
-  const totalAmount = lines.reduce(
-    (sum, item) => sum + Number(item.cost.totalAmount.amount),
-    0,
-  );
-  return {
-    totalQuantity,
-    cost: {
-      subtotalAmount: { amount: totalAmount.toFixed(2), currencyCode: "EUR" },
-      totalAmount: { amount: totalAmount.toFixed(2), currencyCode: "EUR" },
-      totalTaxAmount: { amount: "0", currencyCode: "EUR" },
-    },
-  };
-}
-
-function createOrUpdateCartItem(
-  existingItem: CartItem | undefined,
-  variant: ProductVariant,
-  product: Product,
-  addQuantity = 1,
-): CartItem {
-  const quantity = existingItem ? existingItem.quantity + addQuantity : addQuantity;
-  const totalAmount = calculateItemCost(quantity, variant.price.amount);
-
-  return {
-    id: existingItem?.id ?? variant.id + "-" + Date.now(),
-    quantity,
-    cost: {
-      totalAmount: {
-        amount: totalAmount,
-        currencyCode: variant.price.currencyCode,
-      },
-    },
-    merchandise: {
-      id: variant.id,
-      title: variant.title,
-      selectedOptions: variant.selectedOptions,
-      product: {
-        id: product.id,
-        handle: product.handle,
-        title: product.title,
-        featuredImage: product.featuredImage,
-      },
-    },
-  };
-}
-
-function cartReducer(state: Cart, action: CartAction): Cart {
-  switch (action.type) {
-    case "SET_CART":
-      return action.payload;
-
-    case "CLEAR_CART":
-      return createEmptyCart();
-
-    case "UPDATE_ITEM": {
-      const { merchandiseId, updateType } = action.payload;
-      const updatedLines = state.lines
-        .map((item) => {
-          if (item.merchandise.id !== merchandiseId) return item;
-          if (updateType === "delete") return null;
-          const newQuantity =
-            updateType === "plus" ? item.quantity + 1 : item.quantity - 1;
-          if (newQuantity === 0) return null;
-          const singleItemAmount = Number(item.cost.totalAmount.amount) / item.quantity;
-          return {
-            ...item,
-            quantity: newQuantity,
-            cost: {
-              ...item.cost,
-              totalAmount: {
-                ...item.cost.totalAmount,
-                amount: calculateItemCost(newQuantity, singleItemAmount.toString()),
-              },
-            },
-          };
-        })
-        .filter(Boolean) as CartItem[];
-      return { ...state, ...updateCartTotals(updatedLines), lines: updatedLines };
-    }
-
-    case "ADD_ITEM": {
-      const { variant, product, quantity = 1 } = action.payload;
-      const existingItem = state.lines.find(
-        (item) => item.merchandise.id === variant.id,
-      );
-      const updatedItem = createOrUpdateCartItem(existingItem, variant, product, quantity);
-      const updatedLines = existingItem
-        ? state.lines.map((item) =>
-            item.merchandise.id === variant.id ? updatedItem : item,
-          )
-        : [...state.lines, updatedItem];
-      return { ...state, ...updateCartTotals(updatedLines), lines: updatedLines };
-    }
-
-    default:
-      return state;
-  }
-}
-
-export function CartProvider({
-  children,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  cartPromise: _cartPromise,
-}: {
-  children: React.ReactNode;
-  cartPromise?: Promise<Cart | undefined>;
-}) {
-  const [cart, dispatch] = useReducer(cartReducer, createEmptyCart());
+export function CartProvider({ children, nowUtc }: { children: React.ReactNode; nowUtc: string }) {
+  const [lines, dispatch] = useReducer(reducer, []);
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const prevQuantityRef = useRef(0);
 
-  // Load from localStorage on mount
   useEffect(() => {
     try {
+      for (const k of LEGACY_KEYS) localStorage.removeItem(k); // pas de second panier
       const saved = localStorage.getItem(CART_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved) as Cart;
-        dispatch({ type: "SET_CART", payload: parsed });
-      }
+      if (saved) dispatch({ type: "SET", lines: JSON.parse(saved) as CartLine[] });
     } catch {
-      // Ignore parse errors
+      // stockage indisponible : panier en mémoire seulement
     }
     setMounted(true);
   }, []);
 
-  // Persist to localStorage whenever cart changes
   useEffect(() => {
     if (!mounted) return;
     try {
-      localStorage.setItem(CART_KEY, JSON.stringify(cart));
-    } catch {
-      // Ignore storage errors
-    }
-  }, [cart, mounted]);
-
-  // Auto-open cart when item is added
-  useEffect(() => {
-    if (!mounted) return;
-    if (cart.totalQuantity > prevQuantityRef.current) {
-      setIsOpen(true);
-    }
-    prevQuantityRef.current = cart.totalQuantity;
-  }, [cart.totalQuantity, mounted]);
-
-  // Persist abandoned cart on page close or after 5 min inactivity
-  useEffect(() => {
-    if (!mounted) return;
-
-    const handleUnload = () => {
-      if (cart.lines.length > 0) {
-        persistAbandonedCart(cart);
-      }
-    };
-
-    window.addEventListener("beforeunload", handleUnload);
-
-    const inactivityTimer = setTimeout(() => {
-      if (cart.lines.length > 0) {
-        persistAbandonedCart(cart);
-      }
-    }, 5 * 60 * 1000);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleUnload);
-      clearTimeout(inactivityTimer);
-    };
-  }, [cart, mounted]);
-
-  const updateCartItem = useCallback(
-    (merchandiseId: string, updateType: UpdateType) => {
-      dispatch({ type: "UPDATE_ITEM", payload: { merchandiseId, updateType } });
-    },
-    [],
-  );
-
-  const addCartItem = useCallback(
-    (variant: ProductVariant, product: Product, quantity = 1) => {
-      dispatch({ type: "ADD_ITEM", payload: { variant, product, quantity } });
-    },
-    [],
-  );
-
-  const clearCart = useCallback(() => {
-    dispatch({ type: "CLEAR_CART" });
-    try {
-      localStorage.removeItem(CART_KEY);
+      localStorage.setItem(CART_KEY, JSON.stringify(lines));
     } catch {
       // ignore
     }
-  }, []);
+  }, [lines, mounted]);
 
+  const displayed = useMemo<DisplayedLine[]>(
+    () =>
+      lines.map((l) => {
+        const price = selectWindow(l.windows, l.quantity, nowUtc);
+        return {
+          ...l,
+          price,
+          line_amount: price.ok ? multiplyAmount(price.price.unit_amount, l.quantity) : null,
+        };
+      }),
+    [lines, nowUtc],
+  );
+
+  const displayedTotal = useMemo(
+    () =>
+      displayed.every((l) => l.line_amount !== null)
+        ? sumAmounts(displayed.map((l) => l.line_amount as string))
+        : null,
+    [displayed],
+  );
+
+  const addLine = useCallback((line: CartLine) => {
+    dispatch({ type: "ADD", line });
+    setIsOpen(true);
+  }, []);
+  const updateLine = useCallback(
+    (itemKey: string, updateType: UpdateType) => dispatch({ type: "UPDATE", itemKey, updateType }),
+    [],
+  );
+  const clearCart = useCallback(() => dispatch({ type: "CLEAR" }), []);
   const openCart = useCallback(() => setIsOpen(true), []);
   const closeCart = useCallback(() => setIsOpen(false), []);
 
   const value = useMemo(
-    () => ({ cart, updateCartItem, addCartItem, clearCart, isOpen, openCart, closeCart }),
-    [cart, updateCartItem, addCartItem, clearCart, isOpen, openCart, closeCart],
+    () => ({
+      lines,
+      displayed,
+      totalQuantity: lines.reduce((s, l) => s + l.quantity, 0),
+      displayedTotal,
+      nowUtc,
+      addLine,
+      updateLine,
+      clearCart,
+      isOpen,
+      openCart,
+      closeCart,
+    }),
+    [lines, displayed, displayedTotal, nowUtc, addLine, updateLine, clearCart, isOpen, openCart, closeCart],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
@@ -269,13 +162,12 @@ export function CartProvider({
 
 export function useCart() {
   const context = useContext(CartContext);
-  if (context === undefined) {
-    throw new Error("useCart must be used within a CartProvider");
-  }
+  if (context === undefined) throw new Error("useCart must be used within a CartProvider");
   return context;
 }
 
-/** Export for backward compat with legacy server actions (no-ops) */
-export function useLegacyCart() {
-  return useCart();
+export function axesLabel(axes: VariantAxes): string {
+  return Object.entries(axes)
+    .map(([k, v]) => `${k} : ${v}`)
+    .join(" · ");
 }

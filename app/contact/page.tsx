@@ -6,27 +6,11 @@ import type { FormEvent } from "react";
 export default function ContactPage() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  // BC1-B : /api/contact (Supabase + Resend) supprimé. Aucun envoi n'est fait :
+  // l'état « error » affiche un message honnête (formulaire non branché).
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setStatus("loading");
-
-    const fd = new FormData(e.currentTarget);
-    const body = Object.fromEntries(fd.entries());
-
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (res.ok) {
-        setStatus("success");
-      } else {
-        setStatus("error");
-      }
-    } catch {
-      setStatus("error");
-    }
+    setStatus("error");
   }
 
   return (
@@ -191,7 +175,7 @@ export default function ContactPage() {
 
               {status === "error" && (
                 <p className="text-sm text-red-600">
-                  Une erreur est survenue. Veuillez réessayer ou nous appeler au 04 67 24 30 34.
+                  Formulaire non branché dans cette version de démonstration : aucun message n'a été envoyé. Appelez-nous au 04 67 24 30 34 ou écrivez à contact@prodes.fr.
                 </p>
               )}
 

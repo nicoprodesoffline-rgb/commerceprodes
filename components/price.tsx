@@ -1,19 +1,22 @@
-import clsx from "clsx";
+import { formatAmount } from "lib/site-dto/pricing";
 
+// BC1-B : formatage depuis la chaîne décimale (pas de parseFloat), base fiscale
+// affichée telle que fournie par le snapshot (par défaut « HT »).
 const Price = ({
   amount,
   className,
   currencyCode = "EUR",
-  currencyCodeClassName,
+  taxBasis = "HT",
 }: {
   amount: string;
   className?: string;
   currencyCode: string;
   currencyCodeClassName?: string;
+  taxBasis?: string;
 } & React.ComponentProps<"p">) => (
   <p suppressHydrationWarning={true} className={className}>
-    {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(parseFloat(amount))}
-    {" € HT"}
+    {formatAmount(amount, currencyCode)}
+    {` ${taxBasis}`}
   </p>
 );
 

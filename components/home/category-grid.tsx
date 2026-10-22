@@ -1,10 +1,10 @@
 import Link from "next/link";
-import type { CategoryWithCount } from "lib/supabase/types";
+import type { CategoryView } from "lib/site-dto/types";
 
 export default function CategoryGrid({
   categories,
 }: {
-  categories: CategoryWithCount[];
+  categories: CategoryView[];
 }) {
   if (!categories.length) return null;
 
@@ -14,7 +14,7 @@ export default function CategoryGrid({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {categories.map((cat) => (
           <Link
-            key={cat.id}
+            key={cat.category_key}
             href={`/search/${cat.slug}`}
             className="group flex flex-col rounded-xl border border-gray-200 bg-white p-4 hover:border-blue-400 hover:shadow-md transition-all duration-150"
           >
@@ -22,9 +22,9 @@ export default function CategoryGrid({
               {cat.name}
             </span>
             <span className="mt-1 text-xs text-gray-500">
-              {cat.product_count > 0
-                ? `${cat.product_count} produit${cat.product_count > 1 ? "s" : ""}`
-                : ""}
+              {cat.family_count > 0
+                ? `${cat.family_count} famille${cat.family_count > 1 ? "s" : ""}`
+                : "Aucune famille"}
             </span>
           </Link>
         ))}

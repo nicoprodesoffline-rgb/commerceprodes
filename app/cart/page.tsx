@@ -3,28 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import Footer from "components/layout/footer";
+import Price from "components/price";
 import { CartActions } from "./cart-actions";
-import { useCart } from "components/cart/cart-context";
-
-function formatHT(amount: string | number): string {
-  return (
-    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(Number(amount)) +
-    " € HT"
-  );
-}
-
-function formatTTC(amount: string | number): string {
-  return (
-    new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(
-      Number(amount) * 1.2,
-    ) + " € TTC"
-  );
-}
+import { axesLabel, useCart } from "components/cart/cart-context";
+import { SimulationForm } from "components/cart/simulation-form";
 
 export default function CartPage() {
-  const { cart } = useCart();
+  const { displayed, displayedTotal, nowUtc } = useCart();
 
-  if (!cart || cart.lines.length === 0) {
+  if (displayed.length === 0) {
     return (
       <>
         <div className="mx-auto max-w-screen-2xl px-4 py-24 text-center lg:px-6">
@@ -61,9 +48,6 @@ export default function CartPage() {
     );
   }
 
-  const subtotalHT = Number(cart.cost.subtotalAmount.amount);
-  const tvaAmount = subtotalHT * 0.2;
-
   return (
     <>
       <div className="mx-auto max-w-screen-2xl px-4 py-8 lg:px-6">
@@ -73,81 +57,75 @@ export default function CartPage() {
           {/* Colonne gauche — Articles */}
           <div className="flex-1">
             <div className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white">
-              {cart.lines.map((item) => {
-                const unitPrice =
-                  Number(item.cost.totalAmount.amount) / item.quantity;
-                const lineTotal = Number(item.cost.totalAmount.amount);
-                const hasImage = !!item.merchandise.product.featuredImage?.url;
-                const variantOptions = item.merchandise.selectedOptions
-                  .filter((o) => o.value && o.value !== "Default Title")
-                  .map((o) => o.value)
-                  .join(" — ");
+              {displayed.map((item) => (
+                <div key={item.public_item_key} className="flex gap-4 p-4" data-item-key={item.public_item_key}>
+                  {/* Image */}
+                  <div className="h-20 w-20 flex-none overflow-hidden rounded-md border border-gray-200 bg-gray-50">
+                    <Image
+                      src={item.image_url}
+                      alt={item.family_name}
+                      width={80}
+                      height={80}
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
 
-                return (
-                  <div key={item.id} className="flex gap-4 p-4">
-                    {/* Image */}
-                    <div className="h-20 w-20 flex-none overflow-hidden rounded-md border border-gray-200 bg-gray-50">
-                      {hasImage ? (
-                        <Image
-                          src={item.merchandise.product.featuredImage.url}
-                          alt={item.merchandise.product.title}
-                          width={80}
-                          height={80}
-                          className="h-full w-full object-contain"
-                        />
+                  {/* Info produit */}
+                  <div className="flex flex-1 flex-col justify-between">
+                    <div>
+                      <Link
+                        href={`/product/${item.family_slug}`}
+                        className="line-clamp-2 text-sm font-medium text-gray-900 hover:text-[#cc1818]"
+                      >
+                        {item.family_name}
+                      </Link>
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        Article {item.public_item_key}
+                        {Object.keys(item.variant_axes).length > 0
+                          ? ` — ${axesLabel(item.variant_axes)}`
+                          : ""}
+                      </p>
+                      {item.price.ok ? (
+                        <p className="mt-0.5 text-xs text-gray-500">
+                          <Price
+                            className="inline font-medium text-gray-800"
+                            amount={item.price.price.unit_amount}
+                            currencyCode={item.price.price.currency}
+                            taxBasis={item.price.price.tax_basis_or_status}
+                          />{" "}
+                          / unité · tarif <span className="font-mono">{item.price.price.rate_id}</span>{" "}
+                          ({item.price.price.layer})
+                        </p>
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-gray-300">
-                          <svg
-                            className="h-8 w-8"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M4 5h16v14H4V5zm2 2v10h12V7H6z" />
-                          </svg>
-                        </div>
+                        <p className="mt-0.5 text-xs font-semibold text-amber-700">
+                          Prix indisponible pour cette quantité ({item.price.code})
+                        </p>
                       )}
                     </div>
 
-                    {/* Info produit */}
-                    <div className="flex flex-1 flex-col justify-between">
-                      <div>
-                        <Link
-                          href={`/product/${item.merchandise.product.handle}`}
-                          className="line-clamp-2 text-sm font-medium text-gray-900 hover:text-[#cc1818]"
-                        >
-                          {item.merchandise.product.title}
-                        </Link>
-                        {variantOptions && (
-                          <p className="mt-0.5 text-xs text-gray-500">
-                            {variantOptions}
-                          </p>
-                        )}
-                        <p className="mt-0.5 text-xs text-gray-400">
-                          {formatHT(unitPrice)} / unité
-                        </p>
-                      </div>
-
-                      {/* Contrôles quantité + sous-total */}
-                      <div className="mt-2 flex items-center justify-between">
-                        <CartActions
-                          merchandiseId={item.merchandise.id}
-                          quantity={item.quantity}
-                          itemId={item.id}
+                    {/* Contrôles quantité + sous-total */}
+                    <div className="mt-2 flex items-center justify-between">
+                      <CartActions itemKey={item.public_item_key} quantity={item.quantity} />
+                      {item.line_amount !== null && item.price.ok ? (
+                        <Price
+                          className="text-sm font-bold text-gray-900"
+                          amount={item.line_amount}
+                          currencyCode={item.price.price.currency}
+                          taxBasis={item.price.price.tax_basis_or_status}
                         />
-                        <p className="text-sm font-bold text-gray-900">
-                          {formatHT(lineTotal)}
-                        </p>
-                      </div>
+                      ) : (
+                        <p className="text-sm font-bold text-amber-700">—</p>
+                      )}
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Colonne droite — Récapitulatif */}
-          <div className="w-full lg:w-80 lg:flex-none">
-            <div className="sticky top-28 rounded-lg border border-gray-200 bg-white">
+          <div className="w-full space-y-4 lg:w-96 lg:flex-none">
+            <div className="rounded-lg border border-gray-200 bg-white">
               <div className="border-b border-gray-100 px-5 py-4">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-700">
                   Récapitulatif
@@ -155,50 +133,34 @@ export default function CartPage() {
               </div>
               <div className="space-y-3 px-5 py-4 text-sm">
                 <div className="flex items-center justify-between text-gray-600">
-                  <span>Sous-total HT</span>
-                  <span className="font-medium text-gray-900">
-                    {formatHT(subtotalHT)}
-                  </span>
+                  <span>Somme des lignes</span>
+                  {displayedTotal !== null ? (
+                    <Price className="font-semibold text-gray-900" amount={displayedTotal} currencyCode="EUR" />
+                  ) : (
+                    <span className="text-amber-700">Prix indisponible</span>
+                  )}
                 </div>
                 <div className="flex items-center justify-between text-gray-600">
-                  <span>Frais de livraison</span>
-                  <span className="text-gray-500">À calculer</span>
+                  <span>TVA</span>
+                  <span className="text-gray-500">Non qualifiée</span>
                 </div>
                 <div className="flex items-center justify-between text-gray-600">
-                  <span>TVA 20%</span>
-                  <span className="font-medium text-gray-900">
-                    {formatHT(tvaAmount)}
-                  </span>
-                </div>
-                <div className="border-t border-gray-200 pt-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-gray-900">Total TTC</span>
-                    <span className="text-lg font-bold text-gray-900">
-                      {formatTTC(subtotalHT)}
-                    </span>
-                  </div>
+                  <span>Frais de port</span>
+                  <span className="text-gray-500">Non qualifiés</span>
                 </div>
               </div>
-
-              <div className="space-y-2 border-t border-gray-100 px-5 py-4">
-                <Link
-                  href="/checkout"
-                  className="flex w-full items-center justify-center rounded-md bg-[#cc1818] py-3 text-sm font-semibold text-white hover:bg-[#aa1414] transition-colors"
-                >
-                  Finaliser la commande →
-                </Link>
-                <Link
-                  href="/search"
-                  className="flex w-full items-center justify-center rounded-md border border-gray-300 py-2.5 text-sm text-gray-600 hover:border-gray-400 transition-colors"
-                >
-                  Continuer mes achats
-                </Link>
-              </div>
-
               <p className="px-5 pb-4 text-xs text-gray-400">
-                Prix HT — TVA 20% applicable · Livraison calculée à la commande
+                Prix lus dans le snapshot à l&apos;instant {nowUtc}. Montants indicatifs : le serveur
+                revalide chaque ligne.
               </p>
             </div>
+            <SimulationForm />
+            <Link
+              href="/search"
+              className="flex w-full items-center justify-center rounded-md border border-gray-300 py-2.5 text-sm text-gray-600 hover:border-gray-400 transition-colors"
+            >
+              Continuer mes achats
+            </Link>
           </div>
         </div>
       </div>
