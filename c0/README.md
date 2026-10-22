@@ -1,6 +1,6 @@
 # C0 — contrats Factory ↔ SITE, deux implémentations et golden fixtures
 
-Statut : `SPECIFIED / TESTED_SYNTHETIC / NOT_FROZEN` (gel prononcé par l'orchestrateur après revue).
+Statut : `C0_FROZEN` v1 (2026-10-23, code `b88f5cdf`, review indépendante `FREEZE_RECOMMENDED`) / `TESTED_SYNTHETIC`.
 Contrat normatif : [`docs/contracts/c0_site_v1.md`](../docs/contracts/c0_site_v1.md) et
 [`docs/contracts/c0_public_identity_v1.md`](../docs/contracts/c0_public_identity_v1.md).
 
