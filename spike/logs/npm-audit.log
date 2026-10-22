@@ -1,0 +1,15 @@
+# npm audit report
+
+next  16.0.0 - 16.4.0
+Severity: critical
+Next.js: Unauthenticated Remote Code Execution in Image Optimization API when SVG files are used - https://github.com/advisories/GHSA-2464-fhr4-w9xw
+Next.js: Denial of Service in App Router using Server Actions - https://github.com/advisories/GHSA-p3m5-59mp-jv5r
+Next.js: Unauthenticated Remote Code Execution in `use cache` functions returning typed arrays - https://github.com/advisories/GHSA-673q-mjm6-r5xr
+fix available via `npm audit fix --force`
+Will install next@16.4.2, which is outside the stated dependency range
+node_modules/next
+
+1 critical severity vulnerability
+
+To address all issues, run:
+  npm audit fix --force

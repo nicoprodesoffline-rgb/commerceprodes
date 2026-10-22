@@ -1,0 +1,40 @@
+mesure S01-accueil-1440.png {"scrollWidth":1440,"innerWidth":1440,"wide":[]}
+capture spike/screenshots/S01-accueil-1440.png
+mesure S02-simple-1440.png {"scrollWidth":1440,"innerWidth":1440,"wide":[]}
+capture spike/screenshots/S02-simple-1440.png
+mesure S03-gmce-promo-future-1440.png {"scrollWidth":1440,"innerWidth":1440,"wide":[]}
+capture spike/screenshots/S03-gmce-promo-future-1440.png
+mesure S04-esunny-1440.png {"scrollWidth":1440,"innerWidth":1440,"wide":[]}
+capture spike/screenshots/S04-esunny-1440.png
+mesure S05-panier-1440.png {"scrollWidth":1440,"innerWidth":1440,"wide":[]}
+capture spike/screenshots/S05-panier-1440.png
+mesure S05-panier-recu-simulation-1440.png {"scrollWidth":1440,"innerWidth":1440,"wide":[]}
+capture spike/screenshots/S05-panier-recu-simulation-1440.png
+mesure S01-accueil-1024.png {"scrollWidth":1024,"innerWidth":1024,"wide":[]}
+capture spike/screenshots/S01-accueil-1024.png
+mesure S02-simple-1024.png {"scrollWidth":1024,"innerWidth":1024,"wide":[]}
+capture spike/screenshots/S02-simple-1024.png
+mesure S03-gmce-promo-future-1024.png {"scrollWidth":1024,"innerWidth":1024,"wide":[]}
+capture spike/screenshots/S03-gmce-promo-future-1024.png
+mesure S04-esunny-1024.png {"scrollWidth":1024,"innerWidth":1024,"wide":[]}
+capture spike/screenshots/S04-esunny-1024.png
+mesure S05-panier-1024.png {"scrollWidth":1024,"innerWidth":1024,"wide":[]}
+capture spike/screenshots/S05-panier-1024.png
+mesure S05-panier-recu-simulation-1024.png {"scrollWidth":1024,"innerWidth":1024,"wide":[]}
+capture spike/screenshots/S05-panier-recu-simulation-1024.png
+mesure S01-accueil-390.png {"scrollWidth":390,"innerWidth":390,"wide":[]}
+capture spike/screenshots/S01-accueil-390.png
+mesure S02-simple-390.png {"scrollWidth":390,"innerWidth":390,"wide":[]}
+capture spike/screenshots/S02-simple-390.png
+mesure S03-gmce-promo-future-390.png {"scrollWidth":390,"innerWidth":390,"wide":[]}
+capture spike/screenshots/S03-gmce-promo-future-390.png
+mesure S04-esunny-390.png {"scrollWidth":390,"innerWidth":390,"wide":[]}
+capture spike/screenshots/S04-esunny-390.png
+mesure S05-panier-390.png {"scrollWidth":390,"innerWidth":390,"wide":[]}
+capture spike/screenshots/S05-panier-390.png
+mesure S05-panier-recu-simulation-390.png {"scrollWidth":390,"innerWidth":390,"wide":[]}
+capture spike/screenshots/S05-panier-recu-simulation-390.png
+initial: Article PI-ESUNNY01 | Largeur : 300 · Toile : acrylique
+clic 400: Article PI-ESUNNY03 | Largeur : 400 · Toile : polyester
+clic Acrylique: Article PI-ESUNNY01 | Largeur : 300 · Toile : acrylique
+note: Combinaison non proposée : Toile acrylique × Largeur 400 (interdite)

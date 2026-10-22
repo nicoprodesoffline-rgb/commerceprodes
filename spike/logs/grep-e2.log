@@ -1,0 +1,17 @@
+## grep -rniE 'supabase|shopify' app components lib (sources)
+0 occurrence
+
+## grep -rlE 'supabase|shopify' .next/server .next/static (sortie compilée)
+0 fichier
+
+## cartId / success:true dans sources et sortie
+0 occurrence
+
+## @supabase dans node_modules
+ls: node_modules/@supabase: No such file or directory
+
+## env lu par le code
+components/layout/breadcrumbs.tsx:8:process.env.NEXT_PUBLIC_BASE_URL
+lib/site-dto/index.ts:196:process.env.SPIKE_NOW_UTC
+
+## build lancé avec env -i (PATH, HOME, NEXT_TELEMETRY_DISABLED uniquement) — aucune variable Supabase

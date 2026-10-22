@@ -1,0 +1,6 @@
+PASS | S03-promo-active-q1 | GMCE rouge/M qty 1 pendant la promo | attendu: PROMO RATE-PI-GMCE0001-PROMO-1 9.99 | obtenu: PROMO RATE-PI-GMCE0001-PROMO-1 9.99
+PASS | S03-promo-active-q25 | GMCE rouge/M qty 25 pendant la promo | attendu: PROMO 9.99 (règle provisoire PROMO > BASE) | obtenu: PROMO 9.99
+PASS | S03-promo-scope | GMCE rouge/L non concerné par la promo | attendu: BASE 12.40 | obtenu: BASE 12.40
+PASS | S08-promo-stale | prix BASE affiché avant la promo, envoyé pendant | attendu: 409 PRICE_CHANGED (9.99) | obtenu: 409 PRICE_CHANGED 9.99
+
+PHASE=promo instant=2026-11-15T12:00:00.000Z : 4/4 PASS, 0 FAIL
