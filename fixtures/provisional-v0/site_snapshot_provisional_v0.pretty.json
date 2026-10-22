@@ -1,0 +1,420 @@
+{
+  "as_of_utc": "2026-10-22T20:00:00Z",
+  "catalogue_sequence": 1,
+  "categories": [
+    {
+      "category_key": "CAT-ATELIER",
+      "name": "Atelier",
+      "parent": null
+    },
+    {
+      "category_key": "CAT-MOBILIER",
+      "name": "Mobilier",
+      "parent": null
+    },
+    {
+      "category_key": "CAT-EPI",
+      "name": "Équipements de protection",
+      "parent": null
+    },
+    {
+      "category_key": "CAT-EXTERIEUR",
+      "name": "Extérieur",
+      "parent": null
+    },
+    {
+      "category_key": "CAT-STORES",
+      "name": "Stores",
+      "parent": "CAT-EXTERIEUR"
+    }
+  ],
+  "contract_version": "site_snapshot.PROVISIONAL_v0_BC1_SPIKE",
+  "families": [
+    {
+      "description_long": "STAGING_FIXTURE — Description longue de démonstration. Aucune donnée fournisseur réelle. Plateau bois, piètement acier.",
+      "description_short": "STAGING_FIXTURE — établi d'atelier à plateau bois, une seule variante.",
+      "image_main_sha256": "35121741c1a79f5009255975b0a0e4890e169b6e24a9c7ceca1fb2427ec984f1",
+      "items": [
+        {
+          "public_item_key": "PI-SIMPLE001",
+          "public_media_refs": [],
+          "public_sell_price_windows": [
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-SIMPLE001-base-v1",
+              "quantity_max": 9,
+              "quantity_min": 1,
+              "rate_id": "RATE-PI-SIMPLE001-BASE-1",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "189.00",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            },
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-SIMPLE001-base-v1",
+              "quantity_max": 19,
+              "quantity_min": 10,
+              "rate_id": "RATE-PI-SIMPLE001-BASE-2",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "179.50",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            },
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-SIMPLE001-base-v1",
+              "quantity_max": null,
+              "quantity_min": 20,
+              "rate_id": "RATE-PI-SIMPLE001-BASE-3",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "169.90",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            }
+          ],
+          "status": "READY",
+          "variant_axes": {}
+        }
+      ],
+      "name": "Établi d'atelier SIMPLE (fixture)",
+      "primary_category_key": "CAT-ATELIER",
+      "public_family_key": "PF-SIMPLE01",
+      "secondary_category_keys": [
+        "CAT-MOBILIER"
+      ],
+      "slug": "etabli-atelier-simple",
+      "variant_axes_schema": []
+    },
+    {
+      "description_long": "STAGING_FIXTURE — Description longue de démonstration. Variantes explicitement admises ; une variante brouillon non tarifée n'est pas publiée.",
+      "description_short": "STAGING_FIXTURE — gant de manutention, deux axes : couleur et taille.",
+      "image_main_sha256": "dbc418ceb2c7d0c07a5ec56c2a795ef39c6ad488539dfae52c7e4c6028f49404",
+      "items": [
+        {
+          "public_item_key": "PI-GMCE0001",
+          "public_media_refs": [
+            {
+              "mime": "image/png",
+              "role": "main",
+              "sha256": "7a91bc73335444ca0399b871207c762b4cec8af077368d2bed0880a7019ddfe3",
+              "size": 115
+            }
+          ],
+          "public_sell_price_windows": [
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-GMCE0001-base-v1",
+              "quantity_max": 9,
+              "quantity_min": 1,
+              "rate_id": "RATE-PI-GMCE0001-BASE-1",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "12.40",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            },
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-GMCE0001-base-v1",
+              "quantity_max": 19,
+              "quantity_min": 10,
+              "rate_id": "RATE-PI-GMCE0001-BASE-2",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "11.80",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            },
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-GMCE0001-base-v1",
+              "quantity_max": null,
+              "quantity_min": 20,
+              "rate_id": "RATE-PI-GMCE0001-BASE-3",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "10.95",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            },
+            {
+              "currency": "EUR",
+              "layer": "PROMO",
+              "offer_price_version_public": "opv-PI-GMCE0001-promo-v1",
+              "quantity_max": null,
+              "quantity_min": 1,
+              "rate_id": "RATE-PI-GMCE0001-PROMO-1",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "9.99",
+              "valid_from_utc": "2026-11-02T23:00:00Z",
+              "valid_until_utc": "2026-11-30T23:00:00Z"
+            }
+          ],
+          "status": "READY",
+          "variant_axes": {
+            "couleur": "rouge",
+            "taille": "M"
+          }
+        },
+        {
+          "public_item_key": "PI-GMCE0002",
+          "public_media_refs": [],
+          "public_sell_price_windows": [
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-GMCE0002-base-v1",
+              "quantity_max": 9,
+              "quantity_min": 1,
+              "rate_id": "RATE-PI-GMCE0002-BASE-1",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "12.40",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            },
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-GMCE0002-base-v1",
+              "quantity_max": 19,
+              "quantity_min": 10,
+              "rate_id": "RATE-PI-GMCE0002-BASE-2",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "11.80",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            },
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-GMCE0002-base-v1",
+              "quantity_max": null,
+              "quantity_min": 20,
+              "rate_id": "RATE-PI-GMCE0002-BASE-3",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "10.95",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            }
+          ],
+          "status": "READY",
+          "variant_axes": {
+            "couleur": "rouge",
+            "taille": "L"
+          }
+        },
+        {
+          "public_item_key": "PI-GMCE0003",
+          "public_media_refs": [],
+          "public_sell_price_windows": [
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-GMCE0003-base-v1",
+              "quantity_max": 9,
+              "quantity_min": 1,
+              "rate_id": "RATE-PI-GMCE0003-BASE-1",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "12.90",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            },
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-GMCE0003-base-v1",
+              "quantity_max": 19,
+              "quantity_min": 10,
+              "rate_id": "RATE-PI-GMCE0003-BASE-2",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "12.20",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            },
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-GMCE0003-base-v1",
+              "quantity_max": null,
+              "quantity_min": 20,
+              "rate_id": "RATE-PI-GMCE0003-BASE-3",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "11.40",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            }
+          ],
+          "status": "READY",
+          "variant_axes": {
+            "couleur": "bleu",
+            "taille": "M"
+          }
+        }
+      ],
+      "name": "Gant de manutention GMCE (fixture)",
+      "primary_category_key": "CAT-EPI",
+      "public_family_key": "PF-GMCE0001",
+      "secondary_category_keys": [],
+      "slug": "gant-manutention-gmce",
+      "unpublished_note": "La combinaison bleu/L existe comme brouillon non tarifé côté Factory et n'est PAS dans ce payload (NON_READY).",
+      "variant_axes_schema": [
+        {
+          "axis": "couleur",
+          "values": [
+            "rouge",
+            "bleu"
+          ]
+        },
+        {
+          "axis": "taille",
+          "values": [
+            "M",
+            "L"
+          ]
+        }
+      ]
+    },
+    {
+      "description_long": "STAGING_FIXTURE — Description longue de démonstration. La combinaison toile=acrylique × largeur=400 est interdite ; elle ne doit jamais être proposée ni vendable.",
+      "description_short": "STAGING_FIXTURE — store extérieur, deux axes ; une combinaison est interdite par preuve négative.",
+      "forbidden_combinations": [
+        {
+          "largeur": "400",
+          "toile": "acrylique"
+        }
+      ],
+      "image_main_sha256": "d7759a64d354593b9b98bdec4d51be88a94f17107c4c5e9f30116e1d2a46283b",
+      "items": [
+        {
+          "public_item_key": "PI-ESUNNY01",
+          "public_media_refs": [],
+          "public_sell_price_windows": [
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-ESUNNY01-base-v1",
+              "quantity_max": null,
+              "quantity_min": 1,
+              "rate_id": "RATE-PI-ESUNNY01-BASE-1",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "349.00",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            }
+          ],
+          "status": "READY",
+          "variant_axes": {
+            "largeur": "300",
+            "toile": "acrylique"
+          }
+        },
+        {
+          "public_item_key": "PI-ESUNNY02",
+          "public_media_refs": [],
+          "public_sell_price_windows": [
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-ESUNNY02-base-v1",
+              "quantity_max": null,
+              "quantity_min": 1,
+              "rate_id": "RATE-PI-ESUNNY02-BASE-1",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "299.00",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            }
+          ],
+          "status": "READY",
+          "variant_axes": {
+            "largeur": "300",
+            "toile": "polyester"
+          }
+        },
+        {
+          "public_item_key": "PI-ESUNNY03",
+          "public_media_refs": [],
+          "public_sell_price_windows": [
+            {
+              "currency": "EUR",
+              "layer": "BASE",
+              "offer_price_version_public": "opv-PI-ESUNNY03-base-v1",
+              "quantity_max": null,
+              "quantity_min": 1,
+              "rate_id": "RATE-PI-ESUNNY03-BASE-1",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "359.00",
+              "valid_from_utc": "2026-01-01T00:00:00Z",
+              "valid_until_utc": null
+            }
+          ],
+          "status": "READY",
+          "variant_axes": {
+            "largeur": "400",
+            "toile": "polyester"
+          }
+        }
+      ],
+      "name": "Store extérieur ESUNNY (fixture)",
+      "primary_category_key": "CAT-EXTERIEUR",
+      "public_family_key": "PF-ESUNNY01",
+      "secondary_category_keys": [
+        "CAT-STORES"
+      ],
+      "slug": "store-exterieur-esunny",
+      "variant_axes_schema": [
+        {
+          "axis": "toile",
+          "values": [
+            "acrylique",
+            "polyester"
+          ]
+        },
+        {
+          "axis": "largeur",
+          "values": [
+            "300",
+            "400"
+          ]
+        }
+      ]
+    }
+  ],
+  "fixture_status": "STAGING_FIXTURE — PROVISOIRE, NON AUTORITÉ C0 ; à remplacer par les golden fixtures C0 gelées (BC0)",
+  "generated_at_utc": "2026-10-22T20:00:00Z",
+  "manifest_counts": {
+    "families": 3,
+    "items": 7,
+    "media": 4
+  },
+  "media_refs": [
+    {
+      "mime": "image/png",
+      "sha256": "35121741c1a79f5009255975b0a0e4890e169b6e24a9c7ceca1fb2427ec984f1",
+      "size": 124
+    },
+    {
+      "mime": "image/png",
+      "sha256": "dbc418ceb2c7d0c07a5ec56c2a795ef39c6ad488539dfae52c7e4c6028f49404",
+      "size": 124
+    },
+    {
+      "mime": "image/png",
+      "sha256": "d7759a64d354593b9b98bdec4d51be88a94f17107c4c5e9f30116e1d2a46283b",
+      "size": 124
+    },
+    {
+      "mime": "image/png",
+      "sha256": "7a91bc73335444ca0399b871207c762b4cec8af077368d2bed0880a7019ddfe3",
+      "size": 115
+    }
+  ],
+  "projection_id": "proj-provisional-0001",
+  "publication_id": "pub-provisional-0001",
+  "scope": "FULL_READY_CATALOG",
+  "scope_key": "site:staging"
+}

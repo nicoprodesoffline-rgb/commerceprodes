@@ -1,0 +1,13 @@
+{
+  "fixture_status": "STAGING_FIXTURE — scénarios communs B/D",
+  "S01_catalogue": "Page d'accueil fixe + liste des catégories (5) + liste des familles (3) ; aucune famille achetable directement.",
+  "S02_famille_simple": "Fiche PF-SIMPLE01 : image Famille en premier, descriptions courte/longue, 1 item, grille de paliers 1-9 / 10-19 / 20+ affichée depuis les fenêtres SELL (pas de calcul PBQ).",
+  "S03_gmce_variantes": "Fiche PF-GMCE0001 : sélecteur couleur×taille ; bleu/L NON proposé (absent du payload) ; rouge/M a sa propre image ; PROMO du 2026-11-02T23:00Z au 2026-11-30T23:00Z affichée comme future (instant de test 2026-10-22T20:00Z) puis active (instant de test 2026-11-15T12:00Z).",
+  "S04_esunny_interdit": "Fiche PF-ESUNNY01 : acrylique×400 explicitement interdit (jamais sélectionnable, jamais dans le panier), les 3 autres combinaisons achetables.",
+  "S05_paliers": "Panier : PI-SIMPLE001 qty 1 -> 189.00 ; qty 10 -> 179.50 ; qty 20 -> 169.90 ; franchissement 9->10 et 19->20 ; montants = chaînes décimales, somme exacte côté serveur.",
+  "S06_panier_unique": "Un seul panier ; les lignes réellement affichées sont envoyées au serveur et revalidées contre le snapshot (clé item, variante, quantité, rate_id, montant). Aucun second panier (localStorage divergent / cookie cartId).",
+  "S07_devis": "Demande de devis : lignes + contact minimal -> simulateur contractuel étiqueté SIMULATION (pas de persistance revendiquée) ; même idempotency_key + même payload -> même reçu ; même clé + payload différent -> refus DUPLICATE_KEY_DIFFERENT_PAYLOAD.",
+  "S08_commande": "Commande représentative : montant accepté revalidé ; montant falsifié -> PRICE_CHANGED ; variante invalide/interdite -> INVALID_VARIANT ; quantité hors fenêtre -> PRICE_WINDOW_UNAVAILABLE ; aucun 'success:true' sans passage par le simulateur ; étiquette SIMULATION visible.",
+  "S09_refus": "Toute route legacy dangereuse (admin, checkout legacy, devis legacy, revalidate) -> 404/410 ; aucune mutation possible ; aucun import Supabase actif au runtime.",
+  "S10_responsive_a11y": "Parcours S02/S03/S05 à 1440, 1024, 390 px ; navigation clavier du sélecteur de variantes et du panier ; zoom 200 % sans perte de contenu ; états honnêtes (SIMULATION, prix indisponible)."
+}
