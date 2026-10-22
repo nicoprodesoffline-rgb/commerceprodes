@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+/* PRODES est toujours en light mode (repris de app/globals.css @a985aca2). */
+@variant dark (&:is([data-theme="dark"] *));
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #fafafa;
+  color: #111827;
+}
+
+/* Focus visible PRODES — cohérent rouge #cc1818 (repris tel quel) */
+*:focus-visible {
+  outline: 2px solid #cc1818;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+*:focus:not(:focus-visible) {
+  outline: none;
+}
