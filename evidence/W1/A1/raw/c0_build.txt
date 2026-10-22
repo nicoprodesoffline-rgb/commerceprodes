@@ -1,0 +1,6 @@
+# 2026-10-22T23:41:03Z commit testé e8782bd1eabd02cf65e80d84889db18602e87294 node v22.23.1 npm 10.9.8 tsc Version 5.9.3
+
+> c0:build
+> node -e "require('node:fs').rmSync('c0/ts/dist',{recursive:true,force:true})" && tsc -p c0/ts/tsconfig.json
+
+c0_build_exit=0

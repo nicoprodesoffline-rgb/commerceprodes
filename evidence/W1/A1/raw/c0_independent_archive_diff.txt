@@ -1,0 +1,3 @@
+# contrôle indépendant : git archive brut (sans scripts/c0) puis diff -r avec c0/ vendu (manifeste exclu)
+diff_exit=0
+fichiers extraits: 452

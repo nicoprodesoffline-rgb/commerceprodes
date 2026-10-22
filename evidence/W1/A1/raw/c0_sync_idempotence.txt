@@ -1,0 +1,1 @@
+sync idempotent: manifeste identique
