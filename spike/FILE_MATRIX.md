@@ -1,6 +1,6 @@
 # FILE_MATRIX — candidat D (coque Next.js stable propre)
 
-Base : `commerceprodes/main@a985aca23df49b66658ef06ce5878ef4bdd84834`. Liste : `git ls-tree -r --name-only a985aca2 -- app components lib` (194 fichiers, `spike/logs/files-at-a985aca2.txt`). LOC = nombre de `\n` du fichier à a985aca2 (binaire `favicon.ico` compté tel quel).
+Base : `commerceprodes/main@a985aca23df49b66658ef06ce5878ef4bdd84834`. Liste : `git ls-tree -r --name-only a985aca2 -- app components lib` (194 fichiers, `spike/logs/files-at-a985aca2.txt`). LOC = nombre de `\n` du fichier à a985aca2 (le binaire `favicon.ico` compte 0).
 
 Pour D, le mandat §5 réserve les verdicts à KEEP / ADAPT / DELETE ; REPLACE n'est pas utilisé : quand une fonction est reprise par un fichier neuf, le motif DELETE le nomme.
 
@@ -11,9 +11,9 @@ Pour D, le mandat §5 réserve les verdicts à KEEP / ADAPT / DELETE ; REPLACE n
 | KEEP | 1 | 53 |
 | ADAPT | 6 | 565 |
 | REPLACE | 0 | 0 |
-| DELETE | 187 | 28978 |
+| DELETE | 187 | 21130 (hors favicon.ico binaire) |
 | UNKNOWN | 0 | 0 |
-| **Total** | **194** | **29596** |
+| **Total** | **194** | **21748** |
 
 ## Fichiers à a985aca2
 
@@ -91,7 +91,7 @@ Pour D, le mandat §5 réserve les verdicts à KEEP / ADAPT / DELETE ; REPLACE n
 | `app/devis-express/page.tsx` | DELETE | 410 | page devis express legacy — E6 ; remplacée par le simulateur du panier |
 | `app/error.tsx` | DELETE | 36 | page/route hors S01–S05 ou adossée à Supabase |
 | `app/faq/page.tsx` | DELETE | 151 | page/route hors S01–S05 ou adossée à Supabase |
-| `app/favicon.ico` | DELETE | 7848 | page/route hors S01–S05 ou adossée à Supabase |
+| `app/favicon.ico` | DELETE | 0 (binaire) | icône legacy non reprise (aucune icône dans le candidat D) |
 | `app/gamme-pro-intens/page.tsx` | DELETE | 148 | page/route hors S01–S05 ou adossée à Supabase |
 | `app/globals.css` | ADAPT | 61 | gardés : import Tailwind, variant dark neutralisé, bordure de base, focus-visible PRODES ; retirés : plugins typography/container-queries, prose produit, print ; -37/+6 |
 | `app/layout.tsx` | DELETE | 80 | layout legacy (7 contextes, geist, sonner, promo) ; remplacé par app/layout.tsx neuf |
