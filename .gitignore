@@ -48,3 +48,7 @@ docs/screenshots/
 .worktrees/
 .claude/settings.local.json
 .agent-runs/
+
+# BC1 spike
+/var/
+/spike/logs/*.png.tmp

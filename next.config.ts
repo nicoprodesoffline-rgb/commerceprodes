@@ -1,30 +1,10 @@
-export default {
-  experimental: {
-    ppr: true,
-    inlineCss: true,
-    useCache: true,
-  },
+import type { NextConfig } from "next";
+
+// BC1-B : options expérimentales canary (ppr, inlineCss, useCache) retirées (E1).
+// Images : uniquement servies localement depuis /public (fixture) ; aucun hôte distant.
+const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
-    remotePatterns: [
-      // Supabase Storage (primary image source)
-      {
-        protocol: "https",
-        hostname: "mvnaeddtvyaqkdliivdk.supabase.co",
-        pathname: "/storage/v1/object/public/**",
-      },
-      // WordPress import (prodes.fr migrated images)
-      {
-        protocol: "https",
-        hostname: "prodes.fr",
-        pathname: "/wp-content/uploads/**",
-      },
-      // Admin-managed category images (any HTTPS source)
-      {
-        protocol: "https",
-        hostname: "**",
-      },
-    ],
   },
   async headers() {
     return [
@@ -46,3 +26,5 @@ export default {
     ];
   },
 };
+
+export default nextConfig;
