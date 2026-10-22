@@ -1,0 +1,2269 @@
+{
+  "cases": {
+    "C_CANONICAL.astral_key_order": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Keys sorted by code point (U+FFFD before U+1F600), not by UTF-16 unit",
+      "outcome": "CANONICAL"
+    },
+    "C_CANONICAL.big_integer": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "2^53 is outside the safe integer range",
+      "outcome": "REJECTED"
+    },
+    "C_CANONICAL.bom": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "UTF-8 BOM refused",
+      "outcome": "REJECTED"
+    },
+    "C_CANONICAL.control_in_string": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "Raw control character inside a string",
+      "outcome": "REJECTED"
+    },
+    "C_CANONICAL.depth_64": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "64 nested containers: the maximum depth",
+      "outcome": "CANONICAL"
+    },
+    "C_CANONICAL.depth_65": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "65 nested containers: one too many",
+      "outcome": "REJECTED"
+    },
+    "C_CANONICAL.duplicate_key": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "Duplicate key, even with the same value",
+      "outcome": "REJECTED"
+    },
+    "C_CANONICAL.duplicate_key_after_nfc": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "Two keys equal after NFC",
+      "outcome": "REJECTED"
+    },
+    "C_CANONICAL.empty_object": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "JSON whitespace around and inside an empty object",
+      "outcome": "CANONICAL"
+    },
+    "C_CANONICAL.escapes": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Escapes: short forms, \\u00XX lowercase for other controls, DEL/U+2028 raw, surrogate pair joined",
+      "outcome": "CANONICAL"
+    },
+    "C_CANONICAL.exponent": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "Exponent notation is a float token",
+      "outcome": "REJECTED"
+    },
+    "C_CANONICAL.float": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "A number with a fraction is never accepted: amounts are strings",
+      "outcome": "REJECTED"
+    },
+    "C_CANONICAL.float_integral": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "1.0 is a float token even if integral",
+      "outcome": "REJECTED"
+    },
+    "C_CANONICAL.invalid_utf8": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "Invalid UTF-8 sequence",
+      "outcome": "REJECTED"
+    },
+    "C_CANONICAL.lone_surrogate": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "Lone surrogate escape",
+      "outcome": "REJECTED"
+    },
+    "C_CANONICAL.nan": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "NaN is not JSON",
+      "outcome": "REJECTED"
+    },
+    "C_CANONICAL.nfc_composed": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Same value already NFC and compact: must give the same canonical bytes as nfc_decomposed",
+      "outcome": "CANONICAL"
+    },
+    "C_CANONICAL.nfc_decomposed": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "NFD key and value are normalized to NFC; -0 reads as 0; 2^53-1 is the largest integer",
+      "outcome": "CANONICAL"
+    },
+    "C_CANONICAL.trailing_comma": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "Trailing comma",
+      "outcome": "REJECTED"
+    },
+    "F_A_B_OFFERS.activate_g1_offer_a": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Item 301 sold from preferred Offer A",
+      "outcome": "ACTIVATED"
+    },
+    "F_A_B_OFFERS.activate_g2_b_without_sell": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "B preferred without SELL: 301 NON_READY, withdrawn with a classified reason, no fallback to A",
+      "outcome": "ACTIVATED"
+    },
+    "F_A_B_OFFERS.activate_g3_offer_b": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "ID-T07: B priced, 301 comes back with the same key and a new public price version",
+      "outcome": "ACTIVATED"
+    },
+    "F_A_B_OFFERS.item_without_sell": {
+      "accepted": false,
+      "error_codes": [
+        "SELL_MISSING"
+      ],
+      "expect": {
+        "detail.rules": [
+          "item_without_window"
+        ]
+      },
+      "notes": "A READY Item with no SELL window is refused SELL_MISSING (authority code, cycle 2), rule item_without_window",
+      "outcome": "REJECTED"
+    },
+    "F_A_B_OFFERS.producer_fallback_to_a": {
+      "accepted": false,
+      "error_codes": [
+        "COVERAGE_UNPROVEN"
+      ],
+      "expect": {},
+      "notes": "CE-T15: payload still sells 301 at A's price while the source says NON_READY",
+      "outcome": "REJECTED"
+    },
+    "F_A_B_OFFERS.producer_g2_proven": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "301 NON_READY in source and absent from payload",
+      "outcome": "COVERAGE_PROVEN"
+    },
+    "F_A_B_OFFERS.sell_missing_at_as_of": {
+      "accepted": false,
+      "error_codes": [
+        "SELL_MISSING"
+      ],
+      "expect": {},
+      "notes": "Windows exist but none covers as_of_utc: not READY",
+      "outcome": "REJECTED"
+    },
+    "F_A_B_OFFERS.silent_withdrawal": {
+      "accepted": false,
+      "error_codes": [
+        "STAGE_HOLD"
+      ],
+      "expect": {},
+      "notes": "301 disappears without being listed in expected_withdrawals",
+      "outcome": "STAGE_HOLD"
+    },
+    "F_ESUNNY_FORBIDDEN.activate": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Three of four combinations; blanc+sol is explicitly forbidden and has no Item",
+      "outcome": "ACTIVATED"
+    },
+    "F_ESUNNY_FORBIDDEN.order_allowed_combination": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "receipt.total_amount": "149.00"
+      },
+      "notes": "Same Item with its own axes",
+      "outcome": "RECEIVED"
+    },
+    "F_ESUNNY_FORBIDDEN.order_forbidden_combination": {
+      "accepted": false,
+      "error_codes": [
+        "INVALID_VARIANT"
+      ],
+      "expect": {},
+      "notes": "Order on a forbidden combination is refused server-side",
+      "outcome": "REJECTED"
+    },
+    "F_ESUNNY_FORBIDDEN.producer_cartesian_product": {
+      "accepted": false,
+      "error_codes": [
+        "COVERAGE_UNPROVEN"
+      ],
+      "expect": {},
+      "notes": "Payload generated by cartesian product publishes an EXCLUDED combination",
+      "outcome": "REJECTED"
+    },
+    "F_ESUNNY_FORBIDDEN.producer_coverage_proven": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Forbidden combination is not an Item: universe 3",
+      "outcome": "COVERAGE_PROVEN"
+    },
+    "F_ESUNNY_FORBIDDEN.select_forbidden_combination": {
+      "accepted": false,
+      "error_codes": [
+        "INVALID_VARIANT"
+      ],
+      "expect": {},
+      "notes": "The SITE never builds the cartesian product: blanc+sol does not exist",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.activate_base": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Base generation 10: 4 families x 5 Items",
+      "outcome": "ACTIVATED"
+    },
+    "F_FULL_CORRUPT.as_of_at_tolerance_edge": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "R-07: as_of_utc exactly 300 s after the server clock is admitted",
+      "outcome": "ACTIVATED"
+    },
+    "F_FULL_CORRUPT.as_of_in_future": {
+      "accepted": false,
+      "error_codes": [
+        "STAGE_HOLD"
+      ],
+      "expect": {
+        "detail.hold_reason": "AS_OF_IN_FUTURE"
+      },
+      "notes": "R-07: as_of_utc 5 min 1 s after the SITE server clock (tolerance 300 s): held, never activated",
+      "outcome": "STAGE_HOLD"
+    },
+    "F_FULL_CORRUPT.body_tampered_after_hash": {
+      "accepted": false,
+      "error_codes": [
+        "INTEGRITY_MISMATCH"
+      ],
+      "expect": {},
+      "notes": "A price changed after hashing and signing",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.category_unknown": {
+      "accepted": false,
+      "error_codes": [
+        "CATEGORY_UNKNOWN"
+      ],
+      "expect": {
+        "detail.rules": [
+          "category_unknown"
+        ]
+      },
+      "notes": "R-14: primary category not declared in categories",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.coverage_base_mismatch": {
+      "accepted": false,
+      "error_codes": [
+        "STAGE_HOLD"
+      ],
+      "expect": {},
+      "notes": "Withdrawals computed against seq 9, ACTIVE is 10: delta not bound to the last ACKed generation",
+      "outcome": "STAGE_HOLD"
+    },
+    "F_FULL_CORRUPT.coverage_base_sha_mismatch": {
+      "accepted": false,
+      "error_codes": [
+        "STAGE_HOLD"
+      ],
+      "expect": {
+        "detail.hold_reason": "BASE_MISMATCH"
+      },
+      "notes": "R-10: right previous sequence, wrong previous_payload_sha256: delta not bound to the ACTIVE generation",
+      "outcome": "STAGE_HOLD"
+    },
+    "F_FULL_CORRUPT.family_image_not_declared": {
+      "accepted": false,
+      "error_codes": [
+        "MEDIA_MISSING",
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "media_ref_unknown",
+          "media_refs.orphan"
+        ]
+      },
+      "notes": "Family image not in media_refs (MEDIA_MISSING, authority code, rule media_ref_unknown) and its former ref is now orphan (SNAPSHOT_INVALID media_refs.orphan)",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.family_without_items": {
+      "accepted": false,
+      "error_codes": [
+        "FAMILY_WITHOUT_ITEMS"
+      ],
+      "expect": {
+        "detail.rules": [
+          "family_without_items"
+        ]
+      },
+      "notes": "R-14: a family published without any READY Item",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.first_generation_with_withdrawals": {
+      "accepted": false,
+      "error_codes": [
+        "STAGE_HOLD"
+      ],
+      "expect": {},
+      "notes": "No ACTIVE generation, yet withdrawals are claimed: not bound to anything",
+      "outcome": "STAGE_HOLD"
+    },
+    "F_FULL_CORRUPT.full_amputated_self_consistent": {
+      "accepted": false,
+      "error_codes": [
+        "STAGE_HOLD"
+      ],
+      "expect": {},
+      "notes": "CE-T06: hash, signature, counts and partitions self-consistent (universe 2 = 2 READY), but 18 previous keys vanish unexplained",
+      "outcome": "STAGE_HOLD"
+    },
+    "F_FULL_CORRUPT.hash_wrong": {
+      "accepted": false,
+      "error_codes": [
+        "INTEGRITY_MISMATCH"
+      ],
+      "expect": {},
+      "notes": "payload_sha256 does not match the canonical bytes",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.legit_withdrawals_listed": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "CE-T07: two classified withdrawals, exactly the delta with the active generation",
+      "outcome": "ACTIVATED"
+    },
+    "F_FULL_CORRUPT.manifest_counts_wrong": {
+      "accepted": false,
+      "error_codes": [
+        "MANIFEST_COUNTS_MISMATCH"
+      ],
+      "expect": {
+        "detail.rules": [
+          "manifest_counts_mismatch"
+        ]
+      },
+      "notes": "Physically inconsistent document, even if hashed and signed",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.massive_listed_over_policy": {
+      "accepted": false,
+      "error_codes": [
+        "STAGE_HOLD"
+      ],
+      "expect": {},
+      "notes": "18 classified withdrawals above the fixture policy (5) without operator release: held, no business threshold invented",
+      "outcome": "STAGE_HOLD"
+    },
+    "F_FULL_CORRUPT.massive_listed_released": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Same publication after a documented release bound to its withdrawals digest",
+      "outcome": "ACTIVATED"
+    },
+    "F_FULL_CORRUPT.massive_withdrawal_unexplained": {
+      "accepted": false,
+      "error_codes": [
+        "STAGE_HOLD"
+      ],
+      "expect": {},
+      "notes": "Universe intact (20), 18 NON_READY, but no withdrawal listed: held",
+      "outcome": "STAGE_HOLD"
+    },
+    "F_FULL_CORRUPT.media_hash_mismatch": {
+      "accepted": false,
+      "error_codes": [
+        "MEDIA_HASH_MISMATCH"
+      ],
+      "expect": {},
+      "notes": "Bytes received under a SHA do not hash to it",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.media_missing": {
+      "accepted": false,
+      "error_codes": [
+        "MEDIA_MISSING"
+      ],
+      "expect": {},
+      "notes": "CE-T08: a family image was never transferred",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.media_type_magic_mismatch": {
+      "accepted": false,
+      "error_codes": [
+        "MEDIA_TYPE_REJECTED"
+      ],
+      "expect": {},
+      "notes": "Declared image/png, bytes are SVG text",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.media_type_svg_declared": {
+      "accepted": false,
+      "error_codes": [
+        "MEDIA_TYPE_REJECTED"
+      ],
+      "expect": {},
+      "notes": "SVG is not an allowed public media type",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.partition_mismatch": {
+      "accepted": false,
+      "error_codes": [
+        "COVERAGE_UNPROVEN"
+      ],
+      "expect": {},
+      "notes": "universe != READY + NON_READY + EXCLUDED",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.prices_expired_at_activation": {
+      "accepted": false,
+      "error_codes": [
+        "CATALOG_UNSAFE"
+      ],
+      "expect": {},
+      "notes": "Every window of an Item ended before activation: catalogue not safe to sell",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.producer_amputated_unproven": {
+      "accepted": false,
+      "error_codes": [
+        "COVERAGE_UNPROVEN"
+      ],
+      "expect": {},
+      "notes": "CE-T06 producer side: the real source capture has 20 READY Items",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.producer_legit_proven": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Source manifest proves 18 READY + 1 NON_READY + 1 EXCLUDED",
+      "outcome": "COVERAGE_PROVEN"
+    },
+    "F_FULL_CORRUPT.replay_active": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Same seq/SHA as ACTIVE: the stored ACK, unchanged",
+      "outcome": "REPLAY_ACK"
+    },
+    "F_FULL_CORRUPT.roll_forward_old_capture": {
+      "accepted": false,
+      "error_codes": [
+        "CATALOG_UNSAFE"
+      ],
+      "expect": {},
+      "notes": "CE-T14: an older capture re-sent under a higher seq is not commercially safe",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.sequence_collision": {
+      "accepted": false,
+      "error_codes": [
+        "SEQUENCE_COLLISION"
+      ],
+      "expect": {},
+      "notes": "CE-T10: seq 10 again with another SHA",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.sequence_stale": {
+      "accepted": false,
+      "error_codes": [
+        "STALE_SEQUENCE"
+      ],
+      "expect": {},
+      "notes": "CE-T10: seq 9 arrives after 10",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.unknown_count": {
+      "accepted": false,
+      "error_codes": [
+        "COVERAGE_UNPROVEN"
+      ],
+      "expect": {},
+      "notes": "unknown_count > 0: never activated",
+      "outcome": "REJECTED"
+    },
+    "F_FULL_CORRUPT.withdrawals_digest_wrong": {
+      "accepted": false,
+      "error_codes": [
+        "INTEGRITY_MISMATCH"
+      ],
+      "expect": {},
+      "notes": "expected_withdrawals_digest does not bind the listed withdrawals",
+      "outcome": "REJECTED"
+    },
+    "F_GMCE_VARIANTS.activate": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Two axes, three explicit variants; draft 104 has a key but is NON_READY and absent (ID-T14)",
+      "outcome": "ACTIVATED"
+    },
+    "F_GMCE_VARIANTS.draft_published": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "item.status"
+        ]
+      },
+      "notes": "Only status READY may be transported",
+      "outcome": "REJECTED"
+    },
+    "F_GMCE_VARIANTS.duplicate_combination": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "family.combination_unique"
+        ]
+      },
+      "notes": "Two Items with the same axis combination",
+      "outcome": "REJECTED"
+    },
+    "F_GMCE_VARIANTS.missing_axis": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "item.axes_match_family"
+        ]
+      },
+      "notes": "A variant without one of the family axes",
+      "outcome": "REJECTED"
+    },
+    "F_GMCE_VARIANTS.producer_coverage_proven": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Universe 4 = 3 READY + 1 NON_READY draft",
+      "outcome": "COVERAGE_PROVEN"
+    },
+    "F_GMCE_VARIANTS.producer_draft_claimed_ready": {
+      "accepted": false,
+      "error_codes": [
+        "COVERAGE_UNPROVEN"
+      ],
+      "expect": {},
+      "notes": "Source says 4 READY, payload carries 3: coverage not proven",
+      "outcome": "REJECTED"
+    },
+    "F_GMCE_VARIANTS.select_draft": {
+      "accepted": false,
+      "error_codes": [
+        "ITEM_NOT_PUBLISHED"
+      ],
+      "expect": {},
+      "notes": "ID-T14: the draft's key exists in the Factory but is not published",
+      "outcome": "REJECTED"
+    },
+    "F_GMCE_VARIANTS.select_variant": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-GMCE-102"
+      },
+      "notes": "Explicit variant selected by its own key",
+      "outcome": "SELECTED"
+    },
+    "F_GMCE_VARIANTS.select_wrong_axes": {
+      "accepted": false,
+      "error_codes": [
+        "INVALID_VARIANT"
+      ],
+      "expect": {},
+      "notes": "Axes that do not belong to this key",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.activate_gen_a": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Generation N: four Items, two families",
+      "outcome": "ACTIVATED"
+    },
+    "F_IDENTITY.activate_gen_b_same_keys": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "ID-T11/ID-T08: slug changed, Item 602 moved to another family: same public_item_key, no withdrawal",
+      "outcome": "ACTIVATED"
+    },
+    "F_IDENTITY.activate_gen_c_tombstones": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "ID-T09 (DTO side): 604 SUPERSEDED by 603, 601 RETIRED; both tombstones published",
+      "outcome": "ACTIVATED"
+    },
+    "F_IDENTITY.bad_check_symbol_in_snapshot": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "item.public_item_key"
+        ]
+      },
+      "notes": "ID-T01: a key with a wrong check symbol is not a key",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.d_alias_chain": {
+      "accepted": false,
+      "error_codes": [
+        "IDENTITY_CONFLICT"
+      ],
+      "expect": {},
+      "notes": "R-03: 602 superseded by 604, itself an alias: no alias chain",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.d_alias_repointed": {
+      "accepted": false,
+      "error_codes": [
+        "IDENTITY_CONFLICT"
+      ],
+      "expect": {},
+      "notes": "R-03: alias 604 re-pointed from 603 to 602: superseded_by is immutable",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.d_retired_to_superseded": {
+      "accepted": false,
+      "error_codes": [
+        "IDENTITY_CONFLICT"
+      ],
+      "expect": {},
+      "notes": "R-03: RETIRED is terminal, 601 cannot become an alias",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.d_superseded_to_retired": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "R-03 positive: an alias may become RETIRED (the only admitted transition)",
+      "outcome": "ACTIVATED"
+    },
+    "F_IDENTITY.duplicate_item_key": {
+      "accepted": false,
+      "error_codes": [
+        "IDENTITY_CONFLICT"
+      ],
+      "expect": {},
+      "notes": "Same public_item_key twice in one generation",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.event_keeps_original_key": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "An order received under 604 keeps 604: events are facts, no catalogue lookup, no rewrite",
+      "outcome": "APPLY"
+    },
+    "F_IDENTITY.family_key_as_item_key": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "item.public_item_key"
+        ]
+      },
+      "notes": "PF- key where a PI- key is required",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_00": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_CHECK_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PI-000000Z90' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_01": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'pi-000000z9s' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_02": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PI-0000I0001' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_03": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PI-0000L0001' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_04": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PI-0000O0001' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_05": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PI-0000U0001' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_06": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PI-000000Z9' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_07": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PI-000000Z9S0' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_08": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_NAMESPACE_MISMATCH"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PF-000000Z9Z' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_09": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_NAMESPACE_MISMATCH"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PI-000000Z9S' as family",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_10": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PI-000000000' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_11": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PRD-004218' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_12": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key '3f2504e0-4f89-41d3-9a0c-0305e82c3301' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_13": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key ' PI-000000Z9S' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_14": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PI-000000Z9S\\n' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_15": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 1001 as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_16": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_FORMAT_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key None as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_17": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_CHECK_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PI-000000Z0W' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_18": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_CHECK_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PI-900000Z0S' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_invalid_19": {
+      "accepted": false,
+      "error_codes": [
+        "KEY_CHECK_INVALID"
+      ],
+      "expect": {},
+      "notes": "Refused key 'PI-0000009ZS' as item",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.key_valid_family_07": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 1
+      },
+      "notes": "ID-T01: sequence 1 encodes to PF-00000001Y",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.key_valid_family_08": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 2
+      },
+      "notes": "ID-T01: sequence 2 encodes to PF-00000002N",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.key_valid_family_09": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 31
+      },
+      "notes": "ID-T01: sequence 31 encodes to PF-0000000ZT",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.key_valid_family_10": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 32
+      },
+      "notes": "ID-T01: sequence 32 encodes to PF-000000109",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.key_valid_family_11": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 1001
+      },
+      "notes": "ID-T01: sequence 1001 encodes to PF-000000Z9Z",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.key_valid_family_12": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 123456789
+      },
+      "notes": "ID-T01: sequence 123456789 encodes to PF-003NQK8N0",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.key_valid_family_13": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 1099511627775
+      },
+      "notes": "ID-T01: sequence 1099511627775 encodes to PF-ZZZZZZZZ2",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.key_valid_item_00": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 1
+      },
+      "notes": "ID-T01: sequence 1 encodes to PI-00000001R",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.key_valid_item_01": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 2
+      },
+      "notes": "ID-T01: sequence 2 encodes to PI-00000002K",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.key_valid_item_02": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 31
+      },
+      "notes": "ID-T01: sequence 31 encodes to PI-0000000ZW",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.key_valid_item_03": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 32
+      },
+      "notes": "ID-T01: sequence 32 encodes to PI-00000010F",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.key_valid_item_04": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 1001
+      },
+      "notes": "ID-T01: sequence 1001 encodes to PI-000000Z9S",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.key_valid_item_05": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 123456789
+      },
+      "notes": "ID-T01: sequence 123456789 encodes to PI-003NQK8N6",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.key_valid_item_06": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "sequence": 1099511627775
+      },
+      "notes": "ID-T01: sequence 1099511627775 encodes to PI-ZZZZZZZZ4",
+      "outcome": "VALID"
+    },
+    "F_IDENTITY.new_item_new_key": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "ID-T12 positive: the new product receives a new key (606), 601 stays RETIRED",
+      "outcome": "ACTIVATED"
+    },
+    "F_IDENTITY.order_with_tombstoned_keys": {
+      "accepted": false,
+      "error_codes": [
+        "ITEM_RETIRED",
+        "ITEM_SUPERSEDED"
+      ],
+      "expect": {
+        "superseded_by.PI-000000JW3": "PI-000000JVF"
+      },
+      "notes": "Old cart: both lines refused by name, canonical key given for 604",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.regenerated_key_held": {
+      "accepted": false,
+      "error_codes": [
+        "STAGE_HOLD"
+      ],
+      "expect": {},
+      "notes": "ID-T11 negative: a key regenerated for the same product makes the old key vanish unexplained",
+      "outcome": "STAGE_HOLD"
+    },
+    "F_IDENTITY.registry_key_also_published": {
+      "accepted": false,
+      "error_codes": [
+        "IDENTITY_CONFLICT"
+      ],
+      "expect": {},
+      "notes": "A key cannot be both CANONICAL READY and a tombstone",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.retired_key_reassigned": {
+      "accepted": false,
+      "error_codes": [
+        "IDENTITY_CONFLICT"
+      ],
+      "expect": {},
+      "notes": "ID-T12: a RETIRED key published again for another product",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.select_canonical": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Canonical key of the consolidated product",
+      "outcome": "SELECTED"
+    },
+    "F_IDENTITY.select_retired": {
+      "accepted": false,
+      "error_codes": [
+        "ITEM_RETIRED"
+      ],
+      "expect": {},
+      "notes": "Retired key: never sold, never reassigned",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.select_superseded": {
+      "accepted": false,
+      "error_codes": [
+        "ITEM_SUPERSEDED"
+      ],
+      "expect": {
+        "superseded_by.PI-000000JW3": "PI-000000JVF"
+      },
+      "notes": "Superseded key: refused and the canonical key is given",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.superseded_without_registry": {
+      "accepted": false,
+      "error_codes": [
+        "IDENTITY_CONFLICT"
+      ],
+      "expect": {},
+      "notes": "Withdrawal reason SUPERSEDED requires the registry entry",
+      "outcome": "REJECTED"
+    },
+    "F_IDENTITY.tombstone_dropped": {
+      "accepted": false,
+      "error_codes": [
+        "IDENTITY_CONFLICT"
+      ],
+      "expect": {},
+      "notes": "The alias of 604 disappears from the registry: tombstones are append-only",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.event_digest_mismatch": {
+      "accepted": false,
+      "error_codes": [
+        "INTEGRITY_MISMATCH"
+      ],
+      "expect": {},
+      "notes": "Payload changed after its digest",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.event_future_version": {
+      "accepted": false,
+      "error_codes": [
+        "SCHEMA_UNSUPPORTED"
+      ],
+      "expect": {},
+      "notes": "event_version 2 not supported",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.event_idempotency_conflict": {
+      "accepted": false,
+      "error_codes": [
+        "EVENT_IDEMPOTENCY_CONFLICT"
+      ],
+      "expect": {},
+      "notes": "Same idempotency key, other content: refused, not acknowledged, nothing replaced",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.event_legacy_seam_envelope": {
+      "accepted": false,
+      "error_codes": [
+        "SCHEMA_UNSUPPORTED"
+      ],
+      "expect": {},
+      "notes": "Existing Factory seam envelope (six keys, UUID public key) is not site_events.v1: refused, never misread",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.event_non_canonical_bytes": {
+      "accepted": false,
+      "error_codes": [
+        "INTEGRITY_MISMATCH"
+      ],
+      "expect": {},
+      "notes": "R-05: event bytes must equal their canonical form",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.event_order_duplicate_lines": {
+      "accepted": false,
+      "error_codes": [
+        "DUPLICATE_LINE"
+      ],
+      "expect": {},
+      "notes": "R-01: an order event with two lines for the same Item is refused (totals are consistent)",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.event_order_received": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Order lines frozen with seq/rate/amounts",
+      "outcome": "APPLY"
+    },
+    "F_QUOTE_ORDER.event_order_total_wrong": {
+      "accepted": false,
+      "error_codes": [
+        "EVENT_PAYLOAD_INVALID"
+      ],
+      "expect": {},
+      "notes": "Order total is not the sum of its lines",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.event_pii_injected": {
+      "accepted": false,
+      "error_codes": [
+        "EVENT_PAYLOAD_INVALID"
+      ],
+      "expect": {},
+      "notes": "Personal data has no place in the event payload",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.event_quote_duplicate_lines": {
+      "accepted": false,
+      "error_codes": [
+        "DUPLICATE_LINE"
+      ],
+      "expect": {},
+      "notes": "R-01: same rule for quote events",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.event_quote_requested": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "First poll: applied once, no PII in the payload",
+      "outcome": "APPLY"
+    },
+    "F_QUOTE_ORDER.event_redelivered_new_event_id": {
+      "accepted": true,
+      "error_codes": [
+        "EVENT_DUPLICATE_NOOP"
+      ],
+      "expect": {},
+      "notes": "Same business fact under a new event_id is a replay (seam semantics kept)",
+      "outcome": "DUPLICATE_NOOP"
+    },
+    "F_QUOTE_ORDER.event_replay_after_lost_ack": {
+      "accepted": true,
+      "error_codes": [
+        "EVENT_DUPLICATE_NOOP"
+      ],
+      "expect": {},
+      "notes": "CE-T18: ACK lost, the same event comes back: no second effect",
+      "outcome": "DUPLICATE_NOOP"
+    },
+    "F_QUOTE_ORDER.event_unknown_type": {
+      "accepted": false,
+      "error_codes": [
+        "EVENT_TYPE_UNKNOWN"
+      ],
+      "expect": {},
+      "notes": "Type outside the allowlist stays on the SITE",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.event_version_0": {
+      "accepted": false,
+      "error_codes": [
+        "SCHEMA_UNSUPPORTED"
+      ],
+      "expect": {},
+      "notes": "R-06: event_version 0 != 1",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.event_version_minus_1": {
+      "accepted": false,
+      "error_codes": [
+        "SCHEMA_UNSUPPORTED"
+      ],
+      "expect": {},
+      "notes": "R-06: event_version -1 != 1",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.lookup_found": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Legitimate token",
+      "outcome": "FOUND"
+    },
+    "F_QUOTE_ORDER.lookup_no_token": {
+      "accepted": false,
+      "error_codes": [
+        "UNAUTHORIZED"
+      ],
+      "expect": {},
+      "notes": "No session or token",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.lookup_token_key_absent": {
+      "accepted": false,
+      "error_codes": [
+        "UNAUTHORIZED"
+      ],
+      "expect": {},
+      "notes": "R-13: access_token key absent",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.lookup_unknown_ref": {
+      "accepted": false,
+      "error_codes": [
+        "NOT_FOUND"
+      ],
+      "expect": {},
+      "notes": "Predictable next reference does not reveal anything",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.lookup_wrong_token": {
+      "accepted": false,
+      "error_codes": [
+        "NOT_FOUND"
+      ],
+      "expect": {},
+      "notes": "Wrong token answers like an unknown reference (no leak)",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_catalog_unsafe": {
+      "accepted": false,
+      "error_codes": [
+        "CATALOG_UNSAFE"
+      ],
+      "expect": {},
+      "notes": "CE-T14: generation marked unsafe, checkout refused",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_client_sets_tax": {
+      "accepted": false,
+      "error_codes": [
+        "INVALID_DATA"
+      ],
+      "expect": {},
+      "notes": "The client cannot send tax, shipping or status",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_double_post_same_key": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "receipt.receipt_ref": "ORD-2026-000001"
+      },
+      "notes": "CE-T03 (contract part): second identical POST with the same key returns the first receipt",
+      "outcome": "REPLAY_SAME_RECEIPT"
+    },
+    "F_QUOTE_ORDER.order_duplicate_lines_ten_times_one": {
+      "accepted": false,
+      "error_codes": [
+        "DUPLICATE_LINE"
+      ],
+      "expect": {},
+      "notes": "R-01: 10 lines of quantity 1 instead of one line of 10 (tier bypass)",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_duplicate_lines_tier_bypass": {
+      "accepted": false,
+      "error_codes": [
+        "DUPLICATE_LINE"
+      ],
+      "expect": {},
+      "notes": "R-01: 5+5 split to stay on the 1-9 tier; one line per Item, tier chosen on the line quantity",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_expired_offline": {
+      "accepted": false,
+      "error_codes": [
+        "PRICE_WINDOW_UNAVAILABLE"
+      ],
+      "expect": {},
+      "notes": "CE-T13: no window left, Factory unreachable: refused, old price never reused",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_falsified_amount": {
+      "accepted": false,
+      "error_codes": [
+        "PRICE_CHANGED"
+      ],
+      "expect": {},
+      "notes": "CE-T16: browser-modified unit_amount",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_float_amount": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "Amounts are never JSON numbers",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_future_window": {
+      "accepted": false,
+      "error_codes": [
+        "PRICE_WINDOW_UNAVAILABLE"
+      ],
+      "expect": {},
+      "notes": "CE-T16: price of a window that has not started",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_invalid_email": {
+      "accepted": false,
+      "error_codes": [
+        "INVALID_DATA"
+      ],
+      "expect": {},
+      "notes": "Contact e-mail format",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_invalid_variant": {
+      "accepted": false,
+      "error_codes": [
+        "INVALID_VARIANT"
+      ],
+      "expect": {},
+      "notes": "Axes sent for an Item without axes",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_item_not_published": {
+      "accepted": false,
+      "error_codes": [
+        "ITEM_NOT_PUBLISHED"
+      ],
+      "expect": {},
+      "notes": "Well-formed key absent from the ACTIVE generation",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_line_total_not_unit_times_quantity": {
+      "accepted": false,
+      "error_codes": [
+        "PRICE_CHANGED"
+      ],
+      "expect": {},
+      "notes": "R-10: right rate and unit price, line_total 109.00 != 11.00 x 10 (order total consistent with the lines)",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_promo_at_dst_boundary": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Promotion price accepted from its first second",
+      "outcome": "RECEIVED"
+    },
+    "F_QUOTE_ORDER.order_promo_one_second_early": {
+      "accepted": false,
+      "error_codes": [
+        "PRICE_CHANGED"
+      ],
+      "expect": {},
+      "notes": "Promotion not started yet: BASE selected, the shown promotion price is refused",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_replay_lines_reordered": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "receipt.receipt_ref": "ORD-2026-000001"
+      },
+      "notes": "R-09: same order, lines in another order: same fingerprint, same receipt",
+      "outcome": "REPLAY_SAME_RECEIPT"
+    },
+    "F_QUOTE_ORDER.order_same_key_other_axes": {
+      "accepted": false,
+      "error_codes": [
+        "INVALID_VARIANT"
+      ],
+      "expect": {},
+      "notes": "R-01: same key with other axes is not a duplicate line; the foreign axes are an invalid variant",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_same_key_other_payload": {
+      "accepted": false,
+      "error_codes": [
+        "DUPLICATE_KEY_DIFFERENT_PAYLOAD"
+      ],
+      "expect": {},
+      "notes": "Same idempotency key, different request",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_sequence_boolean": {
+      "accepted": false,
+      "error_codes": [
+        "INVALID_DATA"
+      ],
+      "expect": {},
+      "notes": "R-04: catalogue_sequence true is not an integer (Python bool excluded like TS)",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_stale_generation": {
+      "accepted": false,
+      "error_codes": [
+        "CART_STALE"
+      ],
+      "expect": {},
+      "notes": "CE-T12: cart built on generation 6, ACTIVE is 7",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_tier_crossed": {
+      "accepted": false,
+      "error_codes": [
+        "PRICE_CHANGED"
+      ],
+      "expect": {},
+      "notes": "Quantity 10 shown with the 1-9 price: reconfirmation required",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_total_mismatch": {
+      "accepted": false,
+      "error_codes": [
+        "PRICE_CHANGED"
+      ],
+      "expect": {},
+      "notes": "Order total differs from the sum of line totals",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_unknown_version": {
+      "accepted": false,
+      "error_codes": [
+        "SCHEMA_UNSUPPORTED"
+      ],
+      "expect": {},
+      "notes": "Unknown contract version",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.order_valid": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "receipt.status": "RECEIVED",
+        "receipt.total_amount": "125.75"
+      },
+      "notes": "Two lines re-selected on the ACTIVE generation; exact cents, no tax, no shipping",
+      "outcome": "RECEIVED"
+    },
+    "F_QUOTE_ORDER.poll_first_page": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Events credential, first page",
+      "outcome": "AUTHORIZED"
+    },
+    "F_QUOTE_ORDER.poll_limit_zero": {
+      "accepted": false,
+      "error_codes": [
+        "CURSOR_INVALID"
+      ],
+      "expect": {},
+      "notes": "Page size out of 1..500",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.poll_next_page": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Cursor issued by the SITE",
+      "outcome": "AUTHORIZED"
+    },
+    "F_QUOTE_ORDER.poll_unknown_cursor": {
+      "accepted": false,
+      "error_codes": [
+        "CURSOR_INVALID"
+      ],
+      "expect": {},
+      "notes": "Cursor never issued",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.poll_with_ack_key": {
+      "accepted": false,
+      "error_codes": [
+        "EVENT_UNAUTHORIZED"
+      ],
+      "expect": {},
+      "notes": "ACK key is not an events credential",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.poll_with_publish_key": {
+      "accepted": false,
+      "error_codes": [
+        "EVENT_UNAUTHORIZED"
+      ],
+      "expect": {},
+      "notes": "CE-T19: catalogue publication credential gives no access to events",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.quote_blank_organisation": {
+      "accepted": false,
+      "error_codes": [
+        "INVALID_DATA"
+      ],
+      "expect": {},
+      "notes": "Blank organisation name",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.quote_displayed_price_changed": {
+      "accepted": false,
+      "error_codes": [
+        "CATALOG_CHANGED"
+      ],
+      "expect": {},
+      "notes": "Shown price is not the current selection",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.quote_double_post": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Same key, same request: same receipt",
+      "outcome": "REPLAY_SAME_RECEIPT"
+    },
+    "F_QUOTE_ORDER.quote_duplicate_lines": {
+      "accepted": false,
+      "error_codes": [
+        "DUPLICATE_LINE"
+      ],
+      "expect": {},
+      "notes": "R-01: one line per Item in a quote too",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.quote_priced": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "receipt.lines.0.priced": true
+      },
+      "notes": "Displayed price confirmed by the server",
+      "outcome": "RECEIVED"
+    },
+    "F_QUOTE_ORDER.quote_priced_on_unsafe": {
+      "accepted": false,
+      "error_codes": [
+        "CATALOG_UNSAFE"
+      ],
+      "expect": {},
+      "notes": "No priced quote on an unsafe generation",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.quote_same_key_other_payload": {
+      "accepted": false,
+      "error_codes": [
+        "DUPLICATE_KEY_DIFFERENT_PAYLOAD"
+      ],
+      "expect": {},
+      "notes": "Same key, different quantity",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.quote_stale_generation": {
+      "accepted": false,
+      "error_codes": [
+        "CATALOG_CHANGED"
+      ],
+      "expect": {},
+      "notes": "Displayed prices come from another generation",
+      "outcome": "REJECTED"
+    },
+    "F_QUOTE_ORDER.quote_unpriced_no_window": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "receipt.lines.0.priced": false
+      },
+      "notes": "No window for quantity 5 now: the quote is received without amount, clearly unpriced",
+      "outcome": "RECEIVED"
+    },
+    "F_QUOTE_ORDER.quote_unpriced_on_unsafe": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "An unpriced quote is still received",
+      "outcome": "RECEIVED"
+    },
+    "F_SELL_WINDOWS.activate": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Tiers 1-9/10-19/20+, adjacent BASE/PROMO windows at both DST 2026 boundaries, future tier on 402",
+      "outcome": "ACTIVATED"
+    },
+    "F_SELL_WINDOWS.amount_one_decimal": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "window.unit_amount"
+        ]
+      },
+      "notes": "Money has exactly 2 decimals",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.amount_three_decimals": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "window.unit_amount"
+        ]
+      },
+      "notes": "No silent truncation: a 3-decimal SELL is refused",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.amount_zero": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "window.unit_amount"
+        ]
+      },
+      "notes": "unit_amount must be > 0",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.currency_usd": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "window.currency"
+        ]
+      },
+      "notes": "EUR is the only currency in v1",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.empty_interval": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "window.valid_until_utc"
+        ]
+      },
+      "notes": "valid_until must be strictly after valid_from",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.fractional_seconds": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "window.valid_from_utc"
+        ]
+      },
+      "notes": "No fractional seconds",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.offset_timestamp": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "window.valid_from_utc"
+        ]
+      },
+      "notes": "UTC timestamps end with Z, no offset",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.overlap_refused": {
+      "accepted": false,
+      "error_codes": [
+        "PRICE_WINDOW_OVERLAP"
+      ],
+      "expect": {},
+      "notes": "Promotion 1-10 overlaps tier 10-19 on quantity 10 during the promotion",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.quantity_max_below_min": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "window.quantity_max"
+        ]
+      },
+      "notes": "quantity_max >= quantity_min >= 1",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.select_autumn_before_promo": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-B1"
+      },
+      "notes": "One second before Paris 2026-10-25 00:00 CEST",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_autumn_dst_switch": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-P2"
+      },
+      "notes": "DST switch instant (03:00 CEST -> 02:00 CET) inside the promotion",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_autumn_promo_end": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-B2"
+      },
+      "notes": "until exclusive: Paris 2026-10-26 00:00 CET is BASE",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_autumn_promo_last_second": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-P2"
+      },
+      "notes": "Last second of the 25-hour day",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_autumn_promo_start": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-P2"
+      },
+      "notes": "Promotion starts at Paris midnight (CEST)",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_expired_offline": {
+      "accepted": false,
+      "error_codes": [
+        "PRICE_WINDOW_UNAVAILABLE"
+      ],
+      "expect": {},
+      "notes": "CE-T13: last window ended while the Factory is unreachable; no old price reused",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.select_future_tier": {
+      "accepted": false,
+      "error_codes": [
+        "PRICE_WINDOW_UNAVAILABLE"
+      ],
+      "expect": {},
+      "notes": "Quantity 5 is only priced from 2026-11-01 (future window)",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.select_future_tier_started": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-402-F"
+      },
+      "notes": "Future window starts, from inclusive",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_offset_instant": {
+      "accepted": false,
+      "error_codes": [
+        "INVALID_DATA"
+      ],
+      "expect": {},
+      "notes": "Only UTC with Z, no offset",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.select_on_overlap": {
+      "accepted": false,
+      "error_codes": [
+        "PRICE_WINDOW_OVERLAP"
+      ],
+      "expect": {},
+      "notes": "Defensive: two applicable windows never yield an arbitrary choice",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.select_qty10_now": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-T10"
+      },
+      "notes": "Tier threshold 10 crossed (CE-T02)",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_qty19_now": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-T10"
+      },
+      "notes": "Last quantity of the 10-19 tier",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_qty1_now": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-B1"
+      },
+      "notes": "BASE between the two promotions",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_qty20_now": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-T20"
+      },
+      "notes": "Open tier 20+",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_qty9_now": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-B1"
+      },
+      "notes": "Last quantity of the 1-9 tier",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_quantity_zero": {
+      "accepted": false,
+      "error_codes": [
+        "INVALID_DATA"
+      ],
+      "expect": {},
+      "notes": "Quantities are integers >= 1",
+      "outcome": "REJECTED"
+    },
+    "F_SELL_WINDOWS.select_spring_before_promo": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-B0"
+      },
+      "notes": "One second before Paris 2026-03-29 00:00 CET",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_spring_dst_switch": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-P1"
+      },
+      "notes": "DST switch instant (02:00 CET -> 03:00 CEST) inside the promotion",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_spring_promo_end": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-B1"
+      },
+      "notes": "until exclusive: Paris 2026-03-30 00:00 CEST is BASE",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_spring_promo_last_second": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-P1"
+      },
+      "notes": "Last second of the 23-hour day",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.select_spring_promo_start": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-401-P1"
+      },
+      "notes": "Promotion starts at Paris midnight (CET), from inclusive",
+      "outcome": "SELECTED"
+    },
+    "F_SELL_WINDOWS.ttc_refused": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "window.tax_basis_or_status"
+        ]
+      },
+      "notes": "TTC is a known value refused in v1 (no tax rule qualified)",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.activate_first": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "First FULL: 1 family, 1 Item, real PNG, one SELL window; ACK after (simulated) commit",
+      "outcome": "ACTIVATED"
+    },
+    "F_SIMPLE_READY.ascii_escaped_bytes": {
+      "accepted": false,
+      "error_codes": [
+        "INTEGRITY_MISMATCH"
+      ],
+      "expect": {},
+      "notes": "R-05: \\u00e9 instead of raw UTF-8 is not the canonical form",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.blank_short_description": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "family.description_short"
+        ]
+      },
+      "notes": "Short description blank: not READY content",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.buy_price_leak": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "window.keys"
+        ]
+      },
+      "notes": "A BUY amount in a SELL window is an unknown key",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.duplicate_key_bytes": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "Duplicate JSON key in the transported bytes",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.float_amount_bytes": {
+      "accepted": false,
+      "error_codes": [
+        "PAYLOAD_MALFORMED"
+      ],
+      "expect": {},
+      "notes": "An amount as a JSON number is refused before any validation",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.keyring_duplicate_key_id": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "key_id_duplicate"
+        ]
+      },
+      "notes": "R-02: a key_id present twice is ambiguous, hence unusable, even for a genuine signature",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.keyring_secret_absent": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {},
+      "notes": "R-02: ACTIVE entry without secret_utf8; signature made with an empty key (the former TS fail-open)",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.keyring_secret_empty": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {},
+      "notes": "R-02: secret_utf8 is the empty string; signature made with that empty key",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.keyring_secret_short": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {},
+      "notes": "R-02: 30-byte secret, below the 32-byte minimum",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.non_canonical_bytes": {
+      "accepted": false,
+      "error_codes": [
+        "INTEGRITY_MISMATCH"
+      ],
+      "expect": {},
+      "notes": "R-05: same value, indented bytes: transported bytes must equal their canonical form",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.price_public_leak": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "item.keys"
+        ]
+      },
+      "notes": "CE-T15: an Extractor price_public in the payload is an unknown key",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.producer_coverage_proven": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Private manifest (1 READY) proves the snapshot",
+      "outcome": "COVERAGE_PROVEN"
+    },
+    "F_SIMPLE_READY.producer_manifest_unknown_entry": {
+      "accepted": false,
+      "error_codes": [
+        "COVERAGE_UNPROVEN"
+      ],
+      "expect": {},
+      "notes": "R-10: digest, universe and READY set all match, but the source manifest holds an UNKNOWN entry",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.replay_after_lost_ack": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "CE-T09/ID-T02: same seq and same bytes resent: the stored ACK is returned, no second activation",
+      "outcome": "REPLAY_ACK"
+    },
+    "F_SIMPLE_READY.rotation_verify_only_key": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Rotation: signed before rotation by the now VERIFY_ONLY key; it still verifies during the grace period",
+      "outcome": "ACTIVATED"
+    },
+    "F_SIMPLE_READY.select_price": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.rate_id": "R-SIMPLE-1",
+        "selection.unit_amount": "38.50"
+      },
+      "notes": "Server-side selection of the only window",
+      "outcome": "SELECTED"
+    },
+    "F_SIMPLE_READY.signature_altered": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {},
+      "notes": "One hex digit of the signature changed",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.signature_missing": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {},
+      "notes": "Transport header without signature",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.signature_retired_key": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {},
+      "notes": "Correct HMAC but the key is RETIRED",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.signature_unknown_key_id": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {},
+      "notes": "R-02: key_id absent from the keyring",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.signature_wrong_scope": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {},
+      "notes": "CE-T19: an activation_ack key cannot sign a publication",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.unknown_version": {
+      "accepted": false,
+      "error_codes": [
+        "SCHEMA_UNSUPPORTED"
+      ],
+      "expect": {},
+      "notes": "contract_version site_snapshot.v2 is unknown",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.verify_ack_bad_timestamp": {
+      "accepted": false,
+      "error_codes": [
+        "INTEGRITY_MISMATCH"
+      ],
+      "expect": {},
+      "notes": "R-04: activated_at_utc must be a D5 UTC instant",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.verify_ack_forged_publish_key": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {},
+      "notes": "An ACK signed with the Factory publish key is not an ACK",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.verify_ack_other_publication": {
+      "accepted": false,
+      "error_codes": [
+        "INTEGRITY_MISMATCH"
+      ],
+      "expect": {},
+      "notes": "Genuine signature but for another sequence",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.verify_ack_sequence_boolean": {
+      "accepted": false,
+      "error_codes": [
+        "INTEGRITY_MISMATCH"
+      ],
+      "expect": {},
+      "notes": "R-04: catalogue_sequence true (genuinely signed) is not the integer 1",
+      "outcome": "REJECTED"
+    },
+    "F_SIMPLE_READY.verify_ack_valid": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "Factory checks the SITE ACK: activation_ack key, same seq/sha/ids, active_digest",
+      "outcome": "ACK_VALID"
+    }
+  },
+  "verdicts_version": "c0.verdicts.v1"
+}

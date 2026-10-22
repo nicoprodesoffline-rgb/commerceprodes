@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.control_in_string",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/control_in_string.json"
+    }
+  },
+  "notes": "Raw control character inside a string",
+  "scenario": "C_CANONICAL"
+}

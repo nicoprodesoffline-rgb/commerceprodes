@@ -1,0 +1,13 @@
+{
+  "case_id": "F_QUOTE_ORDER.event_non_canonical_bytes",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_event",
+  "input": {
+    "consumed": [],
+    "event": {
+      "$bytes": "documents/F_QUOTE_ORDER/event_quote_requested_pretty.json"
+    }
+  },
+  "notes": "R-05: event bytes must equal their canonical form",
+  "scenario": "F_QUOTE_ORDER"
+}

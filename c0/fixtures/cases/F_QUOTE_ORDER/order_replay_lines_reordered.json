@@ -1,0 +1,27 @@
+{
+  "case_id": "F_QUOTE_ORDER.order_replay_lines_reordered",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_order_submit",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_s7.json"
+      },
+      "status": "ACTIVE"
+    },
+    "now_utc": "2026-10-20T09:00:00Z",
+    "register": [
+      {
+        "idempotency_key": "order:qo:0001",
+        "kind": "order",
+        "receipt_ref": "ORD-2026-000001",
+        "request_fingerprint": "d16aac8a8494717e241f67e4eb966ee34845001506278ff0055609937936f1c6"
+      }
+    ],
+    "request": {
+      "$bytes": "documents/F_QUOTE_ORDER/order_valid_lines_reordered.json"
+    }
+  },
+  "notes": "R-09: same order, lines in another order: same fingerprint, same receipt",
+  "scenario": "F_QUOTE_ORDER"
+}

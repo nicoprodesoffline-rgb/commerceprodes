@@ -1,0 +1,20 @@
+{
+  "case_id": "F_QUOTE_ORDER.order_duplicate_lines_ten_times_one",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_order_submit",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_s7.json"
+      },
+      "status": "ACTIVE"
+    },
+    "now_utc": "2026-10-20T09:00:00Z",
+    "register": [],
+    "request": {
+      "$bytes": "documents/F_QUOTE_ORDER/order_duplicate_lines_ten_times_one.json"
+    }
+  },
+  "notes": "R-01: 10 lines of quantity 1 instead of one line of 10 (tier bypass)",
+  "scenario": "F_QUOTE_ORDER"
+}

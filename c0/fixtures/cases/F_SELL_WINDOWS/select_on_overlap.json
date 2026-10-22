@@ -1,0 +1,19 @@
+{
+  "case_id": "F_SELL_WINDOWS.select_on_overlap",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_overlap.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-03-29T01:00:00Z",
+    "public_item_key": "PI-000000CHJ",
+    "quantity": 10,
+    "variant_axes": {}
+  },
+  "notes": "Defensive: two applicable windows never yield an arbitrary choice",
+  "scenario": "F_SELL_WINDOWS"
+}

@@ -1,0 +1,13 @@
+{
+  "activated_at_utc": "2026-10-20T06:10:00Z",
+  "active_digest": "6443c2b25da0d633ef66c2f3635cf0b22453d25b13fd81cf6682a837ab33809b",
+  "catalogue_sequence": 1,
+  "contract_version": "site_activation.v1",
+  "key_id": "c0-test-publish-02",
+  "outcome": "ACTIVATED",
+  "payload_sha256": "4f53c1244e26aed26c49c0a2f585c54ed50f9779591e24818b210c947262620e",
+  "projection_id": "PRJ-F_SIMPLE_READY-s1",
+  "publication_id": "PUB-F_SIMPLE_READY-s1",
+  "scope_key": "prodes.site.public.staging",
+  "signature": "b539afc58191faf47033ce7d0e931d584f32a7b827446677379e8ac0dcb81756"
+}

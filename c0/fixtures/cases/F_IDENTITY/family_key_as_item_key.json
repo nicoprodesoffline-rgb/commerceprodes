@@ -1,0 +1,40 @@
+{
+  "case_id": "F_IDENTITY.family_key_as_item_key",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/identity_family_601.png"
+        },
+        "sha256": "240ed2d4d5ee99d13a4eb50f36e2ca4fb18168e6aadf3b2f86804a95301b9a99"
+      },
+      {
+        "file": {
+          "$media": "media/identity_family_602.png"
+        },
+        "sha256": "ac403e49d737d1429e580e4f416d4eee8536f30d2b080e322b8db033f3fd3291"
+      }
+    ],
+    "now_utc": "2026-10-20T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_IDENTITY/snapshot_family_key_in_item_slot.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "a929f7f4b60d6d89bec963276f87462b9f294895b100c420c586928da83a4b5a"
+    }
+  },
+  "notes": "PF- key where a PI- key is required",
+  "scenario": "F_IDENTITY"
+}

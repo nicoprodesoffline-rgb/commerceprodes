@@ -1,0 +1,20 @@
+{
+  "case_id": "F_QUOTE_ORDER.quote_displayed_price_changed",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_quote_request",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_s7.json"
+      },
+      "status": "ACTIVE"
+    },
+    "now_utc": "2026-10-20T09:00:00Z",
+    "register": [],
+    "request": {
+      "$bytes": "documents/F_QUOTE_ORDER/quote_displayed_price_changed.json"
+    }
+  },
+  "notes": "Shown price is not the current selection",
+  "scenario": "F_QUOTE_ORDER"
+}

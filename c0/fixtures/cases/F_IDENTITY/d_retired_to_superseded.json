@@ -1,0 +1,41 @@
+{
+  "case_id": "F_IDENTITY.d_retired_to_superseded",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/F_IDENTITY/ack_gen_c.json"
+      },
+      "snapshot": {
+        "$doc": "documents/F_IDENTITY/snapshot_gen_c.json"
+      }
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/identity_family_602.png"
+        },
+        "sha256": "ac403e49d737d1429e580e4f416d4eee8536f30d2b080e322b8db033f3fd3291"
+      }
+    ],
+    "now_utc": "2026-10-23T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_IDENTITY/snapshot_gen_d_retired_to_superseded.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "452c3f3b9124d217a672454551cbd489ee402bbc8434cfd65a24459112d73b5c"
+    }
+  },
+  "notes": "R-03: RETIRED is terminal, 601 cannot become an alias",
+  "scenario": "F_IDENTITY"
+}

@@ -1,0 +1,11 @@
+{
+  "case_id": "F_IDENTITY.key_invalid_09",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_public_key",
+  "input": {
+    "namespace": "family",
+    "value": "PI-000000Z9S"
+  },
+  "notes": "Refused key 'PI-000000Z9S' as family",
+  "scenario": "F_IDENTITY"
+}

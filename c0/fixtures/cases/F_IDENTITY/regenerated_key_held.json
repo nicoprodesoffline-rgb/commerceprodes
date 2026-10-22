@@ -1,0 +1,47 @@
+{
+  "case_id": "F_IDENTITY.regenerated_key_held",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/F_IDENTITY/ack_gen_a.json"
+      },
+      "snapshot": {
+        "$doc": "documents/F_IDENTITY/snapshot_gen_a.json"
+      }
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/identity_family_601.png"
+        },
+        "sha256": "240ed2d4d5ee99d13a4eb50f36e2ca4fb18168e6aadf3b2f86804a95301b9a99"
+      },
+      {
+        "file": {
+          "$media": "media/identity_family_602.png"
+        },
+        "sha256": "ac403e49d737d1429e580e4f416d4eee8536f30d2b080e322b8db033f3fd3291"
+      }
+    ],
+    "now_utc": "2026-10-21T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_IDENTITY/snapshot_gen_b_regenerated_key.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "338ef32d219c1e467ffe35e7ae4e2413d6362da8b0b9dd350b0623283a2584e2"
+    }
+  },
+  "notes": "ID-T11 negative: a key regenerated for the same product makes the old key vanish unexplained",
+  "scenario": "F_IDENTITY"
+}

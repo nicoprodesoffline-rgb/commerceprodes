@@ -1,0 +1,13 @@
+{
+  "activated_at_utc": "2026-10-19T06:10:00Z",
+  "active_digest": "11ebbc3702c0e59967c4b0cc8665160273a1aa6d09fa49fcf449205712506990",
+  "catalogue_sequence": 10,
+  "contract_version": "site_activation.v1",
+  "key_id": "c0-test-ack-01",
+  "outcome": "ACTIVATED",
+  "payload_sha256": "eb266cdeea1478ba9fb1ec022bd4e9ceabf5c3c68a76fc7d9cc4f2522598928d",
+  "projection_id": "PRJ-F_FULL_CORRUPT-s10",
+  "publication_id": "PUB-F_FULL_CORRUPT-s10",
+  "scope_key": "prodes.site.public.staging",
+  "signature": "5d7ec82cab0dad18c79d4fb75dd24f9f5b68ee3a37cffb84785087ccbf43ba5b"
+}

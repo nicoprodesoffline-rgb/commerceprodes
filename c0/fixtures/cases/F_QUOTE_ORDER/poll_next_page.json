@@ -1,0 +1,21 @@
+{
+  "case_id": "F_QUOTE_ORDER.poll_next_page",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_poll_request",
+  "input": {
+    "issued_cursors": [
+      "c-000001",
+      "c-000002"
+    ],
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "request": {
+      "credential_key_id": "c0-test-events-01",
+      "cursor": "c-000002",
+      "limit": 100
+    }
+  },
+  "notes": "Cursor issued by the SITE",
+  "scenario": "F_QUOTE_ORDER"
+}

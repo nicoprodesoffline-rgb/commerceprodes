@@ -1,0 +1,41 @@
+{
+  "case_id": "F_SIMPLE_READY.replay_after_lost_ack",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/F_SIMPLE_READY/ack_s1.json"
+      },
+      "snapshot": {
+        "$doc": "documents/F_SIMPLE_READY/snapshot_s1.json"
+      }
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/simple_family.png"
+        },
+        "sha256": "ed9aaaaa1debb1f00870b9b41636dc75b64eb0437ed9c58dcbb18047b73b41ec"
+      }
+    ],
+    "now_utc": "2026-10-20T07:00:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_SIMPLE_READY/snapshot_s1.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "0f0fa5ae0860ae5bb43819cad2d2c5b6d9e43159baf802799aa9bf5e1a5fbf15"
+    }
+  },
+  "notes": "CE-T09/ID-T02: same seq and same bytes resent: the stored ACK is returned, no second activation",
+  "scenario": "F_SIMPLE_READY"
+}

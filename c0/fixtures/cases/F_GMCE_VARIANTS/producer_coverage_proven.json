@@ -1,0 +1,15 @@
+{
+  "case_id": "F_GMCE_VARIANTS.producer_coverage_proven",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_source_coverage",
+  "input": {
+    "manifest": {
+      "$doc": "documents/F_GMCE_VARIANTS/private_manifest_s1.json"
+    },
+    "snapshot": {
+      "$doc": "documents/F_GMCE_VARIANTS/snapshot_s1.json"
+    }
+  },
+  "notes": "Universe 4 = 3 READY + 1 NON_READY draft",
+  "scenario": "F_GMCE_VARIANTS"
+}

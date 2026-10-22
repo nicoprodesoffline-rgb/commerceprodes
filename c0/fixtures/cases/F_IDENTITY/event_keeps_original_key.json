@@ -1,0 +1,13 @@
+{
+  "case_id": "F_IDENTITY.event_keeps_original_key",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_event",
+  "input": {
+    "consumed": [],
+    "event": {
+      "$bytes": "documents/F_IDENTITY/event_old_order_superseded_key.json"
+    }
+  },
+  "notes": "An order received under 604 keeps 604: events are facts, no catalogue lookup, no rewrite",
+  "scenario": "F_IDENTITY"
+}

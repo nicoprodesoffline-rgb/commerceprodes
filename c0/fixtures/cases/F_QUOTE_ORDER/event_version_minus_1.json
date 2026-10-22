@@ -1,0 +1,13 @@
+{
+  "case_id": "F_QUOTE_ORDER.event_version_minus_1",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_event",
+  "input": {
+    "consumed": [],
+    "event": {
+      "$bytes": "documents/F_QUOTE_ORDER/event_version_minus_1.json"
+    }
+  },
+  "notes": "R-06: event_version -1 != 1",
+  "scenario": "F_QUOTE_ORDER"
+}

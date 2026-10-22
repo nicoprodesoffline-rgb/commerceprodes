@@ -1,0 +1,20 @@
+{
+  "case_id": "F_ESUNNY_FORBIDDEN.order_forbidden_combination",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_order_submit",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_ESUNNY_FORBIDDEN/snapshot_s1.json"
+      },
+      "status": "ACTIVE"
+    },
+    "now_utc": "2026-10-20T12:00:00Z",
+    "register": [],
+    "request": {
+      "$bytes": "documents/F_ESUNNY_FORBIDDEN/order_forbidden_combination.json"
+    }
+  },
+  "notes": "Order on a forbidden combination is refused server-side",
+  "scenario": "F_ESUNNY_FORBIDDEN"
+}

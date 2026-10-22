@@ -1,0 +1,36 @@
+{
+  "catalogue_sequence": 3,
+  "contact": {
+    "contact_name": "STAGING_FIXTURE Contact",
+    "email": "achats@example.invalid",
+    "organisation_name": "STAGING_FIXTURE Mairie Exemple",
+    "phone": null
+  },
+  "contract_version": "site_business.v1",
+  "currency": "EUR",
+  "idempotency_key": "order:id:0001",
+  "kind": "order",
+  "lines": [
+    {
+      "line_total": "41.00",
+      "public_item_key": "PI-000000JSY",
+      "quantity": 1,
+      "rate_id": "R-ID-601",
+      "unit_amount": "41.00",
+      "variant_axes": {
+        "modele": "A"
+      }
+    },
+    {
+      "line_total": "44.00",
+      "public_item_key": "PI-000000JW3",
+      "quantity": 1,
+      "rate_id": "R-ID-604",
+      "unit_amount": "44.00",
+      "variant_axes": {
+        "modele": "D"
+      }
+    }
+  ],
+  "total_amount": "85.00"
+}

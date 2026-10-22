@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.depth_64",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/depth_64.json"
+    }
+  },
+  "notes": "64 nested containers: the maximum depth",
+  "scenario": "C_CANONICAL"
+}

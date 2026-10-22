@@ -1,0 +1,21 @@
+{
+  "case_id": "F_IDENTITY.select_retired",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_IDENTITY/snapshot_gen_c.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-10-22T12:00:00Z",
+    "public_item_key": "PI-000000JSY",
+    "quantity": 1,
+    "variant_axes": {
+      "modele": "A"
+    }
+  },
+  "notes": "Retired key: never sold, never reassigned",
+  "scenario": "F_IDENTITY"
+}

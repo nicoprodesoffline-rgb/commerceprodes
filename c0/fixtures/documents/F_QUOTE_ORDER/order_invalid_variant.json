@@ -1,0 +1,26 @@
+{
+  "catalogue_sequence": 7,
+  "contact": {
+    "contact_name": "STAGING_FIXTURE Contact",
+    "email": "achats@example.invalid",
+    "organisation_name": "STAGING_FIXTURE Mairie Exemple",
+    "phone": null
+  },
+  "contract_version": "site_business.v1",
+  "currency": "EUR",
+  "idempotency_key": "order:qo:0005",
+  "kind": "order",
+  "lines": [
+    {
+      "line_total": "5.25",
+      "public_item_key": "PI-000000CJS",
+      "quantity": 1,
+      "rate_id": "R-402-A",
+      "unit_amount": "5.25",
+      "variant_axes": {
+        "couleur": "rouge"
+      }
+    }
+  ],
+  "total_amount": "5.25"
+}

@@ -1,0 +1,15 @@
+{
+  "case_id": "F_SIMPLE_READY.producer_coverage_proven",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_source_coverage",
+  "input": {
+    "manifest": {
+      "$doc": "documents/F_SIMPLE_READY/private_manifest_s1.json"
+    },
+    "snapshot": {
+      "$doc": "documents/F_SIMPLE_READY/snapshot_s1.json"
+    }
+  },
+  "notes": "Private manifest (1 READY) proves the snapshot",
+  "scenario": "F_SIMPLE_READY"
+}

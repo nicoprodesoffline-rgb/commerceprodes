@@ -1,0 +1,107 @@
+{
+  "as_of_utc": "2026-10-20T06:00:00Z",
+  "entries": [
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000FN2",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000FP9",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000FQK",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000FRH",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000FSB",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000FT0",
+      "reason": null
+    },
+    {
+      "partition": "NON_READY",
+      "public_item_key": "PI-000000FVT",
+      "reason": "MEDIA_REMOVED"
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000FWP",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000FXC",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000FY7",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000FZX",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000G0C",
+      "reason": null
+    },
+    {
+      "partition": "EXCLUDED",
+      "public_item_key": "PI-000000G1P",
+      "reason": "COMMERCIAL_WITHDRAWAL"
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000G2X",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000G37",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000G4B",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000G5H",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000G6T",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000G70",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000G82",
+      "reason": null
+    }
+  ],
+  "manifest_version": "c0.private_coverage_manifest.v1",
+  "scope_key": "prodes.site.public.staging"
+}

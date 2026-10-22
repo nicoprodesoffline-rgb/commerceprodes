@@ -1,0 +1,41 @@
+{
+  "case_id": "F_A_B_OFFERS.activate_g2_b_without_sell",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/F_A_B_OFFERS/ack_g1.json"
+      },
+      "snapshot": {
+        "$doc": "documents/F_A_B_OFFERS/snapshot_g1_offer_a.json"
+      }
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/ab_family_302.png"
+        },
+        "sha256": "7d724c26875d198059eefcd0e6e2fdbe2dd98685ce0a563c1edc5f6e521f6917"
+      }
+    ],
+    "now_utc": "2026-10-20T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_A_B_OFFERS/snapshot_g2_b_preferred_no_sell.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "63c9dc6ffcaddb9467af49f057e41a330c8fa122a2735092f32224d83f8623ea"
+    }
+  },
+  "notes": "B preferred without SELL: 301 NON_READY, withdrawn with a classified reason, no fallback to A",
+  "scenario": "F_A_B_OFFERS"
+}

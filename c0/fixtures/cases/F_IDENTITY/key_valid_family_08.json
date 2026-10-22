@@ -1,0 +1,11 @@
+{
+  "case_id": "F_IDENTITY.key_valid_family_08",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_public_key",
+  "input": {
+    "namespace": "family",
+    "value": "PF-00000002N"
+  },
+  "notes": "ID-T01: sequence 2 encodes to PF-00000002N",
+  "scenario": "F_IDENTITY"
+}

@@ -1,0 +1,13 @@
+{
+  "case_id": "F_QUOTE_ORDER.event_quote_duplicate_lines",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_event",
+  "input": {
+    "consumed": [],
+    "event": {
+      "$bytes": "documents/F_QUOTE_ORDER/event_quote_duplicate_lines.json"
+    }
+  },
+  "notes": "R-01: same rule for quote events",
+  "scenario": "F_QUOTE_ORDER"
+}

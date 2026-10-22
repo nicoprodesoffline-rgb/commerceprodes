@@ -1,0 +1,18 @@
+{
+  "case_id": "F_SIMPLE_READY.verify_ack_forged_publish_key",
+  "data_label": "STAGING_FIXTURE",
+  "function": "verify_ack",
+  "input": {
+    "ack": {
+      "$doc": "documents/F_SIMPLE_READY/ack_forged_by_factory.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "publication": {
+      "$doc": "documents/F_SIMPLE_READY/snapshot_s1.json"
+    }
+  },
+  "notes": "An ACK signed with the Factory publish key is not an ACK",
+  "scenario": "F_SIMPLE_READY"
+}

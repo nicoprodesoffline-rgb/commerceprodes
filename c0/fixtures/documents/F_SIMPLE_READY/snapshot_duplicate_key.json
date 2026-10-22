@@ -1,0 +1,90 @@
+{
+  "as_of_utc": "2026-10-20T06:00:00Z",
+  "basis_digest": "f8c1269e828521febeef67539725bc8ea29570d4105bf0389e957c729e6e1f4f",
+  "catalogue_sequence": 1,
+  "catalogue_sequence": 1,
+  "categories": [
+    {
+      "category_key": "mobilier",
+      "name": "STAGING_FIXTURE Mobilier",
+      "parent_category_key": null
+    },
+    {
+      "category_key": "mobilier-chaises",
+      "name": "STAGING_FIXTURE Chaises",
+      "parent_category_key": "mobilier"
+    },
+    {
+      "category_key": "signaletique",
+      "name": "STAGING_FIXTURE Signalétique",
+      "parent_category_key": null
+    }
+  ],
+  "contract_version": "site_snapshot.v1",
+  "coverage": {
+    "expected_withdrawals": [],
+    "expected_withdrawals_digest": "4dd1431eb31983505f977800328b514abfacae8b0857385c97bc3f09c4dc7201",
+    "explicit_exclusion_count": 0,
+    "non_ready_count": 0,
+    "previous_catalogue_sequence": null,
+    "previous_payload_sha256": null,
+    "ready_count": 1,
+    "source_coverage_digest": "81d73c3c4027f956c3228c00521c1636176ab043524215da263dbe7510a99210",
+    "source_universe_count": 1,
+    "unknown_count": 0
+  },
+  "data_label": "STAGING_FIXTURE",
+  "families": [
+    {
+      "axes": [],
+      "description_long": "STAGING_FIXTURE — description longue de démonstration.\nDonnées synthétiques, aucune donnée fournisseur réelle (Chaise de démonstration).",
+      "description_short": "STAGING_FIXTURE — description courte de démonstration (Chaise de démonstration).",
+      "image_main_sha256": "ed9aaaaa1debb1f00870b9b41636dc75b64eb0437ed9c58dcbb18047b73b41ec",
+      "items": [
+        {
+          "public_item_key": "PI-00000001R",
+          "public_media_refs": [],
+          "public_sell_price_windows": [
+            {
+              "currency": "EUR",
+              "offer_price_version_public": "OPV-0001",
+              "quantity_max": null,
+              "quantity_min": 1,
+              "rate_id": "R-SIMPLE-1",
+              "tax_basis_or_status": "HT",
+              "unit_amount": "38.50",
+              "valid_from_utc": "2026-10-01T00:00:00Z",
+              "valid_until_utc": "2027-01-01T00:00:00Z"
+            }
+          ],
+          "status": "READY",
+          "variant_axes": {}
+        }
+      ],
+      "name": "STAGING_FIXTURE Chaise de démonstration",
+      "primary_category_key": "mobilier-chaises",
+      "public_family_key": "PF-00000001Y",
+      "secondary_category_keys": [],
+      "slug": "chaise-demo"
+    }
+  ],
+  "generated_at_utc": "2026-10-20T06:05:00Z",
+  "identity_registry": [],
+  "manifest_counts": {
+    "families": 1,
+    "items": 1,
+    "media": 1
+  },
+  "media_refs": [
+    {
+      "mime": "image/png",
+      "sha256": "ed9aaaaa1debb1f00870b9b41636dc75b64eb0437ed9c58dcbb18047b73b41ec",
+      "size": 132
+    }
+  ],
+  "payload_sha256": "4f53c1244e26aed26c49c0a2f585c54ed50f9779591e24818b210c947262620e",
+  "projection_id": "PRJ-F_SIMPLE_READY-s1",
+  "publication_id": "PUB-F_SIMPLE_READY-s1",
+  "scope": "FULL_READY_CATALOG",
+  "scope_key": "prodes.site.public.staging"
+}

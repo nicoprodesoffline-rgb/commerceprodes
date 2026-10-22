@@ -1,0 +1,11 @@
+{
+  "case_id": "F_IDENTITY.key_invalid_12",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_public_key",
+  "input": {
+    "namespace": "item",
+    "value": "3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+  },
+  "notes": "Refused key '3f2504e0-4f89-41d3-9a0c-0305e82c3301' as item",
+  "scenario": "F_IDENTITY"
+}

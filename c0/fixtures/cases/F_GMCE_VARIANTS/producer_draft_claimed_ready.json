@@ -1,0 +1,15 @@
+{
+  "case_id": "F_GMCE_VARIANTS.producer_draft_claimed_ready",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_source_coverage",
+  "input": {
+    "manifest": {
+      "$doc": "documents/F_GMCE_VARIANTS/private_manifest_draft_ready.json"
+    },
+    "snapshot": {
+      "$doc": "documents/F_GMCE_VARIANTS/snapshot_s1.json"
+    }
+  },
+  "notes": "Source says 4 READY, payload carries 3: coverage not proven",
+  "scenario": "F_GMCE_VARIANTS"
+}

@@ -1,0 +1,19 @@
+{
+  "case_id": "F_SELL_WINDOWS.select_future_tier",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_s7.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-10-20T06:00:00Z",
+    "public_item_key": "PI-000000CJS",
+    "quantity": 5,
+    "variant_axes": {}
+  },
+  "notes": "Quantity 5 is only priced from 2026-11-01 (future window)",
+  "scenario": "F_SELL_WINDOWS"
+}

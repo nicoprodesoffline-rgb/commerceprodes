@@ -1,0 +1,27 @@
+{
+  "catalogue_sequence": 1,
+  "contact": {
+    "contact_name": "STAGING_FIXTURE Contact",
+    "email": "achats@example.invalid",
+    "organisation_name": "STAGING_FIXTURE Mairie Exemple",
+    "phone": null
+  },
+  "contract_version": "site_business.v1",
+  "currency": "EUR",
+  "idempotency_key": "order:esunny:0001",
+  "kind": "order",
+  "lines": [
+    {
+      "line_total": "149.00",
+      "public_item_key": "PI-0000006BC",
+      "quantity": 1,
+      "rate_id": "R-ESUNNY-203",
+      "unit_amount": "149.00",
+      "variant_axes": {
+        "coloris": "blanc",
+        "fixation": "sol"
+      }
+    }
+  ],
+  "total_amount": "149.00"
+}

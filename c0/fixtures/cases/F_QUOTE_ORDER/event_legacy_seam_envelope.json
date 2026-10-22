@@ -1,0 +1,13 @@
+{
+  "case_id": "F_QUOTE_ORDER.event_legacy_seam_envelope",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_event",
+  "input": {
+    "consumed": [],
+    "event": {
+      "$bytes": "documents/F_QUOTE_ORDER/event_legacy_seam_v1.json"
+    }
+  },
+  "notes": "Existing Factory seam envelope (six keys, UUID public key) is not site_events.v1: refused, never misread",
+  "scenario": "F_QUOTE_ORDER"
+}
