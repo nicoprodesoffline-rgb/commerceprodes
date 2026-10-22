@@ -1,0 +1,44 @@
+
+> build
+> next build
+
+▲ Next.js 16.4.0 (Turbopack)
+✓ Running next.config.ts took 67ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 775ms
+  Running TypeScript ...
+⚠ Your version of Next.js is affected by a known security vulnerability. This command is continuing after the upgrade reminder.
+Reference: https://registry.npmjs.org/-/npm/v1/security/advisories/bulk
+  Finished TypeScript in 1023ms ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/4) ...
+  Generating static pages using 11 workers (1/4) 
+  Generating static pages using 11 workers (2/4) 
+  Generating static pages using 11 workers (3/4) 
+✓ Generating static pages using 11 workers (4/4) in 175ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/site/order
+├ ƒ /api/site/quote
+├ ƒ /cart
+├ ƒ /contact
+├ ƒ /faq
+├ ƒ /media/[sha]
+├ ƒ /mentions-legales
+├ ○ /opengraph-image
+├ ƒ /product/[handle]
+├ ○ /robots.txt
+├ ƒ /search
+├ ƒ /search/[collection]
+└ ƒ /sitemap.xml
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+env NEXT_TELEMETRY_DISABLED=1 npm run build  5,70s user 2,22s system 250% cpu 3,157 total
+build rc=0
