@@ -8,4 +8,5 @@ skip 012_site_order.sql
 skip 013_site_outbox_event.sql
 skip 014_site_event_cursor.sql
 skip 015_site_transaction_log.sql
-MIGRATIONS_OK db=prodes_site_bc4 applied=0
+apply 016_site_idempotency_receipt_bytes.sql sha256=de306836824581f2f3babd425bc4651ed8a31947d63284f74b4da40341924208
+MIGRATIONS_OK db=prodes_site_bc4 applied=1

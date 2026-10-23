@@ -6,25 +6,25 @@ TAP version 13
 # Subtest: (a) le C0 vendu correspond à son manifeste : C0_VENDOR_OK
 ok 1 - (a) le C0 vendu correspond à son manifeste : C0_VENDOR_OK
   ---
-  duration_ms: 68.348709
+  duration_ms: 67.153
   type: 'test'
   ...
 # Subtest: (b) un drift simulé (octet modifié, fichier ajouté, fichier supprimé) est refusé : C0_VENDOR_DRIFT
 ok 2 - (b) un drift simulé (octet modifié, fichier ajouté, fichier supprimé) est refusé : C0_VENDOR_DRIFT
   ---
-  duration_ms: 695.62175
+  duration_ms: 700.986208
   type: 'test'
   ...
 # Subtest: (c) C0_SOURCE.json pointe le code gelé b88f5cdf…
 ok 3 - (c) C0_SOURCE.json pointe le code gelé b88f5cdf…
   ---
-  duration_ms: 0.860625
+  duration_ms: 0.812292
   type: 'test'
   ...
 # Subtest: (d) un archived_from_sha dont le code diffère du gel est refusé : C0_FROZEN_CODE_MISMATCH
 ok 4 - (d) un archived_from_sha dont le code diffère du gel est refusé : C0_FROZEN_CODE_MISMATCH
   ---
-  duration_ms: 888.441
+  duration_ms: 785.22225
   type: 'test'
   ...
 1..4
@@ -35,5 +35,5 @@ ok 4 - (d) un archived_from_sha dont le code diffère du gel est refusé : C0_FR
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1699.740791
+# duration_ms 1599.003791
 exit=0

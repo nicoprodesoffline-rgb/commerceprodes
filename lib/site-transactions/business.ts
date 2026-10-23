@@ -21,7 +21,7 @@ import { payloadDigest, validateEvent } from "../../c0/ts/src/events";
 import { moneyCents } from "../../c0/ts/src/formats";
 import { canonicalBytes, isObject, parseBytes, type Json, type JsonObject } from "../../c0/ts/src/jsonc";
 import { readActiveForUpdate } from "../site-db/generation";
-import { PERSISTENCE, appendLog, checkout, errorReason, httpStatusFor, json, newAccessToken, opaqueRef, type TxResponse } from "./common";
+import { PERSISTENCE, appendLog, checkout, errorReason, httpStatusFor, json, jsonWithRaw, newAccessToken, opaqueRef, sha256OfBytes, type TxResponse } from "./common";
 
 export type BusinessKind = "quote_request" | "order";
 
@@ -48,6 +48,7 @@ interface RegisterRow {
   request_fingerprint: string;
   receipt_ref: string;
   receipt_json: JsonObject;
+  receipt_bytes: Buffer;
 }
 
 const LOCK_TIMEOUT = "5s";
@@ -72,7 +73,7 @@ function peekIdempotencyKey(bytes: Uint8Array): string | null {
 async function readRegister(client: PoolClient, kind: BusinessKind, key: string | null): Promise<RegisterRow[]> {
   if (key === null) return [];
   const { rows } = await client.query<RegisterRow>(
-    "SELECT kind, idempotency_key, request_fingerprint, receipt_ref, receipt_json FROM site_idempotency WHERE kind = $1 AND idempotency_key = $2",
+    "SELECT kind, idempotency_key, request_fingerprint, receipt_ref, receipt_json, receipt_bytes FROM site_idempotency WHERE kind = $1 AND idempotency_key = $2",
     [kind, key],
   );
   return rows;
@@ -97,8 +98,9 @@ function refusal(base: Common, v: BusinessResult, catalogueSequence: number | nu
   });
 }
 
-function accepted(base: Common, outcome: "RECEIVED" | "REPLAY_SAME_RECEIPT", receipt: JsonObject, accessToken: string | null): TxResponse {
-  const body: Record<string, unknown> = {
+function accepted(base: Common, outcome: "RECEIVED" | "REPLAY_SAME_RECEIPT", receiptBytes: Uint8Array, accessToken: string | null): TxResponse {
+  const receipt = JSON.parse(Buffer.from(receiptBytes).toString("utf8")) as JsonObject;
+  const envelope: Record<string, unknown> = {
     ...base,
     durable: true,
     accepted: true,
@@ -107,11 +109,11 @@ function accepted(base: Common, outcome: "RECEIVED" | "REPLAY_SAME_RECEIPT", rec
     receipt_ref: receipt["receipt_ref"],
     request_fingerprint: receipt["request_fingerprint"],
     lines: receipt["lines"],
-    receipt,
   };
   // Jeton d'accès : renvoyé UNE seule fois (à la création) ; un rejeu ne le redonne jamais (il n'est stocké que haché).
-  if (accessToken !== null) body["access_token"] = accessToken;
-  return json(200, body);
+  if (accessToken !== null) envelope["access_token"] = accessToken;
+  // `receipt` = octets canoniques STOCKÉS (review F-03) : identiques octet pour octet entre création, rejeu et consultation.
+  return jsonWithRaw(200, envelope, "receipt", receiptBytes, { "x-site-receipt-sha256": sha256OfBytes(receiptBytes) });
 }
 
 function dbFailed(base: Common, reason: string): TxResponse {
@@ -326,13 +328,14 @@ export async function submitBusiness(deps: BusinessDeps, kind: BusinessKind, byt
       const ref = opaqueRef(kind === "order" ? "ORD" : "QR");
       const access = newAccessToken();
       const receipt: JsonObject = { ...receiptC0, receipt_ref: ref, created_at_utc: nowUtc };
+      const receiptBytes = canonicalBytes(receipt);
       const { event, bytes: eventBytes } = buildEvent(kind, ref, receipt, nowUtc, opaqueRef("EVT"));
 
       // (4a) Idempotence d'abord : l'unicité (kind, clé) tranche une course entre deux POST (CE-T03).
       const ins = await client.query(
-        `INSERT INTO site_idempotency (kind, idempotency_key, request_fingerprint, receipt_ref, receipt_json)
-         VALUES ($1, $2, $3, $4, $5::jsonb) ON CONFLICT (kind, idempotency_key) DO NOTHING`,
-        [kind, request["idempotency_key"], receipt["request_fingerprint"], ref, JSON.stringify(receipt)],
+        `INSERT INTO site_idempotency (kind, idempotency_key, request_fingerprint, receipt_ref, receipt_json, receipt_bytes)
+         VALUES ($1, $2, $3, $4, $5::jsonb, $6) ON CONFLICT (kind, idempotency_key) DO NOTHING`,
+        [kind, request["idempotency_key"], receipt["request_fingerprint"], ref, JSON.stringify(receipt), Buffer.from(receiptBytes)],
       );
       if (ins.rowCount === 0) {
         // Une transaction concurrente a commité cette clé : relecture, puis NOUVEAU verdict C0 avec ce registre
@@ -342,7 +345,7 @@ export async function submitBusiness(deps: BusinessDeps, kind: BusinessKind, byt
         await client.query("ROLLBACK");
         if (verdict.accepted && verdict.outcome === "REPLAY_SAME_RECEIPT" && register[0]) {
           outcome = {
-            response: accepted(base, "REPLAY_SAME_RECEIPT", register[0].receipt_json, null),
+            response: accepted(base, "REPLAY_SAME_RECEIPT", new Uint8Array(register[0].receipt_bytes), null),
             log: { operation, outcome: "REPLAY_SAME_RECEIPT", object_ref: register[0].receipt_ref, detail: { concurrent: true } },
           };
         } else {
@@ -365,14 +368,14 @@ export async function submitBusiness(deps: BusinessDeps, kind: BusinessKind, byt
 
       // (5) COMMIT (contraintes différées vérifiées ici), (6) réponse APRÈS le COMMIT seulement.
       await client.query("COMMIT");
-      outcome = { response: accepted(base, "RECEIVED", receipt, access.token), log: { operation, outcome: "RECEIVED", object_ref: ref } };
+      outcome = { response: accepted(base, "RECEIVED", receiptBytes, access.token), log: { operation, outcome: "RECEIVED", object_ref: ref } };
       return outcome.response;
     }
 
     // Refus ou rejeu : aucune écriture.
     await client.query("ROLLBACK");
     if (verdict.accepted && verdict.outcome === "REPLAY_SAME_RECEIPT" && register[0]) {
-      outcome = { response: accepted(base, "REPLAY_SAME_RECEIPT", register[0].receipt_json, null), log: { operation, outcome: "REPLAY_SAME_RECEIPT", object_ref: register[0].receipt_ref } };
+      outcome = { response: accepted(base, "REPLAY_SAME_RECEIPT", new Uint8Array(register[0].receipt_bytes), null), log: { operation, outcome: "REPLAY_SAME_RECEIPT", object_ref: register[0].receipt_ref } };
     } else {
       outcome = { response: refusal(base, verdict, active.catalogue_sequence), log: { operation, outcome: verdict.outcome, error_codes: verdict.error_codes } };
     }

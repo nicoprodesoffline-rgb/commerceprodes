@@ -215,7 +215,23 @@ curseur opaque `CUR-<32 hex>` enregistré (`site_event_cursor`, avec la liste de
 Le consommateur décode `event_bytes_b64` et passe **ces octets** à `validate_event` (C0 §11.2) : jamais une re-sérialisation.
 **Livraison au moins une fois** : un événement servi mais non acquitté est **re-servi** à chaque poll suivant, avant les plus
 récents (le consommateur le reconnaît `EVENT_DUPLICATE_NOOP`, CE-T18). Un poll sans événement émet quand même un nouveau
-curseur (`events: []`).
+curseur (`events: []`). Le curseur **n'avance pas** la lecture : sa `position` est enregistrée mais n'est pas lue ; seul l'ACK
+fait progresser le flux.
+
+**Rejeu d'une requête de poll signée (review F-01).** La signature ne porte que `{cursor, limit}`, sans horodatage ni nonce : une
+requête capturée peut être rejouée tant que la clé est valide. **Chaque** rejeu (a) renvoie à son porteur tous les événements non
+acquittés (dans la limite), (b) insère une ligne dans `site_event_cursor` (append-only, aucune purge en W1), (c) incrémente
+`delivery_count` des événements servis (et passe les `PENDING` en `DELIVERED_TO_POLL`). Il ne crée ni ne modifie aucun événement
+ni aucun ACK. Acceptable en `STAGING_TRANSPORT` seulement ; avant production : anti-rejeu horodaté/nonce signé et purge des
+curseurs (NON-OUBLI).
+
+**Événement empoisonné (review F-02, `REQUIRES_OWNER_DECISION`).** Les événements non acquittés sont toujours re-servis **en tête**.
+Un événement que la Factory refuse durablement (C0 §13 : `EVENT_PAYLOAD_INVALID`, `EVENT_IDEMPOTENCY_CONFLICT`, `EVENT_TYPE_UNKNOWN`
+= « non acquitté ») reste donc en tête ; s'il y en a au moins `limit`, **le flux est bloqué** pour toujours (aucun événement plus
+récent n'est servi). W1 ne change pas ce comportement. Options à trancher par le propriétaire : (1) quarantaine explicite côté
+Factory par ACK d'`event_ids` (l'événement sort du flux, la trace du refus reste à la Factory) ; (2) statut SITE `REFUSED` posé par
+une route d'ACK-refus signée (l'événement reste visible côté SITE, hors flux). En attendant, BC5 doit choisir `limit` assez grand et
+alerter dès qu'un même `event_id` revient refusé.
 
 ## `POST /api/site/events/ack`
 
@@ -251,5 +267,5 @@ serveur réel 127.0.0.1:3351).
 
 ## Ce que cette annexe ne prouve pas
 
-Poll réel prolongé (48 h), anti-rejeu horodaté (une requête de poll signée peut être rejouée : elle re-sert les non
-acquittés, sans autre effet), HTTPS, débit, rotation réelle des clés de lecture, purge des curseurs, signature asymétrique.
+Poll réel prolongé (48 h), anti-rejeu horodaté (une requête de poll signée peut être rejouée : effets ci-dessus), traitement d'un
+événement empoisonné, HTTPS, débit, rotation réelle des clés de lecture, purge des curseurs, signature asymétrique.

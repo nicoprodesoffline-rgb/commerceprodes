@@ -122,3 +122,26 @@ export async function checkout(pool: Pool): Promise<{ client: PoolClient; releas
     },
   };
 }
+
+/**
+ * Corps JSON dont la clé `rawKey` (placée en dernier) porte des OCTETS JSON déjà sérialisés, recopiés tels quels
+ * (reçu canonique stocké : identique octet pour octet d'une réponse à l'autre). `envelope` ne doit pas contenir `rawKey`.
+ */
+export function jsonWithRaw(status: number, envelope: Record<string, unknown>, rawKey: string, raw: Uint8Array, extraHeaders: Record<string, string> = {}): TxResponse {
+  const head = new TextEncoder().encode(JSON.stringify(envelope));
+  const prefix = new TextEncoder().encode(`${head.length > 2 ? "," : ""}${JSON.stringify(rawKey)}:`);
+  const body = new Uint8Array(head.length - 1 + prefix.length + raw.length + 1);
+  body.set(head.subarray(0, head.length - 1), 0);
+  body.set(prefix, head.length - 1);
+  body.set(raw, head.length - 1 + prefix.length);
+  body[body.length - 1] = 0x7d; // "}"
+  return {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...extraHeaders },
+    body,
+  };
+}
+
+export function sha256OfBytes(bytes: Uint8Array): string {
+  return createHash("sha256").update(bytes).digest("hex");
+}
