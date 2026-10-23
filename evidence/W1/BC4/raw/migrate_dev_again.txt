@@ -2,6 +2,7 @@ skip 001_site_generation.sql
 skip 002_site_active_pointer.sql
 skip 003_site_media.sql
 skip 004_site_publication_log.sql
+skip 005_site_generation_immutable.sql
 skip 010_site_idempotency.sql
 skip 011_site_quote.sql
 skip 012_site_order.sql
