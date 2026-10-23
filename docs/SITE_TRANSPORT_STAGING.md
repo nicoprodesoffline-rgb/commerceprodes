@@ -15,10 +15,11 @@ appelle `evaluatePublication` à chaque opération et interprète l'étape d'arr
 | `SITE_ENV` | `staging` ou `production` |
 | `SITE_KEYRING_PATH` | trousseau C0 ; aucune valeur par défaut. Staging/tests : `c0/fixtures/keys/test_keyring.json` (secrets `TEST_SECRET_NOT_FOR_PRODUCTION`) |
 | `SITE_ACK_KEY_ID` | clé de scope `activation_ack`, statut `ACTIVE` (staging : `c0-test-ack-01`) |
-| `SITE_WITHDRAWAL_HOLD_POLICY` | JSON `{"max_withdrawals_without_release": int\|null, "released_expected_withdrawals_digest": hex\|null}` ; absente ou invalide = erreur ; `null` **seulement** si `SITE_ENV=staging` (C0 §8.4, R-11 ; DF-0090 ouverte, aucun seuil calibré) |
+| `SITE_WITHDRAWAL_HOLD_POLICY` | JSON `{"max_withdrawals_without_release": int\|null, "released_expected_withdrawals_digest": hex\|null}` ; absente ou invalide = erreur ; `null` **seulement** si `SITE_ENV=staging` (C0 §8.4, R-11 ; DF-0090 ouverte, aucun seuil calibré). `null` avec un autre `SITE_ENV` (production, absent, inconnu) **refuse le démarrage** du serveur : `[site-publish] DÉMARRAGE REFUSÉ : …`, code de sortie 1 (`instrumentation.ts` → `enforceStartupPolicy`, `lib/site-publish/config.ts`) |
 
 Configuration invalide → **toutes** les routes répondent `503 {"transport_error":"RECEIVER_CONFIG_INVALID"}` (ou
-`SITE_DB_CONFIG_INVALID`) ; rien n'est stagé ni activé. La configuration est relue à chaque requête.
+`SITE_DB_CONFIG_INVALID`) ; rien n'est stagé ni activé. La configuration est relue à chaque requête. Seule exception
+vérifiée au démarrage : la politique `null` hors staging (ci-dessus), qui arrête le processus.
 
 ## Ordre de traitement d'une requête, plafonds de corps (review F-01, F-03)
 
@@ -44,6 +45,27 @@ Les refus rendus par l'évaluation C0 après la porte (y compris `SIGNATURE_INVA
 calculé qu'après lecture du document) restent journalisés, une ligne bornée par requête. Risque résiduel : le
 `key_id` n'est pas secret ; un tiers qui le connaît peut écrire une ligne par STAGE de ≤ 32 MiB — limitation de débit
 `DEFERRED_FOR_PROD`.
+
+## Routes machine hors proxy : aucun tampon de corps intermédiaire (DF-0130, I1 R-02)
+
+Les routes `/api/site/publish/**` (ce receiver) et `/api/site/events/**` (annexe BC4) **ne passent par aucun proxy
+applicatif ni frontal** qui mettrait le corps en mémoire tampon ou le plafonnerait en dessous des plafonds de la route :
+
+| Route | Plafond porté par la route | Exigence pour tout frontal / proxy devant le SITE |
+|---|---|---|
+| `POST /api/site/publish/stage` | 32 MiB (33 554 432 octets) | limite de corps **≥ 32 MiB**, corps relayé en flux |
+| `PUT /api/site/publish/media/{sha256}` | 20 MiB (20 971 520 octets) | limite **≥ 20 MiB** (en pratique la même règle ≥ 32 MiB sur tout `/api/site/publish/**`) |
+| `POST verify-media`, `POST activate`, `/api/site/events/ack` | 256 KiB / 64 KiB | aucune contrainte supplémentaire |
+
+- Dans l'application : `proxy.ts` exclut ces routes de son `matcher` (sinon Next 16 tamponne et **tronque** le corps
+  à `proxyClientMaxBodySize`, 10 MiB par défaut : média légitime → 401 `SIGNATURE_INVALID`, STAGE → 400
+  `PAYLOAD_MALFORMED`, au lieu d'un 413). Toute nouvelle route machine signée **doit** rejoindre cette exclusion.
+  Non-régression : `tests/http/storefront.test.mjs`, section « 4 — routes machine signées hors proxy navigateur »
+  (`npm run test:storefront`).
+- Devant l'application (frontal, CDN, reverse proxy) : limite de corps ≥ 32 MiB sur ces routes, pas de réécriture
+  ni de décompression du corps, pas de cache. Check-list : `docs/DEPLOY_CHECKLIST_SITE.md`.
+- C'est la route qui répond `413 BODY_TOO_LARGE` sans lire le corps ; un 413 d'un frontal (corps HTML, sans
+  `transport_error`) est une erreur de déploiement, pas un refus C0.
 
 ## En-têtes
 
