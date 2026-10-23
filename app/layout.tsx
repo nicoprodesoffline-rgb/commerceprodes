@@ -16,11 +16,19 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const catalog = await catalogOrNull();
+  let instant = "CONFIG_INVALID";
+  let forced = false;
+  try {
+    instant = serverNowUtc();
+    forced = isForcedNow();
+  } catch {
+    /* ConfigInvalid : consignée au démarrage ; les pages et l'API refusent. */
+  }
   return (
     <html lang="fr">
       <body className="min-h-screen">
         <CartProvider>
-          <SiteHeader meta={catalog?.meta ?? null} instantUtc={serverNowUtc()} forcedNow={isForcedNow()} />
+          <SiteHeader meta={catalog?.meta ?? null} instantUtc={instant} forcedNow={forced} />
           <main className="mx-auto max-w-screen-2xl px-4 py-8 lg:px-6">{children}</main>
           <Footer />
         </CartProvider>

@@ -4,7 +4,7 @@
  */
 import { NextResponse } from "next/server";
 import { loadCatalog, type Catalog } from "@/lib/site-catalog/catalog";
-import { serverNowUtc } from "@/lib/site-catalog/clock";
+import { ConfigInvalid, serverNowUtc } from "@/lib/site-catalog/clock";
 import { CatalogUnavailable } from "@/lib/site-catalog/source";
 import { BUSINESS_MAX_BYTES, PERSISTENCE } from "./validate";
 
@@ -34,12 +34,28 @@ export async function readBoundedBytes(req: Request, max = BUSINESS_MAX_BYTES): 
 
 export type BusinessContext = { catalog: Catalog; nowUtc: string; bytes: Uint8Array };
 
-/** Exécute `fn` ou répond 503 honnête si aucune génération n'est servable (aucun verdict C0 inventé). */
+/**
+ * Exécute `fn` ou répond 503 honnête : `CONFIG_INVALID` (horloge, F-05) ou `CATALOG_UNAVAILABLE`
+ * (aucune génération servable) — aucun verdict C0 inventé.
+ */
 export async function withCatalog(
   req: Request,
   fn: (ctx: BusinessContext) => { status: number; body: unknown },
 ): Promise<Response> {
   let catalog: Catalog;
+  let nowUtc: string;
+  try {
+    nowUtc = serverNowUtc();
+  } catch (error) {
+    if (error instanceof ConfigInvalid) {
+      console.error(`[site-clock] configuration invalide : ${error.reason} — ${error.message}`);
+      return NextResponse.json(
+        { site_status: "CONFIG_INVALID", reason: error.reason, persistence: PERSISTENCE, durable: false, verdict: null },
+        { status: 503 },
+      );
+    }
+    throw error;
+  }
   try {
     catalog = await loadCatalog();
   } catch (error) {
@@ -53,6 +69,6 @@ export async function withCatalog(
     throw error;
   }
   const bytes = await readBoundedBytes(req);
-  const r = fn({ catalog, nowUtc: serverNowUtc(), bytes });
+  const r = fn({ catalog, nowUtc, bytes });
   return NextResponse.json(r.body, { status: r.status, headers: { "cache-control": "no-store" } });
 }
