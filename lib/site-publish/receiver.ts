@@ -16,9 +16,9 @@ import type { Pool, PoolClient } from "pg";
 import { evaluatePublication, signatureContext, type Active, type ActivationResult } from "../../c0/ts/src/activation";
 import { rejected } from "../../c0/ts/src/errors";
 import { exactKeys, isCount, isHex64, isToken } from "../../c0/ts/src/formats";
-import { canonicalBytes, isObject, parseBytes, sha256Hex, utf8, type Json, type JsonObject } from "../../c0/ts/src/jsonc";
+import { canonicalBytes, isCanonical, isObject, parseBytes, sha256Hex, utf8, type Json, type JsonObject } from "../../c0/ts/src/jsonc";
 import { DOMAIN_SIG_SNAPSHOT, SCOPE_PUBLISH, keyHasScope, verify } from "../../c0/ts/src/signing";
-import { MAX_BYTES, MAX_MEDIA_SIZE, type Snapshot } from "../../c0/ts/src/snapshot";
+import { MAX_BYTES, MAX_MEDIA_SIZE, payloadSha256, type Snapshot } from "../../c0/ts/src/snapshot";
 import { toSafeInt } from "../site-db/generation";
 import type { ReceiverConfig } from "./config";
 
@@ -27,8 +27,12 @@ export const MEDIA_TRANSPORT_DOMAIN = "prodes.c0.transport.media.v1";
 export const HEADER_KEY_ID = "x-c0-key-id";
 export const HEADER_SIGNATURE = "x-c0-signature";
 export const HEADER_OUTCOME = "x-c0-outcome";
-/** Corps de contrôle (verify-media, activate) : même plafond que les couches business/events (C0 §4). */
+/** Corps de contrôle (verify-media, activate, status) : même plafond que les couches business/events (C0 §4). */
 export const MAX_CONTROL_BYTES = 256 * 1024;
+/** Plafond du corps STAGE = plafond C0 du snapshot (32 MiB, C0 §4). */
+export { MAX_BYTES };
+/** Plafond du corps PUT média = taille maximale d'un média C0 (20 MiB, C0 §8.5). */
+export const MAX_MEDIA_BYTES = MAX_MEDIA_SIZE;
 const LOCK_TIMEOUT = "15s";
 
 export interface HeaderSource {
@@ -111,6 +115,18 @@ function ackResponse(ackBytes: Uint8Array, outcome: "ACTIVATED" | "REPLAY_ACK"):
 
 function transportError(status: number, code: string, operation: string): ReceiverResponse {
   return json(status, { accepted: false, outcome: "TRANSPORT_ERROR", operation, transport_error: code, error_codes: [] });
+}
+
+/**
+ * Porte de transport (review F-01/F-03), AVANT toute lecture de corps ou de base : clé connue, de scope
+ * `site_snapshot.publish`, statut ACTIVE/VERIFY_ONLY, et signature au format 64 hex. Refus -> 401, sans journal.
+ * Contrôle d'accès seulement : le HMAC lui-même reste vérifié par la fonction pure C0 (étape `signature`).
+ */
+export function transportGate(config: ReceiverConfig, headers: HeaderSource, operation: string): ReceiverResponse | null {
+  const keyId = headers.get(HEADER_KEY_ID);
+  const signature = headers.get(HEADER_SIGNATURE);
+  if (keyHasScope(config.keyring, keyId, SCOPE_PUBLISH) && isHex64(signature)) return null;
+  return json(401, { accepted: false, outcome: "REJECTED", operation, error_codes: ["SIGNATURE_INVALID"], stage: "transport_gate" });
 }
 
 function transportFromHeaders(headers: HeaderSource): JsonObject {
@@ -264,19 +280,58 @@ interface ActiveState {
   ackBytes: Uint8Array;
 }
 
-/** Génération ACTIVE relue en base (pointeur -> ligne). `lockPointer` = FOR UPDATE (activation). */
-async function loadActive(q: Querier, lockPointer: boolean): Promise<ActiveState | null> {
-  const pointer = await q.query(`SELECT generation_id FROM site_active_pointer WHERE singleton = 1${lockPointer ? " FOR UPDATE" : ""}`);
+/** L'ACTIVE pointée ne passe pas le contrôle d'intégrité (review F-02) : rien ne s'active ni ne se rejoue par-dessus. */
+const UNSAFE_ACTIVE = Symbol("UNSAFE_ACTIVE");
+type LoadedActive = ActiveState | null | typeof UNSAFE_ACTIVE;
+
+/**
+ * Génération ACTIVE relue en base (pointeur -> ligne). `lockPointer` = FOR UPDATE (activation).
+ * Même contrôle d'intégrité que `getActiveGeneration` (lib/site-db/generation.ts) : ligne ACTIVE, séquence et SHA
+ * du pointeur = ceux de la ligne, octets canoniques, `payload_sha256` recalculé = stocké, ACK lisible.
+ * Échec -> UNSAFE_ACTIVE (fail-closed), jamais une base de couverture non vérifiée.
+ */
+async function loadActive(q: Querier, lockPointer: boolean): Promise<LoadedActive> {
+  const pointer = await q.query(
+    `SELECT generation_id, catalogue_sequence, payload_sha256 FROM site_active_pointer WHERE singleton = 1${lockPointer ? " FOR UPDATE" : ""}`,
+  );
   if (pointer.rows.length !== 1) throw new Error("site_active_pointer : ligne unique absente");
-  const id = pointer.rows[0].generation_id;
-  if (id === null) return null;
-  const { rows } = await q.query(`SELECT ${GENERATION_COLUMNS} FROM site_generation WHERE id = $1`, [id]);
-  if (rows.length !== 1) throw new Error("site_active_pointer : génération pointée introuvable");
+  const p = pointer.rows[0];
+  if (p.generation_id === null) return null;
+  const { rows } = await q.query(`SELECT ${GENERATION_COLUMNS} FROM site_generation WHERE id = $1`, [p.generation_id]);
+  if (rows.length !== 1) return UNSAFE_ACTIVE;
   const row = toGeneration(rows[0]);
-  if (row.status !== "ACTIVE" || row.ackBytes === null) throw new Error("site_active_pointer : la génération pointée n'est pas ACTIVE");
-  const snapshot = parseBytes(row.bytes, MAX_BYTES) as unknown as Snapshot;
-  const ack = parseBytes(row.ackBytes, MAX_CONTROL_BYTES);
-  return { row, c0: { snapshot, ack }, ackBytes: row.ackBytes };
+  if (row.status !== "ACTIVE" || row.ackBytes === null) return UNSAFE_ACTIVE;
+  if (String(row.catalogue_sequence) !== String(p.catalogue_sequence) || row.payload_sha256 !== p.payload_sha256) return UNSAFE_ACTIVE;
+  try {
+    const parsed = parseBytes(row.bytes, MAX_BYTES);
+    if (!isCanonical(row.bytes, parsed) || !isObject(parsed)) return UNSAFE_ACTIVE;
+    const snapshot = parsed as unknown as Snapshot;
+    if (payloadSha256(snapshot) !== row.payload_sha256 || snapshot.payload_sha256 !== row.payload_sha256) return UNSAFE_ACTIVE;
+    const ack = parseBytes(row.ackBytes, MAX_CONTROL_BYTES);
+    return { row, c0: { snapshot, ack }, ackBytes: row.ackBytes };
+  } catch {
+    return UNSAFE_ACTIVE;
+  }
+}
+
+/** Refus fail-closed quand l'ACTIVE est UNSAFE : CATALOG_UNSAFE (C0 §13 : « génération marquée UNSAFE »). */
+function unsafeActiveResult(): ActivationResult {
+  return { ...rejected(["CATALOG_UNSAFE"]), stage: "active_integrity", ack: null, detail: {} };
+}
+
+/**
+ * Authentification avant tout verrou (review F-03) pour VERIFY_MEDIA / ACTIVATE : clé de publication, puis génération
+ * connue (404), puis HMAC du contexte C0 §7 de la génération stockée (401). Aucune ligne de journal pour ces refus.
+ */
+async function authenticateControl(deps: ReceiverDeps, control: ControlBody, headers: HeaderSource, operation: string): Promise<GenerationRow | ReceiverResponse> {
+  const gate = transportGate(deps.config, headers, operation);
+  if (gate !== null) return gate;
+  const row = await generationByKey(deps.pool, control.catalogue_sequence, control.payload_sha256, false);
+  if (row === null || row.publication_id !== control.publication_id) return transportError(404, "GENERATION_NOT_STAGED", operation);
+  const doc = tryParse(row.bytes, MAX_BYTES);
+  const ok = isObject(doc) && verify(deps.config.keyring, headers.get(HEADER_KEY_ID), headers.get(HEADER_SIGNATURE), SCOPE_PUBLISH, DOMAIN_SIG_SNAPSHOT, signatureContext(doc as unknown as Snapshot));
+  if (!ok) return json(401, { accepted: false, outcome: "REJECTED", operation, error_codes: ["SIGNATURE_INVALID"], stage: "transport_gate" });
+  return row;
 }
 
 /** Store média de l'évaluation : octets présents en base pour les media_refs du document. */
@@ -329,7 +384,13 @@ export async function stage(deps: ReceiverDeps, bytes: Uint8Array, headers: Head
   const transport = transportFromHeaders(headers);
   const doc = tryParse(bytes, MAX_BYTES);
   const corr = correlate(doc);
-  const active = await loadActive(deps.pool, false);
+  const loaded = await loadActive(deps.pool, false);
+  if (loaded === UNSAFE_ACTIVE) {
+    const r = unsafeActiveResult();
+    await log(deps.pool, { operation: "STAGE", ...corr, outcome: r.outcome, error_codes: r.error_codes, stage: r.stage });
+    return refusal("STAGE", r);
+  }
+  const active = loaded;
   const now = (deps.now ?? serverNowUtc)();
   // Store média VIDE : les médias se vérifient à VERIFY_MEDIA (C0 §9.1) ; l'ACK éventuel de cet appel est jeté.
   const result = applyEnvironment(evaluate(deps, bytes, transport, active, new Map(), now), doc, deps.config.env);
@@ -371,11 +432,10 @@ export async function putMedia(deps: ReceiverDeps, sha256: string, bytes: Uint8A
   const base: LogEntry = { operation: "MEDIA_PUT", publication_id: null, catalogue_sequence: null, payload_sha256: null, outcome: "" };
   const detail = { media_sha256: sha256, size: bytes.length, ...(isToken(keyId) ? { key_id: keyId } : {}) };
   if (!verify(deps.config.keyring, keyId, signature, SCOPE_PUBLISH, MEDIA_TRANSPORT_DOMAIN, context)) {
-    await log(deps.pool, { ...base, outcome: "REJECTED", error_codes: ["SIGNATURE_INVALID"], detail });
+    // Refus non authentifié : aucune ligne de journal (review F-01, pas de remplissage par un tiers).
     return json(401, { accepted: false, outcome: "REJECTED", operation: "MEDIA_PUT", error_codes: ["SIGNATURE_INVALID"] });
   }
   if (bytes.length < 1 || bytes.length > MAX_MEDIA_SIZE) {
-    await log(deps.pool, { ...base, outcome: "TRANSPORT_ERROR", detail: { ...detail, transport_error: "MEDIA_SIZE_OUT_OF_RANGE" } });
     return transportError(413, "MEDIA_SIZE_OUT_OF_RANGE", "MEDIA_PUT");
   }
   if (sha256Hex(bytes) !== sha256) {
@@ -406,11 +466,18 @@ export async function putMedia(deps: ReceiverDeps, sha256: string, bytes: Uint8A
 export async function verifyMedia(deps: ReceiverDeps, body: Uint8Array, headers: HeaderSource): Promise<ReceiverResponse> {
   const control = parseControl(body);
   if (control === null) return transportError(400, "REQUEST_INVALID", "VERIFY_MEDIA");
-  const row = await generationByKey(deps.pool, control.catalogue_sequence, control.payload_sha256, false);
-  if (row === null || row.publication_id !== control.publication_id) return transportError(404, "GENERATION_NOT_STAGED", "VERIFY_MEDIA");
+  const authenticated = await authenticateControl(deps, control, headers, "VERIFY_MEDIA");
+  if (!("bytes" in authenticated)) return authenticated;
+  const row = authenticated;
   const transport = transportFromHeaders(headers);
   const doc = tryParse(row.bytes, MAX_BYTES);
-  const active = await loadActive(deps.pool, false);
+  const loaded = await loadActive(deps.pool, false);
+  if (loaded === UNSAFE_ACTIVE) {
+    const r = unsafeActiveResult();
+    await log(deps.pool, { operation: "VERIFY_MEDIA", ...corrOf(row), outcome: r.outcome, error_codes: r.error_codes, stage: r.stage });
+    return refusal("VERIFY_MEDIA", r);
+  }
+  const active = loaded;
   const store = await mediaStoreFor(deps.pool, doc);
   const now = (deps.now ?? serverNowUtc)();
   const result = applyEnvironment(evaluate(deps, row.bytes, transport, active, store, now), doc, deps.config.env);
@@ -447,6 +514,9 @@ export async function verifyMedia(deps: ReceiverDeps, body: Uint8Array, headers:
 export async function activate(deps: ReceiverDeps, body: Uint8Array, headers: HeaderSource): Promise<ReceiverResponse> {
   const control = parseControl(body);
   if (control === null) return transportError(400, "REQUEST_INVALID", "ACTIVATE");
+  // Authentification AVANT tout verrou (F-03) : un ACTIVATE non signé ne prend ni le pointeur ni la cible.
+  const authenticated = await authenticateControl(deps, control, headers, "ACTIVATE");
+  if (!("bytes" in authenticated)) return authenticated;
   const transport = transportFromHeaders(headers);
   const corrRequest: Correlation = { ...control };
   const client = await deps.pool.connect();
@@ -459,12 +529,20 @@ export async function activate(deps: ReceiverDeps, body: Uint8Array, headers: He
     await client.query("BEGIN");
     await client.query(`SET LOCAL lock_timeout = '${LOCK_TIMEOUT}'`);
     // 1. Verrou exclusif du pointeur, puis relecture de l'ACTIVE DANS le verrou.
-    const active = await loadActive(client, true);
+    const loaded = await loadActive(client, true);
     const target = await generationByKey(client, control.catalogue_sequence, control.payload_sha256, true);
     if (target === null || target.publication_id !== control.publication_id) {
       await client.query("ROLLBACK");
       return transportError(404, "GENERATION_NOT_STAGED", "ACTIVATE");
     }
+    if (loaded === UNSAFE_ACTIVE) {
+      // Fail-closed (F-02) : aucune activation par-dessus une ACTIVE corrompue ; cible inchangée, refus journalisé.
+      const r = unsafeActiveResult();
+      await log(client, { operation: "ACTIVATE", ...corrOf(target), outcome: r.outcome, error_codes: r.error_codes, stage: r.stage });
+      await client.query("COMMIT");
+      return refusal("ACTIVATE", r);
+    }
+    const active = loaded;
     const doc = tryParse(target.bytes, MAX_BYTES);
     const store = await mediaStoreFor(client, doc);
     // 2. Horloge serveur, politique receiver, appel complet de la fonction pure.
