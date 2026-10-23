@@ -66,7 +66,16 @@ export const enc = (value) => new TextEncoder().encode(typeof value === "string"
 /** Appel direct du module BC4 (même code que les routes). Renvoie {status, body}. */
 export async function submit(pool, kind, bytes, now, hooks) {
   const r = await business.submitBusiness({ pool, now: () => now, hooks }, kind, bytes instanceof Uint8Array ? bytes : enc(bytes));
-  return { status: r.status, headers: r.headers, body: JSON.parse(Buffer.from(r.body).toString("utf8")) };
+  return { status: r.status, headers: r.headers, raw: new Uint8Array(r.body), body: JSON.parse(Buffer.from(r.body).toString("utf8")) };
+}
+
+/** Octets bruts de la valeur `receipt` (dernière clé du corps, recopiée telle quelle par le SITE). */
+export function receiptSlice(raw) {
+  const text = Buffer.from(raw);
+  const marker = Buffer.from(',"receipt":');
+  const at = text.lastIndexOf(marker);
+  if (at < 0 || text[text.length - 1] !== 0x7d) throw new Error("corps sans clé receipt finale");
+  return new Uint8Array(text.subarray(at + marker.length, text.length - 1));
 }
 
 /** Compare une réponse BC4 au verdict déclaré par VERDICTS.json pour le cas cité. */

@@ -8,7 +8,7 @@ import type { Pool } from "pg";
 import { lookupReceipt } from "../../c0/ts/src/business";
 import { isToken } from "../../c0/ts/src/formats";
 import type { Json, JsonObject } from "../../c0/ts/src/jsonc";
-import { PERSISTENCE, appendLog, errorReason, httpStatusFor, json, type TxResponse } from "./common";
+import { PERSISTENCE, appendLog, errorReason, httpStatusFor, json, jsonWithRaw, sha256OfBytes, type TxResponse } from "./common";
 
 export interface ReceiptDeps {
   pool: Pool;
@@ -39,24 +39,22 @@ export async function getReceipt(deps: ReceiptDeps, params: URLSearchParams): Pr
       return REFUSED(code);
     }
     const found = rows.find((r) => r.ref === v.ref)!;
-    const stored = await deps.pool.query<{ receipt_json: JsonObject }>(
-      "SELECT receipt_json FROM site_idempotency WHERE receipt_ref = $1 AND kind = $2",
+    const stored = await deps.pool.query<{ receipt_bytes: Buffer }>(
+      "SELECT receipt_bytes FROM site_idempotency WHERE receipt_ref = $1 AND kind = $2",
       [v.ref, found.kind],
     );
-    const receipt = stored.rows[0]?.receipt_json;
+    const receipt = stored.rows[0]?.receipt_bytes;
     if (receipt === undefined) throw Object.assign(new Error("reçu absent du registre"), { code: "RECEIPT_MISSING" });
     await appendLog(deps.pool, { operation: "RECEIPT", outcome: "FOUND", object_ref: v.ref });
-    return json(200, {
-      contract_version: "site_business.v1",
-      persistence: PERSISTENCE,
-      accepted: true,
-      outcome: "FOUND",
-      error_codes: [],
-      receipt_ref: v.ref,
-      kind: found.kind,
-      status: found.status,
-      receipt,
-    });
+    const bytes = new Uint8Array(receipt);
+    // Reçu = octets canoniques stockés à la création (review F-03), recopiés tels quels.
+    return jsonWithRaw(
+      200,
+      { contract_version: "site_business.v1", persistence: PERSISTENCE, accepted: true, outcome: "FOUND", error_codes: [], receipt_ref: v.ref, kind: found.kind, status: found.status },
+      "receipt",
+      bytes,
+      { "x-site-receipt-sha256": sha256OfBytes(bytes) },
+    );
   } catch (error) {
     const reason = errorReason(error);
     console.error(`[site-transactions] RECEIPT lecture impossible code=${reason}`);
