@@ -1,0 +1,9 @@
+11c11
+< import { DB_URL, KEYRING, ROOT, activate, businessCase, c0events, counts, events, rawSign, resetDb, newPool } from "./helpers.mjs";
+---
+> import { DB_URL, KEYRING, ROOT, activate, businessCase, c0events, counts, events, rawSign, resetDb, newPool } from "/Users/nico/Desktop/prodes-w1/review-bc3/tests/bc4/helpers.mjs";
+67c67,68
+<   const res = await fetch(BASE + p, { method, headers, body });
+---
+>   const h = new Headers(headers ?? {}); if (method === "POST" && !h.has("content-type")) h.set("content-type", "application/json");
+>   const res = await fetch(BASE + p, { method, headers: h, body });

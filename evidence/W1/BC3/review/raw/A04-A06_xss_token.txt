@@ -1,0 +1,8 @@
+devis piégé -> 200 RECEIVED QR-e67bc74f01c3be909780421b14021a4c jeton présent: true
+commande piégée -> 200 RECEIVED ORD-7e76b4a7ea34cc4bfed3357c970d7aae total 36.00
+stocké tel quel (attendu, l'échappement se fait au rendu) : {"err":"column \"organisation_name\" does not exist"}
+reçu devis API -> 200 contient contact/message: false ; extrait: {"contract_version":"site_business.v1","persistence":"POSTGRESQL_SITE_LOCAL","accepted":true,"outcome":"FOUND","error_codes":[],"receipt_ref":"QR-e67bc74f01c3be909780421b14021a4c","kind":"quote_reques
+  jeton faux -> 404 {"contract_version":"site_business.v1","accepted":false,"outcome":"REJECTED","error_codes" | sans jeton -> 401 | réf inconnue -> 404
+reçu commande API -> 200 contient contact/message: false ; extrait: {"contract_version":"site_business.v1","persistence":"POSTGRESQL_SITE_LOCAL","accepted":true,"outcome":"FOUND","error_codes":[],"receipt_ref":"ORD-7e76b4a7ea34cc4bfed3357c970d7aae","kind":"order","sta
+  jeton faux -> 404 {"contract_version":"site_business.v1","accepted":false,"outcome":"REJECTED","error_codes" | sans jeton -> 401 | réf inconnue -> 404
+journal serveur : jeton devis présent = false ; jeton commande présent = false ; e-mail présent = false ; lignes de journal = 18

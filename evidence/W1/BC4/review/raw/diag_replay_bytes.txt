@@ -1,0 +1,6 @@
+bytes_equal false
+semantic_equal true
+RECEIVED.receipt keys kind,status,catalogue_sequence,lines,total_amount,currency,request_fingerprint,receipt_ref,created_at_utc
+REPLAY.receipt keys   kind,lines,status,currency,receipt_ref,total_amount,created_at_utc,catalogue_sequence,request_fingerprint
+RECEIVED.line0 keys public_item_key,variant_axes,quantity,catalogue_sequence,rate_id,unit_amount,currency,tax_basis_or_status,offer_price_version_public,line_total
+REPLAY.line0 keys   rate_id,currency,quantity,line_total,unit_amount,variant_axes,public_item_key,catalogue_sequence,tax_basis_or_status,offer_price_version_public

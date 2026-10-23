@@ -1,0 +1,98 @@
+TAP version 13
+# \# ADV-H serveur PID 1884 port 3352
+# \# ADV-H H1 ["200:RECEIVED","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT"]
+# \# ADV-H H1 corps distincts (octets, hors jeton/outcome): 2 — distincts sémantiquement: 1
+# Subtest: ADV-H A — BC4 postgresql
+    # Subtest: ADV-H1 10 POST HTTP simultanés même clé → 1 commande, 1 événement, réponses identiques hors access_token/outcome
+    ok 1 - ADV-H1 10 POST HTTP simultanés même clé → 1 commande, 1 événement, réponses identiques hors access_token/outcome
+      ---
+      duration_ms: 78.551208
+      type: 'test'
+      ...
+# \# ADV-H H2 400 ["PAYLOAD_MALFORMED"] 45 ms
+# \# ADV-H H2 message 200 Kio 422 ["INVALID_DATA"]
+    # Subtest: ADV-H2 message de 10 Mio (devis) → 400 PAYLOAD_MALFORMED rapide, 0 écriture, serveur vivant
+    ok 2 - ADV-H2 message de 10 Mio (devis) → 400 PAYLOAD_MALFORMED rapide, 0 écriture, serveur vivant
+      ---
+      duration_ms: 68.156333
+      type: 'test'
+      ...
+# \# ADV-H H3 connexions tuées 11
+# [site-db] client inactif en erreur code=57P01
+# \# ADV-H H3 après kill 200 RECEIVED [] puis 200 RECEIVED
+    # Subtest: ADV-H3 connexions du pool serveur tuées (pg_terminate_backend) → le serveur survit et répond à la requête suivante
+    ok 3 - ADV-H3 connexions du pool serveur tuées (pg_terminate_backend) → le serveur survit et répond à la requête suivante
+      ---
+      duration_ms: 356.028375
+      type: 'test'
+      ...
+# \# ADV-H H4 text/plain + Origin evil 200 RECEIVED ACAO: null
+    # Subtest: ADV-H4 Content-Type text/plain et Origin étranger : acceptés (aucun contrôle) — à qualifier
+    ok 4 - ADV-H4 Content-Type text/plain et Origin étranger : acceptés (aucun contrôle) — à qualifier
+      ---
+      duration_ms: 11.5765
+      type: 'test'
+      ...
+# \# ADV-H H5 010=400:CURSOR_INVALID 1e1=400:CURSOR_INVALID +10=400:CURSOR_INVALID 10.0=400:CURSOR_INVALID -1=400:CURSOR_INVALID 500=200:SERVED 501=400:CURSOR_INVALID absent=400:CURSOR_INVALID
+    # Subtest: ADV-H5 poll HTTP : limit '010', '1e1', '+10', ' 10', absent, cursor d'une autre forme → CURSOR_INVALID ; PII absente
+    ok 5 - ADV-H5 poll HTTP : limit '010', '1e1', '+10', ' 10', absent, cursor d'une autre forme → CURSOR_INVALID ; PII absente
+      ---
+      duration_ms: 39.638417
+      type: 'test'
+      ...
+# \# ADV-H H6 lignes de journal 16 fuites []
+    # Subtest: ADV-H6 journaux serveur : aucun jeton, e-mail, nom ou secret (après toutes les requêtes A)
+    ok 6 - ADV-H6 journaux serveur : aucun jeton, e-mail, nom ou secret (après toutes les requêtes A)
+      ---
+      duration_ms: 13.032958
+      type: 'test'
+      ...
+# \# ADV-H serveur PID 1884 arrêté
+    1..6
+ok 1 - ADV-H A — BC4 postgresql
+  ---
+  duration_ms: 6746.651709
+  type: 'suite'
+  ...
+# \# ADV-H serveur PID 2050 port 3352
+# \# ADV-H H7 200 {"durable":false,"persistence":"NONE_UNTIL_BC4","receipt_ref":null}
+# Subtest: ADV-H B — mode SITE_BUSINESS_PERSISTENCE absent (A2, non durable)
+    # Subtest: ADV-H7 absent → verdict A2, durable:false, aucune écriture en base, jamais persistence POSTGRESQL
+    ok 1 - ADV-H7 absent → verdict A2, durable:false, aucune écriture en base, jamais persistence POSTGRESQL
+      ---
+      duration_ms: 31.651916
+      type: 'test'
+      ...
+# \# ADV-H serveur PID 2050 arrêté
+    1..1
+ok 2 - ADV-H B — mode SITE_BUSINESS_PERSISTENCE absent (A2, non durable)
+  ---
+  duration_ms: 434.555333
+  type: 'suite'
+  ...
+# \# ADV-H serveur PID 2068 port 3352
+# \# ADV-H H8 503 TRANSACTIONS_CONFIG_INVALID
+# Subtest: ADV-H C — valeur de mode en casse différente
+    # Subtest: ADV-H8 'POSTGRESQL' → 503 TRANSACTIONS_CONFIG_INVALID (aucune tolérance)
+    ok 1 - ADV-H8 'POSTGRESQL' → 503 TRANSACTIONS_CONFIG_INVALID (aucune tolérance)
+      ---
+      duration_ms: 5.808834
+      type: 'test'
+      ...
+# \# ADV-H serveur PID 2068 arrêté
+    1..1
+ok 3 - ADV-H C — valeur de mode en casse différente
+  ---
+  duration_ms: 361.959292
+  type: 'suite'
+  ...
+1..3
+# tests 8
+# suites 3
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7629.704916
+exit=0

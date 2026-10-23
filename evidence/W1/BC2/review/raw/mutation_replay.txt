@@ -1,0 +1,19 @@
+# 2026-10-23T00:16:01Z HEAD a9dede140b34cbf52dfc9288baccc876f5324d08 reviewer ; mutation appliquée à .bc2-build/lib/site-publish/receiver.js (compilé, ignoré par Git), source intacte
+1
+occurrences_true_apres_mutation=0
+ok 1 - F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 1) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+not ok 2 - F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 2) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+not ok 3 - F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 3) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+not ok 4 - F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 4) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+not ok 5 - F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 5) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+not ok 6 - verrou observé : la seconde activation attend le COMMIT de la première (hook qui retient la transaction 400 ms)
+not ok 7 - F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 1) -> une bascule, l'autre SEQUENCE_COLLISION
+not ok 8 - F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 2) -> une bascule, l'autre SEQUENCE_COLLISION
+not ok 9 - F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 3) -> une bascule, l'autre SEQUENCE_COLLISION
+not ok 10 - F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 4) -> une bascule, l'autre SEQUENCE_COLLISION
+not ok 11 - F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 5) -> une bascule, l'autre SEQUENCE_COLLISION
+# pass 1
+# fail 10
+--- mutation 2 : FOR UPDATE de la ligne cible retiré aussi ? non ; mutation 2 = suppression du hook COMMIT avant réponse non applicable
+rebuild_ok occurrences_true=1
+?? evidence/W1/BC2/review/

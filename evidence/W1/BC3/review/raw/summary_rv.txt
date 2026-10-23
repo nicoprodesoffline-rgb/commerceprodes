@@ -1,0 +1,17 @@
+npm_ci                                     exit=0 | 
+build                                      exit=0 | 
+typecheck                                  exit=0 | 
+c0_check                                   exit=0 | 
+c0_test                                    exit=0 | # tests 9 # pass 9 # fail 0 # skipped 0 
+c0_check_after_build                       exit=0 | 
+c0_vendor_test                             exit=0 | # tests 4 # pass 4 # fail 0 # skipped 0 
+test_storefront_3364                       exit=0 | # tests 16 # pass 16 # fail 0 # skipped 0 
+http_a2_site_test_3365                     exit=0 | # tests 88 # pass 88 # fail 0 # skipped 0 
+test_bc2_rv_db                             exit=0 | # tests 58 # pass 58 # fail 0 # skipped 0 
+test_bc4_rv_db                             exit=1 | # tests 73 # pass 71 # fail 2 # skipped 0 
+test_bc4_http_3366                         exit=1 | # tests 7 # pass 1 # fail 6 # skipped 0 
+test_bc4_http_3366_with_content_type       exit=0 | # tests 7 # pass 7 # fail 0 # skipped 0 
+base_70467f88_test_bc4                     exit=1 | # tests 73 # pass 71 # fail 2 # skipped 0 
+base_70467f88_test_bc4_http_3366           exit=0 | # tests 7 # pass 7 # fail 0 # skipped 0 
+ui_playwright_rv_3365                      exit=0 | # tests 8 # pass 8 # fail 0 # skipped 0 
+ui_rv_extra_3364                           exit=0 | 

@@ -1,0 +1,92 @@
+preview de référence : {"persistence":"NONE","catalogue_sequence":1,"instant_utc":"2026-10-23T01:31:33Z","accepted":true,"outcome":"SELECTED","error_codes":[],"lines":[{"public_item_key":"PI-000000358","variant_axes":{"couleur":"rouge","taille":"S"},"quantity":3,"accepted":true,"error_codes":[],"superseded_by":{},"selection":{"catalogue_sequence":1,"public_item_key":"PI-000000358","variant_axes":{"couleur":"rouge","tail
+
+## A03 CSRF — matrice (route × en-têtes), comptage des lignes avant/après
+lignes avant : {"q":"0","o":"0","i":"0","e":"0"}
+/api/site/cart/preview | sans Content-Type -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/cart/preview | text/plain -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/cart/preview | form-urlencoded -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/cart/preview | multipart -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/cart/preview | json + Origin étranger -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/cart/preview | json + Origin null -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/cart/preview | json + Origin même hôte autre port -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/cart/preview | json + Origin suffixe trompeur -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/cart/preview | json + Origin userinfo -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/cart/preview | json + Sec-Fetch-Site cross-site -> 403 {"site_status":"ORIGIN_REFUSED","message":"Requête intersite refusée",
+/api/site/cart/preview | json + Sec-Fetch-Site same-site -> 403 {"site_status":"ORIGIN_REFUSED","message":"Requête intersite refusée",
+/api/site/cart/preview | 'application/json, text/plain' -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/cart/preview | text/plain;application/json -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/quote | sans Content-Type -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/quote | text/plain -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/quote | form-urlencoded -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/quote | multipart -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/quote | json + Origin étranger -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/quote | json + Origin null -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/quote | json + Origin même hôte autre port -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/quote | json + Origin suffixe trompeur -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/quote | json + Origin userinfo -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/quote | json + Sec-Fetch-Site cross-site -> 403 {"site_status":"ORIGIN_REFUSED","message":"Requête intersite refusée",
+/api/site/quote | json + Sec-Fetch-Site same-site -> 403 {"site_status":"ORIGIN_REFUSED","message":"Requête intersite refusée",
+/api/site/quote | 'application/json, text/plain' -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/quote | text/plain;application/json -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/order | sans Content-Type -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/order | text/plain -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/order | form-urlencoded -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/order | multipart -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/order | json + Origin étranger -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/order | json + Origin null -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/order | json + Origin même hôte autre port -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/order | json + Origin suffixe trompeur -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/order | json + Origin userinfo -> 403 {"site_status":"ORIGIN_REFUSED","message":"Origine étrangère refusée",
+/api/site/order | json + Sec-Fetch-Site cross-site -> 403 {"site_status":"ORIGIN_REFUSED","message":"Requête intersite refusée",
+/api/site/order | json + Sec-Fetch-Site same-site -> 403 {"site_status":"ORIGIN_REFUSED","message":"Requête intersite refusée",
+/api/site/order | 'application/json, text/plain' -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+/api/site/order | text/plain;application/json -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: applica
+chemin /api/site/order/ text/plain -> 308 /api/site/order
+chemin /api/site//order text/plain -> 308 /api/site/order
+chemin /api/site/./order text/plain -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: application/json 
+chemin /api/site/order%2F text/plain -> 404 <!DOCTYPE html><html lang="fr"><head><meta charSet="utf-8"/><meta name="viewport
+chemin /API/site/order text/plain -> 404 <!DOCTYPE html><html lang="fr"><head><meta charSet="utf-8"/><meta name="viewport
+chemin /api/site/order?x=1 text/plain -> 415 {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: application/json 
+chemin /api/site/%6Frder text/plain -> 404 <!DOCTYPE html><html lang="fr"><head><meta charSet="utf-8"/><meta name="viewport
+lignes après : {"q":"0","o":"0","i":"0","e":"0"} => 0 ligne écrite
+
+## A12 aperçu : entrées falsifiées / limites
+quantité 0 -> 200 {"persistence":"NONE","catalogue_sequence":1,"instant_utc":"2026-10-23T01:31:33Z","accepted":false,"outcome":"PARTIAL","error_codes":["INVAL
+quantité 1000001 -> 200 {"persistence":"NONE","catalogue_sequence":1,"instant_utc":"2026-10-23T01:31:33Z","accepted":false,"outcome":"PARTIAL","error_codes":["INVAL
+quantité 2.5 -> 400 {"persistence":"NONE","catalogue_sequence":1,"instant_utc":"2026-10-23T01:31:33Z","accepted":false,"outcome":"REJECTED","error_codes":["PAYL
+quantité '3' -> 200 {"persistence":"NONE","catalogue_sequence":1,"instant_utc":"2026-10-23T01:31:33Z","accepted":false,"outcome":"PARTIAL","error_codes":["INVAL
+doublon -> 422 {"persistence":"NONE","catalogue_sequence":1,"instant_utc":"2026-10-23T01:31:33Z","accepted":false,"outcome":"REJECTED","error_codes":["DUPL
+axes forgés (couleur: bleu, taille: M) -> 200 {"persistence":"NONE","catalogue_sequence":1,"instant_utc":"2026-10-23T01:31:33Z","accepted":false,"outcome":"PARTIAL","error_codes":["INVAL
+axes absents -> 200 {"persistence":"NONE","catalogue_sequence":1,"instant_utc":"2026-10-23T01:31:33Z","accepted":false,"outcome":"PARTIAL","error_codes":["INVAL
+clé alphabet interdit PI-00000035I -> 200 {"persistence":"NONE","catalogue_sequence":1,"instant_utc":"2026-10-23T01:31:33Z","accepted":false,"outcome":"PARTIAL","error_codes":["INVAL
+prix client injecté -> 422 {"persistence":"NONE","catalogue_sequence":1,"instant_utc":"2026-10-23T01:31:33Z","accepted":false,"outcome":"REJECTED","error_codes":["INVA
+commande prix falsifié -> 409 {"contract_version":"site_business.v1","kind":"order","persistence":"POSTGRESQL_SITE_LOCAL","instant_utc":"2026-10-23T01:31:33Z","durable":false,"catalogue_sequ
+lignes : {"q":"0","o":"0","i":"0","e":"0"}
+
+## A02 en-têtes / HSTS
+/ {} -> 200 HSTS=null nosniff=nosniff fa=true script-unsafe-inline=false referrer=strict-origin-when-cross-origin
+/ {"x-forwarded-proto":"https"} -> 200 HSTS=max-age=31536000 nosniff=nosniff fa=true script-unsafe-inline=false referrer=strict-origin-when-cross-origin
+/api/site/receipt {} -> 404 HSTS=null nosniff=nosniff fa=true script-unsafe-inline=false referrer=strict-origin-when-cross-origin
+/recu {} -> 200 HSTS=null nosniff=nosniff fa=true script-unsafe-inline=false referrer=strict-origin-when-cross-origin
+/media/bdc052e346fa… -> 200 image/png nosniff=nosniff cc=public, max-age=31536000, immutable
+
+## A05 redirections ouvertes
+//evil.example/ -> 308 location=/evil.example/
+/%2F%2Fevil.example -> 404 location=null
+/\evil.example -> 308 location=/evil.example
+/famille/gmce-demo/ -> 308 location=/famille/gmce-demo
+//evil.example/%2e%2e -> 308 location=/
+/article/%2F%2Fevil.example -> 404 location=null
+/article/PI-000000358 -> 307 location=/famille/gmce-demo?article=PI-000000358
+/article/https:%2F%2Fevil.example -> 404 location=null
+/recherche/?q=1 -> 308 location=/recherche?q=1
+/famille/gmce-demo?article=//evil.example -> 200 location=null
+/article/PI-000000358 avec Host/X-Forwarded-Host forgés -> 307 location=/famille/gmce-demo?article=PI-000000358
+
+## A14 recherche : échappement côté serveur
+q=<script>alert(1)</script> -> 200 brut=absent/échappé img-onerror=false script-alert=false taille=18494 résultat-gmce=false
+q="><img src=x onerror=alert(1)> -> 200 brut=absent/échappé img-onerror=false script-alert=false taille=18532 résultat-gmce=false
+q=javascript:alert(1) -> 200 brut=absent/échappé img-onerror=false script-alert=false taille=18378 résultat-gmce=false
+q=PI-000000358 -> 200 brut=absent/échappé img-onerror=false script-alert=false taille=20334 résultat-gmce=true
+q=pi-000000358 -> 200 brut=absent/échappé img-onerror=false script-alert=false taille=20334 résultat-gmce=true
+q=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -> 200 brut=absent/échappé img-onerror=false script-alert=false taille=28747 résultat-gmce=false

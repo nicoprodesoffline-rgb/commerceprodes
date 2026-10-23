@@ -1,0 +1,25 @@
+TAP version 13
+# \# ADV-I1 retired=410:ITEM_RETIRED:{} superseded=409:ITEM_SUPERSEDED:{"PI-000000JW3":"PI-000000JVF"}
+# Subtest: ADV-I1 clé RETIRED seule → 410 ITEM_RETIRED ; clé SUPERSEDED seule → 409 ITEM_SUPERSEDED + superseded_by ; 0 écriture
+ok 1 - ADV-I1 clé RETIRED seule → 410 ITEM_RETIRED ; clé SUPERSEDED seule → 409 ITEM_SUPERSEDED + superseded_by ; 0 écriture
+  ---
+  duration_ms: 158.22075
+  type: 'test'
+  ...
+# \# ADV-I2 nul_message=422:REJECTED:INVALID_DATA nul_org=422:REJECTED:INVALID_DATA bell_msg=422:REJECTED:INVALID_DATA u2028=200:RECEIVED:
+# Subtest: ADV-I2 caractère NUL / contrôle dans message ou contact : refus C0 (pas un 503 PostgreSQL)
+ok 2 - ADV-I2 caractère NUL / contrôle dans message ou contact : refus C0 (pas un 503 PostgreSQL)
+  ---
+  duration_ms: 14.006333
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 265.956375
+exit=0

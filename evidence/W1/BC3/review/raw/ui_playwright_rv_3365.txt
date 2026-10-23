@@ -1,0 +1,109 @@
+TAP version 13
+# \# Chromium 148.0.7778.96
+# \# serveur PID 92097 port 3365 base prodes_site_rv_bc3_test
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U1-indisponible-503-desktop.png (/, 1440×900)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U1-indisponible-503-mobile.png (/, 390×844)
+# Subtest: BC3 — recette navigateur (Chromium)
+    # Subtest: U1 — catalogue absent : page 503 rendue serveur (captures 1440/390)
+    ok 1 - U1 — catalogue absent : page 503 rendue serveur (captures 1440/390)
+      ---
+      duration_ms: 588.548583
+      type: 'test'
+      ...
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U2-accueil-desktop.png (/, 1440×900)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U2-categorie-desktop.png (/categorie/signaletique, 1440×900)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U2-fiche-gmce-desktop.png (/famille/gmce-demo?article=PI-000000358, 1440×900)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U2-accueil-laptop.png (/, 1024×768)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U2-categorie-laptop.png (/categorie/signaletique, 1024×768)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U2-fiche-gmce-laptop.png (/famille/gmce-demo?article=PI-000000358, 1024×768)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U2-accueil-mobile.png (/, 390×844)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U2-categorie-mobile.png (/categorie/signaletique, 390×844)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U2-fiche-gmce-mobile.png (/famille/gmce-demo?article=PI-000000358, 390×844)
+# \# fiche : 12 Tab jusqu'au radio « Taille S » ; focus visible (solid 2px)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U2-fiche-gmce-rouge-M-bleu-desactive.png (/famille/gmce-demo?article=PI-000000363, 1440×900)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U2-panier-desktop.png (/panier, 1440×900)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U2-panier-laptop.png (/panier, 1024×768)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U2-panier-mobile.png (/panier, 390×844)
+    # Subtest: U2 — F_GMCE_VARIANTS : accueil, catégorie, fiche à variantes (1440/1024/390), sélection clavier, ajout au panier
+    ok 2 - U2 — F_GMCE_VARIANTS : accueil, catégorie, fiche à variantes (1440/1024/390), sélection clavier, ajout au panier
+      ---
+      duration_ms: 6369.210084
+      type: 'test'
+      ...
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U3-devis-erreurs.png (/devis, 1440×900)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U3-devis-recu.png (/devis, 1440×900)
+# \# devis QR-c28821a78090875f6968f3b5098149db persisté (1 ligne, message conservé)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U3-recu-consulte.png (/recu\#ref=QR-c28821a78090875f6968f3b5098149db&code=LazLOCRh8NA5UyAe3r9oKiG3ClwvAJiAqRvyu_5r96E, 1440×900)
+    # Subtest: U3 — parcours devis complet au clavier sur la génération ACTIVE → « Demande de devis reçue », ligne en base, reçu consultable
+    ok 3 - U3 — parcours devis complet au clavier sur la génération ACTIVE → « Demande de devis reçue », ligne en base, reçu consultable
+      ---
+      duration_ms: 3206.527583
+      type: 'test'
+      ...
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U4-commande-avant-confirmation-mobile.png (/commande, 390×844)
+# \# commande ORD-16b2785a1607651bda82f87495517b47 persistée (77.00, RECEIVED)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U4-commande-recue-mobile.png (/commande, 390×844)
+    # Subtest: U4 — F_SIMPLE_READY : commande avec confirmation explicite → « Commande reçue », ligne en base (390 px)
+    ok 4 - U4 — F_SIMPLE_READY : commande avec confirmation explicite → « Commande reçue », ligne en base (390 px)
+      ---
+      duration_ms: 2203.473084
+      type: 'test'
+      ...
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U5-cart-stale-refus-banniere.png (/commande, 1440×900)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U5-panier-catalogue-mis-a-jour.png (/panier, 1440×900)
+# \# CART_STALE affiché puis commande ORD-858a786cdfd3f5910d83ff0f28f5dbe7 reçue sur la génération 2
+    # Subtest: U5 — CART_STALE réel : panier sur la génération 1, BC2 active la génération 2 → refus serveur CART_STALE traduit, bannière et blocage, reconfirmation
+    ok 5 - U5 — CART_STALE réel : panier sur la génération 1, BC2 active la génération 2 → refus serveur CART_STALE traduit, bannière et blocage, reconfirmation
+      ---
+      duration_ms: 4680.418
+      type: 'test'
+      ...
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U6-panier-article-supplante.png (/panier, 1440×900)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U6-fiche-media-manquant.png (/famille/chaise-pliante?article=PI-000000JTN, 1440×900)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U6-panier-apercu-503.png (/panier, 1440×900)
+    # Subtest: U6 — Item retiré/supplanté dans le panier, média manquant, aperçu 503 sur /panier (catalogue devenu UNSAFE)
+    ok 6 - U6 — Item retiré/supplanté dans le panier, média manquant, aperçu 503 sur /panier (catalogue devenu UNSAFE)
+      ---
+      duration_ms: 3130.143875
+      type: 'test'
+      ...
+# \# menu : Entrée ouvre, Échap ferme, focus rendu au bouton (3 Tab depuis le haut)
+# \# capture evidence/W1/BC3/review/raw/ui/d2e4a6ca-rv/U7-zoom200-fiche.png (/famille/gmce-demo?article=PI-000000358, 720×450)
+# \# axe accueil : 0 violation(s), 47 règles passées
+# \# axe fiche : 0 violation(s), 53 règles passées
+# \# axe panier : 0 violation(s), 50 règles passées
+# \# axe devis-erreurs : 0 violation(s), 51 règles passées
+# \# cibles accueil : 0 < 24 px, 0 entre 24 et 34 px
+# \# cibles fiche : 0 < 24 px, 0 entre 24 et 34 px
+# \# cibles panier : 0 < 24 px, 0 entre 24 et 34 px
+# \# cibles devis : 0 < 24 px, 0 entre 24 et 34 px
+# \# console : 10 erreur(s) brute(s), 0 hors ressources 404/503 attendues
+    # Subtest: U7 — menu Catégories au clavier (Entrée, Échap, retour du focus), zoom 200 % (reflow 720 px), axe-core sur 4 pages, tailles de cible
+    ok 7 - U7 — menu Catégories au clavier (Entrée, Échap, retour du focus), zoom 200 % (reflow 720 px), axe-core sur 4 pages, tailles de cible
+      ---
+      duration_ms: 7919.733041
+      type: 'test'
+      ...
+    # Subtest: U8 — aucune erreur console (dont violations CSP) sur l'ensemble du parcours
+    ok 8 - U8 — aucune erreur console (dont violations CSP) sur l'ensemble du parcours
+      ---
+      duration_ms: 0.561208
+      type: 'test'
+      ...
+# \# serveur PID 92097 arrêté
+    1..8
+ok 1 - BC3 — recette navigateur (Chromium)
+  ---
+  duration_ms: 31203.221083
+  type: 'suite'
+  ...
+1..1
+# tests 8
+# suites 1
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31457.6505
+exit=0

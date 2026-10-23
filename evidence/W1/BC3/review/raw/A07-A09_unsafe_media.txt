@@ -1,0 +1,23 @@
+## A09 média altéré ; médias référencés par la fiche : 2
+avant : 200
+UPDATE site_media autorisé (rowCount 1 )
+après altération /media -> 404 text/plain;charset=UTF-8 octets 9
+fiche -> 200 mention 'Image indisponible' dans le HTML serveur : false (rendu client attendu après onerror)
+restauré /media -> 200
+
+## A07 UNSAFE : pointeur altéré ; lignes avant {"q":"1","o":"1","i":"2","e":"2"}
+GET / -> 503 « Catalogue indisponible » prix affichés: false
+GET /famille/gmce-demo -> 503 « Catalogue indisponible » prix affichés: false
+GET /categorie/signaletique -> 503 « Catalogue indisponible » prix affichés: false
+GET /panier -> 503 « Catalogue indisponible » prix affichés: false
+GET /devis -> 503 « Catalogue indisponible » prix affichés: false
+GET /commande -> 503 « Catalogue indisponible » prix affichés: false
+GET /recherche?q=a -> 503 « Catalogue indisponible » prix affichés: false
+GET /article/PI-000000358 -> 503 « Catalogue indisponible » prix affichés: false
+GET /media/bdc052e346fa8f7813cf76228e472d5e0e91ac3901ddc71069214f1d99cdaec5 -> 503 « Catalogue indisponible » prix affichés: false
+GET /recu -> 200  prix affichés: false
+preview -> 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"CATALOG_UNSAFE","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":
+commande -> 503 {"contract_version":"site_business.v1","kind":"order","persistence":"POSTGRESQL_SITE_LOCAL","instant_utc":"2026-10-23T01:32:37Z","durable":false,"accepted":fals
+devis chiffré -> 503 {"contract_version":"site_business.v1","kind":"quote_request","persistence":"POSTGRESQL_SITE_LOCAL","instant_utc":"2026-10-23T01:32:37Z","durable":false,"accept
+lignes après {"q":"1","o":"1","i":"2","e":"2"}
+pointeur restauré, / -> 200

@@ -1,0 +1,13 @@
+# 2026-10-23T00:14:03Z HEAD a9dede140b34cbf52dfc9288baccc876f5324d08 reviewer
+postgres://prodes_site:***@localhost:54318/prodes_factory
+   garde=REFUSÉ SITE_DB_CONFIG_INVALID ; pg se connecterait à database=prodes_factory host=localhost
+postgres://prodes_site:***@localhost:54318/prodes_site_rv_bc2?database=prodes_factory
+   garde=ACCEPTÉ nom=prodes_site_rv_bc2 ; pg se connecterait à database=prodes_site_rv_bc2 host=localhost
+postgres://prodes_site:***@localhost:54318/prodes_site_rv_bc2?database=postgres
+   garde=ACCEPTÉ nom=prodes_site_rv_bc2 ; pg se connecterait à database=prodes_site_rv_bc2 host=localhost
+postgres://prodes_site:***@jarvis:5432/prodes_site_prod
+   garde=ACCEPTÉ nom=prodes_site_prod ; pg se connecterait à database=prodes_site_prod host=jarvis
+postgres://prodes_site:***@localhost:54318/prodes_site_rv_bc2?host=jarvis
+   garde=ACCEPTÉ nom=prodes_site_rv_bc2 ; pg se connecterait à database=prodes_site_rv_bc2 host=jarvis
+CONNEXION RÉELLE via createPool(URL ?database=postgres) -> current_database()=prodes_site_rv_bc2
+exit=0

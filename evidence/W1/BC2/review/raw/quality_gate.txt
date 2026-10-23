@@ -1,0 +1,39 @@
+# 2026-10-23T00:16:54Z HEAD a9dede140b34cbf52dfc9288baccc876f5324d08 reviewer
+
+> agent-ops:quality
+> node scripts/agent_ops/quality-gate.mjs
+
+# Commerce Agent Ops Quality Gate
+
+## Reasons
+- fallback
+
+## Recommended Commands
+- `node scripts/agent_ops/review-pack.mjs`
+
+## Changed Files
+- evidence/W1/BC2/review/adv/adv_dburl.mjs
+- evidence/W1/BC2/review/adv/adv_http.mjs
+- evidence/W1/BC2/review/adv/adv_tx.mjs
+- evidence/W1/BC2/review/adv/common.mjs
+- evidence/W1/BC2/review/adv/crash_child.mjs
+- evidence/W1/BC2/review/raw/adv_body_size.txt
+- evidence/W1/BC2/review/raw/adv_dburl.txt
+- evidence/W1/BC2/review/raw/adv_http.txt
+- evidence/W1/BC2/review/raw/adv_log_hygiene.txt
+- evidence/W1/BC2/review/raw/adv_tx.txt
+- evidence/W1/BC2/review/raw/build.txt
+- evidence/W1/BC2/review/raw/c0_check.txt
+- evidence/W1/BC2/review/raw/c0_twin.txt
+- evidence/W1/BC2/review/raw/db_setup.txt
+- evidence/W1/BC2/review/raw/http_bc2_3332.txt
+- evidence/W1/BC2/review/raw/http_spike_default_3332.txt
+- evidence/W1/BC2/review/raw/http_spike_diff.txt
+- evidence/W1/BC2/review/raw/mutation_replay.txt
+- evidence/W1/BC2/review/raw/npm_ci.txt
+- evidence/W1/BC2/review/raw/quality_gate.txt
+- evidence/W1/BC2/review/raw/server_pid.txt
+- evidence/W1/BC2/review/raw/start_3332.txt
+- evidence/W1/BC2/review/raw/test_bc2.txt
+- evidence/W1/BC2/review/raw/typecheck.txt
+quality_exit=0

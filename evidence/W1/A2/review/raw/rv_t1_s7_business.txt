@@ -1,0 +1,61 @@
+# PID 21084 démarré {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-20T09:00:00Z"}
+## RV-01 paliers (aperçu, PI-000000CHJ, 2026-10-20T09:00:00Z)
+qty 1 → HTTP 200 1:R-401-B1=12.00 tot 12.00
+qty 9 → HTTP 200 9:R-401-B1=12.00 tot 108.00
+qty 10 → HTTP 200 10:R-401-T10=11.00 tot 110.00
+qty 19 → HTTP 200 19:R-401-T10=11.00 tot 209.00
+qty 20 → HTTP 200 20:R-401-T20=10.00 tot 200.00
+qty 21 → HTTP 200 21:R-401-T20=10.00 tot 210.00
+qty 1000000 → HTTP 200 1000000:R-401-T20=10.00 tot 10000000.00
+qty 1000001 → HTTP 200 1000001:INVALID_DATA
+qty 0 → HTTP 200 0:INVALID_DATA
+qty -1 → HTTP 200 -1:INVALID_DATA
+qty "10" → HTTP 200 10:INVALID_DATA
+qty 1.5 (octets bruts) → HTTP 400 ["PAYLOAD_MALFORMED"]
+qty 10.0 → HTTP 400 ["PAYLOAD_MALFORMED"]
+qty 1e1 → HTTP 400 ["PAYLOAD_MALFORMED"]
+qty 2^53+1 → HTTP 400 ["PAYLOAD_MALFORMED"]
+potelet qty 5 (fenêtre future seulement) → HTTP 200 5:PRICE_WINDOW_UNAVAILABLE total=null
+## RV-02 deux lignes même clé, axes différents
+aperçu → HTTP 200 5:R-401-B1=12.00 tot 60.00 | 5:INVALID_VARIANT total=null
+commande → HTTP 422 ["INVALID_VARIANT"]
+## RV-03 deux lignes identiques
+aperçu 5+5 → HTTP 422 ["DUPLICATE_LINE"]
+commande 5+5 au palier 1–9 → HTTP 422 ["DUPLICATE_LINE"]
+## RV-04 commande 9 → 10 au prix 1–9 ; séquence périmée
+commande 9 @12.00 (référence) → HTTP 200 RECEIVED [] persistence=NONE_UNTIL_BC4 durable=false receipt_ref=false
+commande 10 @ R-401-B1 12.00 → HTTP 409 ["PRICE_CHANGED"]
+commande 10 @ R-401-T10 mais 12.00 → HTTP 409 ["PRICE_CHANGED"]
+commande 10 @ T10 11.00 (juste) → HTTP 200 RECEIVED total=110.00
+line_total '110.0' → HTTP 422 ["INVALID_DATA"]
+total 109.99 → HTTP 409 ["PRICE_CHANGED"]
+commande séquence 6 → HTTP 409 ["CART_STALE"]
+commande séquence 8 (future) → HTTP 409 ["CART_STALE"]
+commande séquence "7" → HTTP 422 ["INVALID_DATA"]
+devis chiffré séquence 6 → HTTP 409 ["CATALOG_CHANGED"]
+devis non chiffré sans fenêtre → HTTP 200 RECEIVED {"public_item_key":"PI-000000CJS","variant_axes":{},"quantity":500,"priced":false,"rate_id":null,"unit_amount":null,"currency":null,"tax_basis_or_status":null} persistence=NONE_UNTIL_BC4 durable=false receipt_ref=false
+## RV-05 clés client hors contrat
+commande + tax_amount → HTTP 422 ["INVALID_DATA"]
+commande + shipping_amount → HTTP 422 ["INVALID_DATA"]
+commande + status → HTTP 422 ["INVALID_DATA"]
+commande + vat_rate → HTTP 422 ["INVALID_DATA"]
+commande + receipt_ref → HTTP 422 ["INVALID_DATA"]
+commande + __proto__ → HTTP 422 ["INVALID_DATA"]
+aperçu + unit_amount navigateur → HTTP 422 ["INVALID_DATA"]
+aperçu + __proto__ → HTTP 422 ["INVALID_DATA"]
+aperçu axes __proto__ → HTTP 200 10:INVALID_DATA
+aperçu clé minuscule → HTTP 200 10:INVALID_DATA
+aperçu clé Famille → HTTP 200 10:INVALID_DATA
+aperçu contrôle faux → HTTP 200 10:INVALID_DATA
+aperçu 201 lignes → HTTP 422 ["INVALID_DATA"]
+aperçu 0 ligne → HTTP 422 ["INVALID_DATA"]
+## RV-06 double POST identique (registre vide)
+POST #1 → HTTP 200 RECEIVED persistence=NONE_UNTIL_BC4 durable=false receipt_keys=kind,status,catalogue_sequence,lines,total_amount,currency,request_fingerprint
+POST #2 → HTTP 200 RECEIVED persistence=NONE_UNTIL_BC4 durable=false receipt_keys=kind,status,catalogue_sequence,lines,total_amount,currency,request_fingerprint
+## RV-07 méthodes et types
+GET /api/site/order → HTTP 405 
+PUT /api/site/order → HTTP 405 
+DELETE /api/site/order → HTTP 405 
+POST text/plain → HTTP 400 ["SCHEMA_UNSUPPORTED"]
+POST sans corps → HTTP 400 ["PAYLOAD_MALFORMED"]
+# PID 21084 arrêté, port libre=true

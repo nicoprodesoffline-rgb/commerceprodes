@@ -1,0 +1,11 @@
+prodes-commerce-bc1-d@ /Users/nico/Desktop/prodes-w1/review-a1
+├─┬ next@16.4.2
+│ ├── react-dom@19.3.0 deduped
+│ ├── react@19.3.0 deduped
+│ └─┬ styled-jsx@5.1.6
+│   └── react@19.3.0 deduped
+├─┬ react-dom@19.3.0
+│ └── react@19.3.0 deduped
+├── react@19.3.0
+└── typescript@5.9.3
+

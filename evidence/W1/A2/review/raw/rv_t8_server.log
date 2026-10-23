@@ -1,0 +1,30 @@
+▲ Next.js 16.4.2
+- Local:         http://127.0.0.1:3342
+- Network:       http://127.0.0.1:3342
+✓ Ready in 115ms
+✓ Running next.config.ts took 77ms
+[site-catalog] indisponible : SOURCE_NOT_CONFIGURED — SITE_CATALOG_SOURCE doit valoir « fixture » ou « db » (reçu : absent)
+⨯ Error: CATALOG_UNAVAILABLE:SOURCE_NOT_CONFIGURED
+    at d (.next/server/chunks/ssr/[root-of-the-server]__1unb9c6d2zsua._.js:1:1812)
+    at async h (.next/server/chunks/ssr/app_page_tsx_1noek_qnm44jj._.js:1:3138) {
+  digest: '2050548240'
+}
+[site-catalog] indisponible : SOURCE_NOT_CONFIGURED — SITE_CATALOG_SOURCE doit valoir « fixture » ou « db » (reçu : absent)
+⨯ Error: CATALOG_UNAVAILABLE:SOURCE_NOT_CONFIGURED
+    at d (.next/server/chunks/ssr/[root-of-the-server]__1unb9c6d2zsua._.js:1:1812)
+    at async h (.next/server/chunks/ssr/app_page_tsx_1noek_qnm44jj._.js:1:3138) {
+  digest: '2050548240'
+}
+[site-catalog] indisponible : SOURCE_NOT_CONFIGURED — SITE_CATALOG_SOURCE doit valoir « fixture » ou « db » (reçu : absent)
+⨯ Error: CATALOG_UNAVAILABLE:SOURCE_NOT_CONFIGURED
+    at d (.next/server/chunks/ssr/[root-of-the-server]__1unb9c6d2zsua._.js:1:1812)
+    at async l (.next/server/chunks/ssr/_1hgf9m_rqwuzh._.js:1:506) {
+  digest: '2578397456'
+}
+[site-catalog] indisponible : SOURCE_NOT_CONFIGURED — SITE_CATALOG_SOURCE doit valoir « fixture » ou « db » (reçu : absent)
+⨯ Error: CATALOG_UNAVAILABLE:SOURCE_NOT_CONFIGURED
+    at d (.next/server/chunks/ssr/[root-of-the-server]__1unb9c6d2zsua._.js:1:1812)
+    at async Module.k [as generateMetadata] (.next/server/chunks/ssr/_1hgf9m_rqwuzh._.js:1:329) {
+  digest: '352471130'
+}
+[site-catalog] indisponible : SOURCE_NOT_CONFIGURED — SITE_CATALOG_SOURCE doit valoir « fixture » ou « db » (reçu : absent)

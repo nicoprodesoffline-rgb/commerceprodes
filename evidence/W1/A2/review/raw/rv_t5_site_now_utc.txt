@@ -1,0 +1,21 @@
+# PID 23798 démarré {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-20T08:00:00+02:00"}
+SITE_NOW_UTC=2026-10-20T08:00:00+02:00
+   / 500 prix servis=false trace dans le corps=false
+   preview 500 ""
+   media 200
+   journal : ["⨯ Error: SITE_NOW_UTC invalide (format C0 YYYY-MM-DDTHH:MM:SSZ attendu) : 2026-10-20T08:00:00+02:00","⨯ Error: SITE_NOW_UTC invalide (format C0 YYYY-MM-DDTHH:MM:SSZ attendu) : 2026-10-20T08:00:00+02:00"]
+# PID 23798 arrêté, port libre=true
+# PID 23809 démarré {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-02-30T00:00:00Z"}
+SITE_NOW_UTC=2026-02-30T00:00:00Z
+   / 500 prix servis=false trace dans le corps=false
+   preview 500 ""
+   media 200
+   journal : ["⨯ Error: SITE_NOW_UTC invalide (format C0 YYYY-MM-DDTHH:MM:SSZ attendu) : 2026-02-30T00:00:00Z","⨯ Error: SITE_NOW_UTC invalide (format C0 YYYY-MM-DDTHH:MM:SSZ attendu) : 2026-02-30T00:00:00Z"]
+# PID 23809 arrêté, port libre=true
+# PID 23816 démarré {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-20T09:00:00.000Z"}
+SITE_NOW_UTC=2026-10-20T09:00:00.000Z
+   / 500 prix servis=false trace dans le corps=false
+   preview 500 ""
+   media 200
+   journal : ["⨯ Error: SITE_NOW_UTC invalide (format C0 YYYY-MM-DDTHH:MM:SSZ attendu) : 2026-10-20T09:00:00.000Z","⨯ Error: SITE_NOW_UTC invalide (format C0 YYYY-MM-DDTHH:MM:SSZ attendu) : 2026-10-20T09:00:00.000Z"]
+# PID 23816 arrêté, port libre=true

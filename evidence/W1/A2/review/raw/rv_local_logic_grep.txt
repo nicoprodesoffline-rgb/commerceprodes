@@ -1,0 +1,32 @@
+components/product/family-buy-box.tsx:60:          text: `Ajouté au panier — prix retenu par le serveur : ${formatAmount(l.selection.unit_amount, l.selection.currency, l.selection.tax_basis_or_status)} (${l.selection.rate_id}).`,
+components/product/family-buy-box.tsx:118:            onChange={(e) => setQuantity(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+components/layout/footer.tsx:84:          <p>© 2026 PRODES — prix publiés (HT ou base non qualifiée) — TVA et port non calculés</p>
+components/product/price-grid.tsx:10:  tax_basis_or_status: string;
+components/product/price-grid.tsx:11:  quantity_min: number;
+components/product/price-grid.tsx:12:  quantity_max: number | null;
+components/product/price-grid.tsx:56:                  {formatQuantityRange(r.quantity_min, r.quantity_max)}
+components/product/price-grid.tsx:67:                  {formatAmount(r.unit_amount, r.currency, r.tax_basis_or_status)}
+components/product/price-grid.tsx:79:        Prix unitaire tel que publié (base indiquée : HT ou non qualifiée) — aucune TVA, aucun port, aucune remise calculés.
+components/cart/cart-provider.tsx:36:  return `${l.public_item_key}\u0000${JSON.stringify(Object.entries(l.variant_axes).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))}`;
+lib/site-catalog/view.ts:16:  if (w.valid_until_utc === null) return `dès le ${fmt(w.valid_from_utc)}, sans fin publiée`;
+lib/site-catalog/view.ts:17:  return `du ${fmt(w.valid_from_utc)} au ${fmt(w.valid_until_utc)} exclu`;
+lib/site-catalog/view.ts:23:    .sort((a, b) => a.quantity_min - b.quantity_min || (a.valid_from_utc < b.valid_from_utc ? -1 : a.valid_from_utc > b.valid_from_utc ? 1 : 0))
+lib/site-catalog/view.ts:28:      tax_basis_or_status: w.tax_basis_or_status,
+lib/site-catalog/view.ts:29:      quantity_min: w.quantity_min,
+lib/site-catalog/view.ts:30:      quantity_max: w.quantity_max,
+lib/site-business/client-types.ts:6:  tax_basis_or_status: string;
+lib/site-business/client-types.ts:7:  valid_until_utc: string | null;
+components/cart/cart-view.tsx:172:                    onChange={(e) => setQuantity(i, Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+components/cart/cart-view.tsx:180:                      {formatAmount(sel.unit_amount, sel.currency, sel.tax_basis_or_status)}
+components/cart/cart-view.tsx:191:                  {sel && pl?.line_total && !loading ? formatAmount(pl.line_total, sel.currency, sel.tax_basis_or_status) : "—"}
+components/cart/cart-view.tsx:209:          TVA, frais de port et remises : non calculés. Génération <span className="font-mono">{preview?.catalogue_sequence ?? "—"}</span>, instant serveur{" "}
+lib/site-business/validate.ts:161:  let total = 0n;
+lib/site-business/validate.ts:167:      const cents = (moneyCents(r.selection["unit_amount"]) as bigint) * BigInt(r.selection["quantity"] as number);
+lib/site-business/validate.ts:189:      error_codes: [...codes].sort(),
+lib/site-catalog/catalog.ts:13:  valid_from_utc: string;
+lib/site-catalog/catalog.ts:14:  valid_until_utc: string | null;
+lib/site-catalog/catalog.ts:15:  quantity_min: number;
+lib/site-catalog/catalog.ts:16:  quantity_max: number | null;
+lib/site-catalog/catalog.ts:19:  tax_basis_or_status: string;
+lib/site-catalog/catalog.ts:146:  if (nowUtc < w.valid_from_utc) return "FUTURE";
+lib/site-catalog/catalog.ts:147:  if (w.valid_until_utc !== null && nowUtc >= w.valid_until_utc) return "EXPIRED";

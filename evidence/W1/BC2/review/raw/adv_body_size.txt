@@ -1,0 +1,18 @@
+# 2026-10-23T00:14:18Z HEAD a9dede140b34cbf52dfc9288baccc876f5324d08 reviewer ; serveur PID 3843 port 3332 ; RSS échantillonné toutes les 50 ms (ps)
+STAGE 100 MiB sans en-têtes | rss_avant=59200KiB pic=344320KiB (+278 MiB) | http=400 0.103095s | corps={"accepted":false,"outcome":"REJECTED","error_codes":["PAYLOAD_MALFORMED"],"stage":"parse","detail":{},"operation":"STAGE"}
+STAGE 300 MiB sans en-têtes | rss_avant=427968KiB pic=1000608KiB (+559 MiB) | http=400 0.413232s | corps={"accepted":false,"outcome":"REJECTED","error_codes":["PAYLOAD_MALFORMED"],"stage":"parse","detail":{},"operation":"STAGE"}
+VERIFY_MEDIA 100 MiB sans en-têtes (plafond logique 256 KiB) | rss_avant=1054544KiB pic=1261616KiB (+202 MiB) | http=400 0.074770s | corps={"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"VERIFY_MEDIA","transport_error":"REQUEST_INVALID","error_codes":[]}
+ACTIVATE 100 MiB sans en-têtes | rss_avant=1261616KiB pic=1262016KiB (+0 MiB) | http=400 0.064414s | corps={"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"ACTIVATE","transport_error":"REQUEST_INVALID","error_codes":[]}
+PUT media 100 MiB sans signature | rss_avant=1262144KiB pic=1262304KiB (+0 MiB) | http=401 0.057778s | corps={"accepted":false,"outcome":"REJECTED","operation":"MEDIA_PUT","error_codes":["SIGNATURE_INVALID"]}
+4 x STAGE 300 MiB en parallèle :
+400 400 400 400 
+4x300MiB | rss_avant=1262320KiB pic=0KiB (+-1232 MiB)
+serveur vivant après: oui ; rss=2589232KiB
+rss au repos 5 s après la série précédente : 1448112 KiB
+4 x STAGE 300 MiB parallèles sans authentification : codes= rss_avant=1448112KiB pic=1448112KiB (+0 MiB)
+rss 5 s après : 3173216 KiB ; serveur vivant : oui
+lignes de journal écrites par ces requêtes NON authentifiées :
+MEDIA_PUT|REJECTED|["MEDIA_HASH_MISMATCH"]|1
+MEDIA_PUT|REJECTED|["SIGNATURE_INVALID"]|1
+MEDIA_PUT|STORED|[]|1
+STAGE|REJECTED|["PAYLOAD_MALFORMED"]|10
