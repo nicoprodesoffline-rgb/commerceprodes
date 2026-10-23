@@ -246,6 +246,9 @@ curseur opaque `CUR-<32 hex>` enregistré (`site_event_cursor`, avec la liste de
 ```
 
 Le consommateur décode `event_bytes_b64` et passe **ces octets** à `validate_event` (C0 §11.2) : jamais une re-sérialisation.
+**Ordre** : ordre numérique de `site_outbox_event.id` (ordre d'insertion). Jusqu'au correctif W4 lot I, `ORDER BY id` triait sur
+l'alias texte `id::text AS id` : dès dix événements, le SITE servait `10` avant `8` (trouvé par la campagne réelle Factory BC7,
+test `tests/bc4/16_events_order.test.mjs`).
 **Livraison au moins une fois** : un événement servi mais non acquitté est **re-servi** à chaque poll suivant, avant les plus
 récents (le consommateur le reconnaît `EVENT_DUPLICATE_NOOP`, CE-T18). Un poll sans événement émet quand même un nouveau
 curseur (`events: []`). Le curseur **n'avance pas** la lecture : sa `position` est enregistrée mais n'est pas lue ; seul l'ACK

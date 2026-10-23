@@ -154,8 +154,10 @@ export async function pollEvents(deps: EventsDeps, headers: HeaderBag, params: U
       return refused(code);
     }
     // Non acquittés d'abord, dans l'ordre d'insertion : un événement livré mais non acquitté est RE-SERVI.
+    // ORDER BY sur la colonne QUALIFIÉE : `ORDER BY id` désignait l'alias texte `id::text AS id` (PostgreSQL préfère la
+    // colonne de sortie) et triait « 10 » avant « 8 » dès dix événements (W4 lot I, campagne C12 ; test 16).
     const { rows } = await client.query<{ id: string; event_id: string; event_bytes: Buffer }>(
-      "SELECT id::text AS id, event_id, event_bytes FROM site_outbox_event WHERE status <> 'ACKED' ORDER BY id LIMIT $1 FOR UPDATE",
+      "SELECT site_outbox_event.id::text AS id, event_id, event_bytes FROM site_outbox_event WHERE status <> 'ACKED' ORDER BY site_outbox_event.id LIMIT $1 FOR UPDATE",
       [limit as number],
     );
     const ids = rows.map((r) => r.event_id);
