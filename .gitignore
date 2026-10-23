@@ -60,3 +60,4 @@ docs/screenshots/
 
 # BC2 : JS compilé pour node --test (npm run bc2:build)
 /.bc2-build/
+/.bc4-build/
