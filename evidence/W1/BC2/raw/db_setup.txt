@@ -1,0 +1,132 @@
+# 2026-10-23T00:05:17Z commit testé 0aa6bdc8c4dcbd7e7a0805e41912bc1515e86a4e node v22.23.1 npm 10.9.8 psql (PostgreSQL) 18.6 (Homebrew)
+role prodes_site: OK
+base prodes_site_bc2_test: déjà présente
+role prodes_site: OK
+base prodes_site_bc2: créée
+create_exit=0
+apply 001_site_generation.sql sha256=74b3fbf0f2a253250d30f1eddb33e17aae62acd52fa63a284ab11c2aac3a65c7
+apply 002_site_active_pointer.sql sha256=0e2021c60e60c16504ddc580cd805a6b2424b592e1a540830f329dd19a87f605
+apply 003_site_media.sql sha256=05be388af596569182401b31775bc088739349f502d3c9f1e44495337fc3287d
+apply 004_site_publication_log.sql sha256=e7274db2eb00a68d82827d77e7d141387ba9a7ea3ab614a5a6cacdba4842d564
+MIGRATIONS_OK db=prodes_site_bc2 applied=4
+migrate_exit=0
+skip 001_site_generation.sql
+skip 002_site_active_pointer.sql
+skip 003_site_media.sql
+skip 004_site_publication_log.sql
+MIGRATIONS_OK db=prodes_site_bc2 applied=0
+migrate_again_exit=0
+REFUS: nom de base 'prodes_factory' hors préfixe prodes_site_
+refus_factory_exit=2
+MIGRATIONS_FAILED SITE_DATABASE_URL vise 'prodes_factory' : seules les bases prodes_site* sont admises
+migrate_factory_refused_exit=1
+                                                                                                           Table « public.site_generation »
+      Colonne       |           Type           | Collationnement | NULL-able |                 Par défaut                  | Stockage | Compression | Cible de statistiques |                               Description                               
+--------------------+--------------------------+-----------------+-----------+---------------------------------------------+----------+-------------+-----------------------+-------------------------------------------------------------------------
+ id                 | bigint                   |                 | not null  | nextval('site_generation_id_seq'::regclass) | plain    |             |                       | 
+ publication_id     | text                     |                 | not null  |                                             | extended |             |                       | 
+ projection_id      | text                     |                 | not null  |                                             | extended |             |                       | 
+ scope_key          | text                     |                 | not null  |                                             | extended |             |                       | 
+ catalogue_sequence | bigint                   |                 | not null  |                                             | plain    |             |                       | 
+ payload_sha256     | character(64)            |                 | not null  |                                             | extended |             |                       | 
+ snapshot_bytes     | bytea                    |                 | not null  |                                             | extended |             |                       | octets canoniques reçus, vérité (C0 §4) ; jamais journalisés
+ snapshot_json      | jsonb                    |                 | not null  |                                             | extended |             |                       | 
+ transport_json     | jsonb                    |                 | not null  |                                             | extended |             |                       | en-têtes de transport {key_id, signature} reçus au STAGE (aucun secret)
+ status             | text                     |                 | not null  |                                             | extended |             |                       | 
+ last_result        | jsonb                    |                 |           |                                             | extended |             |                       | 
+ staged_at          | timestamp with time zone |                 | not null  |                                             | plain    |             |                       | 
+ verified_at        | timestamp with time zone |                 |           |                                             | plain    |             |                       | 
+ activated_at       | timestamp with time zone |                 |           |                                             | plain    |             |                       | 
+ ack_json           | jsonb                    |                 |           |                                             | extended |             |                       | 
+ ack_bytes          | bytea                    |                 |           |                                             | extended |             |                       | octets canoniques de l'ACK signé, renvoyés tels quels en REPLAY_ACK
+Index :
+    "site_generation_pkey" PRIMARY KEY, btree (id)
+    "site_generation_catalogue_sequence_payload_sha256_key" UNIQUE CONSTRAINT, btree (catalogue_sequence, payload_sha256)
+    "site_generation_publication" btree (publication_id, catalogue_sequence)
+    "site_generation_single_active" UNIQUE, btree ((true)) WHERE status = 'ACTIVE'::text
+Contraintes de vérification :
+    "site_generation_ack_pair" CHECK ((ack_json IS NULL) = (ack_bytes IS NULL))
+    "site_generation_activated_has_ack" CHECK ((status <> ALL (ARRAY['ACTIVE'::text, 'SUPERSEDED'::text])) OR ack_json IS NOT NULL AND ack_bytes IS NOT NULL AND activated_at IS NOT NULL)
+    "site_generation_catalogue_sequence_check" CHECK (catalogue_sequence >= 1)
+    "site_generation_payload_sha256_check" CHECK (payload_sha256 ~ '^[0-9a-f]{64}$'::text)
+    "site_generation_status_check" CHECK (status = ANY (ARRAY['STAGED'::text, 'VERIFIED'::text, 'ACTIVE'::text, 'SUPERSEDED'::text, 'REJECTED'::text, 'HOLD'::text]))
+Référencé par :
+    TABLE "site_active_pointer" CONSTRAINT "site_active_pointer_generation_id_fkey" FOREIGN KEY (generation_id) REFERENCES site_generation(id)
+Contraintes NOT NULL :
+    "site_generation_id_not_null" NOT NULL "id"
+    "site_generation_publication_id_not_null" NOT NULL "publication_id"
+    "site_generation_projection_id_not_null" NOT NULL "projection_id"
+    "site_generation_scope_key_not_null" NOT NULL "scope_key"
+    "site_generation_catalogue_sequence_not_null" NOT NULL "catalogue_sequence"
+    "site_generation_payload_sha256_not_null" NOT NULL "payload_sha256"
+    "site_generation_snapshot_bytes_not_null" NOT NULL "snapshot_bytes"
+    "site_generation_snapshot_json_not_null" NOT NULL "snapshot_json"
+    "site_generation_transport_json_not_null" NOT NULL "transport_json"
+    "site_generation_status_not_null" NOT NULL "status"
+    "site_generation_staged_at_not_null" NOT NULL "staged_at"
+Méthode d'accès : heap
+
+                           Table « public.site_active_pointer »
+      Colonne       |           Type           | Collationnement | NULL-able | Par défaut 
+--------------------+--------------------------+-----------------+-----------+------------
+ singleton          | smallint                 |                 | not null  | 
+ generation_id      | bigint                   |                 |           | 
+ catalogue_sequence | bigint                   |                 |           | 
+ payload_sha256     | character(64)            |                 |           | 
+ activated_at       | timestamp with time zone |                 |           | 
+Index :
+    "site_active_pointer_pkey" PRIMARY KEY, btree (singleton)
+Contraintes de vérification :
+    "site_active_pointer_all_or_nothing" CHECK (generation_id IS NULL AND catalogue_sequence IS NULL AND payload_sha256 IS NULL AND activated_at IS NULL OR generation_id IS NOT NULL AND catalogue_sequence IS NOT NULL AND payload_sha256 IS NOT NULL AND activated_at IS NOT NULL)
+    "site_active_pointer_singleton_check" CHECK (singleton = 1)
+Contraintes de clés étrangères :
+    "site_active_pointer_generation_id_fkey" FOREIGN KEY (generation_id) REFERENCES site_generation(id)
+Triggers :
+    site_active_pointer_no_delete BEFORE DELETE ON site_active_pointer FOR EACH ROW EXECUTE FUNCTION site_active_pointer_no_delete()
+    site_active_pointer_no_truncate BEFORE TRUNCATE ON site_active_pointer FOR EACH STATEMENT EXECUTE FUNCTION site_active_pointer_no_delete()
+
+                            Table « public.site_media »
+   Colonne   |           Type           | Collationnement | NULL-able | Par défaut 
+-------------+--------------------------+-----------------+-----------+------------
+ sha256      | character(64)            |                 | not null  | 
+ mime        | text                     |                 |           | 
+ size        | integer                  |                 | not null  | 
+ bytes       | bytea                    |                 | not null  | 
+ received_at | timestamp with time zone |                 | not null  | now()
+Index :
+    "site_media_pkey" PRIMARY KEY, btree (sha256)
+Contraintes de vérification :
+    "site_media_sha256_check" CHECK (sha256 ~ '^[0-9a-f]{64}$'::text)
+    "site_media_size_check" CHECK (size >= 1 AND size <= 20971520)
+    "site_media_size_matches" CHECK (size = octet_length(bytes))
+
+                                             Table « public.site_publication_log »
+      Colonne       |           Type           | Collationnement | NULL-able |                    Par défaut                    
+--------------------+--------------------------+-----------------+-----------+--------------------------------------------------
+ id                 | bigint                   |                 | not null  | nextval('site_publication_log_id_seq'::regclass)
+ at                 | timestamp with time zone |                 | not null  | clock_timestamp()
+ operation          | text                     |                 | not null  | 
+ publication_id     | text                     |                 |           | 
+ catalogue_sequence | bigint                   |                 |           | 
+ payload_sha256     | character(64)            |                 |           | 
+ outcome            | text                     |                 | not null  | 
+ error_codes        | jsonb                    |                 | not null  | '[]'::jsonb
+ stage              | text                     |                 |           | 
+ detail             | jsonb                    |                 | not null  | '{}'::jsonb
+Index :
+    "site_publication_log_pkey" PRIMARY KEY, btree (id)
+    "site_publication_log_correlation" btree (publication_id, catalogue_sequence)
+Contraintes de vérification :
+    "site_publication_log_operation_check" CHECK (operation = ANY (ARRAY['STAGE'::text, 'MEDIA_PUT'::text, 'VERIFY_MEDIA'::text, 'ACTIVATE'::text, 'ACTIVATE_ABORTED'::text, 'STATUS'::text]))
+Triggers :
+    site_publication_log_no_truncate BEFORE TRUNCATE ON site_publication_log FOR EACH STATEMENT EXECUTE FUNCTION site_publication_log_append_only()
+    site_publication_log_no_update BEFORE DELETE OR UPDATE ON site_publication_log FOR EACH ROW EXECUTE FUNCTION site_publication_log_append_only()
+
+ version |             name             |                              sha256                              
+---------+------------------------------+------------------------------------------------------------------
+ 001     | 001_site_generation.sql      | 74b3fbf0f2a253250d30f1eddb33e17aae62acd52fa63a284ab11c2aac3a65c7
+ 002     | 002_site_active_pointer.sql  | 0e2021c60e60c16504ddc580cd805a6b2424b592e1a540830f329dd19a87f605
+ 003     | 003_site_media.sql           | 05be388af596569182401b31775bc088739349f502d3c9f1e44495337fc3287d
+ 004     | 004_site_publication_log.sql | e7274db2eb00a68d82827d77e7d141387ba9a7ea3ab614a5a6cacdba4842d564
+(4 lignes)
+

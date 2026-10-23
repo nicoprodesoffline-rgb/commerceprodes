@@ -1,0 +1,26 @@
+# 2026-10-23T00:05:17Z commit testé 0aa6bdc8c4dcbd7e7a0805e41912bc1515e86a4e node v22.23.1 npm 10.9.8 psql (PostgreSQL) 18.6 (Homebrew)
+ id |  operation   |    publication_id     | catalogue_sequence |    outcome     |       error_codes       |   stage   |                                                              detail                                                               
+----+--------------+-----------------------+--------------------+----------------+-------------------------+-----------+-----------------------------------------------------------------------------------------------------------------------------------
+  1 | STAGE        | PUB-F_SIMPLE_READY-s1 |                  1 | STAGED         | []                      | media     | {"key_id": "c0-test-publish-02", "generation_status": "STAGED"}
+  2 | ACTIVATE     | PUB-F_SIMPLE_READY-s1 |                  1 | REJECTED       | ["MEDIA_MISSING"]       | media     | {"key_id": "c0-test-publish-02"}
+  3 | MEDIA_PUT    |                       |                    | REJECTED       | ["MEDIA_HASH_MISMATCH"] |           | {"size": 120, "key_id": "c0-test-publish-02", "media_sha256": "ed9aaaaa1debb1f00870b9b41636dc75b64eb0437ed9c58dcbb18047b73b41ec"}
+  4 | MEDIA_PUT    |                       |                    | STORED         | []                      |           | {"size": 132, "key_id": "c0-test-publish-02", "media_sha256": "ed9aaaaa1debb1f00870b9b41636dc75b64eb0437ed9c58dcbb18047b73b41ec"}
+  5 | VERIFY_MEDIA | PUB-F_SIMPLE_READY-s1 |                  1 | MEDIA_VERIFIED | []                      | activated | {"key_id": "c0-test-publish-02", "generation_status": "VERIFIED"}
+  6 | ACTIVATE     | PUB-F_SIMPLE_READY-s1 |                  1 | REJECTED       | ["SIGNATURE_INVALID"]   | signature | {"key_id": "c0-test-ack-01"}
+  7 | ACTIVATE     | PUB-F_SIMPLE_READY-s1 |                  1 | ACTIVATED      | []                      | activated | {"key_id": "c0-test-publish-02", "superseded_sequence": null}
+  8 | ACTIVATE     | PUB-F_SIMPLE_READY-s1 |                  1 | REPLAY_ACK     | []                      | sequence  | {"key_id": "c0-test-publish-02", "second_effect": false}
+  9 | STAGE        | PUB-F_SIMPLE_READY-s1 |                  1 | REPLAY_ACK     | []                      | sequence  | {"key_id": "c0-test-publish-02"}
+ 10 | STAGE        | PUB-F_SIMPLE_READY-s1 |                  1 | REJECTED       | ["SIGNATURE_INVALID"]   | signature | {"key_id": "c0-test-publish-00"}
+ 11 | STAGE        | PUB-F_SIMPLE_READY-s1 |                  1 | REJECTED       | ["INTEGRITY_MISMATCH"]  | canonical | {"key_id": "c0-test-publish-02"}
+(11 lignes)
+
+ catalogue_sequence | status |      activated_at      
+--------------------+--------+------------------------
+                  1 | ACTIVE | 2026-10-23 02:05:40+02
+(1 ligne)
+
+ generation_id | catalogue_sequence |                          payload_sha256                          
+---------------+--------------------+------------------------------------------------------------------
+             1 |                  1 | 4f53c1244e26aed26c49c0a2f585c54ed50f9779591e24818b210c947262620e
+(1 ligne)
+
