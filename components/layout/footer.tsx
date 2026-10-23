@@ -81,7 +81,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-neutral-800 bg-[#111827] py-5">
         <div className="mx-auto flex max-w-(--breakpoint-2xl) flex-col items-center justify-between gap-2 px-6 text-xs text-neutral-500 md:flex-row">
-          <p>© 2026 PRODES — Prix HT — TVA et port non qualifiés dans ce spike</p>
+          <p>© 2026 PRODES — prix publiés (HT ou base non qualifiée) — TVA et port non calculés</p>
           <p>Marque PRODES — France</p>
         </div>
       </div>

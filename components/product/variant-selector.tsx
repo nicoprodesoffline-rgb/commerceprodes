@@ -76,26 +76,25 @@ function formatOptionValue(value: string): string {
     .trim();
 }
 
-export type SelectorAxis = { axis: string; values: string[] };
+export type SelectorAxis = { axis: string; label: string; values: string[] };
 export type SelectorItem = { public_item_key: string; variant_axes: Record<string, string> };
 
 /**
- * ADAPT (BC1-D) : n'expose que les items READY du snapshot. Une valeur est
- * cliquable si au moins un item READY la porte ; la combinaison exacte est
- * résolue vers un item READY (jamais vers une combinaison interdite/absente).
+ * ADAPT (BC1-D puis W1/A2) : n'expose que les Items publiés du DTO C0 (libellés d'axes
+ * du DTO). Une valeur est cliquable si au moins un Item publié la porte ; la sélection
+ * résout toujours vers un Item publié (jamais vers une combinaison absente : aucun
+ * produit cartésien n'est construit ni affiché).
  */
 export function VariantSelector({
   options,
   items,
   selectedKey,
   onSelect,
-  unavailableNotes = [],
 }: {
   options: SelectorAxis[];
   items: SelectorItem[];
   selectedKey: string;
   onSelect: (itemKey: string) => void;
-  unavailableNotes?: string[];
 }) {
   const multiValueOptions = options.filter((o) => o.values.length >= 2);
   if (multiValueOptions.length === 0) return null;
@@ -125,7 +124,7 @@ export function VariantSelector({
         return (
           <div key={option.axis}>
             <p id={labelId} className="mb-2 text-sm font-medium text-gray-700">
-              {formatOptionName(option.axis)}
+              {option.label || formatOptionName(option.axis)}
               {selectedValue && (
                 <span className="ml-2 font-normal text-gray-500">
                   — {formatOptionValue(selectedValue)}
@@ -196,13 +195,6 @@ export function VariantSelector({
           </div>
         );
       })}
-      {unavailableNotes.length > 0 && (
-        <ul className="text-xs text-gray-500" data-testid="unavailable-combinations">
-          {unavailableNotes.map((n) => (
-            <li key={n}>Combinaison non proposée : {n}</li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }

@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // Vendoring contrôlé du contrat C0 depuis le dépôt Factory, épinglé à un SHA.
 //
-//   node scripts/c0/sync.mjs --factory <chemin dépôt Factory> --sha <sha 40 hex> [--frozen-sha <sha>]
+//   node scripts/c0/sync.mjs --factory <chemin dépôt Factory> --sha <sha 40 hex> [--frozen-sha <sha>] [--dest <racine>]
 //
 // Extrait par `git archive <sha>` (jamais le working tree) les chemins de ARCHIVE_PATHS, vérifie que
 // chaque fichier extrait est octet pour octet le blob git attendu, REMPLACE entièrement c0/ du dépôt
 // Commerce, puis écrit c0/C0_SOURCE.json (empreintes SHA-256 + tree_digest).
-// --frozen-sha (défaut : --sha) = SHA du code gelé du contrat consigné dans frozen_code_sha.
+// --frozen-sha (défaut : --sha) = SHA du code gelé du contrat consigné dans frozen_code_sha. Avant toute
+// écriture, l'arbre code (FROZEN_CODE_PATHS) doit être identique entre --sha et --frozen-sha, sinon
+// C0_FROZEN_CODE_MISMATCH. --dest (défaut : racine du dépôt Commerce) sert aux tests.
 // À n'utiliser que pour une nouvelle version GELÉE du contrat (voir docs/C0_VENDORING.md).
 
 import { execFileSync } from "node:child_process";
@@ -14,7 +16,7 @@ import { mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync, existsSyn
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  ARCHIVE_PATHS, CONTRACT_VERSION, FACTORY_REPO, MANIFEST_REL, SHA_RE,
+  ARCHIVE_PATHS, CONTRACT_VERSION, FACTORY_REPO, FROZEN_CODE_PATHS, MANIFEST_REL, SHA_RE,
   gitBlobSha1, hashFiles, parseArgs, sortedObject, treeDigest, walkC0,
 } from "./lib.mjs";
 
@@ -31,7 +33,7 @@ function git(factory, args, opts = {}) {
 
 let args;
 try {
-  args = parseArgs(process.argv.slice(2), ["factory", "sha", "frozen-sha"]);
+  args = parseArgs(process.argv.slice(2), ["factory", "sha", "frozen-sha", "dest"]);
 } catch (err) {
   fail(err.message);
 }
@@ -43,7 +45,37 @@ if (!SHA_RE.test(sha) || !SHA_RE.test(frozen)) fail("les SHA doivent être compl
 
 const resolved = git(factory, ["rev-parse", "--verify", `${sha}^{commit}`]).toString().trim();
 if (resolved !== sha) fail(`SHA introuvable ou ambigu dans ${factory} : ${sha}`);
-git(factory, ["rev-parse", "--verify", `${frozen}^{commit}`]);
+const dest = resolve(args.dest ?? REPO_ROOT);
+let frozenResolved = "";
+try {
+  frozenResolved = git(factory, ["rev-parse", "--verify", "--quiet", `${frozen}^{commit}`], { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+} catch {
+  /* traité ci-dessous */
+}
+if (frozenResolved !== frozen) fail(`SHA gelé introuvable dans ${factory} : ${frozen}`);
+
+// Identité du code gelé : même objet tree git pour chaque chemin aux deux SHA (= mêmes octets, mêmes modes).
+function treeOid(commit, path) {
+  try {
+    return git(factory, ["rev-parse", "--verify", "--quiet", `${commit}:${path}`], { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+  } catch {
+    return null;
+  }
+}
+const frozenTrees = {};
+const mismatches = [];
+for (const p of FROZEN_CODE_PATHS) {
+  const a = treeOid(sha, p);
+  const f = treeOid(frozen, p);
+  if (!f) mismatches.push(`${p} absent au SHA gelé`);
+  else if (a !== f) mismatches.push(`${p} archived=${a ?? "ABSENT"} frozen=${f}`);
+  frozenTrees[p] = f;
+}
+if (mismatches.length) {
+  console.error(`C0_FROZEN_CODE_MISMATCH archived_from=${sha} frozen=${frozen}`);
+  for (const m of mismatches) console.error(m);
+  process.exit(1);
+}
 
 // Blobs attendus (mode 100644 uniquement : aucun lien, aucun exécutable, aucun sous-module).
 const lsTree = git(factory, ["ls-tree", "-r", "-z", sha, "--", ...ARCHIVE_PATHS]).toString();
@@ -59,7 +91,7 @@ for (const p of ARCHIVE_PATHS) {
 }
 
 // Zone de transit dans le dépôt (même volume que c0/ : le renommage final est atomique).
-const staging = mkdtempSync(join(REPO_ROOT, ".c0-sync-"));
+const staging = mkdtempSync(join(dest, ".c0-sync-"));
 try {
   const tar = git(factory, ["archive", "--format=tar", sha, "--", ...ARCHIVE_PATHS]);
   execFileSync("tar", ["-x", "-f", "-", "-C", staging], { input: tar });
@@ -80,6 +112,11 @@ try {
     frozen_code_sha: frozen,
     archived_from_sha: sha,
     archive_paths: ARCHIVE_PATHS,
+    frozen_code_identity: {
+      rule: "objets tree git identiques entre archived_from_sha et frozen_code_sha (vérifié par sync.mjs)",
+      paths: FROZEN_CODE_PATHS,
+      trees: frozenTrees,
+    },
     contract_version: CONTRACT_VERSION,
     tree_digest_rule: "sha256 de la concaténation triée (octets UTF-8 du chemin) de \"<chemin>\\t<sha256>\\n\"",
     file_count: files.length,
@@ -89,7 +126,7 @@ try {
   writeFileSync(join(staging, MANIFEST_REL), `${JSON.stringify(manifest, null, 2)}\n`);
 
   // Remplacement complet de c0/ (pas de fusion) : l'ancien dossier, dist/ et node_modules/ compris, disparaît.
-  const target = join(REPO_ROOT, "c0");
+  const target = join(dest, "c0");
   if (existsSync(target)) rmSync(target, { recursive: true, force: true });
   renameSync(join(staging, "c0"), target);
   console.log(`C0_SYNC_OK archived_from=${sha} frozen=${frozen} files=${files.length} tree_digest=${manifest.tree_digest}`);

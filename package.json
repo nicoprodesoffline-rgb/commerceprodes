@@ -6,7 +6,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test:http": "node spike/http-tests.mjs",
+    "test:http": "node --test tests/http/site.test.mjs",
     "agent-ops:test": "node --test tests/agent-ops/*.test.mjs",
     "agent-ops:quality": "node scripts/agent_ops/quality-gate.mjs",
     "agent-ops:review": "node scripts/agent_ops/review-pack.mjs",
@@ -18,6 +18,9 @@
     "c0:vendor-test": "node --test \"tests/c0/*.test.mjs\"",
     "bc2:build": "node -e \"require('node:fs').rmSync('.bc2-build',{recursive:true,force:true})\" && tsc -p tsconfig.bc2.json",
     "test:bc2": "npm run bc2:build && SITE_TEST_DATABASE_URL=postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc2_test node --test --test-concurrency=1 \"tests/bc2/*.test.mjs\"",
+    "bc4:build": "node -e \"require('node:fs').rmSync('.bc4-build',{recursive:true,force:true})\" && tsc -p tsconfig.bc4.json",
+    "test:bc4": "npm run bc2:build && npm run bc4:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc4_test} node --test --test-concurrency=1 \"tests/bc4/*.test.mjs\"",
+    "test:bc4:http": "npm run bc2:build && npm run bc4:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc4_test} SITE_TEST_PORT=${SITE_TEST_PORT:-3351} node --test --test-concurrency=1 tests/bc4/http.e2e.mjs",
     "db:create-local": "scripts/db/create-local.sh",
     "db:migrate": "node scripts/db/migrate.mjs"
   },

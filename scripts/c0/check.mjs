@@ -10,7 +10,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MANIFEST_REL, SHA_RE, hashFiles, parseArgs, treeDigest, walkC0 } from "./lib.mjs";
+import { FROZEN_CODE_PATHS, MANIFEST_REL, SHA_RE, hashFiles, parseArgs, treeDigest, walkC0 } from "./lib.mjs";
 
 const DEFAULT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -39,6 +39,13 @@ try {
 const recorded = manifest.files;
 if (!recorded || typeof recorded !== "object") drift("manifeste sans champ files");
 if (!SHA_RE.test(String(manifest.frozen_code_sha))) drift("frozen_code_sha absent ou invalide");
+if (!SHA_RE.test(String(manifest.archived_from_sha))) drift("archived_from_sha absent ou invalide");
+// L'attestation d'identité du code gelé, écrite par sync.mjs, doit être conservée dans le manifeste.
+const identity = manifest.frozen_code_identity;
+if (!identity || JSON.stringify(identity.paths) !== JSON.stringify(FROZEN_CODE_PATHS)
+    || !FROZEN_CODE_PATHS.every((p) => /^[0-9a-f]{40}$/.test(String(identity.trees?.[p])))) {
+  drift("frozen_code_identity absente ou incomplète dans le manifeste (resynchroniser avec scripts/c0/sync.mjs)");
+}
 if (treeDigest(recorded) !== manifest.tree_digest) drift("tree_digest du manifeste incohérent avec son champ files");
 
 const { files, odd } = walkC0(root);

@@ -8,7 +8,9 @@ export function formatAmount(amount: string, currency = "EUR", basis = "HT"): st
   const ent = m[1]!.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   const dec = ((m[2] ?? "") + "00").slice(0, 2);
   const sym = currency === "EUR" ? "€" : currency;
-  return `${ent},${dec} ${sym} ${basis}`.trim();
+  // C0 v1 : `HT` ou `UNQUALIFIED` (aucune taxe calculée ni affichée comme connue).
+  const label = basis === "UNQUALIFIED" ? "(base fiscale non qualifiée)" : basis;
+  return `${ent},${dec} ${sym} ${label}`.trim();
 }
 
 export function formatQuantityRange(min: number, max: number | null): string {
