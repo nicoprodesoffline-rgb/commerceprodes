@@ -1,8 +1,12 @@
-// ADAPT (BC1-D puis W1/A2) de components/product/price-grid.tsx @a985aca2 : même tableau
-// (en-têtes, styles) mais AUCUN calcul ni test local de date ou de quantité — chaque ligne est
-// la sélection C0 `selectPrice` d'un palier publié à l'instant serveur (revue A2, F-04), ou le
-// code C0 qui l'empêche. Le DTO C0 ne porte pas de couche PROMO/BASE : plus de badge promo.
-import { formatAmount, formatQuantityRange } from "@/lib/format";
+/**
+ * Paliers SELL de la variante choisie : CHAQUE ligne est la sélection C0 `selectPrice` d'un palier publié à
+ * l'instant serveur (`priceRows`, lib/site-catalog/view.ts, revue A2 F-04), ou le code C0 qui l'empêche.
+ * Aucun calcul, aucun test local de date ou de quantité. `selectedRateId` = fenêtre retenue par le SERVEUR pour la
+ * quantité saisie (aperçu), jamais déduite localement. Attributs `data-rate-id` / `data-tier` / `data-unavailable`
+ * conservés (tests A2).
+ */
+import { codeMessage } from "@/components/site/codes";
+import { basisLabel, money, quantityRange } from "@/components/site/format";
 
 export type PriceGridRow = {
   tier_quantity: number;
@@ -17,62 +21,59 @@ export type PriceGridRow = {
   validity_label: string | null;
 };
 
-export function PriceGrid({ rows }: { rows: PriceGridRow[] }) {
+export function PriceGrid({ rows, selectedRateId, caption }: { rows: PriceGridRow[]; selectedRateId?: string | null; caption: string }) {
   if (!rows.some((r) => r.selected)) {
     return (
-      <p className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" data-testid="price-unavailable">
-        Prix indisponible : aucun prix publié ne s&apos;applique à cet article à cet instant. Une demande de devis non chiffrée reste possible.
+      <p className="rounded-[9px] border border-caution bg-white p-3 text-sm" data-testid="price-unavailable">
+        <strong className="font-semibold">Prix indisponible</strong> : aucun prix de vente publié ne s&apos;applique à cette variante en ce moment.
+        Vous pouvez l&apos;ajouter au panier pour une demande de devis sans prix ; la commande n&apos;est pas possible.
       </p>
     );
   }
   return (
-    <div className="mt-4 mb-2">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-        Tarifs par quantité (prix retenus par le serveur maintenant)
-      </h3>
-      <div className="overflow-x-auto rounded-md border border-gray-200">
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th scope="col" className="py-2 px-3 text-left font-medium text-gray-600 text-xs uppercase tracking-wide">
-                Quantité
-              </th>
-              <th scope="col" className="py-2 px-3 text-right font-medium text-gray-600 text-xs uppercase tracking-wide">
-                Prix unitaire
-              </th>
-              <th scope="col" className="py-2 px-3 text-left font-medium text-gray-600 text-xs uppercase tracking-wide">
-                Validité
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) =>
-              r.selected ? (
-                <tr key={`t${r.tier_quantity}`} data-rate-id={r.rate_id ?? undefined} data-tier={r.tier_quantity} className="border-b border-gray-100 bg-white last:border-0">
-                  <td className="py-2 px-3 text-gray-700">{formatQuantityRange(r.quantity_min, r.quantity_max)}</td>
-                  <td className="py-2 px-3 text-right font-semibold text-[#cc1818]">
-                    {formatAmount(r.unit_amount ?? "", r.currency ?? "EUR", r.tax_basis_or_status ?? "")}
-                  </td>
-                  <td className="py-2 px-3 text-xs text-gray-500">
-                    {r.validity_label}
-                    <span className="block font-mono text-[10px] text-gray-400">{r.rate_id}</span>
-                  </td>
-                </tr>
-              ) : (
-                <tr key={`t${r.tier_quantity}`} data-tier={r.tier_quantity} data-unavailable={r.error_codes.join(",")} className="border-b border-gray-100 bg-white last:border-0">
-                  <td className="py-2 px-3 text-gray-700">À partir de {r.tier_quantity}</td>
-                  <td className="py-2 px-3 text-right text-gray-400" colSpan={2}>
-                    Prix indisponible pour cette quantité maintenant (devis non chiffré possible)
-                  </td>
-                </tr>
-              ),
-            )}
-          </tbody>
-        </table>
-      </div>
-      <p className="mt-1 text-xs text-gray-400">
-        Prix unitaire tel que publié (base indiquée : HT ou non qualifiée) — aucune TVA, aucun port, aucune remise calculés.
-      </p>
+    <div className="relative overflow-x-auto">
+      <table className="tabular w-full border-collapse text-sm">
+        <caption className="mb-2 text-left text-sm font-semibold">{caption}</caption>
+        <thead>
+          <tr className="border-b border-line-strong text-left text-xs text-ink-3">
+            <th scope="col" className="py-2 pr-3 font-medium">Quantité</th>
+            <th scope="col" className="py-2 pr-3 text-right font-medium">Prix unitaire</th>
+            <th scope="col" className="hidden py-2 font-medium sm:table-cell">Validité</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const current = r.selected && r.rate_id !== null && r.rate_id === selectedRateId;
+            return r.selected ? (
+              <tr
+                key={`t${r.tier_quantity}`}
+                data-rate-id={r.rate_id ?? undefined}
+                data-tier={r.tier_quantity}
+                aria-current={current ? "true" : undefined}
+                className={`h-[34px] border-b border-line ${current ? "bg-signal-subtle" : ""}`}
+              >
+                <td className={`py-1.5 pr-3 ${current ? "border-l-2 border-signal pl-2" : ""}`}>
+                  {quantityRange(r.quantity_min, r.quantity_max)}
+                  {current && <span className="ml-2 text-xs font-medium text-signal">quantité choisie</span>}
+                </td>
+                <td className="py-1.5 pr-3 text-right font-semibold whitespace-nowrap">
+                  {money(r.unit_amount ?? "")} <span className="font-normal">{basisLabel(r.tax_basis_or_status)}</span>
+                </td>
+                <td className={`hidden py-1.5 text-xs sm:table-cell ${current ? "text-ink-2" : "text-ink-3"}`}>{r.validity_label}</td>
+              </tr>
+            ) : (
+              <tr key={`t${r.tier_quantity}`} data-tier={r.tier_quantity} data-unavailable={r.error_codes.join(",")} className="h-[34px] border-b border-line">
+                <td className="py-1.5 pr-3">À partir de {r.tier_quantity}</td>
+                <td className="py-1.5 text-ink-2" colSpan={2}>
+                  Prix indisponible pour cette quantité en ce moment
+                  <span className="sr-only"> — {r.error_codes.map(codeMessage).join(" ")}</span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p className="mt-2 text-xs text-ink-3">Prix de vente PRODES publiés, base indiquée sur chaque ligne. Taxes, port et remises : non calculés.</p>
     </div>
   );
 }

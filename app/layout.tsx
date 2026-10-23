@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { CartProvider } from "@/components/cart/cart-provider";
-import Footer from "@/components/layout/footer";
+import { SiteFooter } from "@/components/layout/footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { isForcedNow, serverNowUtc } from "@/lib/site-catalog/clock";
 import { catalogOrNull } from "@/lib/site-catalog/page";
@@ -10,27 +10,40 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: { default: "PRODES — catalogue STAGING_FIXTURE", template: "%s | PRODES (STAGING_FIXTURE)" },
+  title: { default: "Catalogue PRODES", template: "%s | PRODES" },
+  // Aucun SEO en W1 (scope verdict : SEO = décision propriétaire) : jamais indexé.
   robots: { index: false, follow: false },
 };
 
+export const viewport: Viewport = { width: "device-width", initialScale: 1 };
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const catalog = await catalogOrNull();
-  let instant = "CONFIG_INVALID";
+  let instant: string | null = null;
   let forced = false;
   try {
     instant = serverNowUtc();
     forced = isForcedNow();
   } catch {
-    /* ConfigInvalid : consignée au démarrage ; les pages et l'API refusent. */
+    /* ConfigInvalid : les pages boutique sont servies en 503 par proxy.ts ; l'API refuse. */
   }
+  const roots = catalog
+    ? catalog.categories
+        .filter((c) => c.parent_category_key === null)
+        .map((c) => ({ key: c.category_key, name: c.name, children: catalog.childCategories(c.category_key).map((s) => ({ key: s.category_key, name: s.name })) }))
+    : [];
   return (
     <html lang="fr">
-      <body className="min-h-screen">
+      <body className="flex min-h-screen flex-col">
+        <a href="#contenu" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-[9px] focus:bg-white focus:px-4 focus:py-2">
+          Aller au contenu
+        </a>
         <CartProvider>
-          <SiteHeader meta={catalog?.meta ?? null} instantUtc={instant} forcedNow={forced} />
-          <main className="mx-auto max-w-screen-2xl px-4 py-8 lg:px-6">{children}</main>
-          <Footer />
+          <SiteHeader dataLabel={catalog?.meta.data_label ?? null} categories={roots} />
+          <main id="contenu" tabIndex={-1} className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 lg:px-8 lg:py-8">
+            {children}
+          </main>
+          <SiteFooter meta={catalog?.meta ?? null} instantUtc={instant} forcedNow={forced} />
         </CartProvider>
       </body>
     </html>

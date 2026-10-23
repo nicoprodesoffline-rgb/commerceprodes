@@ -1,90 +1,18 @@
 "use client";
 
-
-// ── Mapping couleur → CSS color ──────────────────────────────────────────────
-const COLOR_KEYWORDS: [string, string][] = [
-  ["blanc", "#f5f5f5"],
-  ["white", "#f5f5f5"],
-  ["noir", "#1a1a1a"],
-  ["black", "#1a1a1a"],
-  ["rouge", "#cc0000"],
-  ["red", "#cc0000"],
-  ["bleu fonce", "#1a4080"],
-  ["bleu pastel", "#7bb8d4"],
-  ["bleu", "#1a4080"],
-  ["blue", "#1a4080"],
-  ["bordeaux", "#5e1a1a"],
-  ["vert fonce", "#1a5c3a"],
-  ["vert pastel", "#7bc47e"],
-  ["vert", "#1a5c3a"],
-  ["green", "#1a5c3a"],
-  ["gris soie", "#a0a09a"],
-  ["gris ardoise", "#606060"],
-  ["gris", "#606060"],
-  ["grey", "#606060"],
-  ["gray", "#606060"],
-  ["jaune", "#f5c400"],
-  ["yellow", "#f5c400"],
-  ["marron", "#6b3a2a"],
-  ["brown", "#6b3a2a"],
-  ["magenta", "#cc3399"],
-  ["rose", "#e8a0b4"],
-  ["saumon", "#f2937a"],
-  ["beige", "#d4b896"],
-  ["anthracite", "#3a3a3a"],
-  ["chrome", "#c0c0c0"],
-  ["argent", "#c0c0c0"],
-  ["silver", "#c0c0c0"],
-  ["or ", "#c8a850"],
-  ["gold", "#c8a850"],
-  ["orange", "#e07820"],
-];
-
-function getColorHex(value: string): string {
-  const lower = value.toLowerCase().replace(/-/g, " ").replace(/ral \d+/gi, "").trim();
-  for (const [keyword, hex] of COLOR_KEYWORDS) {
-    if (lower.includes(keyword)) return hex;
-  }
-  return "#e5e7eb"; // gris clair par défaut
-}
-
-function isColorOption(name: string): boolean {
-  const n = name.toLowerCase();
-  return n === "coloris" || n === "couleur" || n === "color" || n.includes("coloris");
-}
-
-function formatOptionName(name: string): string {
-  const overrides: Record<string, string> = {
-    "pa_les-lots": "Choix du lot",
-    "pa-les-lots": "Choix du lot",
-    "pietement": "Piètement",
-    "coloris": "Coloris",
-    "couleur": "Couleur",
-    "taille": "Taille",
-    "dimension": "Dimension",
-  };
-  const lower = name.toLowerCase();
-  if (overrides[lower]) return overrides[lower]!;
-  // Capitalize first letter, replace _ and - with space
-  return name.replace(/[_-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function formatOptionValue(value: string): string {
-  return value
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-    .trim();
-}
+/**
+ * Sélecteur de variante : un groupe de boutons radio par axe (`axes[]` du DTO, libellés du DTO). Une valeur n'est
+ * sélectionnable que si un Item PUBLIÉ porte cette valeur ET les valeurs déjà choisies des autres axes : aucune
+ * combinaison n'est construite (aucun produit cartésien, C0 §8.3). Une valeur non proposée avec la sélection
+ * courante est désactivée ET expliquée sous le groupe ; la liste « Variantes proposées » permet d'atteindre
+ * directement toute variante publiée. Clavier : flèches dans un groupe (radio natif), Tab entre groupes.
+ */
+import { useId } from "react";
+import { axisValue } from "@/components/site/format";
 
 export type SelectorAxis = { axis: string; label: string; values: string[] };
 export type SelectorItem = { public_item_key: string; variant_axes: Record<string, string> };
 
-/**
- * ADAPT (BC1-D puis W1/A2) : n'expose que les Items publiés du DTO C0 (libellés d'axes
- * du DTO). Une valeur est cliquable si au moins un Item publié la porte ; la sélection
- * résout toujours vers un Item publié (jamais vers une combinaison absente : aucun
- * produit cartésien n'est construit ni affiché).
- */
 export function VariantSelector({
   options,
   items,
@@ -96,103 +24,74 @@ export function VariantSelector({
   selectedKey: string;
   onSelect: (itemKey: string) => void;
 }) {
-  const multiValueOptions = options.filter((o) => o.values.length >= 2);
-  if (multiValueOptions.length === 0) return null;
+  const base = useId();
   const selected = items.find((i) => i.public_item_key === selectedKey)?.variant_axes ?? {};
+  if (options.length === 0) return null;
 
-  const pick = (axis: string, value: string) => {
-    const wanted = { ...selected, [axis]: value };
-    const exact = items.find((i) => Object.entries(wanted).every(([k, v]) => i.variant_axes[k] === v));
-    const fallback = items.find((i) => i.variant_axes[axis] === value);
-    const target = exact ?? fallback;
-    if (target) onSelect(target.public_item_key);
-  };
-
-  const existsWithOthers = (axis: string, value: string) =>
-    items.some((i) =>
-      i.variant_axes[axis] === value &&
-      Object.entries(selected).every(([k, v]) => k === axis || i.variant_axes[k] === v),
-    );
+  const target = (axis: string, value: string) =>
+    items.find((i) => i.variant_axes[axis] === value && Object.entries(selected).every(([k, v]) => k === axis || i.variant_axes[k] === v));
 
   return (
-    <div className="mb-6 space-y-5">
-      {multiValueOptions.map((option) => {
-        const isColor = isColorOption(option.axis);
-        const selectedValue = selected[option.axis];
-        const labelId = `axis-${option.axis}`;
-
-        return (
-          <div key={option.axis}>
-            <p id={labelId} className="mb-2 text-sm font-medium text-gray-700">
-              {option.label || formatOptionName(option.axis)}
-              {selectedValue && (
-                <span className="ml-2 font-normal text-gray-500">
-                  — {formatOptionValue(selectedValue)}
-                </span>
-              )}
+    <div className="space-y-4" data-testid="variant-selector">
+      {options.map((option) => {
+        const current = selected[option.axis];
+        if (option.values.length === 1) {
+          return (
+            <p key={option.axis} className="text-sm">
+              <span className="font-medium">{option.label}</span> : {axisValue(option.values[0]!)} <span className="text-ink-3">(seule option)</span>
             </p>
-            <div role="group" aria-labelledby={labelId} className="flex flex-wrap gap-2">
+          );
+        }
+        const others = options.filter((o) => o.axis !== option.axis && selected[o.axis] !== undefined);
+        const unavailable = option.values.filter((v) => !target(option.axis, v));
+        const hintId = `${base}-${option.axis}-hint`;
+        return (
+          <fieldset key={option.axis} aria-describedby={unavailable.length > 0 ? hintId : undefined}>
+            <legend className="mb-2 text-sm font-medium">
+              {option.label}
+              {current !== undefined && <span className="font-normal text-ink-2"> : {axisValue(current)}</span>}
+            </legend>
+            <div className="flex flex-wrap gap-2">
               {option.values.map((value) => {
-                const isActive = selectedValue === value;
-                const published = items.some((i) => i.variant_axes[option.axis] === value);
-                const compatible = existsWithOthers(option.axis, value);
-                const title = !published
-                  ? `${formatOptionValue(value)} — non proposé`
-                  : compatible
-                    ? formatOptionValue(value)
-                    : `${formatOptionValue(value)} — change aussi une autre option`;
-
-                if (isColor) {
-                  const colorHex = getColorHex(value);
-                  const isLight =
-                    colorHex === "#f5f5f5" ||
-                    colorHex === "#c0c0c0" ||
-                    colorHex === "#e5e7eb" ||
-                    colorHex === "#d4b896";
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      title={title}
-                      aria-label={title}
-                      aria-pressed={isActive}
-                      disabled={!published}
-                      onClick={() => pick(option.axis, value)}
-                      style={{ backgroundColor: colorHex }}
-                      className={[
-                        "h-8 w-8 rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-30",
-                        isActive
-                          ? "ring-2 ring-offset-2 ring-[#cc1818] scale-110 shadow-md"
-                          : "ring-1 ring-gray-300 hover:ring-gray-500 hover:scale-105",
-                        isLight ? "border border-gray-300" : "",
-                        !compatible && !isActive ? "outline-dashed outline-1 outline-gray-400" : "",
-                      ].join(" ")}
-                    />
-                  );
-                }
-
+                const t = target(option.axis, value);
+                const id = `${base}-${option.axis}-${value}`;
                 return (
-                  <button
+                  <label
                     key={value}
-                    type="button"
-                    title={title}
-                    aria-pressed={isActive}
-                    disabled={!published}
-                    onClick={() => pick(option.axis, value)}
+                    htmlFor={id}
                     className={[
-                      "rounded-md px-3 py-1.5 text-sm border transition-all disabled:cursor-not-allowed disabled:opacity-40",
-                      isActive
-                        ? "bg-[#cc1818] text-white border-[#cc1818] font-medium"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-500",
-                      !compatible && !isActive ? "border-dashed" : "",
+                      "relative inline-flex min-h-[42px] min-w-[42px] items-center justify-center rounded-[9px] border px-3 text-sm",
+                      "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink",
+                      !t
+                        ? "cursor-not-allowed border-dashed border-line-strong bg-surface text-ink-3 line-through"
+                        : current === value
+                          ? "cursor-pointer border-ink bg-ink font-medium text-white"
+                          : "cursor-pointer border-line-strong bg-white hover:border-ink-3",
                     ].join(" ")}
                   >
-                    {formatOptionValue(value)}
-                  </button>
+                    <input
+                      id={id}
+                      type="radio"
+                      name={`${base}-${option.axis}`}
+                      value={value}
+                      checked={current === value}
+                      disabled={!t}
+                      onChange={() => t && onSelect(t.public_item_key)}
+                      className="sr-only"
+                    />
+                    {axisValue(value)}
+                    {!t && <span className="sr-only"> (non proposé avec la sélection actuelle)</span>}
+                  </label>
                 );
               })}
             </div>
-          </div>
+            {unavailable.length > 0 && (
+              <p id={hintId} className="mt-1.5 text-xs text-ink-2">
+                Non proposé{others.length > 0 ? <> avec {others.map((o) => `${o.label} « ${axisValue(selected[o.axis]!)} »`).join(" et ")}</> : null} :{" "}
+                {unavailable.map(axisValue).join(", ")}. Changez d&apos;abord une autre option ou choisissez dans la liste des variantes proposées.
+              </p>
+            )}
+          </fieldset>
         );
       })}
     </div>

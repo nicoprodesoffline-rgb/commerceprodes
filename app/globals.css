@@ -1,30 +1,56 @@
 @import "tailwindcss";
 
-/* PRODES est toujours en light mode (repris de app/globals.css @a985aca2). */
-@variant dark (&:is([data-theme="dark"] *));
+/*
+ * Tokens du SITE — Design Authority V1 (PRODES_B, §2, approuvée DA-01/02/03 le 16/10/2026).
+ * Valeurs OBSERVED_IN_SOURCE de la DA (palette neutre, encre, signal lie-de-vin parcimonieux).
+ * Le rouge #CC1818 du prototype n'est PAS une couleur officielle du site (DA-03, §2.2) : non utilisé.
+ * Espace de noms commerce : --commerce-* (DA §2.2 « isoler les valeurs du site »).
+ */
+@theme {
+  --color-canvas: #fbfbfa;
+  --color-surface: #f4f4f2;
+  --color-surface-subtle: #ebebe8;
+  --color-line: #e4e4e0;
+  --color-line-strong: #d6d6d1;
+  --color-ink: #1a1a18;
+  --color-ink-2: #55554f;
+  --color-ink-3: #6b6b64;
+  --color-signal: #7a2e3b;
+  --color-signal-subtle: #f2e9ea;
+  --color-positive: #4a6b4f;
+  --color-caution: #8a6a33;
+  --radius-surface: 14px;
+  --radius-control: 9px;
+}
 
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
-  }
+:root {
+  --commerce-control-h: 42px; /* --height-control-large : actions de premier niveau */
+  --commerce-control-h-secondary: 34px; /* DA-02 A : 34 px standard */
+  --focus-outline: 2px solid #1a1a18;
+  --focus-offset: 2px;
 }
 
 body {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: #fafafa;
-  color: #111827;
+  font-family: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-size: 15px;
+  line-height: 1.5;
 }
 
-/* Focus visible PRODES — cohérent rouge #cc1818 (repris tel quel) */
-*:focus-visible {
-  outline: 2px solid #cc1818;
-  outline-offset: 2px;
-  border-radius: 2px;
+/* Focus visible (DA §2.3 --focus-outline / --focus-offset) — jamais supprimé sans remplacement. */
+:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
 }
-*:focus:not(:focus-visible) {
-  outline: none;
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

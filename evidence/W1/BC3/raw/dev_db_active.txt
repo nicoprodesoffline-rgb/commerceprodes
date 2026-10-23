@@ -1,0 +1,2 @@
+ACTIVATED F_GMCE_VARIANTS.activate sur prodes_site_bc3
+famille gmce-demo sur prodes_site_bc3 : 200

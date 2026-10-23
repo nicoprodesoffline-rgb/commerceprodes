@@ -488,7 +488,7 @@ scenario(`D — ${GM} @ 2026-10-20T12:00:00Z`, { SITE_CATALOG_SOURCE: "fixture",
     const r = await get("/famille/gmce-demo?article=PI-00000037S");
     assert.equal(r.status, 200);
     for (const k of ["PI-000000358", "PI-000000363", "PI-00000037S"]) assert.match(r.text, new RegExp(k));
-    assert.match(r.text, /Article <span[^>]*>PI-00000037S</, "variante présélectionnée");
+    assert.match(r.text, /Référence <span[^>]*data-testid="item-ref">PI-00000037S</, "variante présélectionnée (W1/BC3 : libellé « Référence »)");
     const m = await get("/media/b020140e8822d96407cce4ec28d1ee2df7c25cf7c98f8e2fe0ee49bd73039c6c");
     assert.equal(m.status, 200);
     assert.equal(m.headers.get("content-type"), "image/png");
@@ -502,7 +502,8 @@ scenario(`D — ${GM} @ 2026-10-20T12:00:00Z`, { SITE_CATALOG_SOURCE: "fixture",
 
 const UNAVAILABLE = [
   ["E1 — SITE_CATALOG_SOURCE absent", {}, "SOURCE_NOT_CONFIGURED"],
-  ["E2 — SITE_CATALOG_SOURCE=db (BC2 non fourni)", { SITE_CATALOG_SOURCE: "db" }, "DB_SOURCE_NOT_PROVIDED"],
+  // W1/BC3 : la source `db` est branchée ; sans SITE_DATABASE_URL elle est indisponible (configuration).
+  ["E2 — SITE_CATALOG_SOURCE=db sans SITE_DATABASE_URL", { SITE_CATALOG_SOURCE: "db" }, "SITE_DB_CONFIG_INVALID"],
   ["E3 — fixture refusée par C0 (F_SIMPLE_READY/snapshot_buy_leak.json)", { SITE_CATALOG_SOURCE: "fixture", SITE_CATALOG_FIXTURE: "F_SIMPLE_READY/snapshot_buy_leak.json" }, "SNAPSHOT_REFUSED"],
   ["E4 — nom de fixture hors c0/fixtures/documents", { SITE_CATALOG_SOURCE: "fixture", SITE_CATALOG_FIXTURE: "../../package.json" }, "FIXTURE_NAME_INVALID"],
   // Contrepartie négative du cas exclu F_SELL_WINDOWS.select_on_overlap (revue F-08) : snapshot_overlap n'est jamais servi.
@@ -511,13 +512,13 @@ const UNAVAILABLE = [
 for (const [name, env, reason, logPattern] of UNAVAILABLE) {
   scenario(name, env, (ctx) => {
     test(`pages en erreur, API 503 ${reason}, aucun verdict ni prix`, async () => {
-      // Next 16 : une page qui lève rend la coquille d'erreur (HTTP 500) ; le texte « Catalogue
-      // indisponible » (app/error.tsx) est rendu côté client. Aucune donnée de catalogue dans le HTML.
+      // W1/BC3 (revue A2 F-01) : la page d'indisponibilité est rendue CÔTÉ SERVEUR en HTTP 503 par proxy.ts.
+      // Aucune donnée de catalogue dans le HTML.
       const home = await get("/");
-      assert.equal(home.status, 500);
-      assert.match(home.text, /id="__next_error__"/);
+      assert.equal(home.status, 503);
+      assert.match(home.text, /data-testid="catalog-unavailable"/);
       assert.doesNotMatch(home.text, /data-testid="catalogue-sequence"|STAGING_FIXTURE Chaise|R-SIMPLE-1/);
-      assert.equal((await get("/famille/chaise-demo")).status, 500);
+      assert.equal((await get("/famille/chaise-demo")).status, 503);
       for (const route of ["/api/site/order", "/api/site/quote", "/api/site/cart/preview"]) {
         const r = await post(route, doc("F_QUOTE_ORDER/order_valid.json"));
         assert.equal(r.status, 503, route);
@@ -577,7 +578,7 @@ for (const [name, env, reason] of CLOCK_INVALID) {
         assert.equal(r.json.verdict, null);
       }
       const page = await get("/famille/panneau-paliers");
-      assert.equal(page.status, 500);
+      assert.equal(page.status, 503, "W1/BC3 : page d'indisponibilité 503 rendue côté serveur");
       assert.doesNotMatch(page.text, /data-rate-id=/);
       assert.match(ctx.server.logs.join(""), new RegExp(`CONFIGURATION INVALIDE : ${reason}`));
     });

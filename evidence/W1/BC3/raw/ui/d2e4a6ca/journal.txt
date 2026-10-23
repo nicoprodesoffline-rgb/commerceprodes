@@ -1,0 +1,43 @@
+Chromium 148.0.7778.96
+serveur PID 65110 port 3361 base prodes_site_bc3_test
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U1-indisponible-503-desktop.png (/, 1440×900)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U1-indisponible-503-mobile.png (/, 390×844)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U2-accueil-desktop.png (/, 1440×900)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U2-categorie-desktop.png (/categorie/signaletique, 1440×900)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U2-fiche-gmce-desktop.png (/famille/gmce-demo?article=PI-000000358, 1440×900)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U2-accueil-laptop.png (/, 1024×768)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U2-categorie-laptop.png (/categorie/signaletique, 1024×768)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U2-fiche-gmce-laptop.png (/famille/gmce-demo?article=PI-000000358, 1024×768)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U2-accueil-mobile.png (/, 390×844)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U2-categorie-mobile.png (/categorie/signaletique, 390×844)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U2-fiche-gmce-mobile.png (/famille/gmce-demo?article=PI-000000358, 390×844)
+fiche : 12 Tab jusqu'au radio « Taille S » ; focus visible (solid 2px)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U2-fiche-gmce-rouge-M-bleu-desactive.png (/famille/gmce-demo?article=PI-000000363, 1440×900)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U2-panier-desktop.png (/panier, 1440×900)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U2-panier-laptop.png (/panier, 1024×768)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U2-panier-mobile.png (/panier, 390×844)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U3-devis-erreurs.png (/devis, 1440×900)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U3-devis-recu.png (/devis, 1440×900)
+devis QR-71b47581d1a2a7996f14dac56ee87f1f persisté (1 ligne, message conservé)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U3-recu-consulte.png (/recu#ref=QR-71b47581d1a2a7996f14dac56ee87f1f&code=<jeton masqué>, 1440×900)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U4-commande-avant-confirmation-mobile.png (/commande, 390×844)
+commande ORD-02ba91c34b3d63ddb70c8792854d0eba persistée (77.00, RECEIVED)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U4-commande-recue-mobile.png (/commande, 390×844)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U5-cart-stale-refus-banniere.png (/commande, 1440×900)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U5-panier-catalogue-mis-a-jour.png (/panier, 1440×900)
+CART_STALE affiché puis commande ORD-5d2dcc494f67ac306d67a2c45731a051 reçue sur la génération 2
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U6-panier-article-supplante.png (/panier, 1440×900)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U6-fiche-media-manquant.png (/famille/chaise-pliante?article=PI-000000JTN, 1440×900)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U6-panier-apercu-503.png (/panier, 1440×900)
+menu : Entrée ouvre, Échap ferme, focus rendu au bouton (3 Tab depuis le haut)
+capture evidence/W1/BC3/raw/ui/d2e4a6ca/U7-zoom200-fiche.png (/famille/gmce-demo?article=PI-000000358, 720×450)
+axe accueil : 0 violation(s), 47 règles passées
+axe fiche : 0 violation(s), 53 règles passées
+axe panier : 0 violation(s), 50 règles passées
+axe devis-erreurs : 0 violation(s), 51 règles passées
+cibles accueil : 0 < 24 px, 0 entre 24 et 34 px
+cibles fiche : 0 < 24 px, 0 entre 24 et 34 px
+cibles panier : 0 < 24 px, 0 entre 24 et 34 px
+cibles devis : 0 < 24 px, 0 entre 24 et 34 px
+console : 11 erreur(s) brute(s), 0 hors ressources 404/503 attendues
+serveur PID 65110 arrêté

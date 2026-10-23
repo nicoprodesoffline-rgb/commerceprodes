@@ -1,0 +1,122 @@
+[
+ {
+  "tag": "a",
+  "type": null,
+  "label": "Aller au contenu",
+  "testid": null,
+  "outline": "solid",
+  "outlineWidth": "2px",
+  "h": 39,
+  "w": 143
+ },
+ {
+  "tag": "a",
+  "type": null,
+  "label": "PRODES — accueil du catalogue",
+  "testid": null,
+  "outline": "solid",
+  "outlineWidth": "2px",
+  "h": 42,
+  "w": 90
+ },
+ {
+  "tag": "button",
+  "type": "button",
+  "label": "Catégories ▾",
+  "testid": null,
+  "outline": "solid",
+  "outlineWidth": "2px",
+  "h": 42,
+  "w": 115
+ },
+ {
+  "tag": "input",
+  "type": "search",
+  "label": "Rechercher une famille de produits",
+  "testid": null,
+  "outline": "solid",
+  "outlineWidth": "2px",
+  "h": 42,
+  "w": 320
+ },
+ {
+  "tag": "button",
+  "type": "submit",
+  "label": "Rechercher",
+  "testid": null,
+  "outline": "solid",
+  "outlineWidth": "2px",
+  "h": 42,
+  "w": 115
+ },
+ {
+  "tag": "a",
+  "type": null,
+  "label": "Panier 0",
+  "testid": null,
+  "outline": "solid",
+  "outlineWidth": "2px",
+  "h": 42,
+  "w": 98
+ },
+ {
+  "tag": "a",
+  "type": null,
+  "label": "Accueil",
+  "testid": null,
+  "outline": "solid",
+  "outlineWidth": "2px",
+  "h": 34,
+  "w": 47
+ },
+ {
+  "tag": "a",
+  "type": null,
+  "label": "STAGING_FIXTURE Signalétique",
+  "testid": null,
+  "outline": "solid",
+  "outlineWidth": "2px",
+  "h": 34,
+  "w": 208
+ },
+ {
+  "tag": "button",
+  "type": "button",
+  "label": "Afficher l'image : Image principale de la famille",
+  "testid": null,
+  "outline": "solid",
+  "outlineWidth": "2px",
+  "h": 64,
+  "w": 64
+ },
+ {
+  "tag": "button",
+  "type": "button",
+  "label": "Afficher l'image : Variante Couleur : Rouge · Taille : S",
+  "testid": null,
+  "outline": "solid",
+  "outlineWidth": "2px",
+  "h": 64,
+  "w": 64
+ },
+ {
+  "tag": "input",
+  "type": "radio",
+  "label": "Rouge",
+  "testid": null,
+  "outline": "solid",
+  "outlineWidth": "2px",
+  "h": 42,
+  "w": 68
+ },
+ {
+  "tag": "input",
+  "type": "radio",
+  "label": "S",
+  "testid": null,
+  "outline": "solid",
+  "outlineWidth": "2px",
+  "h": 42,
+  "w": 42
+ }
+]
