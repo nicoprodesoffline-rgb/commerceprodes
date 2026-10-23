@@ -1,0 +1,9 @@
+{
+ "runtime": "nodejs",
+ "matchers": [
+  {
+   "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|api\\/site\\/publish(?:\\/|$)|api\\/site\\/events(?:\\/|$)).*))(\\.json|\\.rsc|\\.segments\\/.+\\.segment\\.rsc)?[\\/#\\?]?$",
+   "originalSource": "/((?!_next/static|_next/image|favicon.ico|api/site/publish(?:/|$)|api/site/events(?:/|$)).*)"
+  }
+ ]
+}

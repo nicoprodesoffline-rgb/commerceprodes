@@ -6,6 +6,53 @@ Branche `build/w1-bc3-storefront`. Cycle 1 : base `70467f88`, code `d2e4a6ca` (p
 Note : l'outil du builder a refusé la création de ce fichier ; contenu initial déposé par l'orchestrateur, complété ici par le builder.
 Preuves brutes : `raw/` (résumé `raw/summary.txt`, rejeu `raw/replay_gates.sh`, état `raw/git_state.txt`).
 
+## Cycle de correction 2 (I1 D-02/D-03/D-04)
+Rapport I1 : verdict `I1_FAIL` (D-02 bloquant). Commits : `1abc69e7` (D-04), `da601653` (D-02), `82e66fa5` (D-03),
+`ba590775` (sonde D-02), `5f0768ce` (contre-épreuves + script de rejeu). **Tout est rejoué à `5f0768ce`** (le code n'a pas
+changé depuis `ba590775`), arbre de code propre, `rm -rf node_modules .next c0/ts/dist .bc2-build .bc4-build` puis `npm ci`, build sous `env -i`.
+Rejeu : `bash evidence/W1/BC3/raw/cycle2/replay_cycle2.sh` ; sorties brutes `raw/cycle2/` (résumé `raw/cycle2/summary.txt`).
+Bases : `prodes_site_bc3c2_{test,smoke,limits,probe_test,ui}` ; ports 3367/3368, libres après (`ports_after.txt`, `pids.log`).
+
+**Règle (D-02) — les routes machine ne passent pas par le proxy navigateur.** `/api/site/publish/**` (receiver BC2) et
+`/api/site/events/**` (poll/ACK BC4), signées HMAC C0, sont exclues du `matcher` de `proxy.ts` (préfixe exact `(?:/|$)`).
+Un proxy Next 16 qui couvre une route met son corps en tampon et le tronque à `proxyClientMaxBodySize` (10 MiB) ; le
+plafond de ces routes appartient à BC2/BC4, qui le lisent en flux et le bornent eux-mêmes (32 MiB STAGE, 20 MiB média,
+256 KiB contrôle). Option retenue : exclusion par `matcher`, **pas** de hausse de `proxyClientMaxBodySize` (elle aurait
+fixé un second plafond, côté proxy, découplé de celui de BC2, et gardé un tampon mémoire avant l'authentification).
+Ces routes n'utilisent aucun rôle du proxy : pas de CSRF (HMAC, aucun cookie), pas de HTML donc pas de CSP à nonce,
+pas de page 503 ; les en-têtes de `next.config.ts` (`nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`)
+s'y appliquent toujours. BC4 ne dépendait pas du proxy : `app/api/site/events/**` délègue à `pollHttp`/`ackHttp`
+(signature et bornes BC4), et `tests/bc4/http.e2e.mjs` n'affirme aucun en-tête du proxy sur ces routes (7/7 après correctif).
+Toute nouvelle route machine signée doit être ajoutée à l'exclusion (commentaire en tête de `proxy.ts`).
+
+| Item | Statut | Preuve | Caveat |
+|---|---|---|---|
+| D-02 correctif (`matcher` excluant `api/site/publish`, `api/site/events`) | ✅ | `proxy.ts` ; matcher compilé `raw/cycle2/proxy_matcher_compiled.txt` | `/api/site/publish.json` (route inexistante) reste sous le proxy : sans effet |
+| D-02 test de non-régression : `test:storefront` section 4 (5 tests) | ✅ | `raw/cycle2/test_storefront_3367.txt` | corps construits par `tests/http/machine-payloads.mjs` à partir des fonctions C0 vendorisées |
+| D-02 contre-épreuve : section 4 avec l'ANCIEN matcher | ✅ 4.1–4.4 **échouent** (201→401, 200→400, 413→400, CSP présente), 4.5 témoin passe | `raw/cycle2/storefront_s4_OLD_MATCHER_counterproof.txt` | jouée sur une copie de travail non committée (`proxy.ts` remis ensuite) |
+| Envois légitimes signés : média 15 MiB, 20 MiB | ✅ 201 `STORED`, `site_media` = taille exacte | `raw/cycle2/probe_legit_machine_bodies.txt` | octets aléatoires précédés de l'en-tête PNG (pas une image décodable) |
+| Envois légitimes signés : STAGE 12 MiB, 31 MiB | ✅ 200 `STAGED`, `snapshot_bytes` = taille exacte | idem | snapshot valide `F_SIMPLE_READY` gonflé de catégories racines de remplissage, `payload_sha256` et signature recalculés par C0 ; pas un catalogue réel ; non activé (pas de VERIFY/ACTIVATE à 31 MiB) |
+| STAGE JSON hors contrat 12 MiB (discriminant de troncature) | ✅ 400 `SCHEMA_UNSUPPORTED` (corps entier), pas `PAYLOAD_MALFORMED` | idem | — |
+| Journal « Request body exceeded » | ✅ 0 ligne | `raw/cycle2/server_logs_truncation_grep.txt` | sur les 3 serveurs lancés par le rejeu |
+| BC2 `http-body-limits.mjs` (serveur réel 3367) | ✅ **22/22** (I1 : 7/22) | `raw/cycle2/http_bc2_body_limits.txt` | RSS : seuils relatifs de BC2 (rétention finale 15,2 % < 25 %) ; journal 0 → 0 ligne |
+| BC2 `http-smoke.mjs` | ✅ 16/16 | `raw/cycle2/http_bc2_smoke.txt` | — |
+| D-03 correctif (fiche) | ✅ | `components/product/family-buy-box.tsx` | « vérification… » annoncé à chaque saisie (région `aria-live` plus bavarde, honnête) ; lecteur d'écran réel `NOT_RUN` |
+| D-03 test navigateur U10 (aperçu ralenti 250–700 ms, trace de chaque mutation) | ✅ 3 prix affichés, tous cohérents ; 5 états « vérification… » `aria-busy` | `raw/cycle2/test_ui_playwright_3368.txt`, trace `raw/cycle2/ui/U10-trace-quantite-prix.json` | oracle de test « total = quantité × unitaire » côté test seulement ; F_GMCE palier unique (aucune fixture activable à paliers multiples, F-11) : le cas 12,00/11,00 d'I1 n'est pas rejoué tel quel |
+| D-03 contre-épreuve : U10 avec l'ANCIEN composant | ✅ **échoue** (« Pour 3 … soit 12,00 € », « Pour 10 … soit 12,00 € », « Pour 8 … soit 84,00 € ») | `raw/cycle2/ui_U10_OLD_BUYBOX_counterproof.txt` | copie de travail non committée |
+| D-04 `test:bc2` surchargeable (`${SITE_TEST_DATABASE_URL:-…bc2_test}`) | ✅ 58/58 joué **par `npm run test:bc2`** sur `prodes_site_bc3c2_test` | `raw/cycle2/test_bc2.txt` | défaut inchangé ; commit séparé `1abc69e7` |
+| `test:storefront` | ✅ **21/21**, 0 skip (16 + 5 de la section 4) | `raw/cycle2/test_storefront_3367.txt` | — |
+| Recette navigateur BC3 | ✅ **10/10** (9 + U10), 0 erreur console hors 404/503 attendues | `raw/cycle2/test_ui_playwright_3368.txt`, 46 fichiers `raw/cycle2/ui/` | Chromium 148 seulement ; aucun `code=` de reçu en clair dans `raw/cycle2/` |
+| `test:bc4` / `test:bc4:http` / A2 `test:http` | ✅ 73/73 / 7/7 / 88/88, 0 skip | `raw/cycle2/test_bc4.txt`, `test_bc4_http_3367.txt`, `test_http_a2_3368.txt` | — |
+| `npm ci`, build `env -i`, typecheck, `c0:check` avant/après `c0:build`, `c0:test` 9/9, `c0:vendor-test` 4/4 | ✅ `C0_VENDOR_OK b88f5cdf… tree_digest=b73f1968…` | `raw/cycle2/{npm_ci,build,typecheck,c0_check,c0_build_test,c0_check_after_build,c0_vendor_test}.txt` | 0 `.env*` (`env_files.txt`) |
+| `agent-ops:test`, suite Factory | ⏸️ non rejoués | — | aucun fichier concerné modifié |
+| Doc de transport BC2 (`docs/SITE_TRANSPORT_STAGING.md`) | ⏸️ non modifiée | — | hors ownership BC3 ; la règle est documentée dans `proxy.ts` et ici ; proposition : une phrase « ces routes ne doivent passer par aucun proxy/middleware applicatif » côté BC2 |
+
+Fichiers du cycle 2 : `proxy.ts`, `components/product/family-buy-box.tsx`, `tests/http/storefront.test.mjs`,
+`tests/http/machine-payloads.mjs` (nouveau), `tests/http/machine-routes-probe.mjs` (nouveau), `tests/ui/storefront.ui.mjs`,
+`package.json` (script `test:bc2`, autorisation orchestrateur), `evidence/W1/BC3/`. Non touchés : `c0/`, contrats, `lib/site-*`, `app/api/**`.
+Non prouvé : STAGE → ACTIVATE complet d'un snapshot de 31 MiB ; frontal HTTP réel devant le SITE (sa propre limite de
+corps devra être ≥ 32 MiB sur ces routes — à vérifier au déploiement) ; paliers multiples en navigateur (F-11).
+
 ## Tests et gates (SHA `5ef5a7dc`, arbre propre)
 | Item | Statut | Preuve | Caveat |
 |---|---|---|---|

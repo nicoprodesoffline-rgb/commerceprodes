@@ -1,0 +1,66 @@
+[
+ {
+  "t": 1395,
+  "input": "1",
+  "state": "line",
+  "quote_quantity": "1",
+  "busy": "false",
+  "text": "Pour 1 : 12,00 € (base fiscale non précisée) l'unité, soit 12,00 € pour la ligne."
+ },
+ {
+  "t": 1401,
+  "input": "3",
+  "state": "loading",
+  "quote_quantity": null,
+  "busy": "true",
+  "text": "Prix pour 3 : vérification auprès du serveur…"
+ },
+ {
+  "t": 1486,
+  "input": "10",
+  "state": "loading",
+  "quote_quantity": null,
+  "busy": "true",
+  "text": "Prix pour 10 : vérification auprès du serveur…"
+ },
+ {
+  "t": 1893,
+  "input": "7",
+  "state": "loading",
+  "quote_quantity": null,
+  "busy": "true",
+  "text": "Prix pour 7 : vérification auprès du serveur…"
+ },
+ {
+  "t": 2452,
+  "input": "7",
+  "state": "line",
+  "quote_quantity": "7",
+  "busy": "false",
+  "text": "Pour 7 : 12,00 € (base fiscale non précisée) l'unité, soit 84,00 € pour la ligne."
+ },
+ {
+  "t": 2695,
+  "input": "8",
+  "state": "loading",
+  "quote_quantity": null,
+  "busy": "true",
+  "text": "Prix pour 8 : vérification auprès du serveur…"
+ },
+ {
+  "t": 2711,
+  "input": "9",
+  "state": "loading",
+  "quote_quantity": null,
+  "busy": "true",
+  "text": "Prix pour 9 : vérification auprès du serveur…"
+ },
+ {
+  "t": 3721,
+  "input": "9",
+  "state": "line",
+  "quote_quantity": "9",
+  "busy": "false",
+  "text": "Pour 9 : 12,00 € (base fiscale non précisée) l'unité, soit 108,00 € pour la ligne."
+ }
+]

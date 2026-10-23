@@ -18,7 +18,7 @@
     "c0:test": "node --test \"c0/ts/dist/test/*.test.js\"",
     "c0:vendor-test": "node --test \"tests/c0/*.test.mjs\"",
     "bc2:build": "node -e \"require('node:fs').rmSync('.bc2-build',{recursive:true,force:true})\" && tsc -p tsconfig.bc2.json",
-    "test:bc2": "npm run bc2:build && SITE_TEST_DATABASE_URL=postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc2_test node --test --test-concurrency=1 \"tests/bc2/*.test.mjs\"",
+    "test:bc2": "npm run bc2:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc2_test} node --test --test-concurrency=1 \"tests/bc2/*.test.mjs\"",
     "bc4:build": "node -e \"require('node:fs').rmSync('.bc4-build',{recursive:true,force:true})\" && tsc -p tsconfig.bc4.json",
     "test:bc4": "npm run bc2:build && npm run bc4:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc4_test} node --test --test-concurrency=1 \"tests/bc4/*.test.mjs\"",
     "test:bc4:http": "npm run bc2:build && npm run bc4:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc4_test} SITE_TEST_PORT=${SITE_TEST_PORT:-3351} node --test --test-concurrency=1 tests/bc4/http.e2e.mjs",
