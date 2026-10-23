@@ -134,6 +134,6 @@ Recette : `tests/bc2/*.test.mjs` (`npm run test:bc2`) et `tests/bc2/http-smoke.m
 
 ## Ce que ce transport ne prouve pas
 
-HTTPS, authentification de production, secrets réels et leur rotation, anti-rejeu horodaté, limites de débit, corps
-> 32 MiB en flux (le corps est lu en mémoire), médias volumineux, CDN, Unicode au-delà de 14.0 entre Python et Node
+HTTPS, authentification de production, secrets réels et leur rotation, anti-rejeu horodaté, limites de débit, corps de plus de
+32 MiB en flux (le corps est lu en mémoire), médias volumineux, CDN, Unicode au-delà de 14.0 entre Python et Node
 (DF-0089), signature asymétrique de l'ACK (DF-0093).
