@@ -57,3 +57,6 @@ docs/screenshots/
 /c0/ts/dist/
 /c0/ts/node_modules/
 /.c0-sync-*/
+
+# BC2 : JS compilé pour node --test (npm run bc2:build)
+/.bc2-build/
