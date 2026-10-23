@@ -110,10 +110,10 @@ export function FamilyBuyBox({
       if (r.network) setFeedback({ kind: "error", text: `${codeMessage("NETWORK")} Rien n'a été ajouté.` });
       else if (r.status === 200 && l?.accepted && l.selection && r.json) {
         add(draft, r.json.catalogue_sequence);
-        setFeedback({ kind: "ok", text: `Ajouté au panier : ${quantity} × ${axesText(item.axes)} (${price(l.selection.unit_amount, l.selection.tax_basis_or_status)} l'unité).` });
+        setFeedback({ kind: "ok", text: `Ajouté au panier — ${quantity} × ${axesText(item.axes)}, ${price(l.selection.unit_amount, l.selection.tax_basis_or_status)} l'unité.` });
       } else if (r.status === 200 && l && r.json && l.error_codes.length === 1 && l.error_codes[0] === "PRICE_WINDOW_UNAVAILABLE") {
         add(draft, r.json.catalogue_sequence);
-        setFeedback({ kind: "ok", text: `Ajouté au panier sans prix : ${quantity} × ${axesText(item.axes)}. Seule une demande de devis sera possible pour cette ligne.` });
+        setFeedback({ kind: "ok", text: `Ajouté au panier sans prix — ${quantity} × ${axesText(item.axes)}. Seule une demande de devis sera possible pour cette ligne.` });
       } else {
         const codes = l?.error_codes?.length ? l.error_codes : r.json?.error_codes?.length ? r.json.error_codes : [r.json?.site_status ?? "TRANSPORT_ERROR"];
         setFeedback({ kind: "error", text: `Rien n'a été ajouté. ${codesMessage(codes)}` });
@@ -142,7 +142,8 @@ export function FamilyBuyBox({
       <div className="flex items-start gap-3 border-t border-line pt-4" data-testid="selected-variant">
         {item.image_sha256 && <MediaImage sha256={item.image_sha256} alt={`Image de la variante ${axesText(item.axes)}`} className="h-16 w-16 shrink-0 rounded-[9px] border border-line [image-rendering:pixelated]" />}
         <div className="min-w-0 text-sm">
-          <p className="font-medium">Variante choisie : {axesText(item.axes)}</p>
+          <p className="font-medium">Variante choisie</p>
+          <p>{axesText(item.axes)}</p>
           <p className="text-ink-2">
             Référence <span className="font-mono text-ink" data-testid="item-ref">{item.public_item_key}</span>
           </p>

@@ -59,7 +59,7 @@ export function PriceGrid({ rows, selectedRateId, caption }: { rows: PriceGridRo
                 <td className="py-1.5 pr-3 text-right font-semibold whitespace-nowrap">
                   {money(r.unit_amount ?? "")} <span className="font-normal">{basisLabel(r.tax_basis_or_status)}</span>
                 </td>
-                <td className="hidden py-1.5 text-xs text-ink-3 sm:table-cell">{r.validity_label}</td>
+                <td className={`hidden py-1.5 text-xs sm:table-cell ${current ? "text-ink-2" : "text-ink-3"}`}>{r.validity_label}</td>
               </tr>
             ) : (
               <tr key={`t${r.tier_quantity}`} data-tier={r.tier_quantity} data-unavailable={r.error_codes.join(",")} className="h-[34px] border-b border-line">

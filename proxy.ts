@@ -86,7 +86,7 @@ function csrfRefusal(req: Pick<Request, "headers">): NextResponse | null {
 const UNAVAILABLE_HTML = (nonce: string, title: string, text: string) => `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${title} | PRODES</title>
 <style nonce="${nonce}">body{margin:0;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#FBFBFA;color:#1A1A18}main{max-width:40rem;margin:0 auto;padding:4rem 1rem}h1{font-size:1.5rem;font-weight:600;margin:0 0 .75rem}p{color:#55554F}a{color:#1A1A18;display:inline-flex;align-items:center;min-height:42px;padding:0 1rem;border:1px solid #D6D6D1;border-radius:9px;text-decoration:none;margin-top:1rem}a:focus-visible{outline:2px solid #1A1A18;outline-offset:2px}.mark{font-weight:700;letter-spacing:.08em}</style></head>
-<body><main data-testid="catalog-unavailable"><p class="mark">PRODES</p><h1>${title}</h1><p>${text}</p><p>Votre panier est conservé sur cet appareil. Aucun prix ni article n'est affiché plutôt qu'un catalogue incomplet.</p><a href="">Réessayer</a></main></body></html>`;
+<body><main data-testid="catalog-unavailable"><p class="mark">PRODES</p><h1>${title}</h1><p>${text}</p><p>Votre panier est conservé sur cet appareil. Nous préférons ne rien afficher plutôt qu'un catalogue incomplet ou des prix non vérifiés.</p><a href="">Réessayer</a></main></body></html>`;
 
 export async function proxy(req: NextRequest) {
   const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString("base64");

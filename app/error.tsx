@@ -8,7 +8,7 @@ export default function ErrorPage({ reset }: { reset: () => void }) {
   return (
     <div className="py-12" data-testid="catalog-unavailable">
       <h1 className="text-2xl font-semibold">Catalogue indisponible</h1>
-      <p className="mt-2 text-ink-2">Le catalogue ne peut pas être servi pour le moment. Aucun prix ni article n&apos;est affiché plutôt qu&apos;un catalogue incomplet. Votre panier est conservé.</p>
+      <p className="mt-2 text-ink-2">Le catalogue ne peut pas être servi pour le moment. Nous préférons ne rien afficher plutôt qu&apos;un catalogue incomplet ou des prix non vérifiés. Votre panier est conservé.</p>
       <button type="button" onClick={reset} className="mt-4 h-[42px] rounded-[9px] bg-ink px-4 font-medium text-white">Réessayer</button>
     </div>
   );
