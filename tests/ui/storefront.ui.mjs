@@ -528,6 +528,71 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.context().close();
   });
 
+  test("U10 — fiche (revue I1 D-03) : la quantité affichée n'est jamais accompagnée du prix ou du total d'une autre quantité", async () => {
+    await scene("F_GMCE_VARIANTS.activate");
+    const page = await newPage();
+    // Aperçu ralenti (réponse réelle du serveur, retenue 250–700 ms) pour élargir la fenêtre où l'ancien code affichait
+    // « Pour N » avec le prix et le total de la quantité précédente. Une requête abandonnée par la page est ignorée.
+    let calls = 0;
+    await page.route("**/api/site/cart/preview", async (route) => {
+      const delay = [700, 450, 250][calls++ % 3];
+      try {
+        const response = await route.fetch();
+        await new Promise((r) => setTimeout(r, delay));
+        await route.fulfill({ response });
+      } catch {
+        /* requête abandonnée par la page (nouvelle saisie) */
+      }
+    });
+    await page.goto(BASE + "/famille/gmce-demo?article=PI-000000358");
+    await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
+    // Trace de CHAQUE mutation de la région aria-live, avec la valeur du champ au même instant.
+    await page.evaluate(() => {
+      const el = document.querySelector("[data-testid=qty-price]");
+      const input = document.querySelector("#qty-gmce-demo");
+      const trace = (window.__qtyTrace = []);
+      const rec = () => trace.push({ t: Math.round(performance.now()), input: input.value, state: el.dataset.quoteState ?? null, quote_quantity: el.dataset.quoteQuantity ?? null, busy: el.getAttribute("aria-busy"), text: el.textContent.replace(/\s+/g, " ").trim() });
+      new MutationObserver(rec).observe(el, { subtree: true, childList: true, characterData: true, attributes: true });
+      rec();
+    });
+    const qty = page.getByLabel("Quantité", { exact: true });
+    await qty.fill("3");
+    await page.waitForTimeout(80);
+    await qty.fill("10");
+    await page.waitForTimeout(400);
+    await qty.fill("7");
+    await page.getByTestId("qty-price").getByText(/^Pour 7 : .*pour la ligne/).waitFor();
+    await page.getByRole("button", { name: "Augmenter la quantité" }).click();
+    await page.getByRole("button", { name: "Augmenter la quantité" }).click();
+    await page.getByTestId("qty-price").getByText(/^Pour 9 : .*pour la ligne/).waitFor();
+    const trace = await page.evaluate(() => window.__qtyTrace);
+    writeFileSync(path.join(OUT, "U10-trace-quantite-prix.json"), JSON.stringify(trace, null, 1));
+    const cents = (s) => Number(s.replace(/[^\d]/g, ""));
+    let priced = 0;
+    let checking = 0;
+    const incoherent = [];
+    const PRICED = /^Pour (\d+) : ([\d\s\u00a0\u202f,]+)\s?€.*soit ([\d\s\u00a0\u202f,]+)\s?€ pour la ligne/;
+    // 1. Ce que voit et entend l'utilisateur. Oracle de TEST seulement (aucun calcul de ce genre côté boutique) :
+    //    quantité affichée = quantité saisie, et total de ligne = quantité × prix unitaire affiché.
+    for (const r of trace) {
+      const m = PRICED.exec(r.text);
+      if (/vérification auprès du serveur/.test(r.text)) checking += 1;
+      if (!m) continue;
+      priced += 1;
+      const n = Number(m[1]);
+      if (String(n) !== r.input || cents(m[3]) !== n * cents(m[2])) incoherent.push(r);
+    }
+    assert.deepEqual(incoherent, [], "prix ou total d'une autre quantité affiché dans la région aria-live");
+    // 2. Marquage : tout prix affiché provient de la réponse à la quantité courante ; « vérification… » est aria-busy.
+    for (const r of trace) {
+      if (PRICED.test(r.text)) assert.equal(r.quote_quantity, r.input, `réponse serveur d'une autre quantité : ${JSON.stringify(r)}`);
+      if (/vérification auprès du serveur/.test(r.text)) assert.equal(r.busy, "true", `aria-busy pendant la vérification : ${JSON.stringify(r)}`);
+    }
+    note(`U10 : ${trace.length} états de la région aria-live, ${priced} prix affichés tous cohérents, ${checking} états « vérification… », ${calls} aperçus demandés`);
+    assert.ok(priced >= 3 && checking >= 3, `trace insuffisante : ${priced} prix, ${checking} vérifications`);
+    await page.context().close();
+  });
+
   test("U8 — aucune erreur console (dont violations CSP) sur l'ensemble du parcours", async () => {
     const filtered = consoleErrors.filter((e) => !/status of 503|status of 404|Failed to load resource/.test(e));
     writeFileSync(path.join(OUT, "console_errors_filtered.txt"), filtered.join("\n") + "\n");

@@ -24,11 +24,15 @@ export type BuyBoxItem = {
   rows: PriceGridRow[];
 };
 
+// Chaque réponse porte la demande (variante, quantité) à laquelle elle répond : un prix n'est affiché que pour la
+// demande COURANTE (revue I1 D-03 : entre une saisie et la réponse, la nouvelle quantité s'affichait avec le prix et le
+// total de l'ancienne, dans une région `aria-live`). Toute autre réponse est obsolète et ignorée.
+type QuoteFor = { key: string; quantity: number };
 type Quote =
   | { state: "idle" }
-  | { state: "loading" }
-  | { state: "line"; line: PreviewLineJson; sequence: number }
-  | { state: "error"; text: string };
+  | ({ state: "loading" } & QuoteFor)
+  | ({ state: "line"; line: PreviewLineJson; sequence: number } & QuoteFor)
+  | ({ state: "error"; text: string } & QuoteFor);
 
 type Feedback = { kind: "ok" | "error"; text: string } | null;
 
@@ -78,14 +82,17 @@ export function FamilyBuyBox({
       return;
     }
     const ctrl = new AbortController();
+    const asked: QuoteFor = { key: item.public_item_key, quantity };
+    // Dès la saisie (avant le délai de 300 ms) : « vérification… », jamais le prix d'une demande précédente.
+    setQuote({ state: "loading", ...asked });
     const timer = setTimeout(async () => {
-      setQuote({ state: "loading" });
       try {
         const r = await previewCart([{ public_item_key: item.public_item_key, variant_axes: item.variant_axes, quantity }], ctrl.signal);
+        if (ctrl.signal.aborted) return; // demande remplacée entre-temps : réponse obsolète
         const line = r.json?.lines?.[0];
-        if (r.status === 200 && line && r.json) setQuote({ state: "line", line, sequence: r.json.catalogue_sequence });
-        else if (r.network) setQuote({ state: "error", text: codeMessage("NETWORK") });
-        else setQuote({ state: "error", text: codesMessage(r.json?.error_codes?.length ? r.json.error_codes : [r.json?.site_status ?? "TRANSPORT_ERROR"]) });
+        if (r.status === 200 && line && r.json) setQuote({ state: "line", line, sequence: r.json.catalogue_sequence, ...asked });
+        else if (r.network) setQuote({ state: "error", text: codeMessage("NETWORK"), ...asked });
+        else setQuote({ state: "error", text: codesMessage(r.json?.error_codes?.length ? r.json.error_codes : [r.json?.site_status ?? "TRANSPORT_ERROR"]), ...asked });
       } catch {
         /* annulé */
       }
@@ -123,7 +130,14 @@ export function FamilyBuyBox({
     }
   }
 
-  const priced = quote.state === "line" && quote.line.accepted && quote.line.selection ? quote.line : null;
+  // Réponse de la demande courante seulement (variante ET quantité, côté demande et côté ligne renvoyée).
+  const current =
+    quote.state !== "idle" && quantity !== null && quote.key === item.public_item_key && quote.quantity === quantity
+      ? quote.state !== "line" || (quote.line.public_item_key === item.public_item_key && quote.line.quantity === quantity)
+        ? quote
+        : null
+      : null;
+  const priced = current?.state === "line" && current.line.accepted && current.line.selection ? current.line : null;
   const anyPrice = item.rows.some((r) => r.selected);
 
   return (
@@ -180,20 +194,28 @@ export function FamilyBuyBox({
           {busy ? "Vérification…" : anyPrice ? "Ajouter au panier" : "Ajouter au panier (devis sans prix)"}
         </button>
       </div>
-      <p id={`${qtyId}-help`} className="-mt-2 text-sm" aria-live="polite" data-testid="qty-price">
+      <p
+        id={`${qtyId}-help`}
+        className="-mt-2 text-sm"
+        aria-live="polite"
+        aria-busy={quantity !== null && (current === null || current.state === "loading")}
+        data-testid="qty-price"
+        data-quote-state={quantity === null ? "invalid" : current === null ? "loading" : current.state}
+        data-quote-quantity={current && current.state !== "loading" ? current.quantity : undefined}
+      >
         {quantity === null ? (
           <span className="text-signal">Saisissez une quantité entière entre 1 et 1 000 000.</span>
-        ) : quote.state === "loading" || quote.state === "idle" ? (
+        ) : current === null || current.state === "loading" ? (
           <span className="text-ink-3">Prix pour {quantity} : vérification auprès du serveur…</span>
-        ) : quote.state === "error" ? (
-          <span className="text-signal">{quote.text}</span>
+        ) : current.state === "error" ? (
+          <span className="text-signal">{current.text}</span>
         ) : priced?.selection ? (
           <span>
             Pour {quantity} : <strong>{price(priced.selection.unit_amount, priced.selection.tax_basis_or_status)}</strong> l&apos;unité
             {priced.line_total ? <>, soit {money(priced.line_total)} pour la ligne</> : null}.
           </span>
         ) : (
-          <span className="text-ink-2">Pour {quantity} : {codesMessage(quote.line.error_codes)}</span>
+          <span className="text-ink-2">Pour {quantity} : {codesMessage(current.line.error_codes)}</span>
         )}
       </p>
 
