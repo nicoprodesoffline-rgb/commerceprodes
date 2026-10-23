@@ -10,7 +10,8 @@
  * (registre réel, objet + lignes + outbox en une transaction) derrière ces mêmes fonctions.
  *
  * Interdit ici : calcul PBQ, remise, TVA, port, arrondi ; prix du navigateur comme autorité.
- * Le seul calcul est `unit_amount × quantity` en centimes BigInt (formats C0) pour l'aperçu.
+ * Le seul calcul est `unit_amount × quantity` et leur somme, en centimes BigInt (formats C0), pour
+ * l'aperçu : EXCEPTION DOCUMENTÉE D-W1-08 (voir `previewCart`).
  */
 import { selectPrice, validateOrderSubmit, validateQuoteRequest, MAX_BYTES } from "@/c0/ts/src/business";
 import { centsToMoney, moneyCents } from "@/c0/ts/src/formats";
@@ -156,6 +157,12 @@ export function previewCart(input: Omit<Input, "register">): PreviewResponse {
   const lines = raw as JsonObject[];
   if (hasDuplicateLines(lines)) return refuse("DUPLICATE_LINE");
 
+  // EXCEPTION DOCUMENTÉE D-W1-08 (orchestrateur W1, revue A2 F-03) : `line_total` et `total_amount` de
+  // l'aperçu sont calculés ICI (multiplication et somme en centimes BigInt via `moneyCents`/`centsToMoney`
+  // du C0), formule identique à C0 §10.3 (`line_total = unit_amount × quantity`, `total_amount = Σ`).
+  // Valeur NON autoritaire : affichage seulement ; toute commande est revalidée par `validateOrderSubmit`
+  // qui refuse toute divergence (`PRICE_CHANGED`). Aucune autre arithmétique (ni TVA, ni port, ni remise,
+  // ni arrondi). Dette : exposer ce calcul d'aperçu dans C0 v2 et l'appeler ici.
   const out: PreviewLine[] = [];
   const codes = new Set<string>();
   let total = 0n;
