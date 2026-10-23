@@ -1,89 +1,50 @@
-import Image from "next/image";
 import Link from "next/link";
+import type { CatalogMeta } from "@/lib/site-catalog/catalog";
 
-export default function Footer() {
+/**
+ * Pied de page : liens utiles et, en second niveau (`<details>`), le détail technique de la génération servie
+ * (DA §7 : « Détail technique » en disclosure). Aucune coordonnée commerciale : non vérifiées (DA §2.2,
+ * PENDING_ASSET_VERIFICATION) — le prototype portait un numéro et une adresse non qualifiés.
+ */
+export function SiteFooter({ meta, instantUtc, forcedNow }: { meta: CatalogMeta | null; instantUtc: string | null; forcedNow: boolean }) {
   return (
-    <footer className="bg-[#1f2937] text-white">
-      {/* Main footer grid */}
-      <div className="mx-auto max-w-(--breakpoint-2xl) px-6 py-12">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
-          {/* Gauche — Logo + baseline */}
-          <div>
-            <Link href="/" aria-label="PRODES — Accueil">
-              <Image
-                src="/logo-prodes.png"
-                alt="PRODES"
-                width={130}
-                height={44}
-                style={{ objectFit: "contain", height: "44px", width: "auto" }}
-              />
-            </Link>
-            <p className="mt-3 text-sm text-neutral-300">
-              Au service des Collectivités
-            </p>
-            <p className="mt-2 text-xs text-neutral-500">
-              Mobilier, signalisation et équipements pour les organismes publics.
-            </p>
-          </div>
-
-          {/* Centre — Liens rapides */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#cc1818]">
-              Liens rapides
-            </h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
-                  Catalogue
-                </Link>
-              </li>
-              <li>
-                <Link href="/panier" className="text-neutral-300 hover:text-[#cc1818] transition-colors">
-                  Panier
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Droite — Contacts */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#cc1818]">
-              Nous contacter
-            </h3>
-            <ul className="space-y-3 text-sm text-neutral-300">
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5">📞</span>
-                <div>
-                  <a href="tel:+33467243034" className="hover:text-white transition-colors">
-                    04 67 24 30 34
-                  </a>
-                </div>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5">✉️</span>
-                <div>
-                  <a href="mailto:contact@prodes.fr" className="hover:text-white transition-colors">
-                    contact@prodes.fr
-                  </a>
-                </div>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5">🕐</span>
-                <div>
-                  <p>Lun–Sam 8h30–19h</p>
-                </div>
-              </li>
-            </ul>
-          </div>
+    <footer className="mt-12 border-t border-line bg-surface text-sm text-ink-2">
+      <div className="mx-auto grid max-w-[1280px] gap-6 px-4 py-8 md:grid-cols-3 lg:px-8">
+        <div>
+          <p className="font-bold tracking-[0.08em] text-ink">PRODES</p>
+          <p className="mt-1">Prix de vente PRODES publiés par le catalogue. Taxes et frais de port : non calculés sur ce site.</p>
         </div>
-      </div>
-
-      {/* Bottom bar */}
-      <div className="border-t border-neutral-800 bg-[#111827] py-5">
-        <div className="mx-auto flex max-w-(--breakpoint-2xl) flex-col items-center justify-between gap-2 px-6 text-xs text-neutral-500 md:flex-row">
-          <p>© 2026 PRODES — prix publiés (HT ou base non qualifiée) — TVA et port non calculés</p>
-          <p>Marque PRODES — France</p>
-        </div>
+        <nav aria-label="Liens du pied de page">
+          <ul className="space-y-1">
+            <li><Link href="/" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Catalogue</Link></li>
+            <li><Link href="/panier" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Panier</Link></li>
+            <li><Link href="/recu" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Consulter un reçu</Link></li>
+          </ul>
+        </nav>
+        <details className="text-xs">
+          <summary className="inline-flex min-h-[34px] cursor-pointer items-center font-medium text-ink">Détail technique</summary>
+          {meta ? (
+            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+              <dt>Données</dt>
+              <dd className="font-mono">{meta.data_label}</dd>
+              <dt>Publication</dt>
+              <dd className="break-all font-mono">{meta.publication_id}</dd>
+              <dt>Version du catalogue</dt>
+              <dd className="font-mono" data-testid="catalogue-sequence">{meta.catalogue_sequence}</dd>
+              <dt>Source</dt>
+              <dd className="font-mono">{meta.source}</dd>
+              <dt>Empreinte</dt>
+              <dd className="font-mono">{meta.payload_sha256.slice(0, 12)}…</dd>
+              <dt>Instant serveur</dt>
+              <dd className="font-mono">
+                {forcedNow ? "instant figé " : ""}
+                {instantUtc ?? "indisponible"}
+              </dd>
+            </dl>
+          ) : (
+            <p className="mt-2" data-testid="unavailable-banner">Aucune génération de catalogue servable.</p>
+          )}
+        </details>
       </div>
     </footer>
   );

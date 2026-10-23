@@ -1,59 +1,86 @@
 "use client";
 
 /**
- * Panier UNIQUE côté client = brouillon UX (localStorage, une seule clé).
- * Une ligne par `(public_item_key, variant_axes)` (C0 §10, R-01) : ajouter la même variante
- * INCRÉMENTE la ligne. Le panier porte la génération (`catalogue_sequence`) de ses derniers
- * prix affichés ; il ne contient AUCUN prix faisant foi : les prix viennent de
- * `/api/site/cart/preview` (C0 `selectPrice`) et devis/commande revalident tout côté serveur.
+ * Panier UNIQUE côté client = brouillon (localStorage, une seule clé, aucune donnée personnelle, aucun prix).
+ * - Une ligne par `(public_item_key, variant_axes)` (C0 §10, R-01) : ajouter la même variante INCRÉMENTE la ligne.
+ * - `ackSequence` = génération (`catalogue_sequence`) dont le client a VU les prix en dernier (ajout ou
+ *   « J'ai vérifié les nouveaux prix »). C'est elle qui est envoyée au serveur : si le catalogue a changé
+ *   entre-temps, le serveur répond `CART_STALE` / `CATALOG_CHANGED` (revue A2 F-10), jamais un prix reconduit.
+ * - Les prix affichés viennent TOUJOURS de `/api/site/cart/preview` ; devis et commande revalident tout.
  * Pas de cookie, pas de second panier, pas d'action serveur.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import type { AxisDisplay } from "@/components/site/format";
 
 export type DraftLine = {
   public_item_key: string;
   variant_axes: Record<string, string>;
   quantity: number;
   family_name: string;
+  family_slug: string;
+  axes: AxisDisplay[];
 };
 
 type CartApi = {
   lines: DraftLine[];
-  catalogueSequence: number | null;
+  ackSequence: number | null;
   ready: boolean;
   add: (line: DraftLine, catalogueSequence: number) => void;
   setQuantity: (index: number, quantity: number) => void;
-  setCatalogueSequence: (sequence: number) => void;
+  acknowledge: (sequence: number) => void;
   remove: (index: number) => void;
   clear: () => void;
 };
 
-const KEY = "prodes_site_cart_draft_v2";
+const KEY = "prodes_site_cart_draft_v3";
+export const MAX_QUANTITY = 1_000_000; // C0 §6
 const Ctx = createContext<CartApi | null>(null);
 
-/** Identité de ligne C0 : clé + axes (ordre des axes indifférent). */
+/** Identité de ligne C0 : clé + axes (ordre des axes indifférent, valeurs NFC). */
 export function lineIdentity(l: { public_item_key: string; variant_axes: Record<string, string> }): string {
-  return `${l.public_item_key}\u0000${JSON.stringify(Object.entries(l.variant_axes).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))}`;
+  const axes = Object.entries(l.variant_axes)
+    .map(([k, v]) => [k, v.normalize("NFC")] as const)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  return `${l.public_item_key}\u0000${JSON.stringify(axes)}`;
+}
+
+function isDraftLine(x: unknown): x is DraftLine {
+  if (!x || typeof x !== "object") return false;
+  const l = x as Record<string, unknown>;
+  return (
+    typeof l.public_item_key === "string" &&
+    /^PI-[0-9A-Z]{9}$/.test(l.public_item_key) &&
+    !!l.variant_axes &&
+    typeof l.variant_axes === "object" &&
+    Object.values(l.variant_axes as object).every((v) => typeof v === "string") &&
+    Number.isSafeInteger(l.quantity) &&
+    (l.quantity as number) >= 1 &&
+    (l.quantity as number) <= MAX_QUANTITY &&
+    typeof l.family_name === "string" &&
+    typeof l.family_slug === "string" &&
+    Array.isArray(l.axes)
+  );
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [lines, setLines] = useState<DraftLine[]>([]);
-  const [catalogueSequence, setSequence] = useState<number | null>(null);
+  const [ackSequence, setAck] = useState<number | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(KEY);
       if (raw) {
-        const parsed: unknown = JSON.parse(raw);
-        if (parsed && typeof parsed === "object" && Array.isArray((parsed as { lines?: unknown }).lines)) {
-          const p = parsed as { lines: DraftLine[]; catalogue_sequence?: unknown };
-          setLines(p.lines);
-          setSequence(typeof p.catalogue_sequence === "number" ? p.catalogue_sequence : null);
+        const p = JSON.parse(raw) as { lines?: unknown; ack_sequence?: unknown };
+        if (Array.isArray(p.lines)) {
+          const seen = new Set<string>();
+          const valid = p.lines.filter(isDraftLine).filter((l) => !seen.has(lineIdentity(l)) && seen.add(lineIdentity(l)));
+          setLines(valid);
+          setAck(Number.isSafeInteger(p.ack_sequence) ? (p.ack_sequence as number) : null);
         }
       }
     } catch {
-      /* stockage indisponible : panier vide */
+      /* stockage indisponible ou illisible : panier vide */
     }
     setReady(true);
   }, []);
@@ -61,34 +88,59 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!ready) return;
     try {
-      window.localStorage.setItem(KEY, JSON.stringify({ catalogue_sequence: catalogueSequence, lines }));
+      window.localStorage.setItem(KEY, JSON.stringify({ ack_sequence: ackSequence, lines }));
     } catch {
-      /* ignoré : brouillon seulement */
+      /* brouillon seulement */
     }
-  }, [lines, catalogueSequence, ready]);
+  }, [lines, ackSequence, ready]);
+
+  // Synchronisation entre onglets : un autre onglet a modifié le brouillon.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== KEY) return;
+      try {
+        const p = e.newValue ? (JSON.parse(e.newValue) as { lines?: unknown; ack_sequence?: unknown }) : { lines: [] };
+        setLines(Array.isArray(p.lines) ? p.lines.filter(isDraftLine) : []);
+        setAck(Number.isSafeInteger(p.ack_sequence) ? (p.ack_sequence as number) : null);
+      } catch {
+        /* ignoré */
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const add = useCallback((line: DraftLine, sequence: number) => {
-    setSequence(sequence);
     setLines((prev) => {
       const id = lineIdentity(line);
       const i = prev.findIndex((l) => lineIdentity(l) === id);
       if (i === -1) return [...prev, line];
-      return prev.map((l, j) => (j === i ? { ...l, quantity: l.quantity + line.quantity } : l));
+      return prev.map((l, j) => (j === i ? { ...l, quantity: Math.min(MAX_QUANTITY, l.quantity + line.quantity) } : l));
     });
+    // Le premier ajout fixe la génération vue ; un ajout sur une autre génération ne l'écrase pas silencieusement :
+    // la page panier signalera l'écart et demandera une vérification explicite.
+    setAck((prev) => (prev === null ? sequence : prev));
   }, []);
   const setQuantity = useCallback((index: number, quantity: number) => {
-    setLines((prev) => prev.map((l, j) => (j === index ? { ...l, quantity } : l)));
+    const q = Math.max(1, Math.min(MAX_QUANTITY, Math.floor(quantity)));
+    setLines((prev) => prev.map((l, j) => (j === index ? { ...l, quantity: q } : l)));
   }, []);
-  const setCatalogueSequence = useCallback((sequence: number) => setSequence(sequence), []);
-  const remove = useCallback((index: number) => setLines((prev) => prev.filter((_, j) => j !== index)), []);
+  const acknowledge = useCallback((sequence: number) => setAck(sequence), []);
+  const remove = useCallback((index: number) => {
+    setLines((prev) => {
+      const next = prev.filter((_, j) => j !== index);
+      if (next.length === 0) setAck(null);
+      return next;
+    });
+  }, []);
   const clear = useCallback(() => {
     setLines([]);
-    setSequence(null);
+    setAck(null);
   }, []);
 
   const api = useMemo(
-    () => ({ lines, catalogueSequence, ready, add, setQuantity, setCatalogueSequence, remove, clear }),
-    [lines, catalogueSequence, ready, add, setQuantity, setCatalogueSequence, remove, clear],
+    () => ({ lines, ackSequence, ready, add, setQuantity, acknowledge, remove, clear }),
+    [lines, ackSequence, ready, add, setQuantity, acknowledge, remove, clear],
   );
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }
@@ -99,11 +151,12 @@ export function useCart(): CartApi {
   return c;
 }
 
+/** Nombre de lignes (variantes) du panier, annoncé poliment. */
 export function CartCount() {
   const { lines, ready } = useCart();
-  const n = lines.reduce((a, l) => a + l.quantity, 0);
+  const n = lines.length;
   return (
-    <span aria-live="polite" className="ml-1 rounded-full bg-[#cc1818] px-2 py-0.5 text-xs font-semibold text-white">
+    <span className="tabular ml-1.5 inline-flex min-w-6 justify-center rounded-full bg-ink px-1.5 text-xs font-semibold leading-5 text-white" aria-label={ready ? `${n} ligne${n > 1 ? "s" : ""}` : "chargement"}>
       {ready ? n : "…"}
     </span>
   );

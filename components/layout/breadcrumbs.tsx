@@ -1,53 +1,30 @@
 import Link from "next/link";
 
-interface BreadcrumbItem {
-  label: string;
-  href?: string;
-}
+export type Crumb = { label: string; href?: string };
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://prodes.fr";
-
-export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: items.map((item, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      name: item.label,
-      ...(item.href ? { item: `${BASE_URL}${item.href}` } : {}),
-    })),
-  };
-
+/** Fil d'Ariane accessible (nav + liste ordonnée, `aria-current` sur la page). Aucun JSON-LD (pas de SEO W1). */
+export function Breadcrumbs({ items }: { items: Crumb[] }) {
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <nav
-        aria-label="Fil d'Ariane"
-        className="flex items-center gap-1.5 text-sm text-gray-500"
-      >
+    <nav aria-label="Fil d'Ariane" className="mb-4 text-sm text-ink-2">
+      <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
         {items.map((item, i) => {
-          const isLast = i === items.length - 1;
+          const last = i === items.length - 1;
           return (
-            <span key={i} className="flex items-center gap-1.5">
+            <li key={i} className="flex items-center gap-1.5">
               {i > 0 && <span aria-hidden="true">/</span>}
-              {isLast || !item.href ? (
-                <span className="text-gray-800">{item.label}</span>
+              {last || !item.href ? (
+                <span aria-current={last ? "page" : undefined} className={last ? "text-ink" : undefined}>
+                  {item.label}
+                </span>
               ) : (
-                <Link
-                  href={item.href}
-                  className="hover:text-[#cc1818] transition-colors"
-                >
+                <Link href={item.href} className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">
                   {item.label}
                 </Link>
               )}
-            </span>
+            </li>
           );
         })}
-      </nav>
-    </>
+      </ol>
+    </nav>
   );
 }
