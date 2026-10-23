@@ -137,3 +137,85 @@ Recette : `tests/bc2/*.test.mjs` (`npm run test:bc2`) et `tests/bc2/http-smoke.m
 HTTPS, authentification de production, secrets réels et leur rotation, anti-rejeu horodaté, limites de débit, corps de plus de
 32 MiB en flux (le corps est lu en mémoire), médias volumineux, CDN, Unicode au-delà de 14.0 entre Python et Node
 (DF-0089), signature asymétrique de l'ACK (DF-0093).
+
+---
+
+# Annexe BC4 — poll / ACK des événements `site_events.v1` (`STAGING_TRANSPORT`, consommée par BC5/I1)
+
+Statut : `TESTED_SYNTHETIC / SITE_DB_REAL_LOCAL`. **Hors contrat C0** (C0 §15 : transport `DEFERRED_FOR_PROD`) : C0 fige les
+octets d'événement, `payload_digest`, les scopes et `validatePollRequest` ; tout ce qui suit est le transport de staging W1.
+Polling **sortant** depuis la Factory. Implémentation : `lib/site-transactions/events.ts`.
+
+## Configuration
+
+| Variable | Valeur |
+|---|---|
+| `SITE_DATABASE_URL` | base `prodes_site*` |
+| `SITE_KEYRING_PATH` | trousseau C0 (staging : `c0/fixtures/keys/test_keyring.json`, clé de lecture `c0-test-events-01`) |
+
+Configuration invalide → `503 {"transport_error":"TRANSACTIONS_CONFIG_INVALID"}` (ou `SITE_DB_CONFIG_INVALID`).
+
+## `GET /api/site/events?cursor=<curseur|vide>&limit=<1…500>`
+
+En-têtes : `x-c0-key-id` (clé de scope **`site_events.read`**, `ACTIVE`/`VERIFY_ONLY`) et `x-c0-signature` :
+
+```text
+signature = hex(HMAC-SHA256(secret_utf8, "prodes.c0.transport.events_poll.v1" || 0x00 || canonical({cursor, limit})))
+  cursor = null au premier poll (paramètre absent ou vide), sinon la chaîne next_cursor reçue
+  limit  = entier si le paramètre est un décimal strict, sinon la chaîne brute (refusée ensuite CURSOR_INVALID)
+```
+
+Ordre : (1) clé de scope `site_events.read` **et** signature valide, sinon `401 EVENT_UNAUTHORIZED` (clé de publication,
+d'ACK, inconnue, `RETIRED`, signature absente/fausse/autre contexte/autre domaine) ; (2) `validatePollRequest(
+{credential_key_id, cursor, limit}, keyring, curseurs émis à CETTE clé)` → `400 CURSOR_INVALID` (curseur jamais émis ou émis à
+une autre clé, `limit` hors 1…500 ou non entier) ; (3) une transaction : événements **non acquittés** (`PENDING` ou
+`DELIVERED_TO_POLL`) dans l'ordre `id`, au plus `limit`, `FOR UPDATE` → `DELIVERED_TO_POLL`, `delivery_count + 1` → nouveau
+curseur opaque `CUR-<32 hex>` enregistré (`site_event_cursor`, avec la liste des `event_id` servis) → COMMIT → réponse :
+
+```json
+{"contract_version":"site_events.v1","transport":"STAGING_TRANSPORT","accepted":true,"outcome":"SERVED",
+ "cursor":null,"next_cursor":"CUR-…",
+ "events":[{"event_id":"EVT-…","event_sha256":"<sha256 des octets>","event_bytes_b64":"<octets canoniques exacts, base64>"}]}
+```
+
+Le consommateur décode `event_bytes_b64` et passe **ces octets** à `validate_event` (C0 §11.2) : jamais une re-sérialisation.
+**Livraison au moins une fois** : un événement servi mais non acquitté est **re-servi** à chaque poll suivant, avant les plus
+récents (le consommateur le reconnaît `EVENT_DUPLICATE_NOOP`, CE-T18). Un poll sans événement émet quand même un nouveau
+curseur (`events: []`).
+
+## `POST /api/site/events/ack`
+
+Corps JSON strict (≤ 64 Kio) : exactement `{"cursor":"CUR-…"}` (acquitte les événements servis sous ce curseur) **ou**
+`{"event_ids":["EVT-…", …]}` (1…500 identifiants distincts). En-têtes `x-c0-key-id` / `x-c0-signature` :
+
+```text
+signature = hex(HMAC-SHA256(secret_utf8, "prodes.c0.transport.events_ack.v1" || 0x00 || canonical(<corps lu>)))
+```
+
+Ordre : scope `site_events.read` (`401 EVENT_UNAUTHORIZED`) → corps (`400 CURSOR_INVALID`) → signature (`401
+EVENT_UNAUTHORIZED`) → curseur émis à cette clé (`400 CURSOR_INVALID`) → `DELIVERED_TO_POLL → ACKED` :
+
+```json
+{"accepted":true,"outcome":"ACKED","acked":[…],"already_acked":[…],"not_delivered":[…],"unknown":[…]}
+```
+
+Un événement `PENDING` (jamais servi) n'est pas acquittable (`not_delivered`) ; un ACK répété est sans effet
+(`already_acked`). **La Factory n'acquitte qu'après sa propre transaction** (C0 §11.2) ; un ACK perdu ramène l'événement.
+
+## Séquence type pour BC5
+
+```text
+1. GET  /api/site/events?cursor=&limit=N        (signé {cursor:null, limit:N})        -> events[], next_cursor C1
+2. pour chaque événement : validate_event(octets, consumed) -> APPLY (persister) | DUPLICATE_NOOP (rien)
+3. COMMIT Factory, puis POST /api/site/events/ack {"cursor":"C1"} (signé)            -> acked[]
+4. GET  /api/site/events?cursor=C1&limit=N      (signé {cursor:"C1", limit:N})        -> suite
+   (perte de l'étape 3 : l'étape 4 re-sert les mêmes octets ; validate_event -> EVENT_DUPLICATE_NOOP ; ré-ACK)
+```
+
+Recette : `tests/bc4/10_events_poll_ack.test.mjs` (`npm run test:bc4`) et `tests/bc4/http.e2e.mjs` (`npm run test:bc4:http`,
+serveur réel 127.0.0.1:3351).
+
+## Ce que cette annexe ne prouve pas
+
+Poll réel prolongé (48 h), anti-rejeu horodaté (une requête de poll signée peut être rejouée : elle re-sert les non
+acquittés, sans autre effet), HTTPS, débit, rotation réelle des clés de lecture, purge des curseurs, signature asymétrique.
