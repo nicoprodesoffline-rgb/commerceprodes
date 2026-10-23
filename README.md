@@ -1,22 +1,24 @@
-# PRODES Commerce — spike BC1-D (coque Next.js stable propre)
+# PRODES Commerce — SITE D sur le contrat C0 gelé (W1/A2)
 
-Branche de spike `spike/bc1-d-clean-shell` (Wave 0, programme PRODES Data Factory V5.1).
-**Non déployable, non destinée à `main`.** L'ancien code (`app/`, `components/`, `lib/`
-au HEAD `a985aca2`) a été retiré par `git rm` (historique conservé) ; seuls quelques
-composants graphiques ont été transplantés (voir `spike/FILE_MATRIX.md`).
+Branche `build/w1-a2-app-on-c0` (macro-wave W1+W2, programme PRODES Data Factory V5.1), issue de
+`build/site-d-foundation` (spike BC1-D). **Non déployable, non destinée à `main` en l'état.**
 
-- Next.js 16.4.0, React 19.3.0, TypeScript 7.0.2, Tailwind 4.3.3 — `npm ci` strict.
-- Données : fixture **provisoire** `fixtures/provisional-v0/` (STAGING_FIXTURE), lue
-  uniquement par `lib/site-dto/index.ts`. Aucun Supabase, aucun Shopify.
-- Devis / commande : simulateur (`/api/site/quote`, `/api/site/order`) — **rien n'est
-  enregistré** (`persistence: NONE_CONTRACTUAL_SIMULATION`).
-- Instant de référence : variable `SPIKE_NOW_UTC` (défaut `2026-10-22T20:00:00Z`).
+- Next.js 16.4.2, React 19.3.0, TypeScript 5.9.3, Tailwind 4.3.3 — `npm ci` strict.
+- Contrat : C0 v1 gelé, **vendu** dans `c0/` (ne jamais l'éditer ; `npm run c0:check`, voir `docs/C0_VENDORING.md`).
+- Catalogue : source unique `lib/site-catalog/source.ts`, choisie par `SITE_CATALOG_SOURCE` (obligatoire) :
+  - `fixture` : `FixtureSource`, document `site_snapshot.v1` gelé nommé par
+    `SITE_CATALOG_FIXTURE=<SCÉNARIO>/<fichier>.json` (sous `c0/fixtures/documents/`), médias de `c0/fixtures/media/` ;
+  - `db` : `ActiveGenerationSource` de BC2 (pas encore fournie : erreur explicite).
+- Prix : uniquement `selectPrice` C0, côté serveur. Devis / commande : verdict C0 sur les octets bruts,
+  **rien n'est enregistré** (`persistence: NONE_UNTIL_BC4`) — `lib/site-business/validate.ts`.
+- Instant : `SITE_NOW_UTC` (format C0 `YYYY-MM-DDTHH:MM:SSZ`, tests et démonstrations) ; absent = horloge serveur.
 
 ```sh
 npm ci
 npm run build
-SPIKE_NOW_UTC=2026-10-22T20:00:00Z npx next start -H 127.0.0.1 -p 3311
-PHASE=default BASE_URL=http://127.0.0.1:3311 node spike/http-tests.mjs
+SITE_CATALOG_SOURCE=fixture SITE_CATALOG_FIXTURE=F_SELL_WINDOWS/snapshot_s7.json \
+  SITE_NOW_UTC=2026-10-20T09:00:00Z npx next start -H 127.0.0.1 -p 3311
+npm run test:http   # lance et arrête lui-même ses serveurs sur le port 3341
 ```
 
-Rapport : `spike/BC1_D_REPORT.md`. Règles du dépôt : `AGENTS.md`, `CLAUDE.md`.
+Rapports : `evidence/W1/A2/REPORT.md`, historique du spike `spike/BC1_D_REPORT.md`. Règles : `AGENTS.md`, `CLAUDE.md`.

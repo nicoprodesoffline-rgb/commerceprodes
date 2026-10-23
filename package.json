@@ -6,7 +6,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test:http": "node spike/http-tests.mjs",
+    "test:http": "node --test tests/http/site.test.mjs",
     "agent-ops:test": "node --test tests/agent-ops/*.test.mjs",
     "agent-ops:quality": "node scripts/agent_ops/quality-gate.mjs",
     "agent-ops:review": "node scripts/agent_ops/review-pack.mjs",

@@ -1,0 +1,105 @@
+
+> agent-ops:test
+> node --test tests/agent-ops/*.test.mjs
+
+TAP version 13
+# Subtest: commerce context loader combines universal and task context
+ok 1 - commerce context loader combines universal and task context
+  ---
+  duration_ms: 0.534791
+  type: 'test'
+  ...
+# Subtest: commerce context loader fails loudly on unknown task
+ok 2 - commerce context loader fails loudly on unknown task
+  ---
+  duration_ms: 0.213208
+  type: 'test'
+  ...
+# Subtest: commerce storefront context warns about secrets and env files
+ok 3 - commerce storefront context warns about secrets and env files
+  ---
+  duration_ms: 0.120625
+  type: 'test'
+  ...
+# Subtest: commerce evals use agent-skills-eval shape
+ok 4 - commerce evals use agent-skills-eval shape
+  ---
+  duration_ms: 0.529291
+  type: 'test'
+  ...
+# Subtest: commerce skill eval yaml declares npx workspace and baseline
+ok 5 - commerce skill eval yaml declares npx workspace and baseline
+  ---
+  duration_ms: 0.311125
+  type: 'test'
+  ...
+# Subtest: commerce eval runner dry-run prints safe command
+ok 6 - commerce eval runner dry-run prints safe command
+  ---
+  duration_ms: 39.058375
+  type: 'test'
+  ...
+# Subtest: buildErrorEntry records failed and working approaches
+ok 7 - buildErrorEntry records failed and working approaches
+  ---
+  duration_ms: 1.515334
+  type: 'test'
+  ...
+# Subtest: appendErrorEntry creates ERRORS.md
+ok 8 - appendErrorEntry creates ERRORS.md
+  ---
+  duration_ms: 1.757875
+  type: 'test'
+  ...
+# Subtest: storefront changes require build-oriented verification
+ok 9 - storefront changes require build-oriented verification
+  ---
+  duration_ms: 0.498333
+  type: 'test'
+  ...
+# Subtest: agent ops changes require node agent-op tests
+ok 10 - agent ops changes require node agent-op tests
+  ---
+  duration_ms: 0.076208
+  type: 'test'
+  ...
+# Subtest: sql and data changes require explicit review pack fallback plus sql reason
+ok 11 - sql and data changes require explicit review pack fallback plus sql reason
+  ---
+  duration_ms: 0.103542
+  type: 'test'
+  ...
+# Subtest: unknown docs-only changes fall back to review pack
+ok 12 - unknown docs-only changes fall back to review pack
+  ---
+  duration_ms: 1.03775
+  type: 'test'
+  ...
+# Subtest: hidden paths keep their dot prefix
+ok 13 - hidden paths keep their dot prefix
+  ---
+  duration_ms: 0.124709
+  type: 'test'
+  ...
+# Subtest: review pack groups commerce agent ops files
+ok 14 - review pack groups commerce agent ops files
+  ---
+  duration_ms: 0.523583
+  type: 'test'
+  ...
+# Subtest: review pack blocks empty merges
+ok 15 - review pack blocks empty merges
+  ---
+  duration_ms: 0.0685
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 107.944041
+exit=0

@@ -5,6 +5,7 @@ import { useCart } from "@/components/cart/cart-provider";
 import { PriceGrid, type PriceGridRow } from "@/components/product/price-grid";
 import { VariantSelector, type SelectorAxis } from "@/components/product/variant-selector";
 import { axesLabel, formatAmount } from "@/lib/format";
+import { CODE_TEXT, type PreviewJson } from "@/lib/site-business/client-types";
 
 export type BuyBoxItem = {
   public_item_key: string;
@@ -18,25 +19,19 @@ type Feedback =
   | { kind: "error"; text: string }
   | null;
 
-const ERROR_TEXT: Record<string, string> = {
-  PRICE_WINDOW_UNAVAILABLE: "Prix indisponible pour cette quantité à cet instant.",
-  INVALID_VARIANT: "Cette variante n'est pas proposée.",
-  INVALID_QUANTITY: "Quantité invalide (entier ≥ 1).",
-};
-
 export function FamilyBuyBox({
   familyName,
   schema,
   items,
-  unavailableNotes,
+  initialKey,
 }: {
   familyName: string;
   schema: SelectorAxis[];
   items: BuyBoxItem[];
-  unavailableNotes: string[];
+  initialKey?: string | undefined;
 }) {
   const { add } = useCart();
-  const [selectedKey, setSelectedKey] = useState(items[0]?.public_item_key ?? "");
+  const [selectedKey, setSelectedKey] = useState(initialKey ?? items[0]?.public_item_key ?? "");
   const [quantity, setQuantity] = useState(1);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
@@ -55,16 +50,21 @@ export function FamilyBuyBox({
           lines: [{ public_item_key: item.public_item_key, variant_axes: item.variant_axes, quantity }],
         }),
       });
-      const data = await res.json();
-      if (data.ok) {
-        const l = data.lines[0];
-        add({ public_item_key: item.public_item_key, variant_axes: item.variant_axes, quantity, family_name: familyName });
+      const data = (await res.json()) as PreviewJson;
+      const l = data.lines?.[0];
+      const draft = { public_item_key: item.public_item_key, variant_axes: item.variant_axes, quantity, family_name: familyName };
+      if (l?.accepted && l.selection) {
+        add(draft, data.catalogue_sequence);
         setFeedback({
           kind: "ok",
-          text: `Ajouté au panier — prix retenu par le serveur : ${formatAmount(l.unit_amount, l.currency, l.tax_basis_or_status)} (${l.rate_id}).`,
+          text: `Ajouté au panier — prix retenu par le serveur : ${formatAmount(l.selection.unit_amount, l.selection.currency, l.selection.tax_basis_or_status)} (${l.selection.rate_id}).`,
         });
+      } else if (l && l.error_codes.length === 1 && l.error_codes[0] === "PRICE_WINDOW_UNAVAILABLE") {
+        add(draft, data.catalogue_sequence);
+        setFeedback({ kind: "ok", text: "Ajouté au panier sans prix : aucun prix publié pour cette quantité maintenant, demande de devis non chiffrée possible." });
       } else {
-        setFeedback({ kind: "error", text: ERROR_TEXT[data.error] ?? `Refusé : ${data.error}` });
+        const codes = l?.error_codes ?? data.error_codes ?? [];
+        setFeedback({ kind: "error", text: `Refusé : ${codes.map((c) => CODE_TEXT[c] ?? c).join(", ") || `HTTP ${res.status}`}.` });
       }
     } catch {
       setFeedback({ kind: "error", text: "Serveur injoignable : rien n'a été ajouté." });
@@ -88,7 +88,6 @@ export function FamilyBuyBox({
           setSelectedKey(k);
           setFeedback(null);
         }}
-        unavailableNotes={unavailableNotes}
       />
 
       {item.image_sha256 ? (
