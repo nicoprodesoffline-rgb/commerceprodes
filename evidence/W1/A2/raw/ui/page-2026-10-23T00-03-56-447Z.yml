@@ -1,0 +1,113 @@
+- generic [active] [ref=f6e1]:
+  - banner [ref=f6e2]:
+    - generic [ref=f6e3]: STAGING_FIXTURE — catalogue PUB-F_SELL_WINDOWS-s7 · séquence 7 · source fixture · devis et commande validés SANS enregistrement · instant figé 2026-10-20T09:00:00Z
+    - navigation "Navigation principale" [ref=f6e4]:
+      - link "PRODES — Accueil" [ref=f6e5] [cursor=pointer]:
+        - /url: /
+        - img "PRODES" [ref=f6e6]
+      - generic [ref=f6e7]:
+        - link "Catégories" [ref=f6e8] [cursor=pointer]:
+          - /url: /#categories
+        - link "Familles" [ref=f6e9] [cursor=pointer]:
+          - /url: /#familles
+        - link "Panier 10" [ref=f6e10] [cursor=pointer]:
+          - /url: /panier
+          - text: Panier
+          - generic [ref=f6e11]: "10"
+  - main [ref=f6e12]:
+    - generic [ref=f6e13]:
+      - navigation "Fil d'Ariane" [ref=f6e14]:
+        - link "Accueil" [ref=f6e16] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f6e17]:
+          - generic [aria-hidden] [ref=f6e18]: /
+          - generic [ref=f6e19]: Panier
+      - heading "Panier" [level=1] [ref=f6e20]
+      - generic [ref=f6e21]:
+        - generic [ref=f6e22]:
+          - heading "Lignes du panier, prix sélectionnés par le serveur" [level=2] [ref=f6e23]
+          - generic [aria-hidden] [ref=f6e24]:
+            - generic [ref=f6e25]: Article
+            - generic [ref=f6e26]: Quantité
+            - generic [ref=f6e27]: Prix unitaire
+            - generic [ref=f6e28]: Ligne
+          - list [ref=f6e30]:
+            - listitem [ref=f6e31]:
+              - generic [ref=f6e32]:
+                - text: STAGING_FIXTURE Panneau à paliers
+                - generic [ref=f6e33]: Variante unique · PI-000000CHJ
+              - generic [ref=f6e34]:
+                - generic [ref=f6e35]:
+                  - text: Quantité
+                  - generic [ref=f6e36]: pour PI-000000CHJ
+                - spinbutton "Quantité pour PI-000000CHJ" [ref=f6e37]: "10"
+              - generic [ref=f6e38]: …
+              - generic [ref=f6e39]: —
+              - button "Retirer PI-000000CHJ" [ref=f6e41]:
+                - text: Retirer
+                - generic [ref=f6e42]: PI-000000CHJ
+          - generic [ref=f6e43]:
+            - generic [ref=f6e44]: Total des lignes (somme serveur, sans taxe ni port)
+            - generic [ref=f6e45]: —
+          - paragraph [ref=f6e46]: "TVA, frais de port et remises : non calculés. Génération —, instant serveur —"
+        - region [ref=f6e47]:
+          - heading "Devis ou commande — validation sans enregistrement" [level=2] [ref=f6e48]
+          - paragraph [ref=f6e49]:
+            - text: Le serveur revalide chaque ligne affichée (contrat C0).
+            - strong [ref=f6e50]: Rien n'est enregistré
+            - text: "(persistence : NONE_UNTIL_BC4) : aucune demande ni commande réelle n'est transmise."
+          - generic [ref=f6e51]:
+            - generic [ref=f6e52]:
+              - text: Organisme *
+              - textbox "Organisme *" [ref=f6e53]
+            - generic [ref=f6e54]:
+              - text: Nom *
+              - textbox "Nom *" [ref=f6e55]
+            - generic [ref=f6e56]:
+              - text: E-mail *
+              - textbox "E-mail *" [ref=f6e57]
+            - generic [ref=f6e58]:
+              - text: Téléphone
+              - textbox "Téléphone" [ref=f6e59]
+            - generic [ref=f6e60]:
+              - text: Message (devis)
+              - textbox "Message (devis)" [ref=f6e61]
+          - generic [ref=f6e62]:
+            - button "Valider une demande de devis" [disabled] [ref=f6e63]
+            - button "Valider une commande" [disabled] [ref=f6e64]
+          - status
+  - contentinfo [ref=f6e65]:
+    - generic [ref=f6e67]:
+      - generic [ref=f6e68]:
+        - link "PRODES — Accueil" [ref=f6e69] [cursor=pointer]:
+          - /url: /
+          - img "PRODES" [ref=f6e70]
+        - paragraph [ref=f6e71]: Au service des Collectivités
+        - paragraph [ref=f6e72]: Mobilier, signalisation et équipements pour les organismes publics.
+      - generic [ref=f6e73]:
+        - heading "Liens rapides" [level=3] [ref=f6e74]
+        - list [ref=f6e75]:
+          - listitem [ref=f6e76]:
+            - link "Catalogue" [ref=f6e77] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=f6e78]:
+            - link "Panier" [ref=f6e79] [cursor=pointer]:
+              - /url: /panier
+      - generic [ref=f6e80]:
+        - heading "Nous contacter" [level=3] [ref=f6e81]
+        - list [ref=f6e82]:
+          - listitem [ref=f6e83]:
+            - generic [ref=f6e84]: 📞
+            - link "04 67 24 30 34" [ref=f6e86] [cursor=pointer]:
+              - /url: tel:+33467243034
+          - listitem [ref=f6e87]:
+            - generic [ref=f6e88]: ✉️
+            - link "contact@prodes.fr" [ref=f6e90] [cursor=pointer]:
+              - /url: mailto:contact@prodes.fr
+          - listitem [ref=f6e91]:
+            - generic [ref=f6e92]: 🕐
+            - paragraph [ref=f6e94]: Lun–Sam 8h30–19h
+    - generic [ref=f6e96]:
+      - paragraph [ref=f6e97]: © 2026 PRODES — prix publiés (HT ou base non qualifiée) — TVA et port non calculés
+      - paragraph [ref=f6e98]: Marque PRODES — France
+  - alert [ref=f6e99]
