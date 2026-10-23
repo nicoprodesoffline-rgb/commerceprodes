@@ -7,7 +7,8 @@
 // chaque fichier extrait est octet pour octet le blob git attendu, REMPLACE entièrement c0/ du dépôt
 // Commerce, puis écrit c0/C0_SOURCE.json (empreintes SHA-256 + tree_digest).
 // --frozen-sha (défaut : --sha) = SHA du code gelé du contrat consigné dans frozen_code_sha. Avant toute
-// écriture, l'arbre code (FROZEN_CODE_PATHS) doit être identique entre --sha et --frozen-sha, sinon
+// écriture, l'arbre code (FROZEN_CODE_PATHS) et la configuration (FROZEN_CONFIG_PATHS) doivent être
+// identiques entre --sha et --frozen-sha, sinon
 // C0_FROZEN_CODE_MISMATCH. --dest (défaut : racine du dépôt Commerce) sert aux tests.
 // À n'utiliser que pour une nouvelle version GELÉE du contrat (voir docs/C0_VENDORING.md).
 
@@ -16,7 +17,7 @@ import { mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync, existsSyn
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  ARCHIVE_PATHS, CONTRACT_VERSION, FACTORY_REPO, FROZEN_CODE_PATHS, MANIFEST_REL, SHA_RE,
+  ARCHIVE_PATHS, CONTRACT_VERSION, FACTORY_REPO, FROZEN_CODE_PATHS, FROZEN_CONFIG_PATHS, MANIFEST_REL, SHA_RE,
   gitBlobSha1, hashFiles, parseArgs, sortedObject, treeDigest, walkC0,
 } from "./lib.mjs";
 
@@ -27,8 +28,23 @@ function fail(message) {
   process.exit(1);
 }
 
+// Appel git sans shell ; toute erreur devient « C0_SYNC_FAILED <raison> » (exit 1, sans trace de pile).
 function git(factory, args, opts = {}) {
-  return execFileSync("git", ["-C", factory, ...args], { maxBuffer: 256 * 1024 * 1024, ...opts });
+  try {
+    return execFileSync("git", ["-C", factory, ...args], { maxBuffer: 256 * 1024 * 1024, stdio: ["pipe", "pipe", "pipe"], ...opts });
+  } catch (err) {
+    const detail = String(err.stderr ?? err.message ?? "").trim().split("\n")[0];
+    fail(`git ${args[0]} a échoué dans ${factory} : ${detail || "erreur inconnue"}`);
+  }
+}
+
+// Variante tolérante : renvoie null si l'objet n'existe pas (chemin absent à ce commit).
+function gitOid(factory, rev) {
+  try {
+    return execFileSync("git", ["-C", factory, "rev-parse", "--verify", "--quiet", rev], { stdio: ["ignore", "pipe", "ignore"] }).toString().trim() || null;
+  } catch {
+    return null;
+  }
 }
 
 let args;
@@ -43,33 +59,25 @@ const sha = args.sha.toLowerCase();
 const frozen = (args["frozen-sha"] ?? args.sha).toLowerCase();
 if (!SHA_RE.test(sha) || !SHA_RE.test(frozen)) fail("les SHA doivent être complets (40 caractères hexadécimaux)");
 
-const resolved = git(factory, ["rev-parse", "--verify", `${sha}^{commit}`]).toString().trim();
-if (resolved !== sha) fail(`SHA introuvable ou ambigu dans ${factory} : ${sha}`);
 const dest = resolve(args.dest ?? REPO_ROOT);
-let frozenResolved = "";
 try {
-  frozenResolved = git(factory, ["rev-parse", "--verify", "--quiet", `${frozen}^{commit}`], { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+  execFileSync("git", ["-C", factory, "rev-parse", "--git-dir"], { stdio: ["ignore", "ignore", "ignore"] });
 } catch {
-  /* traité ci-dessous */
+  fail(`pas un dépôt Git : ${factory}`);
 }
-if (frozenResolved !== frozen) fail(`SHA gelé introuvable dans ${factory} : ${frozen}`);
+if (gitOid(factory, `${sha}^{commit}`) !== sha) fail(`SHA introuvable dans ${factory} : ${sha}`);
+if (gitOid(factory, `${frozen}^{commit}`) !== frozen) fail(`SHA gelé introuvable dans ${factory} : ${frozen}`);
 
-// Identité du code gelé : même objet tree git pour chaque chemin aux deux SHA (= mêmes octets, mêmes modes).
-function treeOid(commit, path) {
-  try {
-    return git(factory, ["rev-parse", "--verify", "--quiet", `${commit}:${path}`], { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
-  } catch {
-    return null;
-  }
-}
+// Identité du code gelé : même objet tree git pour chaque chemin aux deux SHA (= mêmes octets, mêmes modes),
+// et même blob pour la configuration de compilation vendue.
 const frozenTrees = {};
 const mismatches = [];
-for (const p of FROZEN_CODE_PATHS) {
-  const a = treeOid(sha, p);
-  const f = treeOid(frozen, p);
+for (const p of [...FROZEN_CODE_PATHS, ...FROZEN_CONFIG_PATHS]) {
+  const a = gitOid(factory, `${sha}:${p}`);
+  const f = gitOid(factory, `${frozen}:${p}`);
   if (!f) mismatches.push(`${p} absent au SHA gelé`);
   else if (a !== f) mismatches.push(`${p} archived=${a ?? "ABSENT"} frozen=${f}`);
-  frozenTrees[p] = f;
+  if (FROZEN_CODE_PATHS.includes(p)) frozenTrees[p] = f;
 }
 if (mismatches.length) {
   console.error(`C0_FROZEN_CODE_MISMATCH archived_from=${sha} frozen=${frozen}`);
@@ -90,11 +98,15 @@ for (const p of ARCHIVE_PATHS) {
   if (!Object.keys(expectedBlobs).some((k) => k === p || k.startsWith(`${p}/`))) fail(`chemin absent au SHA ${sha} : ${p}`);
 }
 
-// Zone de transit dans le dépôt (même volume que c0/ : le renommage final est atomique).
+// Zone de transit dans la destination (même volume que c0/, les renommages ne copient rien).
 const staging = mkdtempSync(join(dest, ".c0-sync-"));
 try {
   const tar = git(factory, ["archive", "--format=tar", sha, "--", ...ARCHIVE_PATHS]);
-  execFileSync("tar", ["-x", "-f", "-", "-C", staging], { input: tar });
+  try {
+    execFileSync("tar", ["-x", "-f", "-", "-C", staging], { input: tar, stdio: ["pipe", "ignore", "pipe"] });
+  } catch (err) {
+    fail(`extraction tar impossible : ${String(err.stderr ?? err.message).trim().split("\n")[0]}`);
+  }
 
   const { files, odd } = walkC0(staging);
   if (odd.length) fail(`entrées inattendues dans l'archive : ${odd.join(", ")}`);
@@ -126,8 +138,10 @@ try {
   writeFileSync(join(staging, MANIFEST_REL), `${JSON.stringify(manifest, null, 2)}\n`);
 
   // Remplacement complet de c0/ (pas de fusion) : l'ancien dossier, dist/ et node_modules/ compris, disparaît.
+  // L'ancien c0/ est d'abord mis de côté dans la zone de transit puis le nouveau est posé : à aucun moment
+  // la destination ne reste sans c0/ suite à une suppression (seul l'intervalle entre deux renommages).
   const target = join(dest, "c0");
-  if (existsSync(target)) rmSync(target, { recursive: true, force: true });
+  if (existsSync(target)) renameSync(target, join(staging, "c0.previous"));
   renameSync(join(staging, "c0"), target);
   console.log(`C0_SYNC_OK archived_from=${sha} frozen=${frozen} files=${files.length} tree_digest=${manifest.tree_digest}`);
 } finally {

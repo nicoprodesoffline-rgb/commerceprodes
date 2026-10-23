@@ -1,12 +1,12 @@
 # W1 / A1 — Fondation Commerce D : dépendances durcies + C0 TypeScript vendu
 
 **Statut annoncé : `TESTED_SYNTHETIC`** (rien d'`INTEGRATED_REAL`, aucun déploiement).
-Branche `build/site-d-foundation` (base `a86ae1bb`). Commit de code testé : **`156bc548`** (après correctif
-orchestrateur : re-vendoring depuis `7a5ac012`, identité du code gelé vérifiée) — toutes les gates ci-dessous ont été
-rejouées depuis un état propre (`node_modules`, `.next`, `c0/ts/dist` supprimés) sur ce commit par
+Branche `build/site-d-foundation` (base `a86ae1bb`). Commit de code testé : **`fdbfe6a3`** (après correctif
+orchestrateur — re-vendoring depuis `7a5ac012` — puis correctifs de la review indépendante `REVIEW_PASS` F-01…F-08,
+`c0/` inchangé depuis `156bc548`) — toutes les gates ci-dessous ont été rejouées depuis un état propre (`node_modules`, `.next`, `c0/ts/dist` supprimés) sur ce commit par
 `raw/replay_gates.sh`. Le commit qui ajoute ce rapport ne change que `evidence/`. Premier passage : `e8782bd1`
 (mêmes résultats, `tree_digest` `749bff47…`, README vendu `NOT_FROZEN`).
-Environnement : macOS, Node v22.23.1, npm 10.9.8, 2026-10-22T23:46Z (UTC).
+Environnement : macOS, Node v22.23.1, npm 10.9.8, 2026-10-22T23:59Z (UTC).
 
 ## Résultats
 
@@ -20,18 +20,20 @@ Environnement : macOS, Node v22.23.1, npm 10.9.8, 2026-10-22T23:46Z (UTC).
 | `npm ci` strict | ✅ exit 0 | `raw/npm_ci.txt` ; lockfile régénéré : seuls `next`, `@next/*` (16.4.0→16.4.2) et `typescript` (7.0.2→5.9.3, 20 binaires natifs `@typescript/*` retirés) changent | — |
 | `npm run build` sans secret | ✅ exit 0 | `raw/build.txt` : `env -i`, variables transmises `PATH HOME NEXT_TELEMETRY_DISABLED`, 0 fichier `.env*` | — |
 | `npm run typecheck` | ✅ exit 0 | `raw/typecheck.txt` | ne couvre pas `c0/` (hors `include` du tsconfig racine ; compilé par `c0:build`) |
-| Tests HTTP spike, port 3321 | ✅ 66/66 PASS, 0 FAIL | `raw/http_tests_default_3321.txt`, `raw/start_3321.txt`, `raw/server_pid.txt` (PID 35980 lancé puis `kill` ; port libre après) | seule différence avec `spike/logs/http-tests-default.log` : les identifiants aléatoires de reçu `SIM-DEV-…` (S07), `raw/http_tests_diff_vs_spike.txt` ; PHASE=promo/before non rejouées (non demandées) |
+| Tests HTTP spike, port 3321 | ✅ 66/66 PASS, 0 FAIL | `raw/http_tests_default_3321.txt`, `raw/start_3321.txt`, `raw/server_pid.txt` (PID 82252 lancé puis `kill` ; port libre après) | seule différence avec `spike/logs/http-tests-default.log` : les identifiants aléatoires de reçu `SIM-DEV-…` (S07), `raw/http_tests_diff_vs_spike.txt` ; PHASE=promo/before non rejouées (non demandées) |
 | Gel Factory vérifié | ✅ D1 validée par l'orchestrateur | `raw/factory_freeze_check.txt` | le contrôle littéral du mandat n'est pas vide (lignes de statut, `a059ec5`) ; code identique |
 | `c0:sync` depuis `7a5ac012`, gel `b88f5cdf` | ✅ 452 fichiers | `raw/c0_sync_7a5ac012.txt`, `raw/c0_independent_archive_diff.txt` (archive brute `7a5ac012` ≡ `c0/` vendu, `diff -r` exit 0 ; trees `c0/{fixtures,python,ts/src,ts/test}` identiques aux deux SHA), `raw/c0_sync_idempotence.txt` (re-sync → manifeste identique). Premier sync `b88f5cdf` : `raw/c0_sync.txt` | seul `c0/README.md` diffère entre les deux vendorings (ligne de statut) |
-| Refus `C0_FROZEN_CODE_MISMATCH` | ✅ exit 1, rien écrit | `raw/c0_sync_mismatch_84a49dcb.txt` (`--sha 84a49dcb`, sans `c0/` → 4 trees `ABSENT`, `git status c0` vide) | — |
+| Refus `C0_FROZEN_CODE_MISMATCH` / `C0_SYNC_FAILED` | ✅ exit 1, rien écrit | `raw/c0_sync_refusals.txt` : `--sha 9f5d4a0e` (commit Factory réel « R-13 », `c0/fixtures`, `c0/python`, `c0/ts/src` divergents → 3 lignes de trees), SHA inconnu et dépôt invalide → `C0_SYNC_FAILED <raison>` sans trace de pile ; `git status c0` vide | remplace la preuve dégénérée `84a49dcb` (F-07) |
 | `C0_SOURCE.json` | ✅ `frozen_code_sha = b88f5cdf2ca64eca8de4d19c077262e11f9e7e54`, `archived_from_sha = 7a5ac0120d808c2f08d3be7d6f935eb8388afba8`, `frozen_code_identity` (4 trees), `tree_digest = b73f1968…509c5d` | `c0/C0_SOURCE.json` | — |
 | `npm run c0:check` | ✅ `C0_VENDOR_OK sha=b88f5cdf… files=452` (avant/après `c0:build`, après re-sync) ; échoue si `frozen_code_identity` manque (constaté sur l'ancien manifeste) | `raw/c0_check.txt` | `.DS_Store` ou tout fichier ajouté sous `c0/` = drift (voulu) |
 | `npm run c0:build` / `c0:test` | ✅ exit 0 / **9/9** | `raw/c0_build.txt`, `raw/c0_test.txt` | — |
-| `tests/c0/vendor.test.mjs` | ✅ **4/4** | `raw/vendor_test.txt` | (b) octet modifié + fichier ajouté + fichier supprimé, chacun avec témoin ; (d) dépôt Git temporaire : code changé → `C0_FROZEN_CODE_MISMATCH` et rien écrit, docs seules → accepté + `C0_VENDOR_OK` |
+| `tests/c0/vendor.test.mjs` | ✅ **6/6** | `raw/vendor_test.txt` | (a) OK ; (b) octet modifié, fichier ajouté, `dist/` et `node_modules/` imbriqués, fichier supprimé, chacun avec témoin ; (c) valeurs épinglées (`frozen_code_sha`, `archived_from_sha`, `file_count`, `tree_digest`, 4 trees) ; (d) dépôt Git temporaire : code changé ou `tsconfig.json` seul changé → `C0_FROZEN_CODE_MISMATCH`, rien écrit ; docs seules → accepté ; (e) manifeste forgé cohérent : passe `check.mjs` (limite documentée) mais rejeté par les valeurs épinglées ; (f) SHA inconnu / dépôt invalide → `C0_SYNC_FAILED` sans trace |
 | Parité registre `verdicts.ts.json` | ✅ octet pour octet | `raw/verdicts_parity.txt` : SHA-256 Commerce = Factory = `5abb6b69775bb73151f544e54e68d672729f00813e8a7400b1ad59334501dc90` (66 204 octets, 0 chemin absolu) ; Factory régénéré au premier passage (code Factory inchangé depuis) : `raw/factory_c0_build_test.txt` (9/9, `git status` Factory identique avant/après, `dist/` ignoré `.gitignore:31`) | parité TS↔TS ; la parité Python↔TS (`compare_verdicts.py`) n'a pas été rejouée (hors mandat) |
-| Non-régression `agent-ops:test` | ✅ 15/15 | `raw/agent_ops_test.txt` | rejoué avant le commit `5eb49ba8`, pas dans les rejeux finaux |
+| Non-régression `agent-ops:test` | ✅ 15/15 | `raw/agent_ops_test.txt` (en-tête SHA `fdbfe6a3`) | — |
+| Lockfile cohérent | ✅ | `raw/npm_lock_only.txt` (`npm install --package-lock-only` → diff vide) | — |
+| Node 20 | ⏸️ non supporté | `engines.node >=22` (F-06) | les globs de `node --test` exigent Node ≥ 21 |
 
-## Fichiers modifiés (5 commits de code)
+## Fichiers modifiés (7 commits de code)
 
 - `25e38bbe` deps : `package.json` (next 16.4.2, typescript 5.9.3), `package-lock.json`.
 - `5eb49ba8` outillage : `scripts/c0/{lib,sync,check}.mjs`, `tests/c0/vendor.test.mjs`, `docs/C0_VENDORING.md`,
@@ -41,6 +43,10 @@ Environnement : macOS, Node v22.23.1, npm 10.9.8, 2026-10-22T23:46Z (UTC).
 - `48aca49b` identité du code gelé : `scripts/c0/{lib,sync,check}.mjs` (`FROZEN_CODE_PATHS`, `C0_FROZEN_CODE_MISMATCH`,
   `frozen_code_identity`, option `--dest`), `tests/c0/vendor.test.mjs` (cas d), `docs/C0_VENDORING.md`.
 - `156bc548` re-vendoring : `c0/README.md` (ligne de statut `C0_FROZEN`), `c0/C0_SOURCE.json`.
+- `104474f7` correctifs de review : `scripts/c0/{lib,sync}.mjs`, `tests/c0/vendor.test.mjs`, `package.json` (`engines.node >=22`),
+  `docs/C0_VENDORING.md`.
+- `fdbfe6a3` `package-lock.json` : une ligne (`engines.node >=22` de la racine), conséquence mécanique de F-06 —
+  **hors de la liste de fichiers autorisée pour les correctifs** ; aucune dépendance ni intégrité modifiée.
 - Aucun changement dans `app/`, `components/`, `lib/`, `fixtures/provisional-v0/`, `next.config.ts`, `tsconfig.json`.
 
 ## Décisions prises (réversibles)
@@ -70,6 +76,19 @@ Environnement : macOS, Node v22.23.1, npm 10.9.8, 2026-10-22T23:46Z (UTC).
   identité vérifiée par objets tree git (mêmes octets et modes) sur `c0/python`, `c0/ts/src`, `c0/ts/test`, `c0/fixtures`.
   Les fichiers de config `c0/ts/{package.json,tsconfig.json,package-lock.json}` sont hors du contrôle d'identité
   (archivés, couverts par le manifeste ; inchangés entre les deux SHA).
+
+## Correctifs de la review indépendante (`REVIEW_PASS` à `918e5437`)
+
+| Finding | Correction | Preuve |
+|---|---|---|
+| F-01 `dist`/`node_modules` exclus à toute profondeur | exclusion limitée aux chemins exacts `c0/ts/dist`, `c0/ts/node_modules` | test (b) `nested_dist`, `nested_node_modules` → `ADDED` |
+| F-02 manifeste forgé cohérent accepté | valeurs du manifeste épinglées dans `vendor.test.mjs` ; limite de `check.mjs` documentée | tests (c), (e) |
+| F-03 trace de pile sur SHA inconnu / dépôt invalide | `C0_SYNC_FAILED <raison>`, exit 1 (aussi `ls-tree`, `archive`, `tar`) | test (f), `raw/c0_sync_refusals.txt` |
+| F-04 configuration vendue hors du contrôle de gel | blobs `c0/ts/{package.json,tsconfig.json,package-lock.json}` exigés identiques ; non consignés pour garder les octets du manifeste v1 (re-sync → manifeste identique, `raw/c0_sync_idempotence.txt`) | test (d), cas `tsconfig.json` seul |
+| F-06 `engines` | `>=22` (package.json + ligne racine du lockfile) | `raw/npm_lock_only.txt` |
+| F-07 preuves | PID corrigé (82252, rejeu final) ; en-têtes SHA/date sur `advisories_gh_api.txt`, `npm_view_versions.txt`, `agent_ops_test.txt` ; refus rejoué sur `9f5d4a0e` | `raw/` |
+| F-08 (note) remplacement non atomique | l'ancien `c0/` est mis de côté dans la zone de transit avant de poser le nouveau | lecture de `sync.mjs` |
+| F-05, F-09, F-10, F-11, F-12 (notes) | non traitées : parité de registre non épinglée dans un test (A2/intégration), `c0:check` non câblé en CI, `--frozen-sha` à rendre obligatoire en v2 | — |
 
 ## Tests non exécutés
 

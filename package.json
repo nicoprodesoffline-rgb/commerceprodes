@@ -26,7 +26,7 @@
     "db:migrate": "node scripts/db/migrate.mjs"
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=22"
   },
   "dependencies": {
     "next": "16.4.2",

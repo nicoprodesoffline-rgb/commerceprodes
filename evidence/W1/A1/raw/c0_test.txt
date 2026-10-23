@@ -1,4 +1,4 @@
-# 2026-10-22T23:46:36Z commit testé 156bc5481da4ed49414828d75bd4e2fdd228b7a9 node v22.23.1 npm 10.9.8
+# 2026-10-22T23:59:23Z commit testé fdbfe6a3a487ea9bf59081fa5dbaf40cbac6511e node v22.23.1 npm 10.9.8
 
 > c0:test
 > node --test "c0/ts/dist/test/*.test.js"
@@ -7,55 +7,55 @@ TAP version 13
 # Subtest: every case matches its declared verdict and result digest; registry written
 ok 1 - every case matches its declared verdict and result digest; registry written
   ---
-  duration_ms: 181.942292
+  duration_ms: 162.325041
   type: 'test'
   ...
 # Subtest: media are real bytes with their computed SHA-256
 ok 2 - media are real bytes with their computed SHA-256
   ---
-  duration_ms: 0.78125
+  duration_ms: 0.752375
   type: 'test'
   ...
 # Subtest: each D11 scenario has accepted and refused cases
 ok 3 - each D11 scenario has accepted and refused cases
   ---
-  duration_ms: 0.586958
+  duration_ms: 0.57375
   type: 'test'
   ...
 # Subtest: every testable error code has a negative case
 ok 4 - every testable error code has a negative case
   ---
-  duration_ms: 0.165291
+  duration_ms: 0.157708
   type: 'test'
   ...
 # Subtest: identity: valid vectors encode and decode identically to Python
 ok 5 - identity: valid vectors encode and decode identically to Python
   ---
-  duration_ms: 1.616042
+  duration_ms: 1.256875
   type: 'test'
   ...
 # Subtest: identity: invalid vectors refused with the same code as Python
 ok 6 - identity: invalid vectors refused with the same code as Python
   ---
-  duration_ms: 0.163625
+  duration_ms: 0.153
   type: 'test'
   ...
 # Subtest: identity: every substitution and every transposition is detected (5 keys per namespace)
 ok 7 - identity: every substitution and every transposition is detected (5 keys per namespace)
   ---
-  duration_ms: 4.125834
+  duration_ms: 4.196208
   type: 'test'
   ...
 # Subtest: canonical bytes and pinned digest vector (same as the Python suite)
 ok 8 - canonical bytes and pinned digest vector (same as the Python suite)
   ---
-  duration_ms: 0.468
+  duration_ms: 0.451083
   type: 'test'
   ...
 # Subtest: money is exact BigInt cents, never Number
 ok 9 - money is exact BigInt cents, never Number
   ---
-  duration_ms: 0.189834
+  duration_ms: 0.263833
   type: 'test'
   ...
 1..9
@@ -66,5 +66,5 @@ ok 9 - money is exact BigInt cents, never Number
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 240.357292
+# duration_ms 219.649417
 c0_test_exit=0
