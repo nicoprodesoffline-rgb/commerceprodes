@@ -1,4 +1,5 @@
-// Recette HTTP BC4 sur un serveur Next réel (`next start`, 127.0.0.1:3351 UNIQUEMENT), PostgreSQL prodes_site_bc4_test.
+// Recette HTTP BC4 sur un serveur Next réel (`next start`, 127.0.0.1:${SITE_TEST_PORT}, défaut 3351), base SITE_TEST_DATABASE_URL
+// (défaut du script npm : prodes_site_bc4_test) — un reviewer ou la CI choisit SA base et SON port (review F-04).
 // Prérequis : `npm run build`, `npm run bc2:build`, `npm run bc4:build` (script `npm run test:bc4:http`).
 // Chaque serveur est lancé par ce fichier (PID tenu) et arrêté par lui : jamais de kill global.
 // Génération ACTIVE : F_SELL_WINDOWS.activate (receiver BC2, module compilé). Requêtes : fixtures F_QUOTE_ORDER citées.
@@ -9,7 +10,11 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { DB_URL, KEYRING, ROOT, activate, businessCase, c0events, counts, events, rawSign, resetDb, newPool } from "./helpers.mjs";
 
-const PORT = 3351;
+const PORT = (() => {
+  const raw = process.env.SITE_TEST_PORT ?? "3351";
+  if (!/^[1-9][0-9]{3,4}$/.test(raw) || Number(raw) > 65535) throw new Error(`SITE_TEST_PORT invalide : ${raw}`);
+  return Number(raw);
+})();
 const BASE = `http://127.0.0.1:${PORT}`;
 const KEYRING_PATH = path.join(ROOT, "c0", "fixtures", "keys", "test_keyring.json");
 const NOW = "2026-10-20T09:00:00Z";
