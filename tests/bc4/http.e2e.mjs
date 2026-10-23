@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { DB_URL, KEYRING, ROOT, activate, businessCase, c0events, counts, events, rawSign, resetDb, newPool } from "./helpers.mjs";
+import { DB_URL, KEYRING, ROOT, activate, businessCase, c0events, counts, events, freshness, pollContext, rawSign, resetDb, newPool } from "./helpers.mjs";
 
 const PORT = (() => {
   const raw = process.env.SITE_TEST_PORT ?? "3351";
@@ -75,8 +75,15 @@ async function http(method, p, { body, headers = {} } = {}) {
   return { status: res.status, headers: res.headers, text, json };
 }
 
+// W4-I (DF-0115) : chaque poll porte issued_at_utc + nonce frais, signés avec {cursor, limit} (domaine events_poll.v2).
 function pollHeaders(cursor, limit, keyId = "c0-test-events-01") {
-  return { "x-c0-key-id": keyId, "x-c0-signature": rawSign(keyId, events.EVENTS_POLL_DOMAIN, { cursor, limit }) };
+  const fresh = freshness();
+  return {
+    "x-c0-key-id": keyId,
+    "x-c0-issued-at": fresh.issuedAt,
+    "x-c0-nonce": fresh.nonce,
+    "x-c0-signature": rawSign(keyId, events.EVENTS_POLL_DOMAIN, pollContext(cursor, limit, fresh)),
+  };
 }
 
 const ENV = () => ({ SITE_BUSINESS_PERSISTENCE: "postgresql", SITE_DATABASE_URL: DB_URL(), SITE_KEYRING_PATH: KEYRING_PATH, SITE_NOW_UTC: NOW });

@@ -142,8 +142,9 @@ test("un curseur est lié à la clé qui l'a reçu : présenté par une autre cl
   const r = await poll(pool, { cursor: null, limit: 1 });
   const cursor = r.body.next_cursor;
   const { createHmac } = await import("node:crypto");
-  const { jsonc } = await import("./helpers.mjs");
-  const sig = createHmac("sha256", Buffer.from(keyring.keys.at(-1).secret_utf8)).update(Buffer.concat([Buffer.from(events.EVENTS_POLL_DOMAIN), Buffer.from([0]), Buffer.from(jsonc.canonicalBytes({ cursor, limit: 1 }))])).digest("hex");
-  const other = await events.pollEvents({ pool, keyring }, headers("c0-test-events-02", sig), new URLSearchParams({ cursor, limit: "1" }));
+  const { jsonc, freshness, pollContext } = await import("./helpers.mjs");
+  const fresh = freshness(); // W4-I (DF-0115) : contexte signé v2 avec issued_at_utc + nonce
+  const sig = createHmac("sha256", Buffer.from(keyring.keys.at(-1).secret_utf8)).update(Buffer.concat([Buffer.from(events.EVENTS_POLL_DOMAIN), Buffer.from([0]), Buffer.from(jsonc.canonicalBytes(pollContext(cursor, 1, fresh)))])).digest("hex");
+  const other = await events.pollEvents({ pool, keyring }, headers("c0-test-events-02", sig, fresh), new URLSearchParams({ cursor, limit: "1" }));
   assert.equal(other.status, 400);
 });

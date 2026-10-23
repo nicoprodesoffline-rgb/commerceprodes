@@ -3,7 +3,7 @@
 // La génération ACTIVE est posée par le receiver BC2 (STAGE → MEDIA → VERIFY → ACTIVATE) depuis un cas C0 nommé.
 // Aucune règle C0 réécrite : les tests comparent au verdict déclaré dans VERDICTS.json.
 import { createRequire } from "node:module";
-import { createHmac } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import assert from "node:assert/strict";
@@ -122,20 +122,32 @@ export function rawSign(keyId, domain, context) {
     .digest("hex");
 }
 
-export function headers(keyId, signature) {
+export function headers(keyId, signature, freshness) {
   const h = new Headers();
   if (keyId !== undefined) h.set("x-c0-key-id", keyId);
   if (signature !== undefined) h.set("x-c0-signature", signature);
+  if (freshness?.issuedAt !== undefined) h.set("x-c0-issued-at", freshness.issuedAt);
+  if (freshness?.nonce !== undefined) h.set("x-c0-nonce", freshness.nonce);
   return h;
 }
 
-export async function poll(pool, { cursor = null, limit = 100, keyId = "c0-test-events-01", signature } = {}) {
+/** Fraîcheur anti-rejeu (DF-0115) : instant UTC à la seconde (horloge réelle) et nonce de 32 hex aléatoires. */
+export function freshness(atMs = Date.now()) {
+  return { issuedAt: new Date(atMs).toISOString().replace(/\.\d{3}Z$/, "Z"), nonce: randomBytes(16).toString("hex") };
+}
+
+/** Contexte signé du poll (domaine events_poll.v2) : {cursor, issued_at_utc, limit, nonce}. */
+export function pollContext(cursor, limit, fresh) {
+  return { cursor, limit, issued_at_utc: fresh.issuedAt, nonce: fresh.nonce };
+}
+
+export async function poll(pool, { cursor = null, limit = 100, keyId = "c0-test-events-01", signature, fresh = freshness(), deps = {} } = {}) {
   const params = new URLSearchParams();
   params.set("cursor", cursor ?? "");
   params.set("limit", String(limit));
   const ctxLimit = /^(0|[1-9][0-9]{0,15})$/.test(String(limit)) ? Number(limit) : String(limit);
-  const sig = signature ?? rawSign(keyId, events.EVENTS_POLL_DOMAIN, { cursor, limit: ctxLimit });
-  const r = await events.pollEvents({ pool, keyring: KEYRING }, headers(keyId, sig), params);
+  const sig = signature ?? rawSign(keyId, events.EVENTS_POLL_DOMAIN, pollContext(cursor, ctxLimit, fresh));
+  const r = await events.pollEvents({ pool, keyring: KEYRING, ...deps }, headers(keyId, sig, fresh), params);
   const body = JSON.parse(Buffer.from(r.body).toString("utf8"));
   if (body.events) for (const e of body.events) e.bytes = new Uint8Array(Buffer.from(e.event_bytes_b64, "base64"));
   return { status: r.status, body };
