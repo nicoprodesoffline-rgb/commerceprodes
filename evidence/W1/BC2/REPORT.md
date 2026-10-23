@@ -7,7 +7,7 @@ Statut maximal revendiqué : **`TESTED_SYNTHETIC / SITE_DB_REAL_LOCAL`** — à 
 |---|---|
 | Dépôt / worktree | Commerce, `/Users/nico/Desktop/prodes-w1/commerce-bc2` |
 | Branche | `build/w1-bc2-receiver`, créée depuis `build/site-d-foundation@5f69e742` |
-| **Code testé** | **`0aa6bdc8c4dcbd7e7a0805e41912bc1515e86a4e`** (toutes les gates ci-dessous) ; le commit suivant n'ajoute que `evidence/W1/BC2/` |
+| **Code testé** | **`522ed1df4002784c1e845c720fa9f615a10db9b5`** (après correctifs de review, toutes les gates ci-dessous) ; le commit suivant n'ajoute que `evidence/W1/BC2/`. Premier cycle : `0aa6bdc8` (review `REVIEW_FIX_REQUIRED` à `a9dede14`) |
 | C0 | vendu, Factory `b88f5cdf2ca64eca8de4d19c077262e11f9e7e54`, `tree_digest=749bff47…21f0`, **aucun octet modifié** |
 | Environnement | macOS (Darwin 25.6), Node 22.23.1, npm 10.9.8, Next 16.4.2, TypeScript 5.9.3, `pg` 8.23.1, PostgreSQL 18.6 Homebrew `localhost:54318` |
 | Bases | `prodes_site_bc2` (dev, HTTP), `prodes_site_bc2_test` (tests) — rôle de test `prodes_site` |
@@ -22,14 +22,17 @@ Statut maximal revendiqué : **`TESTED_SYNTHETIC / SITE_DB_REAL_LOCAL`** — à 
 | `npm ci` strict | ✅ exit 0, 0 vulnérabilité | `raw/npm_ci.txt` | `pg`/`@types/pg` 8.23.1 ajoutés (commit `6866a90d`) |
 | `npm run typecheck` | ✅ exit 0 | `raw/typecheck.txt` | |
 | `npm run build` sans variable | ✅ exit 0, 5 routes `/api/site/publish/**` dynamiques | `raw/build.txt` | build `env -i` : aucune connexion base au build |
-| Base locale + migrations 001–004 | ✅ création idempotente, `MIGRATIONS_OK applied=4` puis `applied=0` ; refus `prodes_factory` (script exit 2, migrateur exit 1) | `raw/db_setup.txt` (`\d+` des 4 tables, `schema_migrations`) | mot de passe `local-dev-only` = identifiant de test |
-| **Familles 1–13 + data_label + interface** (`npm run test:bc2`) | ✅ **50/50 PASS, 0 FAIL, 0 skip** | `raw/test_bc2.txt` | PostgreSQL réel ; fixtures synthétiques uniquement |
+| Base locale + migrations 001–005 | ✅ création idempotente, `MIGRATIONS_OK` puis `applied=0` ; refus `prodes_factory` (script exit 2, migrateur exit 1), hôte `jarvis` et `?host=jarvis` refusés (exit 1) | `raw/db_setup.txt` (`\d+` des 4 tables, `schema_migrations`) | mot de passe `local-dev-only` = identifiant de test |
+| **Familles 1–13 + data_label + interface + correctifs de review** (`npm run test:bc2`) | ✅ **58/58 PASS, 0 FAIL, 0 skip** (50 du premier cycle + 6 F-01…F-04 + 2 perte de connexion) | `raw/test_bc2.txt` | PostgreSQL réel ; fixtures synthétiques uniquement |
+| Plafonds de corps sur serveur réel (F-01) | ✅ 22/22 PASS, deux runs (tas normal et tas plafonné 128 MiB) | `raw/http_body_limits_3331.txt`, `raw/http_body_limits_3331_heap128.txt` | RSS mesurée par `ps` toutes les 20 ms ; voir « Correctifs de review » |
+| Connexion PostgreSQL tuée sous verrou (constat BC4) | ✅ en processus (2 tests) et HTTP (H05b) ; mutation des écouteurs → 2/2 échouent | `raw/test_bc2.txt`, `raw/http_bc2_3331.txt`, `raw/mutation_connection_listener.txt` | mutation faite sur le JS compilé avant le commit `522ed1df` (code identique) |
 | Test de mutation (verrou pointeur retiré) | ✅ famille 8 : 10/11 échouent sans `FOR UPDATE` | `raw/mutation_no_pointer_lock.txt` | rejoué à la main avant le commit `32120e37` (code identique), non scripté |
-| Recette HTTP réelle BC2 (port 3331) | ✅ 15/15 PASS | `raw/http_bc2_3331.txt`, `raw/http_db_after.txt` | horloge réelle : ACK comparé à `ack_s1.json` hors `activated_at_utc`/`signature`, puis `verifyAck` → `ACK_VALID` |
+| Recette HTTP réelle BC2 (port 3331) | ✅ 16/16 PASS (dont H05b) | `raw/http_bc2_3331.txt`, `raw/http_db_after.txt` | horloge réelle : ACK comparé à `ack_s1.json` hors `activated_at_utc`/`signature`, puis `verifyAck` → `ACK_VALID` |
 | Tests HTTP du spike (port 3331) | ✅ 66/66 PASS, 0 FAIL | `raw/http_spike_default_3331.txt`, `raw/http_spike_diff.txt` | seule différence vs `spike/logs` : identifiants aléatoires `SIM-DEV-…` (S07) ; PHASE promo/before non rejouées |
-| Serveur lancé et tué par PID | ✅ PID 96526 = listener, `kill`, port libre après | `raw/server_pid.txt`, `raw/start_3331.txt` | |
+| Serveur lancé et tué par PID | ✅ deux serveurs successifs (normal, tas 128 MiB), chacun lancé et tué par PID, port libre après chaque arrêt | `raw/server_pid.txt`, `raw/start_3331.txt` | |
 | `quality-gate.mjs` (agent-ops) | ✅ exit 0, aucune commande recommandée | `raw/quality_gate.txt` | outil de recommandation, ne lance rien |
 | Docs `SITE_DB_SCHEMA.md`, `SITE_TRANSPORT_STAGING.md` | ✅ livrés | `docs/` | transport = `STAGING_TRANSPORT`, hors C0 |
+| Ownership : `.gitignore` (+`/.bc2-build/`) et `tsconfig.bc2.json` hors liste (F-07) | ⚠️ conservés | review §3 | nécessaires à `test:bc2`, à valider par l'orchestrateur |
 | Transport réel, secrets réels, Unicode, volumétrie | ⏸️ non prouvés | — | voir « Ce qui n'est pas prouvé » |
 
 ## Résultats par famille (cas de `c0/fixtures/VERDICTS.json` rejoués)
@@ -56,10 +59,11 @@ Statut maximal revendiqué : **`TESTED_SYNTHETIC / SITE_DB_REAL_LOCAL`** — à 
 
 - `package.json`, `package-lock.json` (`pg`, `@types/pg` 8.23.1 ; scripts `bc2:build`, `test:bc2`, `db:create-local`, `db:migrate`), `.gitignore` (`/.bc2-build/`), `tsconfig.bc2.json`
 - `scripts/db/create-local.sh`, `scripts/db/migrate.mjs`, `db/migrations/001_site_generation.sql`, `002_site_active_pointer.sql`, `003_site_media.sql`, `004_site_publication_log.sql`
+- `db/migrations/005_site_generation_immutable.sql` (correctif F-02)
 - `lib/site-db/pool.ts`, `lib/site-db/generation.ts`
 - `lib/site-publish/config.ts`, `lib/site-publish/receiver.ts`, `lib/site-publish/http.ts`
 - `app/api/site/publish/{stage,verify-media,activate,status}/route.ts`, `app/api/site/publish/media/[sha256]/route.ts`
-- `tests/bc2/helpers.mjs`, `tests/bc2/01…15_*.test.mjs`, `tests/bc2/http-smoke.mjs`
+- `tests/bc2/helpers.mjs`, `tests/bc2/01…17_*.test.mjs`, `tests/bc2/http-smoke.mjs`, `tests/bc2/http-body-limits.mjs`
 - `docs/SITE_DB_SCHEMA.md`, `docs/SITE_TRANSPORT_STAGING.md`
 
 Aucun fichier de `c0/`, `components/`, `lib/site-dto`, ni de `app/` hors `app/api/site/publish/**`.
@@ -95,10 +99,47 @@ Aucun fichier de `c0/`, `components/`, `lib/site-dto`, ni de `app/` hors `app/ap
     au lieu de « Claude Fable 5.1 » écrit dans `COMMON.md` — même écart que A1 (D7).
 14. `/budget` non lancé : lot délégué par l'orchestrateur, aucune sous-délégation.
 
+## Correctifs de review (review indépendante `REVIEW_FIX_REQUIRED` à `a9dede14` : 0 bloquant, 1 majeur, 3 mineurs)
+
+| Finding | Correctif | Commit(s) | Preuve |
+|---|---|---|---|
+| **F-01 MAJEUR** corps lu en entier avant tout plafond et toute authentification | `lib/site-publish/http.ts` : (1) **porte de transport sans lire le corps** — clé connue de scope `site_snapshot.publish`, `ACTIVE`/`VERIFY_ONLY`, signature 64 hex, sinon 401 ; (2) **lecture bornée en flux** par route — `Content-Length` > plafond → 413 immédiat, sinon compteur, flux interrompu au premier octet au-delà → 413 `BODY_TOO_LARGE`. Plafonds : STAGE 32 MiB, PUT média 20 MiB, VERIFY_MEDIA/ACTIVATE 256 KiB, STATUS corps jamais lu. **Décision journal** : aucune ligne pour les 401 de la porte, les 401 HMAC avant verrou et les 413 ; les refus rendus par l'évaluation C0 après la porte restent journalisés (une ligne bornée) | `9fe6c4e6`, tests `698bc667`, `5663f303`, `013a678d` | test 16 (en processus : 401 sans lire plus d'1 MiB d'un flux de 100 MiB ; 413 sur `Content-Length` sans lecture ; flux coupé ≤ plafond + 2 MiB ; plafond exact accepté ; 0 ligne de journal) ; serveur réel ci-dessous |
+| F-02 MINEUR ACTIVE corrompue utilisée comme base | `loadActive` applique le contrôle de `getActiveGeneration` (ligne `ACTIVE`, pointeur = ligne, octets canoniques, SHA recalculé) ; ACTIVE `UNSAFE` → `409 CATALOG_UNSAFE`, `stage: "active_integrity"`, journalisé, aucune activation par-dessus (STAGE, VERIFY_MEDIA, ACTIVATE) ; migration 005 : `snapshot_bytes`, `snapshot_json`, `transport_json`, `payload_sha256`, séquence, identité et ACK posé immuables (`BEFORE UPDATE`) | `50b6eb45`, `9fe6c4e6` | test 16 F-02 (corruption simulée par le propriétaire, déclencheur désactivé puis réactivé ; reprise après restauration des octets) ; écritures refusées ×4 |
+| F-03 MINEUR travail et verrous avant le refus de signature | VERIFY_MEDIA/ACTIVATE : clé (401) → génération connue (404) → HMAC du contexte §7 de la génération stockée (401), **avant tout verrou**, sans journal ; l'évaluation C0 complète reste inchangée ensuite | `9fe6c4e6` | test 16 F-03 (401 avant 404 ; 401 en < 1 s alors qu'un verrou exclusif est tenu sur le pointeur ; 0 ligne de journal) |
+| F-04 MINEUR hôte de base non contrôlé | `siteDatabaseName` (pool et migrateur) : hôte `localhost`/`127.0.0.1`/`::1` sauf `SITE_ALLOW_REMOTE_DB=1` ; `jarvis…` toujours refusé ; paramètres `host`, `hostaddr`, `options`, `dbname`, `database`, `service`, `servicefile` refusés | `2ee2bbbe` | test 16 F-04 (10 URLs refusées, 3 acceptées, dérogation explicite) ; `raw/db_setup.txt` |
+| F-05 NOTE | `snapshot: Snapshot \| null`, `null` dès que `UNSAFE` ; contrat documenté | `50b6eb45` | test 15 |
+| F-06 NOTE | non implémenté : `UNSAFE` ne couvre pas les médias de l'ACTIVE, dette documentée (BC3 doit revérifier le SHA à la lecture de `/media/[sha256]`) | `7bcd2f43` (doc) | — |
+| F-07 NOTE | `.gitignore` et `tsconfig.bc2.json` conservés, signalés dans le tableau | — | — |
+| F-08 NOTE | rejeu de signature média : documenté dans le transport (sans effet par adressage par contenu) | `7bcd2f43` | — |
+| F-09 NOTE | inchangé : le rôle propriétaire peut désactiver déclencheurs append-only/immutabilité (dette documentée ; les tests F-02 s'en servent pour simuler une corruption) | `7bcd2f43` (doc) | — |
+| Complément orchestrateur (constat BC4) : connexion coupée en transaction | `withTransaction` (`lib/site-db/pool.ts`, utilisé par BC4) n'avait **pas** d'écouteur `error` : une connexion tuée arrêtait le processus. Écouteur ajouté, client détruit (`release(true)`). L'ACTIVATE l'avait déjà. | `fed1a641`, tests `522ed1df` | test 17 (connexion d'ACTIVATE tuée pendant l'attente du verrou → 503 `ACTIVATION_ABORTED` `57P01`, pas d'ACK, 0 exception non capturée, activation suivante OK ; `withTransaction` tuée → rejet, pool réutilisable) ; H05b HTTP (serveur vivant, H07 réussit ensuite) ; mutation : 2/2 échouent sans écouteur |
+
+**Mesures F-01 sur serveur réel** (`next start` port 3331, base `prodes_site_bc2`, RSS par `ps -o rss=` toutes les 20 ms,
+`raw/http_body_limits_3331.txt`) — référence review à `a9dede14` : +278 MiB pour un STAGE de 100 MiB non authentifié,
+3,17 GiB retenus après ~1,8 GiB envoyés :
+
+| Envoi (100 MiB proposés) | Code | Octets acceptés par le serveur avant refus | Pic RSS |
+|---|---|---|---|
+| STAGE sans en-têtes (avec / sans `Content-Length`) | 401 | ~2 MiB (tampons réseau) | +0,6 / +1,1 MiB |
+| STAGE signé, `Content-Length` 100 MiB | 413 | ~2 MiB | +0,0 MiB |
+| STAGE signé, flux sans longueur | 413 | ~37 MiB (plafond 32 MiB + tampons) | +43,2 MiB |
+| VERIFY_MEDIA signé (flux) / ACTIVATE signé (`Content-Length`) | 413 | ~2 MiB | +0,0 / +0,0 MiB |
+| PUT média signé, flux | 413 | ~23 MiB (plafond 20 MiB) | +34,7 MiB |
+| PUT média sans en-têtes | 401 | ~2 MiB | +0,0 MiB |
+| 12 rafales de 4 STAGE signés de 100 MiB en parallèle | 413 ×48 | ~1,9 GiB au total | rafale 1 : +85 MiB ; rafale 12 : +0,3 MiB |
+
+Critère retenu : **pas de rétention proportionnelle aux octets reçus**. Plateau entre les rafales 6 et 12 : +5,9 MiB pour
+952 MiB envoyés (0,6 %) ; RSS finale − initiale : +229,9 MiB pour 1 942 MiB envoyés (11,8 %) ; journal 10 → 10 lignes.
+Même scénario avec un serveur à tas JS plafonné (`--max-old-space-size=128`) : 22/22, plateau +23,8 MiB pour
+933 MiB (2,6 %), finale +223,3 MiB (11,5 %), serveur vivant. Le résidu dépasse le plafond du tas : c'est de la mémoire
+native/allocateur non rendue au système, pas des références JS retenues. **Un seuil absolu de RSS n'est pas
+revendiqué** : une première version du test avec seuils absolus a échoué sur des runs où le plateau variait
+(+17 à +129 MiB entre rafales), sans croissance linéaire ; le critère a été remplacé par la proportion (commits
+`5663f303` → `013a678d`), les sorties intermédiaires n'ont pas été conservées.
+
 ## Ce qui n'est pas prouvé
 
-- **Transport réel** : HTTPS, authentification de production, anti-rejeu horodaté, débit ; le corps est lu entièrement
-  en mémoire avant le plafond C0 de 32 MiB (pas de limite de flux en amont).
+- **Transport réel** : HTTPS, authentification de production, anti-rejeu horodaté, débit et concurrence par client.
 - **Secrets réels**, stockage et rotation ; HMAC → signature asymétrique de l'ACK (DF-0093) ; énumérabilité (DF-0092).
 - **Unicode** : divergence NFC Python 3.11 (Unicode 14) / Node 22 (Unicode 17) non traitée (DF-0089) ; corpus ≤ Unicode 14.
 - **Volumétrie** : FULL 2–3 k Items, snapshots proches de 32 MiB, médias de 20 MiB, nombre de générations conservées.
@@ -109,7 +150,10 @@ Aucun fichier de `c0/`, `components/`, `lib/site-dto`, ni de `app/` hors `app/ap
 
 ## Dettes découvertes (candidates NON-OUBLI, non clôturées)
 
-- Plafond de taille du corps HTTP en amont du parseur (risque mémoire), avant toute exposition.
+- RSS résiduelle de ~230 MiB après des rafales de corps maximaux (allocateur natif) : bornée, non proportionnelle, mais
+  à surveiller avant exposition ; limitation de débit et de concurrence par client `DEFERRED_FOR_PROD`.
+- Un tiers qui connaît un `key_id` (non secret) peut encore écrire une ligne de journal par STAGE ≤ 32 MiB refusé par C0.
+- `UNSAFE` ne couvre pas les médias de l'ACTIVE (F-06).
 - Rétention/purge des générations `SUPERSEDED`/`REJECTED` et des médias orphelins : aucune.
 - Valeur `STATUS` admise par le `CHECK` de `site_publication_log.operation` mais jamais écrite.
 - Le rôle de test possède les bases (droits fins à concevoir avant toute base partagée).
@@ -124,4 +168,5 @@ Aucun fichier de `c0/`, `components/`, `lib/site-dto`, ni de `app/` hors `app/ap
 3. **Rétention** des anciennes générations et des médias (durée, purge) — affecte la capacité de restauration
    (ROLL_FORWARD = republication par la Factory, pas de re-pointage).
 
-Question au reviewer (technique, non propriétaire) : décision 2 (ACTIVATE sans VERIFY_MEDIA préalable) acceptable ?
+Décision 2 (ACTIVATE sans VERIFY_MEDIA préalable) : jugée acceptable par la review (§6) ; `VERIFIED` documenté comme
+informatif dans `docs/SITE_TRANSPORT_STAGING.md`.

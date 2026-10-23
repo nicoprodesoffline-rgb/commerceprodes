@@ -1,4 +1,4 @@
-# 2026-10-23T00:05:17Z commit testé 0aa6bdc8c4dcbd7e7a0805e41912bc1515e86a4e node v22.23.1 npm 10.9.8 psql (PostgreSQL) 18.6 (Homebrew)
+# 2026-10-23T00:32:39Z commit testé 522ed1df4002784c1e845c720fa9f615a10db9b5 node v22.23.1 npm 10.9.8 psql (PostgreSQL) 18.6 (Homebrew)
 role prodes_site: OK
 base prodes_site_bc2_test: déjà présente
 role prodes_site: OK
@@ -8,18 +8,24 @@ apply 001_site_generation.sql sha256=74b3fbf0f2a253250d30f1eddb33e17aae62acd52fa
 apply 002_site_active_pointer.sql sha256=0e2021c60e60c16504ddc580cd805a6b2424b592e1a540830f329dd19a87f605
 apply 003_site_media.sql sha256=05be388af596569182401b31775bc088739349f502d3c9f1e44495337fc3287d
 apply 004_site_publication_log.sql sha256=e7274db2eb00a68d82827d77e7d141387ba9a7ea3ab614a5a6cacdba4842d564
-MIGRATIONS_OK db=prodes_site_bc2 applied=4
+apply 005_site_generation_immutable.sql sha256=5494f0bdd7bf3cdf48c955cbf6158fbe65f223d7d26ff5cade7e1777708cdce1
+MIGRATIONS_OK db=prodes_site_bc2 applied=5
 migrate_exit=0
 skip 001_site_generation.sql
 skip 002_site_active_pointer.sql
 skip 003_site_media.sql
 skip 004_site_publication_log.sql
+skip 005_site_generation_immutable.sql
 MIGRATIONS_OK db=prodes_site_bc2 applied=0
 migrate_again_exit=0
 REFUS: nom de base 'prodes_factory' hors préfixe prodes_site_
 refus_factory_exit=2
 MIGRATIONS_FAILED SITE_DATABASE_URL vise 'prodes_factory' : seules les bases prodes_site* sont admises
 migrate_factory_refused_exit=1
+MIGRATIONS_FAILED hôte de base refusé (jamais JARVIS, hôte explicite obligatoire)
+migrate_jarvis_refused_exit=1
+MIGRATIONS_FAILED paramètre 'host' refusé dans SITE_DATABASE_URL
+migrate_host_param_refused_exit=1
                                                                                                            Table « public.site_generation »
       Colonne       |           Type           | Collationnement | NULL-able |                 Par défaut                  | Stockage | Compression | Cible de statistiques |                               Description                               
 --------------------+--------------------------+-----------------+-----------+---------------------------------------------+----------+-------------+-----------------------+-------------------------------------------------------------------------
@@ -64,6 +70,8 @@ Contraintes NOT NULL :
     "site_generation_transport_json_not_null" NOT NULL "transport_json"
     "site_generation_status_not_null" NOT NULL "status"
     "site_generation_staged_at_not_null" NOT NULL "staged_at"
+Triggers :
+    site_generation_immutable BEFORE UPDATE ON site_generation FOR EACH ROW EXECUTE FUNCTION site_generation_immutable()
 Méthode d'accès : heap
 
                            Table « public.site_active_pointer »
@@ -122,11 +130,12 @@ Triggers :
     site_publication_log_no_truncate BEFORE TRUNCATE ON site_publication_log FOR EACH STATEMENT EXECUTE FUNCTION site_publication_log_append_only()
     site_publication_log_no_update BEFORE DELETE OR UPDATE ON site_publication_log FOR EACH ROW EXECUTE FUNCTION site_publication_log_append_only()
 
- version |             name             |                              sha256                              
----------+------------------------------+------------------------------------------------------------------
- 001     | 001_site_generation.sql      | 74b3fbf0f2a253250d30f1eddb33e17aae62acd52fa63a284ab11c2aac3a65c7
- 002     | 002_site_active_pointer.sql  | 0e2021c60e60c16504ddc580cd805a6b2424b592e1a540830f329dd19a87f605
- 003     | 003_site_media.sql           | 05be388af596569182401b31775bc088739349f502d3c9f1e44495337fc3287d
- 004     | 004_site_publication_log.sql | e7274db2eb00a68d82827d77e7d141387ba9a7ea3ab614a5a6cacdba4842d564
-(4 lignes)
+ version |               name                |                              sha256                              
+---------+-----------------------------------+------------------------------------------------------------------
+ 001     | 001_site_generation.sql           | 74b3fbf0f2a253250d30f1eddb33e17aae62acd52fa63a284ab11c2aac3a65c7
+ 002     | 002_site_active_pointer.sql       | 0e2021c60e60c16504ddc580cd805a6b2424b592e1a540830f329dd19a87f605
+ 003     | 003_site_media.sql                | 05be388af596569182401b31775bc088739349f502d3c9f1e44495337fc3287d
+ 004     | 004_site_publication_log.sql      | e7274db2eb00a68d82827d77e7d141387ba9a7ea3ab614a5a6cacdba4842d564
+ 005     | 005_site_generation_immutable.sql | 5494f0bdd7bf3cdf48c955cbf6158fbe65f223d7d26ff5cade7e1777708cdce1
+(5 lignes)
 

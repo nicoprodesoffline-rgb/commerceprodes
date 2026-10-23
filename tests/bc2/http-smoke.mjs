@@ -3,7 +3,10 @@
 //   BASE_URL=http://127.0.0.1:3331 node tests/bc2/http-smoke.mjs     (après npm run bc2:build)
 // Horloge = horloge serveur réelle : l'ACK est comparé à ack_s1.json HORS activated_at_utc et signature,
 // puis vérifié par verifyAck (C0) avec le trousseau de test. Base attendue vide au départ.
+// H05b (constat BC4) : SITE_DEV_DATABASE_URL et SERVER_PID requis ; la connexion PostgreSQL d'un ACTIVATE en attente
+// du verrou du pointeur est tuée -> 503 propre, pas d'ACK, serveur vivant, et l'ACTIVATE suivant (H07) réussit.
 import { readFileSync } from "node:fs";
+import pg from "pg";
 import { KEYRING, activation, fixtureBytes, jsonc, loadCase, mediaHeaders } from "./helpers.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://127.0.0.1:3331";
@@ -40,6 +43,36 @@ record("H04", "PUT média correct -> 201 STORED", r.status === 201 && r.json?.ou
 r = await call("POST", "/api/site/publish/verify-media", { body: ctl(c.doc), headers: h });
 record("H05", "VERIFY_MEDIA -> 200 VERIFIED", r.status === 200 && r.json?.generation?.status === "VERIFIED", `${r.status} ${r.json?.generation?.status}`);
 
+{
+  const DB = process.env.SITE_DEV_DATABASE_URL;
+  const PID = Number(process.env.SERVER_PID);
+  const db = new pg.Client({ connectionString: DB });
+  const holder = new pg.Client({ connectionString: DB });
+  await db.connect();
+  await holder.connect();
+  await holder.query("BEGIN");
+  await holder.query("SELECT 1 FROM site_active_pointer WHERE singleton = 1 FOR SHARE");
+  const pending = call("POST", "/api/site/publish/activate", { body: ctl(c.doc), headers: h });
+  let victim = null;
+  for (let i = 0; i < 200 && victim === null; i += 1) {
+    const { rows } = await db.query("SELECT pid FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock' AND pid <> pg_backend_pid()");
+    if (rows.length === 1) victim = rows[0].pid;
+    else await new Promise((res) => setTimeout(res, 20));
+  }
+  if (victim !== null) await db.query("SELECT pg_terminate_backend($1)", [victim]);
+  r = await pending;
+  await holder.query("ROLLBACK");
+  await holder.end();
+  await new Promise((res) => setTimeout(res, 300));
+  let alive = false;
+  try { process.kill(PID, 0); alive = true; } catch {}
+  const ptr = (await db.query("SELECT generation_id FROM site_active_pointer")).rows[0].generation_id;
+  await db.end();
+  record("H05b", "connexion PostgreSQL de l'ACTIVATE tuée sous verrou -> 503 ACTIVATION_ABORTED, pas d'ACK, serveur vivant, rien d'activé",
+    victim !== null && r.status === 503 && r.json?.transport_error === "ACTIVATION_ABORTED" && !r.headers.get("x-c0-outcome") && alive && ptr === null,
+    `victime=${victim} ${r.status} ${r.json?.transport_error} serveur_vivant=${alive} pointeur=${ptr}`);
+}
+
 r = await call("POST", "/api/site/publish/activate", { body: ctl(c.doc), headers: { ...sig({ key_id: "c0-test-ack-01", signature: c.transport.signature }), "content-type": "application/json" } });
 record("H06", "ACTIVATE avec la clé ACK (hors scope) -> 401 SIGNATURE_INVALID", r.status === 401 && r.json?.error_codes?.[0] === "SIGNATURE_INVALID", `${r.status}`);
 
@@ -47,7 +80,7 @@ const act = await call("POST", "/api/site/publish/activate", { body: ctl(c.doc),
 const ack = act.json;
 const expected = JSON.parse(readFileSync(new URL("../../c0/fixtures/documents/F_SIMPLE_READY/ack_s1.json", import.meta.url), "utf8"));
 const strip = (a) => { const o = { ...a }; delete o.activated_at_utc; delete o.signature; return o; };
-record("H07", "ACTIVATE -> 200 ACTIVATED, ACK = ack_s1.json hors activated_at_utc/signature", act.status === 200 && act.headers.get("x-c0-outcome") === "ACTIVATED" && JSON.stringify(strip(ack)) === JSON.stringify(strip(expected)), `${act.status} ${act.headers.get("x-c0-outcome")} activated_at=${ack?.activated_at_utc}`);
+record("H07", "ACTIVATE (après la connexion tuée de H05b) -> 200 ACTIVATED, ACK = ack_s1.json hors activated_at_utc/signature", act.status === 200 && act.headers.get("x-c0-outcome") === "ACTIVATED" && JSON.stringify(strip(ack)) === JSON.stringify(strip(expected)), `${act.status} ${act.headers.get("x-c0-outcome")} activated_at=${ack?.activated_at_utc}`);
 const verdict = activation.verifyAck(ack, KEYRING, c.doc);
 record("H08", "ACK vérifié par verifyAck (C0) -> ACK_VALID ; octets canoniques", verdict.outcome === "ACK_VALID" && Buffer.compare(act.bytes, Buffer.from(jsonc.canonicalBytes(ack))) === 0, verdict.outcome);
 

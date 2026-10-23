@@ -16,9 +16,18 @@ export class SiteDbConfigError extends Error {
 export type Queryable = Pool | PoolClient | Client;
 
 const DB_NAME_RE = /^prodes_site[a-z0-9_]*$/;
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+/** Paramètres de requête qui changeraient la cible réelle de pg (hôte, base, options serveur) : toujours refusés. */
+const FORBIDDEN_PARAMS = ["host", "hostaddr", "options", "dbname", "database", "service", "servicefile"];
 
-/** Valide une URL SITE et renvoie le nom de la base. */
-export function siteDatabaseName(url: string): string {
+/**
+ * Valide une URL SITE et renvoie le nom de la base (review F-04) :
+ * - base `prodes_site*` seulement (jamais une base Factory) ;
+ * - hôte `localhost` / `127.0.0.1` / `::1` seulement, sauf `SITE_ALLOW_REMOTE_DB=1` explicite ;
+ * - `jarvis` (quel que soit le suffixe) toujours refusé, même avec `SITE_ALLOW_REMOTE_DB=1` ;
+ * - paramètres `host`, `hostaddr`, `options`, `dbname`, `database`, `service`, `servicefile` refusés.
+ */
+export function siteDatabaseName(url: string, env: Record<string, string | undefined> = process.env): string {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -26,6 +35,14 @@ export function siteDatabaseName(url: string): string {
     throw new SiteDbConfigError("SITE_DATABASE_URL n'est pas une URL");
   }
   if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") throw new SiteDbConfigError("SITE_DATABASE_URL doit être postgres://");
+  for (const key of parsed.searchParams.keys()) {
+    if (FORBIDDEN_PARAMS.includes(key.toLowerCase())) throw new SiteDbConfigError(`paramètre '${key}' refusé dans SITE_DATABASE_URL`);
+  }
+  const host = decodeURIComponent(parsed.hostname).toLowerCase();
+  if (host === "" || /(^|\.)jarvis($|\.)/.test(host) || host.startsWith("jarvis")) throw new SiteDbConfigError("hôte de base refusé (jamais JARVIS, hôte explicite obligatoire)");
+  if (!LOCAL_HOSTS.has(host) && env["SITE_ALLOW_REMOTE_DB"] !== "1") {
+    throw new SiteDbConfigError("hôte de base non local refusé (SITE_ALLOW_REMOTE_DB=1 requis)");
+  }
   const name = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
   if (!DB_NAME_RE.test(name)) throw new SiteDbConfigError(`base '${name}' refusée : seules les bases prodes_site* sont admises`);
   return name;
@@ -34,7 +51,7 @@ export function siteDatabaseName(url: string): string {
 export function siteDatabaseUrl(env: Record<string, string | undefined> = process.env): string {
   const url = env["SITE_DATABASE_URL"];
   if (url === undefined || url === "") throw new SiteDbConfigError("SITE_DATABASE_URL absente (aucune valeur par défaut)");
-  siteDatabaseName(url);
+  siteDatabaseName(url, env);
   return url;
 }
 
@@ -68,6 +85,11 @@ export function getPool(): Pool {
 /** Exécute `fn` dans une transaction (BEGIN … COMMIT, ROLLBACK sur exception). */
 export async function withTransaction<T>(pool: Pool, fn: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
+  // Connexion coupée pendant la transaction : pg émet `error` sur le client emprunté ; sans écouteur, Node
+  // arrêterait le processus. L'erreur remonte par la requête en cours (rejet), PostgreSQL annule la transaction.
+  const onClientError = (): void => undefined;
+  client.on("error", onClientError);
+  let broken = false;
   try {
     await client.query("BEGIN");
     try {
@@ -75,10 +97,15 @@ export async function withTransaction<T>(pool: Pool, fn: (client: PoolClient) =>
       await client.query("COMMIT");
       return out;
     } catch (error) {
+      broken = true;
       await client.query("ROLLBACK").catch(() => undefined);
       throw error;
     }
+  } catch (error) {
+    broken = true;
+    throw error;
   } finally {
-    client.release();
+    client.removeListener("error", onClientError);
+    client.release(broken);
   }
 }
