@@ -3,7 +3,7 @@ import Link from "next/link";
 export type CategoryWithCount = {
   category_key: string;
   name: string;
-  parent: string | null;
+  parent_category_key: string | null;
   family_count: number;
 };
 

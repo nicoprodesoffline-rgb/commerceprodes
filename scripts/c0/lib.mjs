@@ -23,6 +23,10 @@ export const ARCHIVE_PATHS = [
   "c0/ts/tsconfig.json",
 ];
 
+// Arbre du CODE gelé : doit être identique (objets tree git) entre archived_from_sha et frozen_code_sha,
+// sinon sync.mjs refuse avec C0_FROZEN_CODE_MISMATCH. c0/python n'est pas vendu mais fait partie du gel.
+export const FROZEN_CODE_PATHS = ["c0/fixtures", "c0/python", "c0/ts/src", "c0/ts/test"];
+
 // Répertoires régénérables exclus de l'empreinte (à toute profondeur sous c0/).
 export const EXCLUDED_DIRS = new Set(["dist", "node_modules"]);
 

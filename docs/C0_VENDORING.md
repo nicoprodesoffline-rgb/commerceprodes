@@ -19,9 +19,13 @@ Commerce en est une **copie vendue, épinglée au SHA**, jamais un fork.
 
 Contenu vendu : `c0/README.md`, `c0/fixtures/`, `c0/ts/src/`, `c0/ts/test/` et la configuration de
 compilation du jumeau (`c0/ts/package.json`, `c0/ts/tsconfig.json`, `c0/ts/package-lock.json`). Le Python et
-les outils de génération restent côté Factory. Le `c0/README.md` vendu est celui du commit gelé : sa ligne
-de statut dit encore `NOT_FROZEN` ; le gel a été prononcé ensuite (commit Factory `a059ec5`, lignes de statut
-seulement) et fait foi.
+les outils de génération restent côté Factory.
+
+**Code gelé vs commit archivé.** `frozen_code_sha` (`b88f5cdf…`) est le code gelé ; `archived_from_sha` est le
+commit Factory réellement archivé (actuellement `7a5ac012…`, tête de PR #29, dont `c0/README.md` porte le statut
+`C0_FROZEN`). `sync.mjs` refuse (`C0_FROZEN_CODE_MISMATCH`, avant toute écriture) si `c0/python`, `c0/ts/src`,
+`c0/ts/test` ou `c0/fixtures` n'ont pas le même objet tree git aux deux SHA ; les identifiants de ces trees sont
+consignés dans `frozen_code_identity` du manifeste, et `check.mjs` échoue si cette attestation manque.
 
 ## Interdit
 
@@ -34,13 +38,15 @@ jamais par un correctif local.
 Seulement quand Factory a prononcé le gel d'une nouvelle version (v2, nouveau SHA de code gelé) :
 
 ```bash
-npm run c0:sync -- --factory <chemin du dépôt Factory> --sha <sha complet du code gelé v2>
+npm run c0:sync -- --factory <chemin du dépôt Factory> --sha <sha archivé> --frozen-sha <sha complet du code gelé v2>
 npm run c0:check && npm run c0:build && npm run c0:test && npm run c0:vendor-test
 ```
 
 `c0:sync` **remplace entièrement** `c0/` (aucune fusion) et réécrit `c0/C0_SOURCE.json`
-(`frozen_code_sha`, `archived_from_sha`, `files`, `tree_digest`). `--frozen-sha` permet, si nécessaire,
-d'archiver un commit postérieur dont le code C0 est identique au gel ; par défaut `frozen_code_sha = --sha`.
+(`frozen_code_sha`, `archived_from_sha`, `frozen_code_identity`, `files`, `tree_digest`). `--sha` peut être un
+commit postérieur au gel (docs seulement) : le code doit y être identique au `--frozen-sha`, sinon refus.
+Sans `--frozen-sha`, `frozen_code_sha = --sha`. Commande de l'état actuel :
+`npm run c0:sync -- --factory <Factory> --sha 7a5ac0120d808c2f08d3be7d6f935eb8388afba8 --frozen-sha b88f5cdf2ca64eca8de4d19c077262e11f9e7e54`.
 Mettre ensuite à jour la constante attendue de `tests/c0/vendor.test.mjs` et `contract_version` dans
 `scripts/c0/lib.mjs`, comparer les deux registres de verdicts (SHA-256), et livrer le tout dans un commit
 dédié revu. Un SHA non gelé, une branche ou un working tree ne sont jamais des sources acceptables.

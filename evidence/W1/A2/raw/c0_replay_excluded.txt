@@ -1,0 +1,10 @@
+# \# exclu F_QUOTE_ORDER.order_catalog_unsafe — génération UNSAFE : la fixture sert ACTIVE
+# \# exclu F_QUOTE_ORDER.order_double_post_same_key — registre non vide : idempotence persistée = BC4
+# \# exclu F_QUOTE_ORDER.order_replay_lines_reordered — registre non vide : idempotence persistée = BC4
+# \# exclu F_QUOTE_ORDER.order_same_key_other_payload — registre non vide : idempotence persistée = BC4
+# \# exclu F_QUOTE_ORDER.quote_double_post — registre non vide : idempotence persistée = BC4
+# \# exclu F_QUOTE_ORDER.quote_priced_on_unsafe — génération UNSAFE : la fixture sert ACTIVE
+# \# exclu F_QUOTE_ORDER.quote_same_key_other_payload — registre non vide : idempotence persistée = BC4
+# \# exclu F_QUOTE_ORDER.quote_unpriced_on_unsafe — génération UNSAFE : la fixture sert ACTIVE
+# \# exclu F_SELL_WINDOWS.select_offset_instant — instant 2026-10-20T08:00:00+02:00 non C0 : l'instant est celui du serveur, jamais fourni
+# \# exclu F_SELL_WINDOWS.select_on_overlap — snapshot_overlap refusé par validateSnapshotBytes (PRICE_WINDOW_OVERLAP) : non servable

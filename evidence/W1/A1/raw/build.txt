@@ -1,4 +1,4 @@
-# 2026-10-22T23:41:03Z commit testé e8782bd1eabd02cf65e80d84889db18602e87294 node v22.23.1 npm 10.9.8
+# 2026-10-22T23:46:36Z commit testé 156bc5481da4ed49414828d75bd4e2fdd228b7a9 node v22.23.1 npm 10.9.8
 # commande: env -i PATH HOME NEXT_TELEMETRY_DISABLED=1 npm run build ; fichiers .env* présents: 0
 # variables transmises: PATH HOME NEXT_TELEMETRY_DISABLED 
 
@@ -6,15 +6,15 @@
 > next build
 
 ▲ Next.js 16.4.2 (Turbopack)
-✓ Running next.config.ts took 931ms
+✓ Running next.config.ts took 943ms
 
   Creating an optimized production build ...
-✓ Compiled successfully in 2.5s
+✓ Compiled successfully in 2.4s
   Running TypeScript ...
-  Finished TypeScript in 1366ms ...
+  Finished TypeScript in 1500ms ...
   Collecting page data using 11 workers ...
   Generating static pages using 11 workers (0/1) ...
-✓ Generating static pages using 11 workers (1/1) in 248ms
+✓ Generating static pages using 11 workers (1/1) in 224ms
   Finalizing page optimization ...
 
 Route (app)

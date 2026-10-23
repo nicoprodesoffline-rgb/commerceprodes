@@ -1,5 +1,5 @@
-# 2026-10-22T23:41:03Z commit testé e8782bd1eabd02cf65e80d84889db18602e87294 node v22.23.1 npm 10.9.8
-Factory HEAD b831750ed340def887e0bfe7f1836603a3db2855 (registre régénéré par npm run build && npm test dans c0/ts, dist/ ignoré)
+# 2026-10-22T23:46:36Z commit testé 156bc5481da4ed49414828d75bd4e2fdd228b7a9 node v22.23.1 npm 10.9.8
+Factory HEAD fb0de29f0e9ac329b8ce281b88007630403cf9cf (registre régénéré par npm run build && npm test dans c0/ts, dist/ ignoré)
 5abb6b69775bb73151f544e54e68d672729f00813e8a7400b1ad59334501dc90  c0/ts/dist/verdicts.ts.json
 5abb6b69775bb73151f544e54e68d672729f00813e8a7400b1ad59334501dc90  /Users/nico/Desktop/prodes-data-factory-poc/.claude/worktrees/w1-candidate/c0/ts/dist/verdicts.ts.json
 REGISTRES_IDENTIQUES_OCTET_POUR_OCTET

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function Hero() {
+export default function Hero({ dataLabel, familyCount, itemCount }: { dataLabel: string; familyCount: number; itemCount: number }) {
   return (
     <section className="border-b border-gray-100 bg-gradient-to-br from-white to-[#fef9f9]">
       <div className="mx-auto max-w-screen-2xl px-4 py-14 lg:px-6 lg:py-20">
@@ -14,8 +14,8 @@ export default function Hero() {
               Équipements pour collectivités
             </h1>
             <p className="mt-4 text-lg text-gray-600 max-w-lg">
-              Catalogue de démonstration (STAGING_FIXTURE) : 3 familles, 7
-              articles publiés. Devis et commande en simulation contractuelle.
+              Catalogue de démonstration ({dataLabel}) : {familyCount} famille{familyCount > 1 ? "s" : ""}, {itemCount}{" "}
+              article{itemCount > 1 ? "s" : ""} publié{itemCount > 1 ? "s" : ""}. Devis et commande validés par le serveur, sans enregistrement.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
@@ -37,9 +37,9 @@ export default function Hero() {
           <div className="grid grid-cols-2 gap-4 lg:w-80">
             {[
               { icon: "🏛️", title: "Collectivités publiques", sub: "Mairies, régions, écoles" },
-              { icon: "💶", title: "Prix HT affichés", sub: "Sélectionnés depuis le snapshot" },
+              { icon: "💶", title: "Prix publiés", sub: "Sélectionnés par le serveur (C0)" },
               { icon: "📦", title: "Paliers de quantité", sub: "Fenêtres de vente publiées" },
-              { icon: "🧪", title: "Devis / commande", sub: "SIMULATION — rien n'est enregistré" },
+              { icon: "🧪", title: "Devis / commande", sub: "Validés, rien n'est enregistré" },
             ].map((item) => (
               <div
                 key={item.title}
