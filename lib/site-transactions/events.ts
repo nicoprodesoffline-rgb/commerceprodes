@@ -2,11 +2,14 @@
  * Lecture sortante des événements par la Factory (C0 §11.3) et ACK — transport `STAGING_TRANSPORT`
  * (annexe « Poll / ACK des événements » de docs/SITE_TRANSPORT_STAGING.md).
  *
- * `GET /api/site/events?cursor=&limit=` : en-têtes `x-c0-key-id`, `x-c0-signature` =
- *   hex(HMAC-SHA256(secret, "prodes.c0.transport.events_poll.v1" 0x00 canonical({cursor, limit}))), clé de scope
- *   `site_events.read`. Ordre : signature (`EVENT_UNAUTHORIZED`) → `validatePollRequest` C0 (`EVENT_UNAUTHORIZED`,
- *   `CURSOR_INVALID`) → service des `event_bytes` NON ACQUITTÉS dans l'ordre `id` (un événement non acquitté est
- *   re-servi) → `DELIVERED_TO_POLL` → nouveau curseur opaque émis et enregistré → COMMIT → réponse.
+ * `GET /api/site/events?cursor=&limit=` : en-têtes `x-c0-key-id`, `x-c0-issued-at`, `x-c0-nonce`, `x-c0-signature` =
+ *   hex(HMAC-SHA256(secret, "prodes.c0.transport.events_poll.v2" 0x00 canonical({cursor, issued_at_utc, limit, nonce}))),
+ *   clé de scope `site_events.read`. Ordre : scope → en-têtes de fraîcheur (`POLL_FRESHNESS_REQUIRED`) → signature
+ *   (`EVENT_UNAUTHORIZED`) → fenêtre `SITE_EVENTS_POLL_WINDOW_SECONDS` (`POLL_STALE`) → nonce jamais vu pour cette clé
+ *   (`POLL_REPLAYED`) — tous en 401 `EVENT_UNAUTHORIZED` avec `transport_error` (anti-rejeu DF-0115, hors C0) →
+ *   `validatePollRequest` C0 (`EVENT_UNAUTHORIZED`, `CURSOR_INVALID`) → service des `event_bytes` NON ACQUITTÉS dans
+ *   l'ordre `id` (un événement non acquitté est re-servi) → `DELIVERED_TO_POLL` → nouveau curseur opaque émis et
+ *   enregistré → COMMIT → réponse. Purge des curseurs et nonces : `purgeEventCursors` (`site_purge_event_cursors`, 017).
  * `POST /api/site/events/ack` : corps `{cursor}` ou `{event_ids:[…]}`, signé (domaine `prodes.c0.transport.events_ack.v1`,
  *   contexte = le corps lu), même scope → `ACKED`.
  */
@@ -16,8 +19,21 @@ import { isToken } from "../../c0/ts/src/formats";
 import { isObject, parseBytes, sha256Hex, type Json, type JsonObject } from "../../c0/ts/src/jsonc";
 import { SCOPE_EVENTS_READ, keyHasScope, verify } from "../../c0/ts/src/signing";
 import { appendLog, checkout, errorReason, httpStatusFor, json, opaqueRef, type TxResponse } from "./common";
+import { TransactionsConfigError } from "./config";
 
-export const EVENTS_POLL_DOMAIN = "prodes.c0.transport.events_poll.v1";
+/** Domaine de signature du poll depuis DF-0115 (contexte {cursor, issued_at_utc, limit, nonce}). */
+export const EVENTS_POLL_DOMAIN = "prodes.c0.transport.events_poll.v2";
+/** Domaine W1 ({cursor, limit} sans fraîcheur) : REFUSÉ depuis DF-0115 (une requête capturée se rejouait sans limite). */
+export const LEGACY_EVENTS_POLL_DOMAIN_V1 = "prodes.c0.transport.events_poll.v1";
+/** Fenêtre d'acceptation de `issued_at_utc` (|horloge serveur − issued_at| ≤ fenêtre) : défaut 300 s, bornes 5…3600. */
+export const DEFAULT_POLL_WINDOW_SECONDS = 300;
+export const MIN_POLL_WINDOW_SECONDS = 5;
+export const MAX_POLL_WINDOW_SECONDS = 3600;
+export const DEFAULT_CURSOR_RETENTION_HOURS = 168;
+export const DEFAULT_NONCE_RETENTION_HOURS = 24;
+const ISSUED_AT_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/;
+const NONCE_RE = /^[0-9a-f]{32}$/;
+const WINDOW_RE = /^[1-9][0-9]{0,4}$/;
 export const EVENTS_ACK_DOMAIN = "prodes.c0.transport.events_ack.v1";
 export const MAX_ACK_IDS = 500;
 const MAX_ACK_BYTES = 64 * 1024;
@@ -26,12 +42,35 @@ const LIMIT_RE = /^(0|[1-9][0-9]{0,15})$/;
 export interface EventsDeps {
   pool: Pool;
   keyring: Json;
+  /** Fenêtre anti-rejeu en secondes ; absente → `SITE_EVENTS_POLL_WINDOW_SECONDS` (défaut 300). */
+  windowSeconds?: number;
+  /** Horloge RÉELLE du serveur en millisecondes (jamais `SITE_NOW_UTC`, figée pour les fixtures) ; tests : injectable. */
+  clockMs?: () => number;
 }
+
+/** `SITE_EVENTS_POLL_WINDOW_SECONDS` : entier décimal 5…3600 ; absente → 300 ; invalide → erreur de configuration (503). */
+export function pollWindowSeconds(env: Record<string, string | undefined> = process.env): number {
+  const raw = env["SITE_EVENTS_POLL_WINDOW_SECONDS"];
+  if (raw === undefined || raw === "") return DEFAULT_POLL_WINDOW_SECONDS;
+  const n = WINDOW_RE.test(raw) ? Number(raw) : NaN;
+  if (!Number.isSafeInteger(n) || n < MIN_POLL_WINDOW_SECONDS || n > MAX_POLL_WINDOW_SECONDS) {
+    throw new TransactionsConfigError(`SITE_EVENTS_POLL_WINDOW_SECONDS doit être un entier de ${MIN_POLL_WINDOW_SECONDS} à ${MAX_POLL_WINDOW_SECONDS} (reçu : ${JSON.stringify(raw)})`);
+  }
+  return n;
+}
+
+export type PollFreshnessError = "POLL_FRESHNESS_REQUIRED" | "POLL_STALE" | "POLL_REPLAYED";
 
 type HeaderBag = { get(name: string): string | null };
 
-const refused = (code: "EVENT_UNAUTHORIZED" | "CURSOR_INVALID"): TxResponse =>
-  json(httpStatusFor([code]), { contract_version: "site_events.v1", accepted: false, outcome: "REJECTED", error_codes: [code] });
+const refused = (code: "EVENT_UNAUTHORIZED" | "CURSOR_INVALID", transportError?: PollFreshnessError): TxResponse =>
+  json(httpStatusFor([code]), {
+    contract_version: "site_events.v1",
+    accepted: false,
+    outcome: "REJECTED",
+    error_codes: [code],
+    ...(transportError ? { transport_error: transportError } : {}),
+  });
 
 function credential(headers: HeaderBag): { keyId: string | null; signature: string | null } {
   return { keyId: headers.get("x-c0-key-id"), signature: headers.get("x-c0-signature") };
@@ -58,16 +97,44 @@ async function issuedFor(q: Pool | PoolClient, keyId: string, cursor: Json): Pro
 
 export async function pollEvents(deps: EventsDeps, headers: HeaderBag, params: URLSearchParams): Promise<TxResponse> {
   const { keyId, signature } = credential(headers);
+  const windowSeconds = deps.windowSeconds ?? pollWindowSeconds();
+  const nowMs = (deps.clockMs ?? Date.now)();
   const rawCursor = params.get("cursor");
   const cursor: Json = rawCursor === null || rawCursor === "" ? null : rawCursor;
   const limit = parseLimit(params.get("limit"));
+  const issuedAt = headers.get("x-c0-issued-at");
+  const nonce = headers.get("x-c0-nonce");
+  const freshnessRefused = async (transportError: PollFreshnessError, keyKnown: boolean): Promise<TxResponse> => {
+    await appendLog(deps.pool, { operation: "EVENTS_POLL", outcome: "REJECTED", error_codes: ["EVENT_UNAUTHORIZED"], detail: { transport_error: transportError, ...(keyKnown ? { key_id: keyId } : {}) } });
+    return refused("EVENT_UNAUTHORIZED", transportError);
+  };
 
-  // Credential : scope site_events.read (ACTIVE/VERIFY_ONLY) ET signature de transport sur {cursor, limit}.
-  if (!keyHasScope(deps.keyring, keyId, SCOPE_EVENTS_READ) || !verify(deps.keyring, keyId, signature, SCOPE_EVENTS_READ, EVENTS_POLL_DOMAIN, { cursor, limit })) {
+  // (1) scope site_events.read (ACTIVE/VERIFY_ONLY).
+  if (!keyHasScope(deps.keyring, keyId, SCOPE_EVENTS_READ)) {
+    await appendLog(deps.pool, { operation: "EVENTS_POLL", outcome: "REJECTED", error_codes: ["EVENT_UNAUTHORIZED"] });
+    return refused("EVENT_UNAUTHORIZED");
+  }
+  // (2) fraîcheur présente et bien formée (DF-0115) : sans elle, la requête pourrait être rejouée indéfiniment.
+  if (issuedAt === null || nonce === null || !ISSUED_AT_RE.test(issuedAt) || !NONCE_RE.test(nonce) || Number.isNaN(Date.parse(issuedAt))) {
+    return freshnessRefused("POLL_FRESHNESS_REQUIRED", true);
+  }
+  // (3) signature de transport sur {cursor, issued_at_utc, limit, nonce}.
+  if (!verify(deps.keyring, keyId, signature, SCOPE_EVENTS_READ, EVENTS_POLL_DOMAIN, { cursor, limit, issued_at_utc: issuedAt, nonce })) {
     await appendLog(deps.pool, { operation: "EVENTS_POLL", outcome: "REJECTED", error_codes: ["EVENT_UNAUTHORIZED"] });
     return refused("EVENT_UNAUTHORIZED");
   }
   const key = keyId as string;
+  // (4) fenêtre : |horloge serveur − issued_at| ≤ fenêtre.
+  if (Math.abs(nowMs - Date.parse(issuedAt)) > windowSeconds * 1000) {
+    return freshnessRefused("POLL_STALE", true);
+  }
+  // (5) nonce jamais vu pour cette clé (insertion atomique, HORS transaction de service : un rejeu concurrent perd).
+  try {
+    const seen = await deps.pool.query("INSERT INTO site_event_poll_nonce (credential_key_id, nonce, issued_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING nonce", [key, nonce, issuedAt]);
+    if (seen.rowCount !== 1) return freshnessRefused("POLL_REPLAYED", true);
+  } catch (error) {
+    return json(503, { accepted: false, outcome: "TRANSPORT_ERROR", transport_error: "EVENTS_UNAVAILABLE", error_codes: [], detail: { reason: errorReason(error) } });
+  }
   let client: PoolClient;
   let release: (failed: boolean) => void;
   try {
@@ -87,8 +154,10 @@ export async function pollEvents(deps: EventsDeps, headers: HeaderBag, params: U
       return refused(code);
     }
     // Non acquittés d'abord, dans l'ordre d'insertion : un événement livré mais non acquitté est RE-SERVI.
+    // ORDER BY sur la colonne QUALIFIÉE : `ORDER BY id` désignait l'alias texte `id::text AS id` (PostgreSQL préfère la
+    // colonne de sortie) et triait « 10 » avant « 8 » dès dix événements (W4 lot I, campagne C12 ; test 16).
     const { rows } = await client.query<{ id: string; event_id: string; event_bytes: Buffer }>(
-      "SELECT id::text AS id, event_id, event_bytes FROM site_outbox_event WHERE status <> 'ACKED' ORDER BY id LIMIT $1 FOR UPDATE",
+      "SELECT site_outbox_event.id::text AS id, event_id, event_bytes FROM site_outbox_event WHERE status <> 'ACKED' ORDER BY site_outbox_event.id LIMIT $1 FOR UPDATE",
       [limit as number],
     );
     const ids = rows.map((r) => r.event_id);
@@ -206,4 +275,29 @@ export async function ackEvents(deps: EventsDeps, headers: HeaderBag, bytes: Uin
     console.error(`[site-transactions] EVENTS_ACK échec code=${reason}`);
     return json(503, { accepted: false, outcome: "TRANSPORT_ERROR", transport_error: "EVENTS_UNAVAILABLE", error_codes: [], detail: { reason } });
   }
+}
+
+export interface PurgeOptions {
+  cursorRetentionHours?: number;
+  nonceRetentionHours?: number;
+  dryRun?: boolean;
+}
+
+/**
+ * Purge des curseurs de poll et des nonces (DF-0115) : `site_purge_event_cursors` (migration 017). Garde le curseur le plus
+ * récent de chaque clé ; rétention minimale 1 h (refusée en dessous par la fonction SQL). Un curseur purgé présenté ensuite
+ * → `CURSOR_INVALID` ; le consommateur repart d'un curseur vide (le flux sert toujours la tête du non-acquitté).
+ */
+export async function purgeEventCursors(pool: Pool, options: PurgeOptions = {}): Promise<{ cursors_deleted: number; cursors_kept: number; nonces_deleted: number }> {
+  const cursorHours = options.cursorRetentionHours ?? DEFAULT_CURSOR_RETENTION_HOURS;
+  const nonceHours = options.nonceRetentionHours ?? DEFAULT_NONCE_RETENTION_HOURS;
+  for (const h of [cursorHours, nonceHours]) {
+    if (!Number.isSafeInteger(h) || h < 1 || h > 24 * 3650) throw new RangeError("rétention en heures : entier de 1 à 87600");
+  }
+  const { rows } = await pool.query<{ cursors_deleted: string; cursors_kept: string; nonces_deleted: string }>(
+    "SELECT cursors_deleted::text, cursors_kept::text, nonces_deleted::text FROM site_purge_event_cursors(make_interval(hours => $1), make_interval(hours => $2), $3)",
+    [cursorHours, nonceHours, options.dryRun === true],
+  );
+  const r = rows[0]!;
+  return { cursors_deleted: Number(r.cursors_deleted), cursors_kept: Number(r.cursors_kept), nonces_deleted: Number(r.nonces_deleted) };
 }

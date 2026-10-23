@@ -208,21 +208,32 @@ Polling **sortant** depuis la Factory. Implémentation : `lib/site-transactions/
 |---|---|
 | `SITE_DATABASE_URL` | base `prodes_site*` |
 | `SITE_KEYRING_PATH` | trousseau C0 (staging : `c0/fixtures/keys/test_keyring.json`, clé de lecture `c0-test-events-01`) |
+| `SITE_EVENTS_POLL_WINDOW_SECONDS` | fenêtre anti-rejeu du poll, entier `5…3600`, **défaut 300** (absente ou vide) ; autre valeur → 503 `TRANSACTIONS_CONFIG_INVALID` |
 
 Configuration invalide → `503 {"transport_error":"TRANSACTIONS_CONFIG_INVALID"}` (ou `SITE_DB_CONFIG_INVALID`).
 
 ## `GET /api/site/events?cursor=<curseur|vide>&limit=<1…500>`
 
-En-têtes : `x-c0-key-id` (clé de scope **`site_events.read`**, `ACTIVE`/`VERIFY_ONLY`) et `x-c0-signature` :
+En-têtes : `x-c0-key-id` (clé de scope **`site_events.read`**, `ACTIVE`/`VERIFY_ONLY`), `x-c0-issued-at`, `x-c0-nonce` et
+`x-c0-signature` (depuis W4 lot I, DF-0115 — domaine **v2**) :
 
 ```text
-signature = hex(HMAC-SHA256(secret_utf8, "prodes.c0.transport.events_poll.v1" || 0x00 || canonical({cursor, limit})))
-  cursor = null au premier poll (paramètre absent ou vide), sinon la chaîne next_cursor reçue
-  limit  = entier si le paramètre est un décimal strict, sinon la chaîne brute (refusée ensuite CURSOR_INVALID)
+signature = hex(HMAC-SHA256(secret_utf8, "prodes.c0.transport.events_poll.v2" || 0x00 ||
+                canonical({cursor, issued_at_utc, limit, nonce})))
+  cursor        = null au premier poll (paramètre absent ou vide), sinon la chaîne next_cursor reçue
+  limit         = entier si le paramètre est un décimal strict, sinon la chaîne brute (refusée ensuite CURSOR_INVALID)
+  issued_at_utc = en-tête x-c0-issued-at, UTC à la seconde « YYYY-MM-DDTHH:MM:SSZ », horloge RÉELLE de l'émetteur
+  nonce         = en-tête x-c0-nonce, 32 caractères hexadécimaux minuscules aléatoires, neuf à CHAQUE requête
 ```
 
-Ordre : (1) clé de scope `site_events.read` **et** signature valide, sinon `401 EVENT_UNAUTHORIZED` (clé de publication,
-d'ACK, inconnue, `RETIRED`, signature absente/fausse/autre contexte/autre domaine) ; (2) `validatePollRequest(
+Ordre : (1) clé de scope `site_events.read`, sinon `401 EVENT_UNAUTHORIZED` (clé de publication, d'ACK, inconnue,
+`RETIRED`) ; (1b) **fraîcheur** — `x-c0-issued-at` et `x-c0-nonce` présents et bien formés, sinon `401 EVENT_UNAUTHORIZED` +
+`transport_error: "POLL_FRESHNESS_REQUIRED"` (toute requête W1 signée `events_poll.v1` sur `{cursor, limit}` tombe ici) ;
+signature v2 valide, sinon `401 EVENT_UNAUTHORIZED` (absente, fausse, autre contexte, autre domaine — v1 compris) ;
+`|horloge serveur − issued_at| ≤ SITE_EVENTS_POLL_WINDOW_SECONDS`, sinon `401` + `transport_error: "POLL_STALE"` (passé comme
+futur ; l'horloge serveur est l'horloge réelle, jamais `SITE_NOW_UTC`) ; nonce jamais vu **pour cette clé** (insertion
+atomique dans `site_event_poll_nonce`), sinon `401` + `transport_error: "POLL_REPLAYED"`. Un poll refusé ne sert rien,
+n'émet aucun curseur, ne touche aucun `delivery_count` ; seul un poll authentifié consomme un nonce ; (2) `validatePollRequest(
 {credential_key_id, cursor, limit}, keyring, curseurs émis à CETTE clé)` → `400 CURSOR_INVALID` (curseur jamais émis ou émis à
 une autre clé, `limit` hors 1…500 ou non entier) ; (3) une transaction : événements **non acquittés** (`PENDING` ou
 `DELIVERED_TO_POLL`) dans l'ordre `id`, au plus `limit`, `FOR UPDATE` → `DELIVERED_TO_POLL`, `delivery_count + 1` → nouveau
@@ -235,17 +246,31 @@ curseur opaque `CUR-<32 hex>` enregistré (`site_event_cursor`, avec la liste de
 ```
 
 Le consommateur décode `event_bytes_b64` et passe **ces octets** à `validate_event` (C0 §11.2) : jamais une re-sérialisation.
+**Ordre** : ordre numérique de `site_outbox_event.id` (ordre d'insertion). Jusqu'au correctif W4 lot I, `ORDER BY id` triait sur
+l'alias texte `id::text AS id` : dès dix événements, le SITE servait `10` avant `8` (trouvé par la campagne réelle Factory BC7,
+test `tests/bc4/16_events_order.test.mjs`).
 **Livraison au moins une fois** : un événement servi mais non acquitté est **re-servi** à chaque poll suivant, avant les plus
 récents (le consommateur le reconnaît `EVENT_DUPLICATE_NOOP`, CE-T18). Un poll sans événement émet quand même un nouveau
 curseur (`events: []`). Le curseur **n'avance pas** la lecture : sa `position` est enregistrée mais n'est pas lue ; seul l'ACK
 fait progresser le flux.
 
-**Rejeu d'une requête de poll signée (review F-01).** La signature ne porte que `{cursor, limit}`, sans horodatage ni nonce : une
-requête capturée peut être rejouée tant que la clé est valide. **Chaque** rejeu (a) renvoie à son porteur tous les événements non
-acquittés (dans la limite), (b) insère une ligne dans `site_event_cursor` (append-only, aucune purge en W1), (c) incrémente
-`delivery_count` des événements servis (et passe les `PENDING` en `DELIVERED_TO_POLL`). Il ne crée ni ne modifie aucun événement
-ni aucun ACK. Acceptable en `STAGING_TRANSPORT` seulement ; avant production : anti-rejeu horodaté/nonce signé et purge des
-curseurs (NON-OUBLI).
+**Rejeu d'une requête de poll signée (review F-01, DF-0115 — traité en W4 lot I).** En W1, la signature ne portait que
+`{cursor, limit}` : une requête capturée se rejouait sans limite. Depuis la migration `017_site_events_antireplay.sql`, une
+requête capturée rejouée est refusée `POLL_REPLAYED` (nonce déjà vu, même dans la fenêtre) puis `POLL_STALE` (hors fenêtre,
+vérifié avant le nonce) ; huit rejeux concurrents de la même requête → un seul servi (`tests/bc4/14_events_antireplay.test.mjs`).
+Limites : la fenêtre suppose des horloges à moins de `SITE_EVENTS_POLL_WINDOW_SECONDS` près ; l'ACK (idempotent :
+`already_acked`) n'a pas d'anti-rejeu ; HTTPS reste requis contre la lecture des réponses (le rejeu est bloqué, l'écoute non).
+
+**Purge des curseurs et des nonces (DF-0115).** `site_event_cursor` n'admet plus `UPDATE` ; `DELETE` n'est admis que pendant
+`site_purge_event_cursors(rétention curseurs, rétention nonces, simulation)` (paramètre de transaction
+`site.event_cursor_purge`, garde contre l'erreur, pas contre un administrateur) ; `TRUNCATE` reste refusé. Politique : un
+curseur émis il y a plus de la rétention (**défaut 168 h**) est supprimé, **sauf le plus récent de chaque clé** ; un nonce dont
+`issued_at` a plus que la rétention (**défaut 24 h**, minimum 1 h ≥ fenêtre maximale : un tel poll serait de toute façon
+`POLL_STALE`) est supprimé ; rétention < 1 h refusée ; aucun événement n'est touché. Commande :
+`SITE_DATABASE_URL=… node scripts/db/purge-event-cursors.mjs [--cursor-retention-hours 168] [--nonce-retention-hours 24]
+[--dry-run]` (une ligne JSON ; base `prodes_site*` locale seulement) ; module : `purgeEventCursors(pool, options)`. Un curseur
+purgé présenté ensuite → `400 CURSOR_INVALID` (poll et ACK par curseur) : le consommateur repart d'un curseur vide, qui sert
+la même tête non acquittée (`tests/bc4/15_events_cursor_purge.test.mjs`). Planification de la purge : non faite (staging).
 
 **Événement empoisonné (review F-02, `REQUIRES_OWNER_DECISION`).** Les événements non acquittés sont toujours re-servis **en tête**.
 Un événement que la Factory refuse durablement (C0 §13 : `EVENT_PAYLOAD_INVALID`, `EVENT_IDEMPOTENCY_CONFLICT`, `EVENT_TYPE_UNKNOWN`
@@ -253,7 +278,9 @@ Un événement que la Factory refuse durablement (C0 §13 : `EVENT_PAYLOAD_INVAL
 récent n'est servi). W1 ne change pas ce comportement. Options à trancher par le propriétaire : (1) quarantaine explicite côté
 Factory par ACK d'`event_ids` (l'événement sort du flux, la trace du refus reste à la Factory) ; (2) statut SITE `REFUSED` posé par
 une route d'ACK-refus signée (l'événement reste visible côté SITE, hors flux). En attendant, BC5 doit choisir `limit` assez grand et
-alerter dès qu'un même `event_id` revient refusé.
+alerter dès qu'un même `event_id` revient refusé. **W4 lot I (Factory BC7)** : la Factory met l'événement en quarantaine
+**chez elle** (persistée, visible), ne l'acquitte jamais, et signale `EVENT_STREAM_BLOCKED` quand un lot plein ne contient
+aucun événement acquittable ; aucune route SITE nouvelle (proposition v2, décision propriétaire DF-0116).
 
 ## `POST /api/site/events/ack`
 
@@ -277,17 +304,20 @@ Un événement `PENDING` (jamais servi) n'est pas acquittable (`not_delivered`) 
 ## Séquence type pour BC5
 
 ```text
-1. GET  /api/site/events?cursor=&limit=N        (signé {cursor:null, limit:N})        -> events[], next_cursor C1
-2. pour chaque événement : validate_event(octets, consumed) -> APPLY (persister) | DUPLICATE_NOOP (rien)
-3. COMMIT Factory, puis POST /api/site/events/ack {"cursor":"C1"} (signé)            -> acked[]
-4. GET  /api/site/events?cursor=C1&limit=N      (signé {cursor:"C1", limit:N})        -> suite
+1. GET  /api/site/events?cursor=&limit=N   (signé v2 {cursor:null, issued_at_utc, limit:N, nonce}) -> events[], next_cursor C1
+2. pour chaque événement : validate_event(octets, consumed) -> APPLY (persister) | DUPLICATE_NOOP (rien) | refus (quarantaine)
+3. COMMIT Factory, puis POST /api/site/events/ack {"event_ids":[acquittables seulement]} (signé)       -> acked[]
+   (un ACK {"cursor":"C1"} acquitterait aussi les événements refusés : la Factory BC7 ne l'emploie pas)
+4. GET  /api/site/events?cursor=C1&limit=N (signé v2, issued_at et nonce NEUFS)                      -> suite
    (perte de l'étape 3 : l'étape 4 re-sert les mêmes octets ; validate_event -> EVENT_DUPLICATE_NOOP ; ré-ACK)
 ```
 
-Recette : `tests/bc4/10_events_poll_ack.test.mjs` (`npm run test:bc4`) et `tests/bc4/http.e2e.mjs` (`npm run test:bc4:http`,
-serveur réel 127.0.0.1:3351).
+Recette : `tests/bc4/10_events_poll_ack.test.mjs`, `14_events_antireplay.test.mjs`, `15_events_cursor_purge.test.mjs`
+(`npm run test:bc4`) et `tests/bc4/http.e2e.mjs` (`npm run test:bc4:http`, serveur réel 127.0.0.1:3351). Consommateur Factory
+réel : `manage.py site_events_poll` (Factory, `docs/contracts/site_events_consumer_v1.md`).
 
 ## Ce que cette annexe ne prouve pas
 
-Poll réel prolongé (48 h), anti-rejeu horodaté (une requête de poll signée peut être rejouée : effets ci-dessus), traitement d'un
-événement empoisonné, HTTPS, débit, rotation réelle des clés de lecture, purge des curseurs, signature asymétrique.
+Poll réel prolongé (48 h), HTTPS, débit, rotation réelle des clés de lecture, signature asymétrique, anti-rejeu de l'ACK,
+planification de la purge, synchronisation d'horloges Factory/SITE, sortie durable d'un événement empoisonné du flux SITE
+(DF-0116, décision propriétaire).
