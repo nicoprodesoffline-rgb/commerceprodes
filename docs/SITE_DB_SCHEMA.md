@@ -11,7 +11,7 @@ jamais une base Factory. Propriétaire : BC2 (receiver de publication). Lecteurs
 | Bases | `prodes_site_bc2` (dev), `prodes_site_bc2_test` (tests, remise à zéro par chaque fichier de test) |
 | Création | `scripts/db/create-local.sh [--recreate] <prodes_site_…> …` (idempotent, refuse tout nom hors `prodes_site_*`, refuse un hôte non local) |
 | Migrations | `SITE_DATABASE_URL=… node scripts/db/migrate.mjs` (`npm run db:migrate`) |
-| Connexion | **uniquement** `SITE_DATABASE_URL` (ex. `postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc2`) ; aucune valeur par défaut ; toute base dont le nom n'est pas `prodes_site*` est refusée (`SITE_DB_CONFIG_INVALID`) |
+| Connexion | **uniquement** `SITE_DATABASE_URL` (ex. `postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc2`) ; aucune valeur par défaut ; refus `SITE_DB_CONFIG_INVALID` si la base n'est pas `prodes_site*`, si l'hôte n'est pas `localhost`/`127.0.0.1`/`::1` (sauf `SITE_ALLOW_REMOTE_DB=1` explicite), si l'hôte est `jarvis…` (toujours), ou si l'URL porte un paramètre `host`, `hostaddr`, `options`, `dbname`, `database`, `service`, `servicefile` (review F-04 ; même garde dans `scripts/db/migrate.mjs`) |
 | Pilote | `pg` 8.23.1 épinglé (`@types/pg` 8.23.1) |
 
 ## Migrations
@@ -20,7 +20,7 @@ jamais une base Factory. Propriétaire : BC2 (receiver de publication). Lecteurs
   consultatif ; table `schema_migrations(version, name, sha256, applied_at)`.
 - Idempotent : une migration appliquée est sautée si son SHA-256 est inchangé ; modifiée → `MIGRATION_DRIFT` (échec).
   On n'édite jamais une migration appliquée : on en ajoute une.
-- **Plages réservées : BC2 = `001`–`009` ; BC4 = `010`–`019`.** BC2 a livré `001`–`004`.
+- **Plages réservées : BC2 = `001`–`009` ; BC4 = `010`–`019`.** BC2 a livré `001`–`005`.
 
 | Migration | Objet |
 |---|---|
@@ -28,6 +28,7 @@ jamais une base Factory. Propriétaire : BC2 (receiver de publication). Lecteurs
 | `002_site_active_pointer.sql` | pointeur ACTIVE (ligne unique) |
 | `003_site_media.sql` | médias adressés par contenu |
 | `004_site_publication_log.sql` | journal append-only |
+| `005_site_generation_immutable.sql` | déclencheur `BEFORE UPDATE` : `snapshot_bytes`, `snapshot_json`, `transport_json`, `payload_sha256`, séquence, `publication_id`, `projection_id`, `scope_key` immuables ; un ACK posé (`ack_bytes`/`ack_json`) ne change plus (review F-02) |
 
 ## Tables
 
@@ -114,7 +115,7 @@ interface ActiveGeneration {
   generation_id: number;
   catalogue_sequence: number;
   payload_sha256: string;
-  snapshot: Snapshot;            // type C0 (c0/ts/src/snapshot.ts), relu depuis snapshot_bytes par le lecteur strict
+  snapshot: Snapshot | null;     // type C0 (c0/ts/src/snapshot.ts), relu depuis snapshot_bytes ; null si UNSAFE
   status: "ACTIVE" | "UNSAFE";
 }
 getActiveGeneration(client?: Queryable): Promise<ActiveGeneration | null>   // sans verrou ; pool partagé par défaut
@@ -129,13 +130,21 @@ readActiveForUpdate(client: PoolClient): Promise<ActiveGeneration | null>    // 
   Une activation en attente du verrou bloque aussi les nouveaux `FOR SHARE` : BC4 doit garder ses transactions courtes.
 - `status: "UNSAFE"` est **fail-closed** : pointeur et ligne discordants (séquence, SHA, statut ≠ `ACTIVE`), octets
   illisibles, non canoniques, ou `payload_sha256` recalculé ≠ stocké. Le passer tel quel à `site_business` C0
-  (`{snapshot, status}`) donne `CATALOG_UNSAFE`. **Il n'existe en W1 aucun marquage opérationnel « UNSAFE »** d'une
+  (`{snapshot, status}`) donne `CATALOG_UNSAFE`. **Quand `status` vaut `UNSAFE`, `snapshot` vaut `null`** (F-05) :
+  BC3/BC4 ne lisent jamais un document non vérifié. **Il n'existe en W1 aucun marquage opérationnel « UNSAFE »** d'une
   génération saine (décision/outillage hors périmètre BC2).
+- Le receiver applique le **même contrôle** à l'ACTIVE qu'il relit (STAGE, VERIFY_MEDIA, ACTIVATE) : ACTIVE `UNSAFE`
+  → refus `CATALOG_UNSAFE`, aucune activation par-dessus (F-02). Reprise : rétablir les octets d'origine (geste DBA,
+  hors receiver) ; aucune voie HTTP ne contourne ce refus.
+- **`UNSAFE` ne couvre pas les médias** de l'ACTIVE (F-06, dette) : un octet de `site_media` altéré après activation
+  laisse `status: "ACTIVE"`. BC3 (route `/media/[sha256]`) doit revérifier le SHA-256 des octets à la lecture.
 - `getPool()` lit `SITE_DATABASE_URL` à la première demande (singleton de processus) ; `createPool(url)` pour un pool
   dédié (tests, outils), fermé par l'appelant.
 
 ## Ce que ce schéma ne prouve pas
 
-Volumétrie réelle (FULL 2–3 k Items, `snapshot_bytes` jusqu'à 32 MiB par ligne), rétention/purge des générations et
+Immutabilité face au rôle propriétaire : `prodes_site` possède les tables et peut désactiver les déclencheurs
+(`ALTER TABLE … DISABLE TRIGGER`) ; append-only et immutabilité ne valent que contre le receiver et les rôles non
+propriétaires (dette F-09, droits fins avant toute base partagée). Volumétrie réelle (FULL 2–3 k Items, `snapshot_bytes` jusqu'à 32 MiB par ligne), rétention/purge des générations et
 médias, sauvegarde, réplication, PostgreSQL hors Mac, droits fins (le rôle de test possède les bases), comportement
 sous charge prolongée.
