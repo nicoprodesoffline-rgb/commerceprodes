@@ -20,7 +20,7 @@ jamais une base Factory. Propriétaire : BC2 (receiver de publication). Lecteurs
   consultatif ; table `schema_migrations(version, name, sha256, applied_at)`.
 - Idempotent : une migration appliquée est sautée si son SHA-256 est inchangé ; modifiée → `MIGRATION_DRIFT` (échec).
   On n'édite jamais une migration appliquée : on en ajoute une.
-- **Plages réservées : BC2 = `001`–`009` ; BC4 = `010`–`019`.** BC2 a livré `001`–`004` ; BC4 a livré `010`–`015`
+- **Plages réservées : BC2 = `001`–`009` ; BC4 = `010`–`019`.** BC2 a livré `001`–`004` ; BC4 a livré `010`–`016`
   (section « BC4 — transactions » ci-dessous).
 
 | Migration | Objet |
@@ -159,6 +159,7 @@ Statut : `TESTED_SYNTHETIC / SITE_DB_REAL_LOCAL`. Propriétaire : BC4. Lecture d
 | `013_site_outbox_event.sql` | outbox `site_events.v1` |
 | `014_site_event_cursor.sql` | curseurs de poll émis par le SITE |
 | `015_site_transaction_log.sql` | journal append-only BC4 |
+| `016_site_idempotency_receipt_bytes.sql` | `receipt_bytes` : octets canoniques du reçu (review F-03) |
 
 **Aucune colonne** taxe, TVA/TTC, port, statut client, paiement, facture (vérifié par `tests/bc4/09`). Aucun type
 flottant ni `numeric` : montants = chaîne Money C0 (`^(0|[1-9][0-9]{0,8})\.[0-9]{2}$`) **et** centimes `bigint`, liés par
@@ -172,7 +173,8 @@ flottant ni `numeric` : montants = chaîne Money C0 (`^(0|[1-9][0-9]{0,8})\.[0-9
 | `idempotency_key` | `text` | format C0 §6 |
 | `request_fingerprint` | `char(64)` | `requestFingerprint` C0 (lignes triées, sans la clé) |
 | `receipt_ref` | `text UNIQUE` | `ORD-<32 hex>` / `QR-<32 hex>` (128 bits aléatoires, non prévisible) |
-| `receipt_json` | `jsonb` | reçu renvoyé au client (lignes C0 + `receipt_ref` + `created_at_utc`), **sans contact ni jeton** |
+| `receipt_json` | `jsonb` | vue requêtable du reçu (lignes C0 + `receipt_ref` + `created_at_utc`), **sans contact ni jeton** ; jsonb ne conserve pas l'ordre des clés |
+| `receipt_bytes` | `bytea NOT NULL` | `canonicalBytes(reçu)` (migration 016) : **octets renvoyés** à la création, au rejeu et à la consultation, identiques octet pour octet (en-tête `x-site-receipt-sha256`) |
 | `created_at` | `timestamptz` | |
 
 `PRIMARY KEY (kind, idempotency_key)` : c'est **l'unicité en base** qui tranche deux POST concurrents (CE-T03). Immuable
