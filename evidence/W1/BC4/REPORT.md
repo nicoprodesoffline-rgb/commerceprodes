@@ -6,7 +6,8 @@ synthétiques `STAGING_FIXTURE`). Pas d'auto-approbation : review indépendante 
 - Dépôt Commerce, worktree `/Users/nico/Desktop/prodes-w1/commerce-bc4`, branche `build/w1-bc4-transactions`.
 - Base : BC2 `build/w1-bc2-receiver@a9dede14` + fusion `--no-ff` de A2 `build/w1-a2-app-on-c0@aa022a67` (commit `09c0168f`,
   seul fichier commun `package.json`, hunks disjoints, sans conflit).
-- **SHA testé (code) : `1cee6e0e`** après les correctifs de review (`evidence/W1/BC4/raw/env.txt`) ; première livraison testée à
+- **SHA testé (code) : `1e1f7fea`** après fusion de BC2 corrigé (`build/w1-bc2-receiver@c5dc9d02`, commit `6cffc296`) et
+  adaptation des tests demandée par l'intégration (garde CSRF BC3, migration BC2 005) ; avant : `1cee6e0e` après les correctifs de review (`evidence/W1/BC4/raw/env.txt`) ; première livraison testée à
   `3ebbb48d`, review indépendante `REVIEW_PASS` à `0d21981e` (0 bloquant, 0 majeur, 4 mineurs). Le commit de preuves suit (aucun code).
 - C0 vendu inchangé : `C0_VENDOR_OK sha=b88f5cdf… tree_digest=b73f1968…` (`raw/c0_check.txt`).
 - Bases : `prodes_site_bc4` (dev, migrations appliquées), `prodes_site_bc4_test` (tests). Port HTTP : **3351** seulement.
@@ -23,7 +24,7 @@ synthétiques `STAGING_FIXTURE`). Pas d'auto-approbation : review indépendante 
 | F2 CE-T03 concurrence (barrière forcée + 8 POST) → 1 objet, 1 événement, même reçu | ✅ | `02_concurrent_same_key` 5/5 ; HTTP `http.e2e` A | « deux réponses identiques » = **même `receipt`** ; le jeton n'est que dans la 1re (décision 3) |
 | F3 même clé autre payload → 409 ; lignes réordonnées → même reçu | ✅ | `03_idempotency_conflict` 4/4 (`order_same_key_other_payload`, `order_replay_lines_reordered`, `quote_same_key_other_payload`) | |
 | F4 CE-T16 falsifications → `PRICE_CHANGED`, `INVALID_VARIANT`, `ITEM_NOT_PUBLISHED`, `ITEM_SUPERSEDED` + canonique, 0 Order | ✅ | `04_falsified_and_items` 15/15 (F_QUOTE_ORDER, F_ESUNNY_FORBIDDEN, F_IDENTITY a→b→c) | |
-| F5 CE-T12 `CART_STALE` / `CATALOG_CHANGED` ; `UNSAFE` → `CATALOG_UNSAFE` | ✅ | `05_stale_unsafe` 5/5 | UNSAFE simulé par octets ACTIVE altérés (aucun marquage opérationnel en W1, cf. BC2) |
+| F5 CE-T12 `CART_STALE` / `CATALOG_CHANGED` ; ACTIVE `UNSAFE` → refus fail-closed | ⚠️ | `05_stale_unsafe` 5/5 | UNSAFE simulé par le pointeur ACTIVE (la migration BC2 005 interdit d'altérer `snapshot_bytes`). Depuis BC2 F-05, `snapshot: null` → BC4 répond **503 `CATALOG_UNAVAILABLE` (`ACTIVE_GENERATION_UNREADABLE`)**, pas le verdict C0 `CATALOG_UNSAFE` ; devis non chiffré et rejeu idempotent aussi refusés (plus strict que C0 §10.2/§10.4) — question 7 |
 | F6 devis non chiffré → `RECEIVED`, `priced:false`, aucun montant | ✅ | `06_quote_unpriced` 3/3 (`quote_unpriced_no_window`, `quote_priced`) | |
 | F7 DB coupée → `DB_WRITE_FAILED` 503, 0 ligne | ✅ | `07_db_down` 3/3 (base inexistante ; `pg_terminate_backend` après INSERT objet ; avant COMMIT) ; HTTP `http.e2e` B | perte de connexion **pendant** le COMMIT (issue ambiguë) non provoquée : le rejeu à l'identique la résout (REPLAY) |
 | F8 crash injecté objet → outbox : rollback complet, rejeu → RECEIVED | ✅ | `08_crash_rollback` 6/6 | injection par crochet de test (`hooks`), jamais exposé par les routes |
@@ -32,10 +33,10 @@ synthétiques `STAGING_FIXTURE`). Pas d'auto-approbation : review indépendante 
 | F11 reçu : 200 / 401 / 404 indiscernables | ✅ | `11_receipt` 4/4 (`lookup_*`) ; HTTP | jeton en paramètre d'URL (journaux de proxy) : `DEFERRED_FOR_PROD` |
 | F12 historique figé après nouvelle activation ; rejeu → reçu d'origine ; ancienne séquence → `CART_STALE` | ✅ | `12_history_frozen` 3/3 (F_IDENTITY gen_a → b → c) | commande construite par `selectPrice` C0 sur gen_a |
 | F-03 reçu rejoué identique octet pour octet (séquentiel, concurrent, réordonné, tardif, consultation) | ✅ | `13_receipt_bytes` 3/3 | octets identiques pour la clé `receipt` ; `outcome`, `instant_utc` et `access_token` diffèrent légitimement |
-| `npm run test:bc4` | ✅ | **73/73** (70 + 3 F-03), 0 skip (`raw/test_bc4.txt`, `raw/test_bc4_per_family.txt`) | |
-| `npm run test:bc4:http` (next start réel, 3351) | ✅ | **7/7** (`raw/test_bc4_http.txt`) | |
+| `npm run test:bc4` | ✅ | **73/73** (70 + 3 F-03), 0 skip ; aussi 73/73 sur une fusion jetable avec `build/w1-site-integration@70467f88` (worktree supprimé) (`raw/test_bc4.txt`, `raw/test_bc4_per_family.txt`) | |
+| `npm run test:bc4:http` (next start réel, 3351) | ✅ | **7/7** (`raw/test_bc4_http.txt`) ; 7/7 aussi sur la fusion jetable avec le candidat SITE (garde CSRF BC3 active) | POST avec `Content-Type: application/json` et `Origin` same-origin |
 | `npm run build` (sous `env -i`), `typecheck`, `c0:check`, `c0:vendor-test`, `c0:test` | ✅ | `raw/build.txt`, `typecheck.txt`, `c0_check.txt`, `c0_vendor_test.txt` 4/4, `c0_ts_test.txt` 9/9 | |
-| Tests BC2 sur la branche | ✅ | **50/50** (`raw/test_bc2_on_bc4_db.txt`) | rejoués sur `prodes_site_bc4_test`, **pas** via `npm run test:bc2` littéral (qui vise `prodes_site_bc2_test`, base de BC2 : aucune base partagée) ; même commande sinon |
+| Tests BC2 sur la branche (BC2 corrigé `c5dc9d02`) | ✅ | **58/58** (`raw/test_bc2_on_bc4_db.txt`) | rejoués sur `prodes_site_bc4_test`, **pas** via `npm run test:bc2` littéral (qui vise `prodes_site_bc2_test`, base de BC2 : aucune base partagée) ; même commande sinon |
 | F-04 base et port de test configurables | ✅ | `package.json` (`SITE_TEST_DATABASE_URL`, `SITE_TEST_PORT`, défauts inchangés), `tests/bc4/http.e2e.mjs`, `raw/replay_gates.sh` | |
 | F-01 / F-02 annexe poll corrigée (effets réels d'un rejeu, événement empoisonné) | ✅ | `docs/SITE_TRANSPORT_STAGING.md` annexe BC4 | comportement inchangé |
 | Tests HTTP A2 sur la branche | ✅ | **81/81** (`raw/test_http_a2_port3351.txt`) | rejoués sur une copie temporaire où **seul** `PORT` 3341 → 3351 change (`raw/test_http_a2_port_diff.txt`), copie supprimée |
@@ -122,6 +123,10 @@ charge prolongée, UI (BC3), accès Factory aux coordonnées (route scopée `DEF
 2. Jeton d'accès au reçu dans l'URL (`?access_token=`) : acceptable en W1, ou en-tête/POST exigé avant la production ?
 3. Rétention : durée de conservation des événements `ACKED`, des curseurs, et des devis/commandes (coordonnées du contact) ?
 4. `PENDING_REVIEW` : qui déclenche cette transition, sur quelle règle ?
+7. **ACTIVE `UNSAFE` après BC2 F-05** : `snapshot: null` empêche tout appel C0 ; BC4 refuse donc en 503 `CATALOG_UNAVAILABLE` même un
+   devis non chiffré (C0 : `RECEIVED`) et un rejeu idempotent (C0 : reçu d'origine), et n'émet plus le code C0 `CATALOG_UNSAFE`.
+   Garder ce refus strict (fail-closed, aucun document non vérifié), ou faire émettre par BC4 un `CATALOG_UNSAFE` local / servir les
+   rejeux depuis le registre seul (règle hors C0, à décider) ?
 5. **Événement empoisonné** (F-02) : un événement durablement refusé par la Factory bloque la tête du flux. Option (1) quarantaine
    explicite côté Factory par ACK d'`event_ids` ; option (2) statut SITE `REFUSED` posé par une route d'ACK-refus signée. Laquelle ?
 6. **Jeton au rejeu** (F-08) : réémettre un jeton sur rejeu vérifié (même empreinte), ou accepter qu'un client ayant perdu la
