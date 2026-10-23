@@ -7,7 +7,9 @@
  *                                tests : c0/fixtures/keys/test_keyring.json, secrets TEST_SECRET_NOT_FOR_PRODUCTION)
  *   SITE_ACK_KEY_ID              clé de scope activation_ack, statut ACTIVE (ex. c0-test-ack-01)
  *   SITE_WITHDRAWAL_HOLD_POLICY  JSON {max_withdrawals_without_release, released_expected_withdrawals_digest}
- *                                max = null (aucun seuil) admis SEULEMENT si SITE_ENV=staging (C0 §8.4, R-11, DF-0090)
+ *                                max = null (aucun seuil) admis SEULEMENT si SITE_ENV=staging (C0 §8.4, R-11, DF-0090) ;
+ *                                hors staging, null refuse le DÉMARRAGE du serveur (`enforceStartupPolicy`, appelé par
+ *                                `instrumentation.ts`), en plus du 503 par requête
  *
  * Aucun seuil n'est choisi ici : la valeur vient de la configuration (décision propriétaire, C0 §16.4).
  */
@@ -76,4 +78,43 @@ export function loadReceiverConfig(env: Record<string, string | undefined> = pro
   }
   const policy = parsePolicy(env["SITE_WITHDRAWAL_HOLD_POLICY"], siteEnv);
   return { env: siteEnv, keyring, ackKeyId, policy };
+}
+
+/**
+ * Contrôle de démarrage (DF-0090) : `max_withdrawals_without_release = null` hors `SITE_ENV=staging` est un
+ * fail-open interdit ; le serveur ne démarre pas. Retourne le motif du refus, ou `null` si rien ne s'y oppose.
+ * Une politique absente ou mal formée n'est pas jugée ici : le receiver la refuse déjà à chaque requête (503
+ * `RECEIVER_CONFIG_INVALID`) et un SITE sans receiver configuré doit pouvoir servir la vitrine.
+ * Aucun seuil n'est proposé : la valeur entière est une décision propriétaire (C0 §16.4, DF-0090).
+ */
+export function startupPolicyRefusal(env: Record<string, string | undefined> = process.env): string | null {
+  const raw = env["SITE_WITHDRAWAL_HOLD_POLICY"];
+  if (raw === undefined || raw === "") return null;
+  let value: Json;
+  try {
+    value = parseBytes(utf8(raw), MAX_CONFIG_BYTES);
+  } catch {
+    return null;
+  }
+  if (!isObject(value) || value["max_withdrawals_without_release"] !== null) return null;
+  const siteEnv = env["SITE_ENV"];
+  if (siteEnv === "staging") return null;
+  return (
+    `SITE_WITHDRAWAL_HOLD_POLICY.max_withdrawals_without_release=null refusé avec SITE_ENV=${siteEnv === undefined || siteEnv === "" ? "absent" : siteEnv} : ` +
+    "null (aucune garde de retraits) n'est admis qu'en staging (C0 §8.4 R-11, DF-0090). " +
+    "Configurer un entier >= 0 décidé par le propriétaire ; aucune valeur par défaut."
+  );
+}
+
+/** Appelé au démarrage : journalise le refus et arrête le processus (code 1). Injectable pour les tests. */
+export function enforceStartupPolicy(
+  env: Record<string, string | undefined> = process.env,
+  log: (message: string) => void = (message) => console.error(message),
+  exit: (code: number) => void = (code) => process.exit(code),
+): boolean {
+  const refusal = startupPolicyRefusal(env);
+  if (refusal === null) return true;
+  log(`[site-publish] DÉMARRAGE REFUSÉ : ${refusal}`);
+  exit(1);
+  return false;
 }

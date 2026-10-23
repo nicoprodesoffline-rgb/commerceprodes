@@ -1,0 +1,378 @@
+
+> test:bc2
+> npm run bc2:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc2_test} node --test --test-concurrency=1 "tests/bc2/*.test.mjs"
+
+
+> bc2:build
+> node -e "require('node:fs').rmSync('.bc2-build',{recursive:true,force:true})" && tsc -p tsconfig.bc2.json
+
+TAP version 13
+# Subtest: F_SIMPLE_READY.activate_first : STAGE -> MEDIA -> VERIFY -> ACTIVATE, ACK octet pour octet = ack_s1.json, pointeur durable
+ok 1 - F_SIMPLE_READY.activate_first : STAGE -> MEDIA -> VERIFY -> ACTIVATE, ACK octet pour octet = ack_s1.json, pointeur durable
+  ---
+  duration_ms: 136.4965
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.full_amputated_self_consistent : STAGE_HOLD UNEXPLAINED_WITHDRAWALS, ancienne génération servie
+ok 2 - F_FULL_CORRUPT.full_amputated_self_consistent : STAGE_HOLD UNEXPLAINED_WITHDRAWALS, ancienne génération servie
+  ---
+  duration_ms: 126.209084
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.legit_withdrawals_listed : retraits listés -> ACTIVATED, ancienne génération SUPERSEDED
+ok 3 - F_FULL_CORRUPT.legit_withdrawals_listed : retraits listés -> ACTIVATED, ancienne génération SUPERSEDED
+  ---
+  duration_ms: 25.58425
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.hash_wrong : refus au STAGE, rien de persisté
+ok 4 - F_FULL_CORRUPT.hash_wrong : refus au STAGE, rien de persisté
+  ---
+  duration_ms: 138.246666
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.body_tampered_after_hash : refus au STAGE, rien de persisté
+ok 5 - F_FULL_CORRUPT.body_tampered_after_hash : refus au STAGE, rien de persisté
+  ---
+  duration_ms: 5.734
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.manifest_counts_wrong : refus au STAGE, rien de persisté
+ok 6 - F_FULL_CORRUPT.manifest_counts_wrong : refus au STAGE, rien de persisté
+  ---
+  duration_ms: 5.354917
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.withdrawals_digest_wrong : refus au STAGE, rien de persisté
+ok 7 - F_FULL_CORRUPT.withdrawals_digest_wrong : refus au STAGE, rien de persisté
+  ---
+  duration_ms: 5.352375
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.media_missing : VERIFY et ACTIVATE -> MEDIA_MISSING, génération reste STAGED
+ok 8 - F_FULL_CORRUPT.media_missing : VERIFY et ACTIVATE -> MEDIA_MISSING, génération reste STAGED
+  ---
+  duration_ms: 127.433292
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.media_hash_mismatch : PUT d'octets faux refusé ; octets altérés en base -> MEDIA_HASH_MISMATCH
+ok 9 - F_FULL_CORRUPT.media_hash_mismatch : PUT d'octets faux refusé ; octets altérés en base -> MEDIA_HASH_MISMATCH
+  ---
+  duration_ms: 14.651584
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.media_type_svg_declared : MEDIA_TYPE_REJECTED, pas d'ACK, pas d'activation
+ok 10 - F_FULL_CORRUPT.media_type_svg_declared : MEDIA_TYPE_REJECTED, pas d'ACK, pas d'activation
+  ---
+  duration_ms: 4.439583
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.media_type_magic_mismatch : MEDIA_TYPE_REJECTED, pas d'ACK, pas d'activation
+ok 11 - F_FULL_CORRUPT.media_type_magic_mismatch : MEDIA_TYPE_REJECTED, pas d'ACK, pas d'activation
+  ---
+  duration_ms: 17.5185
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.activate_base : ACK = ack_s10.json (octets canoniques)
+ok 12 - F_FULL_CORRUPT.activate_base : ACK = ack_s10.json (octets canoniques)
+  ---
+  duration_ms: 120.420833
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.sequence_stale : refus au STAGE (étape sequence), 409, rien persisté
+ok 13 - F_FULL_CORRUPT.sequence_stale : refus au STAGE (étape sequence), 409, rien persisté
+  ---
+  duration_ms: 6.833166
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.sequence_collision : refus au STAGE (étape sequence), 409, rien persisté
+ok 14 - F_FULL_CORRUPT.sequence_collision : refus au STAGE (étape sequence), 409, rien persisté
+  ---
+  duration_ms: 5.120833
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.replay_active : même N même SHA -> REPLAY_ACK, octets = ACK stocké = ack_s10.json
+ok 15 - F_FULL_CORRUPT.replay_active : même N même SHA -> REPLAY_ACK, octets = ACK stocké = ack_s10.json
+  ---
+  duration_ms: 10.062208
+  type: 'test'
+  ...
+# Subtest: F_SIMPLE_READY.replay_after_lost_ack : re-ACTIVATE -> REPLAY_ACK, ACK identique, 0 ligne de plus, journal explicite
+ok 16 - F_SIMPLE_READY.replay_after_lost_ack : re-ACTIVATE -> REPLAY_ACK, ACK identique, 0 ligne de plus, journal explicite
+  ---
+  duration_ms: 137.773625
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.legit_withdrawals_listed : exception avant COMMIT puis connexion tuée avant COMMIT -> rollback ; reprise = une seule bascule
+ok 17 - F_FULL_CORRUPT.legit_withdrawals_listed : exception avant COMMIT puis connexion tuée avant COMMIT -> rollback ; reprise = une seule bascule
+  ---
+  duration_ms: 195.420584
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 1) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+ok 18 - F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 1) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+  ---
+  duration_ms: 161.929042
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 2) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+ok 19 - F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 2) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+  ---
+  duration_ms: 88.043292
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 3) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+ok 20 - F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 3) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+  ---
+  duration_ms: 91.425208
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 4) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+ok 21 - F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 4) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+  ---
+  duration_ms: 98.98475
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 5) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+ok 22 - F_FULL_CORRUPT.activate_base ×2 en parallèle (tour 5) : une bascule, l'autre REPLAY_ACK aux mêmes octets
+  ---
+  duration_ms: 84.992416
+  type: 'test'
+  ...
+# Subtest: verrou observé : la seconde activation attend le COMMIT de la première (hook qui retient la transaction 400 ms)
+ok 23 - verrou observé : la seconde activation attend le COMMIT de la première (hook qui retient la transaction 400 ms)
+  ---
+  duration_ms: 488.483
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 1) -> une bascule, l'autre SEQUENCE_COLLISION
+ok 24 - F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 1) -> une bascule, l'autre SEQUENCE_COLLISION
+  ---
+  duration_ms: 142.385042
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 2) -> une bascule, l'autre SEQUENCE_COLLISION
+ok 25 - F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 2) -> une bascule, l'autre SEQUENCE_COLLISION
+  ---
+  duration_ms: 87.088083
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 3) -> une bascule, l'autre SEQUENCE_COLLISION
+ok 26 - F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 3) -> une bascule, l'autre SEQUENCE_COLLISION
+  ---
+  duration_ms: 87.903666
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 4) -> une bascule, l'autre SEQUENCE_COLLISION
+ok 27 - F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 4) -> une bascule, l'autre SEQUENCE_COLLISION
+  ---
+  duration_ms: 82.333666
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 5) -> une bascule, l'autre SEQUENCE_COLLISION
+ok 28 - F_FULL_CORRUPT.sequence_collision : s10 et s10' activés en parallèle (tour 5) -> une bascule, l'autre SEQUENCE_COLLISION
+  ---
+  duration_ms: 79.994083
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.roll_forward_old_capture : séquence supérieure mais capture antérieure -> CATALOG_UNSAFE
+ok 29 - F_FULL_CORRUPT.roll_forward_old_capture : séquence supérieure mais capture antérieure -> CATALOG_UNSAFE
+  ---
+  duration_ms: 161.637583
+  type: 'test'
+  ...
+# Subtest: réactiver l'ancienne génération s10 après bascule vers s11 -> STALE_SEQUENCE, s10 reste SUPERSEDED
+ok 30 - réactiver l'ancienne génération s10 après bascule vers s11 -> STALE_SEQUENCE, s10 reste SUPERSEDED
+  ---
+  duration_ms: 30.668708
+  type: 'test'
+  ...
+# Subtest: restauration du contenu s10 = nouvelle séquence 12, revalidée contre l'ACTIVE s11 -> ACTIVATED
+ok 31 - restauration du contenu s10 = nouvelle séquence 12, revalidée contre l'ACTIVE s11 -> ACTIVATED
+  ---
+  duration_ms: 19.343542
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.legit_withdrawals_listed : politique null en staging -> activation (fail-open explicite)
+ok 32 - F_FULL_CORRUPT.legit_withdrawals_listed : politique null en staging -> activation (fail-open explicite)
+  ---
+  duration_ms: 150.810375
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.massive_listed_over_policy puis massive_listed_released : RELEASE_REQUIRED, puis libération -> ACTIVATED
+ok 33 - F_FULL_CORRUPT.massive_listed_over_policy puis massive_listed_released : RELEASE_REQUIRED, puis libération -> ACTIVATED
+  ---
+  duration_ms: 88.000334
+  type: 'test'
+  ...
+# Subtest: politique null en production -> erreur de configuration ; le receiver n'active rien
+ok 34 - politique null en production -> erreur de configuration ; le receiver n'active rien
+  ---
+  duration_ms: 2.694708
+  type: 'test'
+  ...
+# Subtest: F_SIMPLE_READY.signature_wrong_scope : STAGE -> SIGNATURE_INVALID 401, rien persisté
+ok 35 - F_SIMPLE_READY.signature_wrong_scope : STAGE -> SIGNATURE_INVALID 401, rien persisté
+  ---
+  duration_ms: 111.877834
+  type: 'test'
+  ...
+# Subtest: F_SIMPLE_READY.signature_retired_key : STAGE -> SIGNATURE_INVALID 401, rien persisté
+ok 36 - F_SIMPLE_READY.signature_retired_key : STAGE -> SIGNATURE_INVALID 401, rien persisté
+  ---
+  duration_ms: 4.273584
+  type: 'test'
+  ...
+# Subtest: F_SIMPLE_READY.signature_unknown_key_id : STAGE -> SIGNATURE_INVALID 401, rien persisté
+ok 37 - F_SIMPLE_READY.signature_unknown_key_id : STAGE -> SIGNATURE_INVALID 401, rien persisté
+  ---
+  duration_ms: 6.584458
+  type: 'test'
+  ...
+# Subtest: F_SIMPLE_READY.signature_missing : STAGE -> SIGNATURE_INVALID 401, rien persisté
+ok 38 - F_SIMPLE_READY.signature_missing : STAGE -> SIGNATURE_INVALID 401, rien persisté
+  ---
+  duration_ms: 2.352541
+  type: 'test'
+  ...
+# Subtest: F_SIMPLE_READY.signature_altered : STAGE -> SIGNATURE_INVALID 401, rien persisté
+ok 39 - F_SIMPLE_READY.signature_altered : STAGE -> SIGNATURE_INVALID 401, rien persisté
+  ---
+  duration_ms: 2.645166
+  type: 'test'
+  ...
+# Subtest: clé c0-test-events-01 (site_events.read) sur STAGE -> SIGNATURE_INVALID 401 (règle de F_SIMPLE_READY.signature_wrong_scope)
+ok 40 - clé c0-test-events-01 (site_events.read) sur STAGE -> SIGNATURE_INVALID 401 (règle de F_SIMPLE_READY.signature_wrong_scope)
+  ---
+  duration_ms: 1.49275
+  type: 'test'
+  ...
+# Subtest: F_SIMPLE_READY.rotation_verify_only_key : clé VERIFY_ONLY acceptée jusqu'à l'ACK
+ok 41 - F_SIMPLE_READY.rotation_verify_only_key : clé VERIFY_ONLY acceptée jusqu'à l'ACK
+  ---
+  duration_ms: 16.088709
+  type: 'test'
+  ...
+# Subtest: clés hors scope sur MEDIA, VERIFY_MEDIA, ACTIVATE et STATUS -> SIGNATURE_INVALID 401
+ok 42 - clés hors scope sur MEDIA, VERIFY_MEDIA, ACTIVATE et STATUS -> SIGNATURE_INVALID 401
+  ---
+  duration_ms: 73.1345
+  type: 'test'
+  ...
+# Subtest: F_SIMPLE_READY.replay_after_lost_ack : réémission des mêmes octets (STAGE, VERIFY, ACTIVATE) -> REPLAY_ACK = documents/F_SIMPLE_READY/ack_s1.json
+ok 43 - F_SIMPLE_READY.replay_after_lost_ack : réémission des mêmes octets (STAGE, VERIFY, ACTIVATE) -> REPLAY_ACK = documents/F_SIMPLE_READY/ack_s1.json
+  ---
+  duration_ms: 116.800875
+  type: 'test'
+  ...
+# Subtest: F_FULL_CORRUPT.replay_active : réémission des mêmes octets (STAGE, VERIFY, ACTIVATE) -> REPLAY_ACK = documents/F_FULL_CORRUPT/ack_s10.json
+ok 44 - F_FULL_CORRUPT.replay_active : réémission des mêmes octets (STAGE, VERIFY, ACTIVATE) -> REPLAY_ACK = documents/F_FULL_CORRUPT/ack_s10.json
+  ---
+  duration_ms: 94.502875
+  type: 'test'
+  ...
+# Subtest: journal sans PII, sans secret, sans octets ; détail borné ; UPDATE/DELETE/TRUNCATE refusés
+ok 45 - journal sans PII, sans secret, sans octets ; détail borné ; UPDATE/DELETE/TRUNCATE refusés
+  ---
+  duration_ms: 215.626292
+  type: 'test'
+  ...
+# Subtest: staging : un snapshot étiqueté PRODUCTION -> SNAPSHOT_INVALID envelope.data_label_environment
+ok 46 - staging : un snapshot étiqueté PRODUCTION -> SNAPSHOT_INVALID envelope.data_label_environment
+  ---
+  duration_ms: 86.666709
+  type: 'test'
+  ...
+# Subtest: production : F_SIMPLE_READY.activate_first (STAGING_FIXTURE) -> SNAPSHOT_INVALID envelope.data_label_environment, rien persisté
+ok 47 - production : F_SIMPLE_READY.activate_first (STAGING_FIXTURE) -> SNAPSHOT_INVALID envelope.data_label_environment, rien persisté
+  ---
+  duration_ms: 3.147
+  type: 'test'
+  ...
+# Subtest: ordre : une faute de forme (F_SIMPLE_READY.buy_price_leak) prime ; une faute sémantique (F_FULL_CORRUPT.category_unknown) ne passe pas avant
+ok 48 - ordre : une faute de forme (F_SIMPLE_READY.buy_price_leak) prime ; une faute sémantique (F_FULL_CORRUPT.category_unknown) ne passe pas avant
+  ---
+  duration_ms: 7.680875
+  type: 'test'
+  ...
+# Subtest: readActiveForUpdate : une transaction BC4 ouverte retient l'activation, qui bascule après son COMMIT
+ok 49 - readActiveForUpdate : une transaction BC4 ouverte retient l'activation, qui bascule après son COMMIT
+  ---
+  duration_ms: 461.218458
+  type: 'test'
+  ...
+# Subtest: getActiveGeneration : écriture des octets ACTIVE refusée (migration 005) ; corruption par le propriétaire -> UNSAFE, snapshot null
+ok 50 - getActiveGeneration : écriture des octets ACTIVE refusée (migration 005) ; corruption par le propriétaire -> UNSAFE, snapshot null
+  ---
+  duration_ms: 25.12925
+  type: 'test'
+  ...
+# Subtest: F-02 : ACTIVE s10 corrompue (propriétaire) -> ACTIVATE s11 et STAGE refusés CATALOG_UNSAFE, journalisés ; réparée -> activation
+ok 51 - F-02 : ACTIVE s10 corrompue (propriétaire) -> ACTIVATE s11 et STAGE refusés CATALOG_UNSAFE, journalisés ; réparée -> activation
+  ---
+  duration_ms: 162.275916
+  type: 'test'
+  ...
+# Subtest: F-02 : migration 005 — octets, SHA, identité et ACK posé d'une génération non modifiables
+ok 52 - F-02 : migration 005 — octets, SHA, identité et ACK posé d'une génération non modifiables
+  ---
+  duration_ms: 29.489125
+  type: 'test'
+  ...
+# Subtest: F-03 : ACTIVATE/VERIFY non signés -> 401 avant 404, sans verrou ni journal
+ok 53 - F-03 : ACTIVATE/VERIFY non signés -> 401 avant 404, sans verrou ni journal
+  ---
+  duration_ms: 103.635792
+  type: 'test'
+  ...
+# Subtest: F-04 : SITE_DATABASE_URL — hôte local seulement, jamais jarvis, paramètres de cible refusés
+ok 54 - F-04 : SITE_DATABASE_URL — hôte local seulement, jamais jarvis, paramètres de cible refusés
+  ---
+  duration_ms: 0.608416
+  type: 'test'
+  ...
+# Subtest: F-01 : porte de transport — sans en-têtes ou clé hors scope -> 401 sans lire le corps ni journaliser
+ok 55 - F-01 : porte de transport — sans en-têtes ou clé hors scope -> 401 sans lire le corps ni journaliser
+  ---
+  duration_ms: 63.665708
+  type: 'test'
+  ...
+# Subtest: F-01 : lecture bornée — Content-Length au-delà -> 413 sans lecture ; flux sans longueur coupé à plafond + 1 bloc
+ok 56 - F-01 : lecture bornée — Content-Length au-delà -> 413 sans lecture ; flux sans longueur coupé à plafond + 1 bloc
+  ---
+  duration_ms: 5.3005
+  type: 'test'
+  ...
+# Subtest: ACTIVATE : connexion tuée pendant l'attente du verrou du pointeur -> 503 ACTIVATION_ABORTED, pas d'ACK, processus vivant, activation suivante OK
+ok 57 - ACTIVATE : connexion tuée pendant l'attente du verrou du pointeur -> 503 ACTIVATION_ABORTED, pas d'ACK, processus vivant, activation suivante OK
+  ---
+  duration_ms: 353.017834
+  type: 'test'
+  ...
+# Subtest: withTransaction (lib/site-db, utilisé par BC4) : connexion tuée -> rejet propre, aucune exception non capturée, pool réutilisable
+ok 58 - withTransaction (lib/site-db, utilisé par BC4) : connexion tuée -> rejet propre, aucune exception non capturée, pool réutilisable
+  ---
+  duration_ms: 210.254625
+  type: 'test'
+  ...
+# Subtest: null hors staging (production, absent, vide, inconnu) : démarrage refusé avec un message clair
+ok 59 - null hors staging (production, absent, vide, inconnu) : démarrage refusé avec un message clair
+  ---
+  duration_ms: 0.980625
+  type: 'test'
+  ...
+# Subtest: null en staging, entier en production, politique absente : le démarrage n'est pas bloqué par ce contrôle
+ok 60 - null en staging, entier en production, politique absente : le démarrage n'est pas bloqué par ce contrôle
+  ---
+  duration_ms: 0.511709
+  type: 'test'
+  ...
+1..60
+# tests 60
+# suites 0
+# pass 60
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6394.778459
