@@ -1,0 +1,142 @@
+# Contre-épreuve D-02 : section 4 de tests/http/storefront.test.mjs jouée avec l'ANCIEN matcher ["/((?!_next/static|_next/image|favicon.ico).*)"] (proxy.ts modifié temporairement, rebuild env -i, port 3367, base prodes_site_bc3c2_test), 2026-10-23T07:23:30Z, base de code 1abc69e7 + correctifs non committés
+# attendu : 4.1–4.4 ÉCHOUENT (corps tronqué à 10 MiB / CSP du proxy), 4.5 (témoin positif) passe
+TAP version 13
+# \# serveur PID 28106 port 3367 base prodes_site_bc3c2_test
+# Subtest: BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver BC2, transactions BC4)
+    # Subtest: 4 — routes machine signées hors proxy navigateur (plafonds de corps BC2 intacts)
+        # Subtest: 4.1 PUT média légitime signé de 15 et 20 MiB → 201 STORED (octets entiers reçus), sans en-tête du proxy
+        not ok 1 - 4.1 PUT média légitime signé de 15 et 20 MiB → 201 STORED (octets entiers reçus), sans en-tête du proxy
+          ---
+          duration_ms: 51.816708
+          type: 'test'
+          location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/http/storefront.test.mjs:592:5'
+          failureType: 'testCodeFailure'
+          error: |-
+            15728640 octets : 401 {"accepted":false,"outcome":"REJECTED","operation":"MEDIA_PUT","error_codes":["SIGNATURE_INVALID"]}
+            
+            401 !== 201
+            
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected: 201
+          actual: 401
+          operator: 'strictEqual'
+          stack: |-
+            TestContext.<anonymous> (file:///Users/nico/Desktop/prodes-w1/commerce-bc3/tests/http/storefront.test.mjs:596:16)
+            process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+            async Test.run (node:internal/test_runner/test:1054:7)
+            async Promise.all (index 0)
+            async Suite.run (node:internal/test_runner/test:1442:7)
+            async Promise.all (index 4)
+            async Suite.run (node:internal/test_runner/test:1442:7)
+            async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+          ...
+        # Subtest: 4.2 STAGE légitime signé de 12 et 31 MiB → 200 STAGED ; JSON hors contrat de 12 MiB → SCHEMA_UNSUPPORTED (corps entier), jamais PAYLOAD_MALFORMED
+        not ok 2 - 4.2 STAGE légitime signé de 12 et 31 MiB → 200 STAGED ; JSON hors contrat de 12 MiB → SCHEMA_UNSUPPORTED (corps entier), jamais PAYLOAD_MALFORMED
+          ---
+          duration_ms: 931.395708
+          type: 'test'
+          location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/http/storefront.test.mjs:607:5'
+          failureType: 'testCodeFailure'
+          error: |-
+            12582792 octets : 400 {"accepted":false,"outcome":"REJECTED","error_codes":["PAYLOAD_MALFORMED"],"stage":"parse","detail":{},"operation":"STAGE"}
+            
+            400 !== 200
+            
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected: 200
+          actual: 400
+          operator: 'strictEqual'
+          stack: |-
+            TestContext.<anonymous> (file:///Users/nico/Desktop/prodes-w1/commerce-bc3/tests/http/storefront.test.mjs:613:16)
+            process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+            async Test.run (node:internal/test_runner/test:1054:7)
+            async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+          ...
+        # Subtest: 4.3 STAGE signé de 40 MiB en flux sans Content-Length → 413 BODY_TOO_LARGE (plafond BC2 32 MiB), pas 400
+        not ok 3 - 4.3 STAGE signé de 40 MiB en flux sans Content-Length → 413 BODY_TOO_LARGE (plafond BC2 32 MiB), pas 400
+          ---
+          duration_ms: 28.3
+          type: 'test'
+          location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/http/storefront.test.mjs:624:5'
+          failureType: 'testCodeFailure'
+          error: |-
+            {"accepted":false,"outcome":"REJECTED","error_codes":["PAYLOAD_MALFORMED"],"stage":"parse","detail":{},"operation":"STAGE"}
+            
+            400 !== 413
+            
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected: 413
+          actual: 400
+          operator: 'strictEqual'
+          stack: |-
+            TestContext.<anonymous> (file:///Users/nico/Desktop/prodes-w1/commerce-bc3/tests/http/storefront.test.mjs:627:14)
+            process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+            async Test.run (node:internal/test_runner/test:1054:7)
+            async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+          ...
+        # Subtest: 4.4 /api/site/events et /events/ack (BC4) hors proxy : 401 signé BC4, sans CSP ni contrôle CSRF du proxy
+        not ok 4 - 4.4 /api/site/events et /events/ack (BC4) hors proxy : 401 signé BC4, sans CSP ni contrôle CSRF du proxy
+          ---
+          duration_ms: 10.42775
+          type: 'test'
+          location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/http/storefront.test.mjs:631:5'
+          failureType: 'testCodeFailure'
+          error: |-
+            Expected values to be strictly equal:
+            + actual - expected
+            
+            + "default-src 'self'; script-src 'self' 'nonce-oiluD9uMReoTp+gTdALA6A==' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+            - null
+            
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected: ~
+          actual: "default-src 'self'; script-src 'self' 'nonce-oiluD9uMReoTp+gTdALA6A==' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          operator: 'strictEqual'
+          stack: |-
+            TestContext.<anonymous> (file:///Users/nico/Desktop/prodes-w1/commerce-bc3/tests/http/storefront.test.mjs:634:14)
+            process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+            async Test.run (node:internal/test_runner/test:1054:7)
+            async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+          ...
+        # Subtest: 4.5 le proxy couvre toujours la boutique : CSP sur les pages, CSRF sur les POST du site, exclusion limitée au préfixe exact
+        ok 5 - 4.5 le proxy couvre toujours la boutique : CSP sur les pages, CSRF sur les POST du site, exclusion limitée au préfixe exact
+          ---
+          duration_ms: 63.673875
+          type: 'test'
+          ...
+        1..5
+    not ok 1 - 4 — routes machine signées hors proxy navigateur (plafonds de corps BC2 intacts)
+      ---
+      duration_ms: 1167.748292
+      type: 'suite'
+      location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/http/storefront.test.mjs:587:3'
+      failureType: 'subtestsFailed'
+      error: '4 subtests failed'
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        async Promise.all (index 4)
+      ...
+# \# serveur PID 28106 arrêté, port 3367 libre
+    1..1
+not ok 1 - BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver BC2, transactions BC4)
+  ---
+  duration_ms: 1610.531875
+  type: 'suite'
+  location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/http/storefront.test.mjs:183:1'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 5
+# suites 2
+# pass 1
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1692.312541
