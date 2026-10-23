@@ -1,0 +1,19 @@
+{
+  "case_id": "F_SELL_WINDOWS.select_autumn_before_promo",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_s7.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-10-24T21:59:59Z",
+    "public_item_key": "PI-000000CHJ",
+    "quantity": 1,
+    "variant_axes": {}
+  },
+  "notes": "One second before Paris 2026-10-25 00:00 CEST",
+  "scenario": "F_SELL_WINDOWS"
+}

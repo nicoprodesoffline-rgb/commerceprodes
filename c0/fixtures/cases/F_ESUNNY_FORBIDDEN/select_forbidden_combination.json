@@ -1,0 +1,22 @@
+{
+  "case_id": "F_ESUNNY_FORBIDDEN.select_forbidden_combination",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_ESUNNY_FORBIDDEN/snapshot_s1.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-10-20T12:00:00Z",
+    "public_item_key": "PI-0000006BC",
+    "quantity": 1,
+    "variant_axes": {
+      "coloris": "blanc",
+      "fixation": "sol"
+    }
+  },
+  "notes": "The SITE never builds the cartesian product: blanc+sol does not exist",
+  "scenario": "F_ESUNNY_FORBIDDEN"
+}

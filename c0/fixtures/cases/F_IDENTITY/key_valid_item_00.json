@@ -1,0 +1,11 @@
+{
+  "case_id": "F_IDENTITY.key_valid_item_00",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_public_key",
+  "input": {
+    "namespace": "item",
+    "value": "PI-00000001R"
+  },
+  "notes": "ID-T01: sequence 1 encodes to PI-00000001R",
+  "scenario": "F_IDENTITY"
+}

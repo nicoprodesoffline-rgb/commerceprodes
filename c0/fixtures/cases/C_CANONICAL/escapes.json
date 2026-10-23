@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.escapes",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/escapes.json"
+    }
+  },
+  "notes": "Escapes: short forms, \\u00XX lowercase for other controls, DEL/U+2028 raw, surrogate pair joined",
+  "scenario": "C_CANONICAL"
+}

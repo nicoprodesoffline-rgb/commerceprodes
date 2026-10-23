@@ -1,0 +1,17 @@
+{
+  "as_of_utc": "2026-10-20T06:00:00Z",
+  "entries": [
+    {
+      "partition": "NON_READY",
+      "public_item_key": "PI-0000009DV",
+      "reason": "PREFERRED_OFFER_B_WITHOUT_SELL"
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-0000009EG",
+      "reason": null
+    }
+  ],
+  "manifest_version": "c0.private_coverage_manifest.v1",
+  "scope_key": "prodes.site.public.staging"
+}

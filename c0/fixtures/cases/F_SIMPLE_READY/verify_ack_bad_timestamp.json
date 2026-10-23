@@ -1,0 +1,18 @@
+{
+  "case_id": "F_SIMPLE_READY.verify_ack_bad_timestamp",
+  "data_label": "STAGING_FIXTURE",
+  "function": "verify_ack",
+  "input": {
+    "ack": {
+      "$doc": "documents/F_SIMPLE_READY/ack_verify_ack_bad_timestamp.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "publication": {
+      "$doc": "documents/F_SIMPLE_READY/snapshot_s1.json"
+    }
+  },
+  "notes": "R-04: activated_at_utc must be a D5 UTC instant",
+  "scenario": "F_SIMPLE_READY"
+}

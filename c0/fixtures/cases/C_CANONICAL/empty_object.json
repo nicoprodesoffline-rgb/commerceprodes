@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.empty_object",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/empty_object.json"
+    }
+  },
+  "notes": "JSON whitespace around and inside an empty object",
+  "scenario": "C_CANONICAL"
+}

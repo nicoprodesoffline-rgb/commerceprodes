@@ -1,0 +1,178 @@
+{
+  "alphabet": "0123456789ABCDEFGHJKMNPQRSTVWXYZ",
+  "invalid": [
+    {
+      "error": "KEY_CHECK_INVALID",
+      "namespace": "item",
+      "value": "PI-000000Z90"
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": "pi-000000z9s"
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": "PI-0000I0001"
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": "PI-0000L0001"
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": "PI-0000O0001"
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": "PI-0000U0001"
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": "PI-000000Z9"
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": "PI-000000Z9S0"
+    },
+    {
+      "error": "KEY_NAMESPACE_MISMATCH",
+      "namespace": "item",
+      "value": "PF-000000Z9Z"
+    },
+    {
+      "error": "KEY_NAMESPACE_MISMATCH",
+      "namespace": "family",
+      "value": "PI-000000Z9S"
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": "PI-000000000"
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": "PRD-004218"
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": "3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": " PI-000000Z9S"
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": "PI-000000Z9S\n"
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": 1001
+    },
+    {
+      "error": "KEY_FORMAT_INVALID",
+      "namespace": "item",
+      "value": null
+    },
+    {
+      "error": "KEY_CHECK_INVALID",
+      "namespace": "item",
+      "value": "PI-000000Z0W"
+    },
+    {
+      "error": "KEY_CHECK_INVALID",
+      "namespace": "item",
+      "value": "PI-900000Z0S"
+    },
+    {
+      "error": "KEY_CHECK_INVALID",
+      "namespace": "item",
+      "value": "PI-0000009ZS"
+    }
+  ],
+  "valid": [
+    {
+      "key": "PI-00000001R",
+      "namespace": "item",
+      "sequence": 1
+    },
+    {
+      "key": "PI-00000002K",
+      "namespace": "item",
+      "sequence": 2
+    },
+    {
+      "key": "PI-0000000ZW",
+      "namespace": "item",
+      "sequence": 31
+    },
+    {
+      "key": "PI-00000010F",
+      "namespace": "item",
+      "sequence": 32
+    },
+    {
+      "key": "PI-000000Z9S",
+      "namespace": "item",
+      "sequence": 1001
+    },
+    {
+      "key": "PI-003NQK8N6",
+      "namespace": "item",
+      "sequence": 123456789
+    },
+    {
+      "key": "PI-ZZZZZZZZ4",
+      "namespace": "item",
+      "sequence": 1099511627775
+    },
+    {
+      "key": "PF-00000001Y",
+      "namespace": "family",
+      "sequence": 1
+    },
+    {
+      "key": "PF-00000002N",
+      "namespace": "family",
+      "sequence": 2
+    },
+    {
+      "key": "PF-0000000ZT",
+      "namespace": "family",
+      "sequence": 31
+    },
+    {
+      "key": "PF-000000109",
+      "namespace": "family",
+      "sequence": 32
+    },
+    {
+      "key": "PF-000000Z9Z",
+      "namespace": "family",
+      "sequence": 1001
+    },
+    {
+      "key": "PF-003NQK8N0",
+      "namespace": "family",
+      "sequence": 123456789
+    },
+    {
+      "key": "PF-ZZZZZZZZ2",
+      "namespace": "family",
+      "sequence": 1099511627775
+    }
+  ],
+  "vectors_version": "c0.identity_vectors.v1"
+}

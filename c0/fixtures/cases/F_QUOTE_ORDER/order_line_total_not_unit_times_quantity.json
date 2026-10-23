@@ -1,0 +1,20 @@
+{
+  "case_id": "F_QUOTE_ORDER.order_line_total_not_unit_times_quantity",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_order_submit",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_s7.json"
+      },
+      "status": "ACTIVE"
+    },
+    "now_utc": "2026-10-20T09:00:00Z",
+    "register": [],
+    "request": {
+      "$bytes": "documents/F_QUOTE_ORDER/order_line_total_wrong.json"
+    }
+  },
+  "notes": "R-10: right rate and unit price, line_total 109.00 != 11.00 x 10 (order total consistent with the lines)",
+  "scenario": "F_QUOTE_ORDER"
+}

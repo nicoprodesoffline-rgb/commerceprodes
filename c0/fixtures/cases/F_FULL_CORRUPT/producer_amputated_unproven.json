@@ -1,0 +1,15 @@
+{
+  "case_id": "F_FULL_CORRUPT.producer_amputated_unproven",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_source_coverage",
+  "input": {
+    "manifest": {
+      "$doc": "documents/F_FULL_CORRUPT/private_manifest_real_source.json"
+    },
+    "snapshot": {
+      "$doc": "documents/F_FULL_CORRUPT/snapshot_full_amputated_self_consistent.json"
+    }
+  },
+  "notes": "CE-T06 producer side: the real source capture has 20 READY Items",
+  "scenario": "F_FULL_CORRUPT"
+}

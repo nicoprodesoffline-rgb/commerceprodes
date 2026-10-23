@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.astral_key_order",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/astral_key_order.json"
+    }
+  },
+  "notes": "Keys sorted by code point (U+FFFD before U+1F600), not by UTF-16 unit",
+  "scenario": "C_CANONICAL"
+}

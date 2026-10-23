@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.duplicate_key_after_nfc",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/duplicate_key_after_nfc.json"
+    }
+  },
+  "notes": "Two keys equal after NFC",
+  "scenario": "C_CANONICAL"
+}

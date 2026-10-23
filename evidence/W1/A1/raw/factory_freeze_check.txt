@@ -1,0 +1,22 @@
+# 2026-10-22T23:39:46Z
+Factory HEAD: b831750ed340def887e0bfe7f1836603a3db2855 branche build/w1-candidate
+b831750 evidence(w1): mandats BC2 (receiver PostgreSQL SITE) et A2 (application Commerce sur C0 gelé)
+eb1361e evidence(w1): phase 0 — suite complète 1761 OK/0 skip sur b5c3623, gates C0/manifeste/NON-OUBLI, mandats A1/L4a/P0
+## diff --stat b88f5cdf b5c3623 -- c0/python c0/ts/src c0/ts/test c0/fixtures docs/contracts (contrôle du mandat)
+ docs/contracts/c0_public_identity_v1.md |  2 +-
+ docs/contracts/c0_site_v1.md            |  6 ++--
+ docs/contracts/matching_v1.md           | 56 +++++++++++++++++++++++++++++++++
+ 3 files changed, 61 insertions(+), 3 deletions(-)
+## même contrôle restreint au CODE C0 (sans docs/contracts)
+(vide = aucun octet de code changé)
+## working tree Factory vs b88f5cdf sur les chemins compilés (vide = identique)
+## HEAD actuel vs b88f5cdf, code C0
+## commit a059ec5 (gel) : seules les lignes de statut changent
+a059ec51135e3bd836ecb1d6b8b152cf347266cc contrat(C0): C0_FROZEN v1 — gel prononcé au code b88f5cd après review indépendante (FREEZE_RECOMMENDED)
+
+ c0/README.md                            | 2 +-
+ docs/contracts/c0_public_identity_v1.md | 2 +-
+ docs/contracts/c0_site_v1.md            | 6 ++++--
+ 3 files changed, 6 insertions(+), 4 deletions(-)
+## check-ignore (depuis la racine)
+.gitignore:31:c0/ts/dist/	c0/ts/dist/verdicts.ts.json

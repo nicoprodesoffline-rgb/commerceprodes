@@ -1,0 +1,15 @@
+{
+  "case_id": "F_SIMPLE_READY.producer_manifest_unknown_entry",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_source_coverage",
+  "input": {
+    "manifest": {
+      "$doc": "documents/F_SIMPLE_READY/private_manifest_with_unknown.json"
+    },
+    "snapshot": {
+      "$doc": "documents/F_SIMPLE_READY/snapshot_universe_with_unknown.json"
+    }
+  },
+  "notes": "R-10: digest, universe and READY set all match, but the source manifest holds an UNKNOWN entry",
+  "scenario": "F_SIMPLE_READY"
+}

@@ -1,0 +1,15 @@
+{
+  "case_id": "F_ESUNNY_FORBIDDEN.producer_coverage_proven",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_source_coverage",
+  "input": {
+    "manifest": {
+      "$doc": "documents/F_ESUNNY_FORBIDDEN/private_manifest_s1.json"
+    },
+    "snapshot": {
+      "$doc": "documents/F_ESUNNY_FORBIDDEN/snapshot_s1.json"
+    }
+  },
+  "notes": "Forbidden combination is not an Item: universe 3",
+  "scenario": "F_ESUNNY_FORBIDDEN"
+}

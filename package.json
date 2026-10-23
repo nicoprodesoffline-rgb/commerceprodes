@@ -10,13 +10,18 @@
     "agent-ops:test": "node --test tests/agent-ops/*.test.mjs",
     "agent-ops:quality": "node scripts/agent_ops/quality-gate.mjs",
     "agent-ops:review": "node scripts/agent_ops/review-pack.mjs",
-    "agent-ops:evals": "node scripts/agent_ops/run-skill-evals.mjs --dry-run --split optimization"
+    "agent-ops:evals": "node scripts/agent_ops/run-skill-evals.mjs --dry-run --split optimization",
+    "c0:sync": "node scripts/c0/sync.mjs",
+    "c0:check": "node scripts/c0/check.mjs",
+    "c0:build": "node -e \"require('node:fs').rmSync('c0/ts/dist',{recursive:true,force:true})\" && tsc -p c0/ts/tsconfig.json",
+    "c0:test": "node --test \"c0/ts/dist/test/*.test.js\"",
+    "c0:vendor-test": "node --test \"tests/c0/*.test.mjs\""
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=22"
   },
   "dependencies": {
-    "next": "16.4.0",
+    "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
@@ -27,6 +32,6 @@
     "@types/react-dom": "19.3.0",
     "postcss": "8.5.29",
     "tailwindcss": "4.3.3",
-    "typescript": "7.0.2"
+    "typescript": "5.9.3"
   }
 }

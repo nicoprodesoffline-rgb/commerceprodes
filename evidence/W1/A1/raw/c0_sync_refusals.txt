@@ -1,0 +1,14 @@
+# 2026-10-22T23:59:23Z commit testé fdbfe6a3a487ea9bf59081fa5dbaf40cbac6511e node v22.23.1 npm 10.9.8 refus attendu : --sha 9f5d4a0e042202a65f52acf3a8a278ee0a5e2841 (9f5d4a0 c0: consultation sans clé access_token -> UNAUTHORIZED (R-13) ; c0/ diverge du gel) --frozen-sha b88f5cdf2ca64eca8de4d19c077262e11f9e7e54
+C0_FROZEN_CODE_MISMATCH archived_from=9f5d4a0e042202a65f52acf3a8a278ee0a5e2841 frozen=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54
+c0/fixtures archived=b2e39c78ebb2a5fb663ea5f6d6e569fbcce47616 frozen=c2bf3496239b3e92e4a45f67ba55237495041208
+c0/python archived=56bb84ca0ac25befb6508bb99a06e4f84d431d10 frozen=f2f0b1180424f9231469971e4f786ec38d8e70b0
+c0/ts/src archived=072bfcad77609789c7eb415c6de1b63547b61e6a frozen=899b1af9b72ab2f7e191d58f48171ff892931a50
+sync_exit=1
+git status --short c0 après (vide = rien écrit) : []
+## SHA inconnu
+C0_SYNC_FAILED SHA introuvable dans /Users/nico/Desktop/prodes-data-factory-poc/.claude/worktrees/w1-candidate : 2222222222222222222222222222222222222222
+sync_exit=1
+## dépôt invalide
+C0_SYNC_FAILED pas un dépôt Git : /var/folders/yh/35rjgk610ggb_ff8v0h5s03c0000gn/T/tmp.waHlRc02q4
+sync_exit=1
+git status --short c0 après (vide = rien écrit) : []

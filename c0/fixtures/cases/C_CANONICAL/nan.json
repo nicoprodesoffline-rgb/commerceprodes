@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.nan",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/nan.json"
+    }
+  },
+  "notes": "NaN is not JSON",
+  "scenario": "C_CANONICAL"
+}

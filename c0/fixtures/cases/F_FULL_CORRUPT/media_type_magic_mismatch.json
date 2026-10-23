@@ -1,0 +1,59 @@
+{
+  "case_id": "F_FULL_CORRUPT.media_type_magic_mismatch",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/F_FULL_CORRUPT/ack_s10.json"
+      },
+      "snapshot": {
+        "$doc": "documents/F_FULL_CORRUPT/snapshot_s10_active.json"
+      }
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/full_family_2.png"
+        },
+        "sha256": "abc733bea150995d8fd44e735f97f1fb5689200c9455a1c410ffb88c9bec3470"
+      },
+      {
+        "file": {
+          "$media": "media/full_family_3.png"
+        },
+        "sha256": "cf8dcd555fe1d1b6f3a93fba46f53cecaab221408bb35e9857b23ac1a8782a07"
+      },
+      {
+        "file": {
+          "$media": "media/full_family_4.png"
+        },
+        "sha256": "960637958b5cad2363e87dfdec42441d09a0f2cdb598de417d6c559d647c4670"
+      },
+      {
+        "file": {
+          "$media": "media/not_an_image.svg"
+        },
+        "sha256": "9cc27e07f45630b71a3742f717c79c907761b1d4379ed053c3e1d08b0d077760"
+      }
+    ],
+    "now_utc": "2026-10-20T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_FULL_CORRUPT/snapshot_media_type_magic_mismatch.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "7934ae8841cbe956635c755d3292dac73a326c27532ed60ede7f76d95edfe9f9"
+    }
+  },
+  "notes": "Declared image/png, bytes are SVG text",
+  "scenario": "F_FULL_CORRUPT"
+}

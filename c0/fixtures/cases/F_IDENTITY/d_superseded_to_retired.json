@@ -1,0 +1,41 @@
+{
+  "case_id": "F_IDENTITY.d_superseded_to_retired",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/F_IDENTITY/ack_gen_c.json"
+      },
+      "snapshot": {
+        "$doc": "documents/F_IDENTITY/snapshot_gen_c.json"
+      }
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/identity_family_602.png"
+        },
+        "sha256": "ac403e49d737d1429e580e4f416d4eee8536f30d2b080e322b8db033f3fd3291"
+      }
+    ],
+    "now_utc": "2026-10-23T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_IDENTITY/snapshot_gen_d_superseded_to_retired.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "3c93bb3c2118f265ba07f138299774d30141df947514137bed0ea72f0c8b620b"
+    }
+  },
+  "notes": "R-03 positive: an alias may become RETIRED (the only admitted transition)",
+  "scenario": "F_IDENTITY"
+}
