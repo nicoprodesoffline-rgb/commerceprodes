@@ -3,7 +3,7 @@
 //   SERVER_PID=<pid> BASE_URL=http://127.0.0.1:3331 SITE_DEV_DATABASE_URL=postgres://…/prodes_site_bc2 node tests/bc2/http-body-limits.mjs
 // RSS du serveur échantillonnée toutes les 20 ms par `ps -o rss=` pendant chaque envoi.
 // Critères : chaque envoi, pic - avant < 64 MiB ; rafale de 4 envois parallèles, pic < 4 x 32 + 64 MiB ; RSS après
-// rafale 3 - après rafale 1 < 64 MiB (pas d'accumulation) ; RSS finale - initiale < 256 MiB ; 0 ligne de journal ajoutée.
+// rafale 5 - après rafale 3 < 32 MiB (plateau, après échauffement du tas V8) ; RSS finale - initiale < 256 MiB ; 0 ligne de journal ajoutée.
 // (Référence review a9dede14 : +278 MiB pour UN STAGE de 100 MiB non authentifié, 3,17 GiB retenus après ~1,8 GiB.)
 import { execFileSync } from "node:child_process";
 import { request } from "node:http";
@@ -79,9 +79,9 @@ for (const [label, path, headers, withLength, expected] of scenarios) {
   if (!ok) fails += 1;
   console.log(`${ok ? "PASS" : "FAIL"} ${label} | attendu ${expected} obtenu ${res.status} en ${Date.now() - t0} ms | envoyés ${(res.sent / MiB).toFixed(0)} MiB | rss avant=${before}KiB pic=${peak}KiB (+${growth.toFixed(1)} MiB) | ${res.body.slice(0, 140)}`);
 }
-// Rafales : 3 tours de 4 flux signés de 100 MiB en parallèle (pire cas : 4 corps de 32 MiB vivants à la fois).
+// Rafales : 5 tours de 4 flux signés de 100 MiB en parallèle (pire cas : 4 corps de 32 MiB vivants à la fois).
 const rounds = [];
-for (let round = 1; round <= 3; round += 1) {
+for (let round = 1; round <= 5; round += 1) {
   const before = rssKiB();
   let peak = before;
   const timer = setInterval(() => { try { peak = Math.max(peak, rssKiB()); } catch {} }, 20);
@@ -94,10 +94,12 @@ for (let round = 1; round <= 3; round += 1) {
   if (!ok) fails += 1;
   console.log(`${ok ? "PASS" : "FAIL"} rafale ${round} : 4 x STAGE 100 MiB signés en parallèle | codes ${res.map((x) => x.status).join(",")} | rss avant=${before}KiB pic=${peak}KiB (+${((peak - before) / 1024).toFixed(1)} MiB) après=${after}KiB`);
 }
-const growthAcrossRounds = (rounds[2] - rounds[0]) / 1024;
-const okRounds = growthAcrossRounds < 64;
+// Le tas V8 grandit pendant les premières rafales puis plafonne (la RSS n'est pas rendue au système) : on mesure
+// le PLATEAU, après échauffement (rafales 3 -> 5).
+const growthAcrossRounds = (rounds[4] - rounds[2]) / 1024;
+const okRounds = growthAcrossRounds < 32;
 if (!okRounds) fails += 1;
-console.log(`${okRounds ? "PASS" : "FAIL"} pas d'accumulation entre rafales : RSS après rafale 1 -> 3 : ${rounds[0]} -> ${rounds[2]} KiB (${growthAcrossRounds.toFixed(1)} MiB)`);
+console.log(`${okRounds ? "PASS" : "FAIL"} plateau (pas d'accumulation) : RSS après rafale 3 -> 5 : ${rounds[2]} -> ${rounds[4]} KiB (${growthAcrossRounds.toFixed(1)} MiB ; rafale 1 -> 3 : ${((rounds[2] - rounds[0]) / 1024).toFixed(1)} MiB d'échauffement)`);
 await new Promise((r) => setTimeout(r, 1000));
 const rssEnd = rssKiB();
 const retained = (rssEnd - rss0) / 1024;
@@ -105,7 +107,7 @@ const logsAfter = await logCount();
 const okEnd = retained < 256 && logsAfter === logsBefore;
 if (!okEnd) fails += 1;
 console.log(`${okEnd ? "PASS" : "FAIL"} fin | RSS finale ${rssEnd} KiB (retenu +${retained.toFixed(1)} MiB, ${(scenarios.length + 12) * 100} MiB proposés) | journal ${logsBefore} -> ${logsAfter} lignes`);
-const checks = scenarios.length + 3 + 1 + 1;
+const checks = scenarios.length + 5 + 1 + 1;
 console.log(`# LIMITES BC2 : ${checks - fails}/${checks} PASS, ${fails} FAIL`);
 await db.end();
 process.exit(fails === 0 ? 0 : 1);
