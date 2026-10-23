@@ -39,6 +39,16 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
     rows: priceRows(catalog.c0Generation, i, instant),
   }));
   const preselected = typeof article === "string" && items.some((i) => i.public_item_key === article) ? article : undefined;
+  // Revue BC3 F-06 : une référence demandée mais non portée par cette Famille n'est jamais remplacée en silence.
+  let notice: { text: string; link?: { href: string; label: string } } | null = null;
+  if (typeof article === "string" && preselected === undefined) {
+    const shown = article.slice(0, 40);
+    const r = /^PI-[0-9A-HJKMNP-TV-Z]{9}$/.test(article) ? catalog.resolveItem(article) : ({ kind: "ABSENT" } as const);
+    if (r.kind === "SUPERSEDED") notice = { text: `La référence ${shown} a été remplacée.`, link: { href: `/article/${r.superseded_by}`, label: `Voir la nouvelle référence ${r.superseded_by}` } };
+    else if (r.kind === "RETIRED") notice = { text: `La référence ${shown} a été retirée du catalogue et n'est plus proposée.` };
+    else if (r.kind === "PUBLISHED") notice = { text: `La référence ${shown} appartient à une autre famille (${r.family.name}).`, link: { href: `/article/${article}`, label: "Voir cette référence" } };
+    else notice = { text: `La référence ${shown} est inconnue du catalogue actuel.` };
+  }
 
   const images: GalleryImage[] = [{ sha256: family.image_main_sha256, caption: "Image principale de la famille" }];
   for (const i of items) {
@@ -61,6 +71,15 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
             <h1 className="mt-1 text-2xl font-semibold">{family.name}</h1>
             <p className="mt-2 text-ink-2">{family.description_short}</p>
           </header>
+          {notice && (
+            <div role="status" className="rounded-[14px] border-2 border-caution bg-white p-4 text-sm" data-testid="article-notice">
+              <p className="font-semibold">{notice.text}</p>
+              <p className="mt-1 text-ink-2">La variante affichée ci-dessous est la première variante de cette famille, pas la référence demandée.</p>
+              {notice.link && (
+                <Link href={notice.link.href} className="mt-1 inline-flex min-h-[34px] items-center font-medium underline">{notice.link.label}</Link>
+              )}
+            </div>
+          )}
           <FamilyBuyBox familyName={family.name} familySlug={family.slug} schema={selectorAxes(family)} items={items} initialKey={preselected} />
           <section aria-labelledby="desc-h">
             <h2 id="desc-h" className="mb-2 text-lg font-semibold">Description</h2>
