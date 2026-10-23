@@ -2,7 +2,8 @@
 //   PLAYWRIGHT_DIR=<dossier node_modules contenant playwright> CHROMIUM=<exécutable> \
 //   UI_OUT=evidence/W1/BC3/raw/ui/<sha> AXE=<axe.min.js> node --test --test-concurrency=1 tests/ui/storefront.ui.mjs
 // Aucun téléchargement : Playwright et Chromium déjà présents localement sont réutilisés (chemins en paramètres).
-// Serveur `next start` lancé/tué par CE script sur $SITE_TEST_PORT (défaut 3361), base prodes_site_bc3_test.
+// Serveur `next start` lancé/tué par CE script sur $SITE_TEST_PORT (défaut 3361), base $SITE_TEST_DATABASE_URL
+// (défaut prodes_site_bc3_test ; toute base locale `prodes_site_*`, revue BC3 F-13).
 import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -15,7 +16,7 @@ import { activateOverHttp, dbUrl, resetSiteDb } from "./site-setup.mjs";
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const PORT = Number(process.env.SITE_TEST_PORT ?? 3361);
 const BASE = `http://127.0.0.1:${PORT}`;
-const DB = "prodes_site_bc3_test";
+const DB = process.env.SITE_TEST_DATABASE_URL ?? "prodes_site_bc3_test";
 const OUT = path.resolve(ROOT, process.env.UI_OUT ?? "evidence/W1/BC3/raw/ui/local");
 const AXE = process.env.AXE;
 mkdirSync(OUT, { recursive: true });
@@ -68,7 +69,7 @@ async function startServer() {
     if (exited || Date.now() > deadline) throw new Error("serveur non démarré");
     await new Promise((r) => setTimeout(r, 150));
   }
-  note(`serveur PID ${child.pid} port ${PORT} base ${DB}`);
+  note(`serveur PID ${child.pid} port ${PORT} base ${new URL(dbUrl(DB)).pathname.slice(1)}`);
   return { child, isExited: () => exited };
 }
 
@@ -95,10 +96,12 @@ async function newPage(viewport = VIEWPORTS.desktop, opts = {}) {
   return page;
 }
 
+/** Capture pleine page. Le lien de consultation d'un reçu (code d'accès) est TOUJOURS masqué (revue BC3 F-05). */
 async function shot(page, name) {
   const file = path.join(OUT, `${name}.png`);
-  await page.screenshot({ path: file, fullPage: true });
-  note(`capture ${path.relative(ROOT, file)} (${page.url().replace(BASE, "")}, ${page.viewportSize().width}×${page.viewportSize().height})`);
+  await page.screenshot({ path: file, fullPage: true, mask: [page.getByTestId("receipt-link")], maskColor: "#1A1A18" });
+  const where = page.url().replace(BASE, "").replace(/code=[^&]+/g, "code=<jeton masqué>");
+  note(`capture ${path.relative(ROOT, file)} (${where}, ${page.viewportSize().width}×${page.viewportSize().height})`);
 }
 
 /** Pas de défilement horizontal du document (DA UX-P21 : « pas de body horizontal à 390 px »). */
@@ -229,12 +232,12 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.getByTestId("qty-price").getByText(/^Pour 3 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).focus();
     await page.keyboard.press("Enter");
-    await page.getByRole("status").getByText(/Ajouté au panier : 3 × Couleur : Rouge · Taille : M/).waitFor();
+    await page.getByRole("status").getByText(/Ajouté au panier — 3 × Couleur : Rouge · Taille : M/).waitFor();
     // Même variante ajoutée de nouveau : incrément de la ligne, pas de seconde ligne (C0 R-01).
     await page.getByLabel("Quantité", { exact: true }).fill("2");
     await page.getByTestId("qty-price").getByText(/^Pour 2 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier : 2 ×/).waitFor();
+    await page.getByRole("status").getByText(/Ajouté au panier — 2 ×/).waitFor();
     await page.goto(BASE + "/panier");
     await page.getByTestId("cart-total").getByText(/65,00/).waitFor(); // 5 × 13,00 (sélection serveur R-GMCE-102)
     assert.equal(await page.getByTestId("cart-line").count(), 1);
@@ -295,7 +298,22 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.goto(link);
     await page.getByTestId("receipt-found").waitFor();
     assert.ok(requested.some((u) => u.includes("/recu") && !u.includes("code=")), "page /recu demandée sans le code");
+    // Revue F-04 : après consultation, ni l'adresse, ni l'historique, ni le champ ne gardent le code.
+    assert.equal(await page.evaluate(() => window.location.pathname + window.location.hash), "/recu", "fragment retiré de l'adresse");
+    assert.equal(await page.locator("#r-code").inputValue(), "", "champ du code vidé");
     await shot(page, "U3-recu-consulte");
+    await page.getByRole("link", { name: "Panier", exact: true }).first().click();
+    await page.waitForURL(/\/panier$/);
+    await page.goBack();
+    await page.waitForURL(/\/recu$/);
+    await page.locator("#r-ref").waitFor({ timeout: 10_000 }).catch(async (e) => {
+      await shot(page, "U3-DEBUG-retour");
+      throw new Error(`retour : ${page.url()} — ${(await page.locator("main").innerText()).slice(0, 300)} — ${e.message}`);
+    });
+    assert.equal(await page.getByTestId("receipt-found").count(), 0, "« Retour » ne réaffiche pas le reçu sans ressaisie");
+    assert.equal(await page.locator("#r-code").inputValue(), "");
+    assert.ok(!(await page.evaluate(() => window.location.href)).includes("code="), "aucun code dans l'adresse après retour");
+    note("reçu : fragment retiré, champ vidé, « Retour » n'affiche plus le reçu (F-04)");
     await page.goto(BASE + "/recu#ref=" + ref + "&code=faux");
     await page.getByTestId("receipt-refused").getByText(/code NOT_FOUND/).waitFor();
     await page.context().close();
@@ -461,6 +479,53 @@ describe("BC3 — recette navigateur (Chromium)", () => {
       assert.deepEqual(serious, [], "aucune violation axe serious/critical");
     } else note("axe-core NOT_RUN (AXE absent)");
     for (const s of Object.values(sizes)) assert.deepEqual(s.under24, [], "aucune cible < 24 px");
+  });
+
+  test("U9 — captures complémentaires (F-10) : recherche 1440/1024/390, 404, 410, avertissement ?article=, devis/commande/reçu à 1024 ; favicon 204", async () => {
+    await scene("F_IDENTITY.activate_gen_a", "F_IDENTITY.activate_gen_b_same_keys", "F_IDENTITY.activate_gen_c_tombstones");
+    assert.equal((await fetch(BASE + "/favicon.ico")).status, 204, "favicon neutre (F-08)");
+    for (const [vp, size] of Object.entries(VIEWPORTS)) {
+      const page = await newPage(size);
+      await page.goto(BASE + "/recherche?q=chaise");
+      await page.getByTestId("search-count").waitFor();
+      await assertNoHScroll(page, `recherche ${vp}`);
+      await shot(page, `U9-recherche-${vp}`);
+      await page.context().close();
+    }
+    const page = await newPage(VIEWPORTS.laptop);
+    assert.equal((await page.goto(BASE + "/famille/inconnue")).status(), 404);
+    await shot(page, "U9-404-laptop");
+    assert.equal((await page.goto(BASE + "/article/PI-000000JSY")).status(), 410);
+    await shot(page, "U9-410-article-retire-laptop");
+    await page.goto(BASE + "/famille/chaise-pliante?article=PI-000000JSY");
+    await page.getByTestId("article-notice").getByText(/retirée du catalogue/).waitFor();
+    await shot(page, "U9-avertissement-reference-retiree-laptop");
+    await page.goto(BASE + "/famille/chaise-pliante?article=PI-000000JVF");
+    await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
+    await page.getByRole("button", { name: "Ajouter au panier" }).click();
+    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.goto(BASE + "/devis");
+    await page.getByRole("heading", { name: "Récapitulatif" }).waitFor();
+    await assertNoHScroll(page, "devis 1024");
+    await shot(page, "U9-devis-laptop");
+    await page.goto(BASE + "/commande");
+    await page.getByTestId("order-confirm").waitFor();
+    await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie");
+    await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
+    await page.locator("#f-email").fill("achats@example.invalid");
+    await page.getByTestId("order-confirm").check();
+    await assertNoHScroll(page, "commande 1024");
+    await shot(page, "U9-commande-laptop");
+    await page.getByTestId("submit").click();
+    await page.getByTestId("result-received").waitFor();
+    await shot(page, "U9-commande-recue-laptop");
+    const link = await page.getByTestId("receipt-link").textContent();
+    await page.goto(link);
+    await page.getByTestId("receipt-found").waitFor();
+    await page.getByTestId("receipt-total").getByText(/€ HT/).waitFor();
+    await assertNoHScroll(page, "reçu 1024");
+    await shot(page, "U9-recu-laptop");
+    await page.context().close();
   });
 
   test("U8 — aucune erreur console (dont violations CSP) sur l'ensemble du parcours", async () => {

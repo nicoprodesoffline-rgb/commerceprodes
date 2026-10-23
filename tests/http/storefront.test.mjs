@@ -505,6 +505,11 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       const ok = await post("/api/site/order", orderFrom(pvB));
       assert.equal(ok.status, 200, ok.text.slice(0, 200));
       assert.equal(ok.json.outcome, "RECEIVED");
+      // Revue F-06 : référence d'une autre Famille → avertissement explicite, jamais une autre variante en silence.
+      const other = await get("/famille/chaise-pliante?article=PI-000000JSY");
+      assert.equal(other.status, 200);
+      assert.match(other.text, /data-testid="article-notice"[^]*appartient à une autre famille/);
+      assert.match(other.text, /href="\/article\/PI-000000JSY"/);
       // Slug changé en génération 2 (chaise-coque → chaise-coque-v2) : l'ancienne adresse n'existe plus.
       assert.equal((await get("/famille/chaise-coque")).status, 404);
       assert.equal((await get("/famille/chaise-coque-v2")).status, 200);
@@ -527,6 +532,22 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
         { public_item_key: "PI-000000JSY", variant_axes: { modele: "A" }, quantity: 1 },
       ]);
       assert.deepEqual(pv.json.lines.map((l) => l.error_codes), [["ITEM_SUPERSEDED"], ["ITEM_RETIRED"]]);
+      // Revue F-06 : ?article= retirée / remplacée / inconnue / mal formée → message explicite, jamais silencieux.
+      const cases = [
+        ["PI-000000JSY", /La référence PI-000000JSY a été retirée du catalogue/],
+        ["PI-000000JW3", /La référence PI-000000JW3 a été remplacée\.[^]*href="\/article\/PI-000000JVF"/],
+        ["PI-00000001R", /La référence PI-00000001R est inconnue du catalogue actuel/],
+        ["<script>alert(1)</script>", /La référence &lt;script&gt;alert\(1\)&lt;\/script&gt; est inconnue/],
+      ];
+      for (const [ref, re] of cases) {
+        const r = await get(`/famille/chaise-pliante?article=${encodeURIComponent(ref)}`);
+        assert.equal(r.status, 200, ref);
+        assert.match(r.text, /data-testid="article-notice"/, ref);
+        assert.match(r.text, re, ref);
+        assert.doesNotMatch(r.text, /<script>alert\(1\)/, ref);
+      }
+      const ok = await get("/famille/chaise-pliante?article=PI-000000JVF");
+      assert.doesNotMatch(ok.text, /data-testid="article-notice"/, "référence portée par la Famille : aucun avertissement");
       assert.equal(pv.json.lines[0].superseded_by["PI-000000JW3"], "PI-000000JVF");
     });
 

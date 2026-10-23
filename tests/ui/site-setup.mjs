@@ -1,20 +1,27 @@
 // Outil de préparation (tests navigateur BC3, recette manuelle) : remet une base SITE `prodes_site_bc3*` à zéro et
 // pose des générations par le VRAI receiver BC2, en HTTP, sur un serveur déjà lancé.
-//   node tests/ui/site-setup.mjs <port> <base prodes_site_bc3…> <cas C0> [<cas C0>…]
+//   node tests/ui/site-setup.mjs <port> <base prodes_site_… | URL postgres locale> <cas C0> [<cas C0>…]
 //   ex. node tests/ui/site-setup.mjs 3361 prodes_site_bc3 F_GMCE_VARIANTS.activate
+// Garde (revue BC3 F-13, paramétrable sans copie) : base `prodes_site_*` sur hôte local seulement, jamais JARVIS.
 // Prérequis : `npm run bc2:build` (signature des PUT média avec le trousseau de TEST des fixtures C0).
 import pg from "pg";
 import { migrate } from "../../scripts/db/migrate.mjs";
 
-const DB_RE = /^prodes_site_bc3(_test)?$/; // jamais la base d'un autre lot
+const DB_RE = /^prodes_site_[a-z0-9_]+$/;
+const LOCAL = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
-export function dbUrl(name) {
-  if (!DB_RE.test(name)) throw new Error(`base refusée : ${name} (BC3 seulement)`);
-  return `postgres://prodes_site:local-dev-only@localhost:54318/${name}`;
+/** Nom de base ou URL postgres locale → URL vérifiée (base `prodes_site_*`, hôte local). */
+export function dbUrl(nameOrUrl) {
+  const url = nameOrUrl.includes("://") ? nameOrUrl : `postgres://prodes_site:local-dev-only@localhost:54318/${nameOrUrl}`;
+  const u = new URL(url);
+  const name = u.pathname.slice(1);
+  if (!DB_RE.test(name)) throw new Error(`base refusée : ${name} (prodes_site_* seulement)`);
+  if (!LOCAL.has(u.hostname)) throw new Error(`hôte refusé : ${u.hostname} (local seulement)`);
+  return url;
 }
 
-export async function resetSiteDb(name) {
-  const url = dbUrl(name);
+export async function resetSiteDb(nameOrUrl) {
+  const url = dbUrl(nameOrUrl);
   const client = new pg.Client({ connectionString: url });
   await client.connect();
   try {
@@ -27,7 +34,7 @@ export async function resetSiteDb(name) {
 }
 
 export async function activateOverHttp(base, caseId) {
-  process.env.SITE_TEST_DATABASE_URL ??= dbUrl("prodes_site_bc3_test");
+  process.env.SITE_TEST_DATABASE_URL ??= dbUrl("prodes_site_bc3_test"); // lu par tests/bc2/helpers.mjs à l'import
   const { loadCase, mediaHeaders } = await import("../bc2/helpers.mjs");
   const c = loadCase(caseId);
   const sig = { "x-c0-key-id": c.transport.key_id, "x-c0-signature": c.transport.signature, "content-type": "application/json" };
