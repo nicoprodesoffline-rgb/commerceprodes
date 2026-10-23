@@ -85,6 +85,11 @@ export function getPool(): Pool {
 /** Exécute `fn` dans une transaction (BEGIN … COMMIT, ROLLBACK sur exception). */
 export async function withTransaction<T>(pool: Pool, fn: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
+  // Connexion coupée pendant la transaction : pg émet `error` sur le client emprunté ; sans écouteur, Node
+  // arrêterait le processus. L'erreur remonte par la requête en cours (rejet), PostgreSQL annule la transaction.
+  const onClientError = (): void => undefined;
+  client.on("error", onClientError);
+  let broken = false;
   try {
     await client.query("BEGIN");
     try {
@@ -92,10 +97,15 @@ export async function withTransaction<T>(pool: Pool, fn: (client: PoolClient) =>
       await client.query("COMMIT");
       return out;
     } catch (error) {
+      broken = true;
       await client.query("ROLLBACK").catch(() => undefined);
       throw error;
     }
+  } catch (error) {
+    broken = true;
+    throw error;
   } finally {
-    client.release();
+    client.removeListener("error", onClientError);
+    client.release(broken);
   }
 }

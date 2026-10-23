@@ -138,6 +138,10 @@ readActiveForUpdate(client: PoolClient): Promise<ActiveGeneration | null>    // 
   hors receiver) ; aucune voie HTTP ne contourne ce refus.
 - **`UNSAFE` ne couvre pas les médias** de l'ACTIVE (F-06, dette) : un octet de `site_media` altéré après activation
   laisse `status: "ACTIVE"`. BC3 (route `/media/[sha256]`) doit revérifier le SHA-256 des octets à la lecture.
+- `withTransaction(pool, fn)` : `BEGIN` … `COMMIT`, `ROLLBACK` sur exception ; une connexion coupée pendant la
+  transaction (redémarrage PostgreSQL, `pg_terminate_backend`) **rejette la promesse** sans exception non capturée
+  (écouteur `error` sur le client emprunté, client détruit au lieu d'être rendu au pool) ; le processus et le pool
+  continuent (test `tests/bc2/17_connection_loss.test.mjs`). L'ACTIVATE du receiver applique la même règle.
 - `getPool()` lit `SITE_DATABASE_URL` à la première demande (singleton de processus) ; `createPool(url)` pour un pool
   dédié (tests, outils), fermé par l'appelant.
 
