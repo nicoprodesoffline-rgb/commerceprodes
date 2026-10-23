@@ -138,5 +138,7 @@ export async function loadCatalog(): Promise<Catalog> {
   const source = await getCatalogSource();
   const served = await source.getGeneration();
   if (served === null) throw new CatalogUnavailable("NO_ACTIVE_GENERATION", "Aucune génération ACTIVE servable");
+  // UNSAFE (BC2 fail-closed) : aucune page ni prix servi depuis un document non vérifié (C0 §10.1 CATALOG_UNSAFE).
+  if (served.status === "UNSAFE" || served.snapshot === null) throw new CatalogUnavailable("CATALOG_UNSAFE", "Génération ACTIVE marquée UNSAFE par la lecture BC2");
   return build(served, source.kind);
 }

@@ -5,9 +5,8 @@
  * aucune autre lecture de catalogue n'existe. Deux implémentations, choisies par
  * `SITE_CATALOG_SOURCE` (aucune valeur par défaut : absence = erreur explicite) :
  *   - `fixture` : `FixtureSource` (document `site_snapshot.v1` gelé de `c0/fixtures/`) ;
- *   - `db`      : `ActiveGenerationSource` fournie par BC2 (`lib/site-db/generation.ts`),
- *                 non livrée ici — sélectionner `db` échoue explicitement tant que BC2
- *                 ne l'a pas branchée.
+ *   - `db`      : `ActiveGenerationSource` (W1/BC3, `./db-source.ts`) sur la génération ACTIVE
+ *                 durable lue par l'interface BC2 `getActiveGeneration()` (`lib/site-db/generation.ts`).
  *
  * Serveur uniquement (lit le disque).
  */
@@ -17,6 +16,7 @@ export type GenerationStatus = "ACTIVE" | "UNSAFE";
 
 /** Génération servie : le document C0 tel que publié, son statut et sa séquence. */
 export type ServedGeneration = {
+  /** `null` seulement si `status` vaut `UNSAFE` (BC2 ne rend jamais un document non vérifié). */
   snapshot: Json;
   status: GenerationStatus;
   catalogue_sequence: number;
@@ -60,11 +60,12 @@ export async function getCatalogSource(): Promise<CatalogSource> {
     return source;
   }
   if (kind === "db") {
-    // BC2 fournira `ActiveGenerationSource` (lib/site-db/generation.ts) et la branchera ici.
-    throw new CatalogUnavailable(
-      "DB_SOURCE_NOT_PROVIDED",
-      "SITE_CATALOG_SOURCE=db : ActiveGenerationSource (BC2, lib/site-db/generation.ts) n'est pas encore fournie",
-    );
+    // Aucun état : la source relit la base à chaque appel (le pool est celui de BC2, singleton de processus).
+    if (cached?.key === "db") return cached.source;
+    const { ActiveGenerationSource } = await import("./db-source");
+    const source = new ActiveGenerationSource();
+    cached = { key: "db", source };
+    return source;
   }
   throw new CatalogUnavailable(
     "SOURCE_NOT_CONFIGURED",
