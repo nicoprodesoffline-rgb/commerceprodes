@@ -13,7 +13,12 @@ function page(status: number, title: string, text: string): Response {
  * publiée → fiche Famille, variante présélectionnée ; SUPERSEDED → redirection permanente vers la
  * canonique ; RETIRED → 410 ; absente → 404. Aucune résolution hors du DTO servi.
  */
-export async function GET(req: Request, ctx: { params: Promise<{ key: string }> }) {
+/** Redirection à `Location` RELATIVE (revue A2, F-02) : jamais l'hôte interne de `req.url`. */
+function redirect(location: string, status: 307 | 308): Response {
+  return new Response(null, { status, headers: { location, "cache-control": "no-store" } });
+}
+
+export async function GET(_req: Request, ctx: { params: Promise<{ key: string }> }) {
   const { key } = await ctx.params;
   let catalog;
   try {
@@ -23,12 +28,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ key: string }> 
     throw error;
   }
   const r = catalog.resolveItem(key);
-  const url = new URL(req.url);
   switch (r.kind) {
     case "PUBLISHED":
-      return Response.redirect(new URL(`/famille/${r.family.slug}?article=${encodeURIComponent(key)}`, url), 307);
+      return redirect(`/famille/${encodeURIComponent(r.family.slug)}?article=${encodeURIComponent(key)}`, 307);
     case "SUPERSEDED":
-      return Response.redirect(new URL(`/article/${encodeURIComponent(r.superseded_by)}`, url), 308);
+      return redirect(`/article/${encodeURIComponent(r.superseded_by)}`, 308);
     case "RETIRED":
       return page(410, "Article retiré", "Cet article a été retiré du catalogue et ne sera plus proposé.");
     default:
