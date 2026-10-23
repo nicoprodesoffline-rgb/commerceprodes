@@ -473,7 +473,7 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       // Blanc choisi : « sol » est désactivé et expliqué ; aucune 4e combinaison n'a de référence.
       assert.match(fiche.text, /value="sol"[^>]*disabled=""|disabled=""[^>]*value="sol"/, "sol non sélectionnable avec blanc");
       assert.match(fiche.text, /Non proposé avec Coloris « Blanc »/);
-      assert.equal([...fiche.text.matchAll(/<td class="py-1 pr-2 font-mono text-xs">(PI-[0-9A-Z]{9})<\/td>/g)].length, 3, "3 variantes listées, pas 4");
+      assert.equal([...fiche.text.matchAll(/<td class="py-1 pr-2 font-mono text-xs whitespace-nowrap">(PI-[0-9A-Z]{9})<\/td>/g)].length, 3, "3 variantes listées, pas 4");
       const noir = await get("/famille/esunny-demo?article=PI-00000069X");
       assert.doesNotMatch(noir.text, /value="sol"[^>]*disabled=""|disabled=""[^>]*value="sol"/, "noir : sol proposé");
     });
