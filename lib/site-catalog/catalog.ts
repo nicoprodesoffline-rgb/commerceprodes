@@ -140,10 +140,3 @@ export async function loadCatalog(): Promise<Catalog> {
   if (served === null) throw new CatalogUnavailable("NO_ACTIVE_GENERATION", "Aucune génération ACTIVE servable");
   return build(served, source.kind);
 }
-
-/** État d'affichage d'une fenêtre publiée à l'instant serveur (comparaison d'instants C0). */
-export function windowState(w: PriceWindow, nowUtc: string): "ACTIVE" | "FUTURE" | "EXPIRED" {
-  if (nowUtc < w.valid_from_utc) return "FUTURE";
-  if (w.valid_until_utc !== null && nowUtc >= w.valid_until_utc) return "EXPIRED";
-  return "ACTIVE";
-}

@@ -33,7 +33,7 @@ export default async function FamilyPage({
     public_item_key: i.public_item_key,
     variant_axes: i.variant_axes,
     image_sha256: i.public_media_refs[0] ?? null,
-    rows: priceRows(i.windows, instant),
+    rows: priceRows(catalog.c0Generation, i, instant),
   }));
   const preselected = typeof article === "string" && items.some((i) => i.public_item_key === article) ? article : undefined;
 
