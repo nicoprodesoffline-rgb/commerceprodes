@@ -1,17 +1,14 @@
-import { NextResponse } from "next/server";
-import { SIMULATION_LABEL, validateLines } from "@/lib/simulator";
-import { badJson, readJson } from "@/lib/simulator/http";
+import { withCatalog } from "@/lib/site-business/http";
+import { previewCart } from "@/lib/site-business/validate";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Aperçu de panier : le serveur sélectionne rate_id et montant pour les lignes
- * du brouillon client (aucune écriture). Le client affiche CE résultat, puis
- * le renvoie tel quel au devis/à la commande, qui le revalide.
+ * Aperçu de panier : `selectPrice` C0 par ligne, à l'instant serveur, sur la génération servie.
+ * Aucune écriture. Le client affiche CE résultat ; devis et commande le revalident.
  */
 export async function POST(req: Request) {
-  const body = (await readJson(req)) as { lines?: unknown } | null;
-  if (body === null) return badJson();
-  const v = validateLines(body.lines, false);
-  return NextResponse.json({ ...SIMULATION_LABEL, ...v }, { status: v.ok ? 200 : v.status });
+  return withCatalog(req, ({ catalog, nowUtc, bytes }) =>
+    previewCart({ bytes, generation: catalog.c0Generation, catalogueSequence: catalog.meta.catalogue_sequence, nowUtc }),
+  );
 }
