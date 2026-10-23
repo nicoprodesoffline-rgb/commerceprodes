@@ -14,248 +14,226 @@ TAP version 13
 # Subtest: F_QUOTE_ORDER.order_valid → RECEIVED durable, lignes figées C0, outbox APPLY, total_cents = Σ
 ok 1 - F_QUOTE_ORDER.order_valid → RECEIVED durable, lignes figées C0, outbox APPLY, total_cents = Σ
   ---
-  duration_ms: 140.403166
+  duration_ms: 137.230041
   type: 'test'
   ...
 # Subtest: journal BC4 : une ligne RECEIVED sans PII ni jeton
 ok 2 - journal BC4 : une ligne RECEIVED sans PII ni jeton
   ---
-  duration_ms: 0.540833
+  duration_ms: 0.577084
   type: 'test'
   ...
 # Subtest: CE-T03 commande : course forcée (barrière) → 1 site_order, 1 événement, même reçu — F_QUOTE_ORDER.order_valid
 ok 3 - CE-T03 commande : course forcée (barrière) → 1 site_order, 1 événement, même reçu — F_QUOTE_ORDER.order_valid
   ---
-  duration_ms: 117.881416
+  duration_ms: 140.760875
   type: 'test'
   ...
 # Subtest: CE-T03 commande : rejeu séquentiel → REPLAY_SAME_RECEIPT, aucun nouvel objet — F_QUOTE_ORDER.order_double_post_same_key
 ok 4 - CE-T03 commande : rejeu séquentiel → REPLAY_SAME_RECEIPT, aucun nouvel objet — F_QUOTE_ORDER.order_double_post_same_key
   ---
-  duration_ms: 8.171625
+  duration_ms: 3.445458
   type: 'test'
   ...
 # Subtest: CE-T03 commande : 8 POST concurrents sans barrière → toujours 1 objet, 1 événement, 1 seul RECEIVED
 ok 5 - CE-T03 commande : 8 POST concurrents sans barrière → toujours 1 objet, 1 événement, 1 seul RECEIVED
   ---
-  duration_ms: 19.022167
+  duration_ms: 17.443708
   type: 'test'
   ...
 # Subtest: CE-T03 devis : course forcée → 1 devis, 1 événement quote.requested — F_QUOTE_ORDER.quote_priced, quote_double_post
 ok 6 - CE-T03 devis : course forcée → 1 devis, 1 événement quote.requested — F_QUOTE_ORDER.quote_priced, quote_double_post
   ---
-  duration_ms: 28.491417
+  duration_ms: 12.009583
   type: 'test'
   ...
 # Subtest: course forcée même clé, AUTRE corps → 1 RECEIVED + 1 DUPLICATE_KEY_DIFFERENT_PAYLOAD 409 — F_QUOTE_ORDER.order_same_key_other_payload
 ok 7 - course forcée même clé, AUTRE corps → 1 RECEIVED + 1 DUPLICATE_KEY_DIFFERENT_PAYLOAD 409 — F_QUOTE_ORDER.order_same_key_other_payload
   ---
-  duration_ms: 11.455792
+  duration_ms: 8.258917
   type: 'test'
   ...
 # Subtest: même clé, autre payload → 409 DUPLICATE_KEY_DIFFERENT_PAYLOAD, 0 écriture — F_QUOTE_ORDER.order_same_key_other_payload
 ok 8 - même clé, autre payload → 409 DUPLICATE_KEY_DIFFERENT_PAYLOAD, 0 écriture — F_QUOTE_ORDER.order_same_key_other_payload
   ---
-  duration_ms: 116.245791
+  duration_ms: 128.861417
   type: 'test'
   ...
 # Subtest: lignes réordonnées → REPLAY_SAME_RECEIPT, même reçu, 0 écriture — F_QUOTE_ORDER.order_replay_lines_reordered
 ok 9 - lignes réordonnées → REPLAY_SAME_RECEIPT, même reçu, 0 écriture — F_QUOTE_ORDER.order_replay_lines_reordered
   ---
-  duration_ms: 11.116791
+  duration_ms: 4.424625
   type: 'test'
   ...
 # Subtest: rejeu à un autre instant serveur → toujours le reçu d'origine (idempotence avant génération/prix)
 ok 10 - rejeu à un autre instant serveur → toujours le reçu d'origine (idempotence avant génération/prix)
   ---
-  duration_ms: 2.250625
+  duration_ms: 2.053875
   type: 'test'
   ...
 # Subtest: devis : même clé autre payload → 409 ; la même clé côté commande est un autre espace (kind) — F_QUOTE_ORDER.quote_same_key_other_payload
 ok 11 - devis : même clé autre payload → 409 ; la même clé côté commande est un autre espace (kind) — F_QUOTE_ORDER.quote_same_key_other_payload
   ---
-  duration_ms: 15.746625
+  duration_ms: 8.737083
   type: 'test'
   ...
 # Subtest: génération F_SELL_WINDOWS s7
     # Subtest: F_QUOTE_ORDER.order_falsified_amount → refus C0, 0 écriture
     ok 1 - F_QUOTE_ORDER.order_falsified_amount → refus C0, 0 écriture
       ---
-      duration_ms: 20.084167
+      duration_ms: 9.519584
       type: 'test'
       ...
     # Subtest: F_QUOTE_ORDER.order_tier_crossed → refus C0, 0 écriture
     ok 2 - F_QUOTE_ORDER.order_tier_crossed → refus C0, 0 écriture
       ---
-      duration_ms: 7.658833
+      duration_ms: 3.903917
       type: 'test'
       ...
     # Subtest: F_QUOTE_ORDER.order_line_total_not_unit_times_quantity → refus C0, 0 écriture
     ok 3 - F_QUOTE_ORDER.order_line_total_not_unit_times_quantity → refus C0, 0 écriture
       ---
-      duration_ms: 10.007667
+      duration_ms: 4.054333
       type: 'test'
       ...
     # Subtest: F_QUOTE_ORDER.order_total_mismatch → refus C0, 0 écriture
     ok 4 - F_QUOTE_ORDER.order_total_mismatch → refus C0, 0 écriture
       ---
-      duration_ms: 11.904667
+      duration_ms: 3.236375
       type: 'test'
       ...
     # Subtest: F_QUOTE_ORDER.order_item_not_published → refus C0, 0 écriture
     ok 5 - F_QUOTE_ORDER.order_item_not_published → refus C0, 0 écriture
       ---
-      duration_ms: 9.978791
+      duration_ms: 3.5495
       type: 'test'
       ...
     # Subtest: F_QUOTE_ORDER.order_invalid_variant → refus C0, 0 écriture
     ok 6 - F_QUOTE_ORDER.order_invalid_variant → refus C0, 0 écriture
       ---
-      duration_ms: 9.983209
+      duration_ms: 3.803416
       type: 'test'
       ...
     # Subtest: F_QUOTE_ORDER.order_same_key_other_axes → refus C0, 0 écriture
     ok 7 - F_QUOTE_ORDER.order_same_key_other_axes → refus C0, 0 écriture
       ---
-      duration_ms: 8.177917
+      duration_ms: 3.623917
       type: 'test'
       ...
     # Subtest: F_QUOTE_ORDER.order_future_window → refus C0, 0 écriture
     ok 8 - F_QUOTE_ORDER.order_future_window → refus C0, 0 écriture
       ---
-      duration_ms: 8.896334
+      duration_ms: 3.240292
       type: 'test'
       ...
     # Subtest: F_QUOTE_ORDER.order_duplicate_lines_tier_bypass → refus C0, 0 écriture
     ok 9 - F_QUOTE_ORDER.order_duplicate_lines_tier_bypass → refus C0, 0 écriture
       ---
-      duration_ms: 9.19375
+      duration_ms: 3.918125
       type: 'test'
       ...
     # Subtest: F_QUOTE_ORDER.quote_displayed_price_changed → refus C0, 0 écriture
     ok 10 - F_QUOTE_ORDER.quote_displayed_price_changed → refus C0, 0 écriture
       ---
-      duration_ms: 5.5705
+      duration_ms: 3.615541
       type: 'test'
       ...
     # Subtest: CE-T16 : chaque champ prix falsifié isolément (rate_id, unit_amount, line_total, total_amount) → PRICE_CHANGED 409, 0 Order
     ok 11 - CE-T16 : chaque champ prix falsifié isolément (rate_id, unit_amount, line_total, total_amount) → PRICE_CHANGED 409, 0 Order
       ---
-      duration_ms: 7.631625
+      duration_ms: 6.988834
       type: 'test'
       ...
     # Subtest: ITEM_NOT_PUBLISHED → HTTP 404 (C0 §13)
     ok 12 - ITEM_NOT_PUBLISHED → HTTP 404 (C0 §13)
       ---
-      duration_ms: 2.504
+      duration_ms: 1.689541
       type: 'test'
       ...
     1..12
 ok 12 - génération F_SELL_WINDOWS s7
   ---
-  duration_ms: 213.0715
+  duration_ms: 167.277083
   type: 'suite'
   ...
 # Subtest: génération F_ESUNNY_FORBIDDEN s1
     # Subtest: variante interdite → INVALID_VARIANT 422, 0 écriture — F_ESUNNY_FORBIDDEN.order_forbidden_combination
     ok 1 - variante interdite → INVALID_VARIANT 422, 0 écriture — F_ESUNNY_FORBIDDEN.order_forbidden_combination
       ---
-      duration_ms: 14.089542
+      duration_ms: 5.444708
       type: 'test'
       ...
     # Subtest: variante publiée → RECEIVED — F_ESUNNY_FORBIDDEN.order_allowed_combination
     ok 2 - variante publiée → RECEIVED — F_ESUNNY_FORBIDDEN.order_allowed_combination
       ---
-      duration_ms: 10.273084
+      duration_ms: 5.869834
       type: 'test'
       ...
     1..2
 ok 13 - génération F_ESUNNY_FORBIDDEN s1
   ---
-  duration_ms: 105.818792
+  duration_ms: 84.097958
   type: 'suite'
   ...
 # Subtest: générations F_IDENTITY a → b → c (tombstones)
     # Subtest: clé supplantée + clé retirée → ITEM_RETIRED + ITEM_SUPERSEDED, canonique donnée, 0 écriture — F_IDENTITY.order_with_tombstoned_keys
     ok 1 - clé supplantée + clé retirée → ITEM_RETIRED + ITEM_SUPERSEDED, canonique donnée, 0 écriture — F_IDENTITY.order_with_tombstoned_keys
       ---
-      duration_ms: 13.880708
+      duration_ms: 5.046333
       type: 'test'
       ...
     1..1
 ok 14 - générations F_IDENTITY a → b → c (tombstones)
   ---
-  duration_ms: 139.624166
+  duration_ms: 94.082083
   type: 'suite'
   ...
 # Subtest: CE-T12 commande sur séquence 6 (ACTIVE 7) → CART_STALE 409 — F_QUOTE_ORDER.order_stale_generation
 ok 15 - CE-T12 commande sur séquence 6 (ACTIVE 7) → CART_STALE 409 — F_QUOTE_ORDER.order_stale_generation
   ---
-  duration_ms: 106.070916
+  duration_ms: 102.319
   type: 'test'
   ...
 # Subtest: CE-T12 devis chiffré sur autre séquence → CATALOG_CHANGED 409 — F_QUOTE_ORDER.quote_stale_generation
 ok 16 - CE-T12 devis chiffré sur autre séquence → CATALOG_CHANGED 409 — F_QUOTE_ORDER.quote_stale_generation
   ---
-  duration_ms: 4.58075
+  duration_ms: 4.621292
   type: 'test'
   ...
-# Subtest: génération UNSAFE → CATALOG_UNSAFE (commande, devis chiffré) ; devis non chiffré reçu — order_catalog_unsafe, quote_priced_on_unsafe, quote_unpriced_on_unsafe
-not ok 17 - génération UNSAFE → CATALOG_UNSAFE (commande, devis chiffré) ; devis non chiffré reçu — order_catalog_unsafe, quote_priced_on_unsafe, quote_unpriced_on_unsafe
+# Subtest: ACTIVE UNSAFE (pointeur ≠ génération) → 503 CATALOG_UNAVAILABLE fail-closed, 0 écriture, même pour un devis non chiffré et un rejeu — order_catalog_unsafe, quote_priced_on_unsafe, quote_unpriced_on_unsafe
+ok 17 - ACTIVE UNSAFE (pointeur ≠ génération) → 503 CATALOG_UNAVAILABLE fail-closed, 0 écriture, même pour un devis non chiffré et un rejeu — order_catalog_unsafe, quote_priced_on_unsafe, quote_unpriced_on_unsafe
   ---
-  duration_ms: 1.749167
+  duration_ms: 16.012875
   type: 'test'
-  location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/05_stale_unsafe.test.mjs:31:1'
-  failureType: 'testCodeFailure'
-  error: "site_generation: octets et identité d'une génération immuables (id=1)"
-  code: 'P0001'
-  name: 'error'
-  stack: |-
-    /Users/nico/Desktop/prodes-w1/commerce-bc3/node_modules/pg-pool/index.js:45:11
-    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    async TestContext.<anonymous> (file:///Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/05_stale_unsafe.test.mjs:33:3)
-    async Test.run (node:internal/test_runner/test:1054:7)
-    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
   ...
-# Subtest: octets ACTIVE illisibles → 503 CATALOG_UNAVAILABLE, aucun verdict inventé, 0 écriture
-not ok 18 - octets ACTIVE illisibles → 503 CATALOG_UNAVAILABLE, aucun verdict inventé, 0 écriture
+# Subtest: migration BC2 005 : les octets ACTIVE ne sont plus altérables en SQL (le test précédent passe donc par le pointeur)
+ok 18 - migration BC2 005 : les octets ACTIVE ne sont plus altérables en SQL (le test précédent passe donc par le pointeur)
   ---
-  duration_ms: 5.900166
+  duration_ms: 1.486875
   type: 'test'
-  location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/05_stale_unsafe.test.mjs:44:1'
-  failureType: 'testCodeFailure'
-  error: "site_generation: octets et identité d'une génération immuables (id=1)"
-  code: 'P0001'
-  name: 'error'
-  stack: |-
-    /Users/nico/Desktop/prodes-w1/commerce-bc3/node_modules/pg-pool/index.js:45:11
-    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    async TestContext.<anonymous> (file:///Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/05_stale_unsafe.test.mjs:46:3)
-    async Test.run (node:internal/test_runner/test:1054:7)
-    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
   ...
 # Subtest: aucune génération jamais activée → 503 CATALOG_UNAVAILABLE NO_ACTIVE_GENERATION
 ok 19 - aucune génération jamais activée → 503 CATALOG_UNAVAILABLE NO_ACTIVE_GENERATION
   ---
-  duration_ms: 62.844958
+  duration_ms: 57.724542
   type: 'test'
   ...
 # Subtest: devis non chiffré → RECEIVED, lignes priced:false sans aucun montant, événement sans prix — F_QUOTE_ORDER.quote_unpriced_no_window
 ok 20 - devis non chiffré → RECEIVED, lignes priced:false sans aucun montant, événement sans prix — F_QUOTE_ORDER.quote_unpriced_no_window
   ---
-  duration_ms: 109.694625
+  duration_ms: 108.44175
   type: 'test'
   ...
 # Subtest: devis chiffré → lignes priced:true avec prix et version d'offre relus par selectPrice C0 — F_QUOTE_ORDER.quote_priced
 ok 21 - devis chiffré → lignes priced:true avec prix et version d'offre relus par selectPrice C0 — F_QUOTE_ORDER.quote_priced
   ---
-  duration_ms: 5.235125
+  duration_ms: 4.959709
   type: 'test'
   ...
 # Subtest: base : une ligne non chiffrée portant un montant est refusée par CHECK (jamais un ancien montant reconduit)
 ok 22 - base : une ligne non chiffrée portant un montant est refusée par CHECK (jamais un ancien montant reconduit)
   ---
-  duration_ms: 1.076334
+  duration_ms: 1.051916
   type: 'test'
   ...
 # [site-transactions] ORDER connexion impossible code=3D000
@@ -265,7 +243,7 @@ ok 22 - base : une ligne non chiffrée portant un montant est refusée par CHECK
 # Subtest: (a) base inexistante → 503 DB_WRITE_FAILED, accepted:false — F_QUOTE_ORDER.order_valid
 ok 23 - (a) base inexistante → 503 DB_WRITE_FAILED, accepted:false — F_QUOTE_ORDER.order_valid
   ---
-  duration_ms: 107.557084
+  duration_ms: 102.953166
   type: 'test'
   ...
 # [site-transactions] connexion perdue pendant l'emprunt code=ECONNRESET
@@ -273,7 +251,7 @@ ok 23 - (a) base inexistante → 503 DB_WRITE_FAILED, accepted:false — F_QUOTE
 # Subtest: (b) connexion révoquée après l'INSERT de l'objet → 503 DB_WRITE_FAILED, ROLLBACK complet — F_QUOTE_ORDER.order_valid
 ok 24 - (b) connexion révoquée après l'INSERT de l'objet → 503 DB_WRITE_FAILED, ROLLBACK complet — F_QUOTE_ORDER.order_valid
   ---
-  duration_ms: 25.960417
+  duration_ms: 23.374625
   type: 'test'
   ...
 # [site-transactions] connexion perdue pendant l'emprunt code=ECONNRESET
@@ -281,235 +259,235 @@ ok 24 - (b) connexion révoquée après l'INSERT de l'objet → 503 DB_WRITE_FAI
 # Subtest: (c) connexion révoquée juste avant COMMIT (devis) → 503, rien de commité — F_QUOTE_ORDER.quote_priced
 ok 25 - (c) connexion révoquée juste avant COMMIT (devis) → 503, rien de commité — F_QUOTE_ORDER.quote_priced
   ---
-  duration_ms: 14.775958
+  duration_ms: 14.982584
   type: 'test'
   ...
 # [site-transactions] ORDER échec de persistance code=TEST_CRASH
 # Subtest: crash après INSERT objet → 503 DB_WRITE_FAILED, 0 orphelin ; rejeu → RECEIVED — F_QUOTE_ORDER.order_valid
 ok 26 - crash après INSERT objet → 503 DB_WRITE_FAILED, 0 orphelin ; rejeu → RECEIVED — F_QUOTE_ORDER.order_valid
   ---
-  duration_ms: 118.868916
+  duration_ms: 119.9165
   type: 'test'
   ...
 # [site-transactions] QUOTE échec de persistance code=TEST_CRASH
 # Subtest: crash après INSERT objet → 503 DB_WRITE_FAILED, 0 orphelin ; rejeu → RECEIVED — F_QUOTE_ORDER.quote_priced
 ok 27 - crash après INSERT objet → 503 DB_WRITE_FAILED, 0 orphelin ; rejeu → RECEIVED — F_QUOTE_ORDER.quote_priced
   ---
-  duration_ms: 14.827333
+  duration_ms: 14.885208
   type: 'test'
   ...
 # [site-transactions] ORDER échec de persistance code=TEST_CRASH
 # Subtest: crash juste avant COMMIT (après outbox) → rien de visible
 ok 28 - crash juste avant COMMIT (après outbox) → rien de visible
   ---
-  duration_ms: 10.088041
+  duration_ms: 10.475916
   type: 'test'
   ...
 # Subtest: base : commande sans ligne → COMMIT refusé (contrainte différée site_order_lines_consistent)
 ok 29 - base : commande sans ligne → COMMIT refusé (contrainte différée site_order_lines_consistent)
   ---
-  duration_ms: 2.785417
+  duration_ms: 2.550083
   type: 'test'
   ...
 # Subtest: base : total_cents ≠ Σ line_total_cents → COMMIT refusé ; total_cents ≠ total_amount → CHECK
 ok 30 - base : total_cents ≠ Σ line_total_cents → COMMIT refusé ; total_cents ≠ total_amount → CHECK
   ---
-  duration_ms: 1.741416
+  duration_ms: 1.663
   type: 'test'
   ...
 # Subtest: base : lignes, outbox (contenu) et idempotence immuables ; ACKED final
 ok 31 - base : lignes, outbox (contenu) et idempotence immuables ; ACKED final
   ---
-  duration_ms: 23.944125
+  duration_ms: 22.356917
   type: 'test'
   ...
 # Subtest: F_QUOTE_ORDER.order_client_sets_tax → refus C0, 0 écriture
 ok 32 - F_QUOTE_ORDER.order_client_sets_tax → refus C0, 0 écriture
   ---
-  duration_ms: 102.810125
+  duration_ms: 101.753667
   type: 'test'
   ...
 # Subtest: F_QUOTE_ORDER.order_float_amount → refus C0, 0 écriture
 ok 33 - F_QUOTE_ORDER.order_float_amount → refus C0, 0 écriture
   ---
-  duration_ms: 3.23675
+  duration_ms: 3.153959
   type: 'test'
   ...
 # Subtest: F_QUOTE_ORDER.order_invalid_email → refus C0, 0 écriture
 ok 34 - F_QUOTE_ORDER.order_invalid_email → refus C0, 0 écriture
   ---
-  duration_ms: 3.627417
+  duration_ms: 3.218917
   type: 'test'
   ...
 # Subtest: F_QUOTE_ORDER.order_sequence_boolean → refus C0, 0 écriture
 ok 35 - F_QUOTE_ORDER.order_sequence_boolean → refus C0, 0 écriture
   ---
-  duration_ms: 3.024083
+  duration_ms: 2.833584
   type: 'test'
   ...
 # Subtest: F_QUOTE_ORDER.order_unknown_version → refus C0, 0 écriture
 ok 36 - F_QUOTE_ORDER.order_unknown_version → refus C0, 0 écriture
   ---
-  duration_ms: 3.326125
+  duration_ms: 3.095917
   type: 'test'
   ...
 # Subtest: F_QUOTE_ORDER.order_duplicate_lines_ten_times_one → refus C0, 0 écriture
 ok 37 - F_QUOTE_ORDER.order_duplicate_lines_ten_times_one → refus C0, 0 écriture
   ---
-  duration_ms: 3.336875
+  duration_ms: 3.349625
   type: 'test'
   ...
 # Subtest: F_QUOTE_ORDER.quote_blank_organisation → refus C0, 0 écriture
 ok 38 - F_QUOTE_ORDER.quote_blank_organisation → refus C0, 0 écriture
   ---
-  duration_ms: 3.028375
+  duration_ms: 2.911125
   type: 'test'
   ...
 # Subtest: commande sans ligne / 201 lignes / tax_amount / shipping / status / payment → INVALID_DATA 422, 0 écriture
 ok 39 - commande sans ligne / 201 lignes / tax_amount / shipping / status / payment → INVALID_DATA 422, 0 écriture
   ---
-  duration_ms: 17.284
+  duration_ms: 16.406875
   type: 'test'
   ...
 # Subtest: montants flottants, BOM, non-JSON, > 256 Kio → PAYLOAD_MALFORMED 400
 ok 40 - montants flottants, BOM, non-JSON, > 256 Kio → PAYLOAD_MALFORMED 400
   ---
-  duration_ms: 10.07
+  duration_ms: 9.354125
   type: 'test'
   ...
 # Subtest: aucune donnée de contact dans event_bytes ni dans le payload (devis avec message, commande)
 ok 41 - aucune donnée de contact dans event_bytes ni dans le payload (devis avec message, commande)
   ---
-  duration_ms: 11.101458
+  duration_ms: 11.321541
   type: 'test'
   ...
 # Subtest: schéma : aucune colonne taxe / port / paiement / statut client dans les tables BC4
 ok 42 - schéma : aucune colonne taxe / port / paiement / statut client dans les tables BC4
   ---
-  duration_ms: 7.788666
+  duration_ms: 8.465916
   type: 'test'
   ...
 # Subtest: CE-T17 premier poll (curseur null) → 3 événements dans l'ordre, octets exacts APPLY — F_QUOTE_ORDER.poll_first_page
 ok 43 - CE-T17 premier poll (curseur null) → 3 événements dans l'ordre, octets exacts APPLY — F_QUOTE_ORDER.poll_first_page
   ---
-  duration_ms: 126.02225
+  duration_ms: 143.375375
   type: 'test'
   ...
 # Subtest: CE-T18 sans ACK → les mêmes événements sont re-servis ; le consommateur les reconnaît EVENT_DUPLICATE_NOOP — F_QUOTE_ORDER.poll_next_page, event_replay_after_lost_ack
 ok 44 - CE-T18 sans ACK → les mêmes événements sont re-servis ; le consommateur les reconnaît EVENT_DUPLICATE_NOOP — F_QUOTE_ORDER.poll_next_page, event_replay_after_lost_ack
   ---
-  duration_ms: 3.049709
+  duration_ms: 3.606208
   type: 'test'
   ...
 # Subtest: limit=1 → pagination ordonnée, re-service du plus ancien non acquitté
 ok 45 - limit=1 → pagination ordonnée, re-service du plus ancien non acquitté
   ---
-  duration_ms: 1.749
+  duration_ms: 1.730125
   type: 'test'
   ...
 # Subtest: ACK par event_ids puis par curseur → ACKED, plus jamais servis
 ok 46 - ACK par event_ids puis par curseur → ACKED, plus jamais servis
   ---
-  duration_ms: 5.190792
+  duration_ms: 5.71675
   type: 'test'
   ...
 # Subtest: nouvel événement après ACK → servi seul ; un événement PENDING n'est pas acquittable avant livraison
 ok 47 - nouvel événement après ACK → servi seul ; un événement PENDING n'est pas acquittable avant livraison
   ---
-  duration_ms: 6.317042
+  duration_ms: 6.214625
   type: 'test'
   ...
 # Subtest: CE-T19 clé de publication / d'ACK / inconnue → EVENT_UNAUTHORIZED 401 (même avec un HMAC correct pour cette clé) — poll_with_publish_key, poll_with_ack_key
 ok 48 - CE-T19 clé de publication / d'ACK / inconnue → EVENT_UNAUTHORIZED 401 (même avec un HMAC correct pour cette clé) — poll_with_publish_key, poll_with_ack_key
   ---
-  duration_ms: 1.928583
+  duration_ms: 1.950541
   type: 'test'
   ...
 # Subtest: signature absente, fausse, ou sur un autre {cursor, limit} → EVENT_UNAUTHORIZED
 ok 49 - signature absente, fausse, ou sur un autre {cursor, limit} → EVENT_UNAUTHORIZED
   ---
-  duration_ms: 1.197375
+  duration_ms: 1.135125
   type: 'test'
   ...
 # Subtest: curseur forgé / limit 0 / 501 / non entier → CURSOR_INVALID 400 — poll_unknown_cursor, poll_limit_zero
 ok 50 - curseur forgé / limit 0 / 501 / non entier → CURSOR_INVALID 400 — poll_unknown_cursor, poll_limit_zero
   ---
-  duration_ms: 4.13975
+  duration_ms: 3.910333
   type: 'test'
   ...
 # Subtest: un curseur est lié à la clé qui l'a reçu : présenté par une autre clé events → CURSOR_INVALID (trousseau étendu de test)
 ok 51 - un curseur est lié à la clé qui l'a reçu : présenté par une autre clé events → CURSOR_INVALID (trousseau étendu de test)
   ---
-  duration_ms: 2.116
+  duration_ms: 2.32
   type: 'test'
   ...
 # Subtest: bon jeton → 200 FOUND, reçu d'origine (commande et devis) — F_QUOTE_ORDER.lookup_found
 ok 52 - bon jeton → 200 FOUND, reçu d'origine (commande et devis) — F_QUOTE_ORDER.lookup_found
   ---
-  duration_ms: 117.295708
+  duration_ms: 132.914167
   type: 'test'
   ...
 # Subtest: jeton absent (clé omise), vide → 401 UNAUTHORIZED — lookup_token_key_absent, lookup_no_token
 ok 53 - jeton absent (clé omise), vide → 401 UNAUTHORIZED — lookup_token_key_absent, lookup_no_token
   ---
-  duration_ms: 1.326041
+  duration_ms: 1.276
   type: 'test'
   ...
 # Subtest: faux jeton, jeton d'un autre reçu, réf inconnue, réf mal formée → 404 NOT_FOUND aux octets identiques — lookup_wrong_token, lookup_unknown_ref
 ok 54 - faux jeton, jeton d'un autre reçu, réf inconnue, réf mal formée → 404 NOT_FOUND aux octets identiques — lookup_wrong_token, lookup_unknown_ref
   ---
-  duration_ms: 2.476083
+  duration_ms: 2.039875
   type: 'test'
   ...
 # Subtest: le jeton n'existe en base que haché (SHA-256), jamais en clair
 ok 55 - le jeton n'existe en base que haché (SHA-256), jamais en clair
   ---
-  duration_ms: 1.722916
+  duration_ms: 1.793875
   type: 'test'
   ...
 # Subtest: activations gen_b puis gen_c → lignes figées, reçu et total inchangés à la relecture
 ok 56 - activations gen_b puis gen_c → lignes figées, reçu et total inchangés à la relecture
   ---
-  duration_ms: 133.737708
+  duration_ms: 152.21475
   type: 'test'
   ...
 # Subtest: rejeu de la même requête après la nouvelle activation → REPLAY_SAME_RECEIPT (reçu d'origine), pas CART_STALE
 ok 57 - rejeu de la même requête après la nouvelle activation → REPLAY_SAME_RECEIPT (reçu d'origine), pas CART_STALE
   ---
-  duration_ms: 2.526625
+  duration_ms: 2.270958
   type: 'test'
   ...
 # Subtest: nouvelle commande sur l'ancienne séquence → CART_STALE 409, 0 écriture
 ok 58 - nouvelle commande sur l'ancienne séquence → CART_STALE 409, 0 écriture
   ---
-  duration_ms: 2.239458
+  duration_ms: 1.884083
   type: 'test'
   ...
 # Subtest: commande : création, rejeu, lignes réordonnées, rejeu tardif, consultation → même octets de reçu (canoniques, stockés)
 ok 59 - commande : création, rejeu, lignes réordonnées, rejeu tardif, consultation → même octets de reçu (canoniques, stockés)
   ---
-  duration_ms: 114.170167
+  duration_ms: 140.525708
   type: 'test'
   ...
 # Subtest: première réponse et rejeu : corps identiques hors outcome, instant_utc et access_token
 ok 60 - première réponse et rejeu : corps identiques hors outcome, instant_utc et access_token
   ---
-  duration_ms: 7.01725
+  duration_ms: 7.862333
   type: 'test'
   ...
 # Subtest: course CE-T03 (barrière) : gagnant et perdant renvoient les mêmes octets de reçu
 ok 61 - course CE-T03 (barrière) : gagnant et perdant renvoient les mêmes octets de reçu
   ---
-  duration_ms: 9.548
+  duration_ms: 10.740125
   type: 'test'
   ...
 1..61
 # tests 73
 # suites 3
-# pass 71
-# fail 2
+# pass 73
+# fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 3167.063541
-exit=1
+# duration_ms 3081.046833
+exit=0

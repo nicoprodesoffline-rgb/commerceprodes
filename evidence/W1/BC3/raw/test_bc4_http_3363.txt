@@ -11,211 +11,82 @@
 > node -e "require('node:fs').rmSync('.bc4-build',{recursive:true,force:true})" && tsc -p tsconfig.bc4.json
 
 TAP version 13
-# \# serveur PID 62237 port 3363
+# \# serveur PID 17449 port 3363
 # Subtest: A — serveur BC4 (SITE_BUSINESS_PERSISTENCE=postgresql) sur prodes_site_bc4_test
     # Subtest: POST /api/site/order (F_QUOTE_ORDER.order_valid) → 200 RECEIVED durable, puis rejeu → même reçu
-    not ok 1 - POST /api/site/order (F_QUOTE_ORDER.order_valid) → 200 RECEIVED durable, puis rejeu → même reçu
+    ok 1 - POST /api/site/order (F_QUOTE_ORDER.order_valid) → 200 RECEIVED durable, puis rejeu → même reçu
       ---
-      duration_ms: 43.53275
+      duration_ms: 53.81025
       type: 'test'
-      location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:93:3'
-      failureType: 'testCodeFailure'
-      error: |-
-        Expected values to be strictly equal:
-        + actual - expected
-        
-        + undefined
-        - 'REPLAY_SAME_RECEIPT'
-        
-      code: 'ERR_ASSERTION'
-      name: 'AssertionError'
-      expected: 'REPLAY_SAME_RECEIPT'
-      operator: 'strictEqual'
-      stack: |-
-        TestContext.<anonymous> (file:///Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:103:12)
-        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-        async Test.run (node:internal/test_runner/test:1054:7)
-        async Promise.all (index 0)
-        async Suite.run (node:internal/test_runner/test:1442:7)
-        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
       ...
     # Subtest: CE-T03 HTTP : deux POST simultanés même clé → 1 commande, 1 événement
-    not ok 2 - CE-T03 HTTP : deux POST simultanés même clé → 1 commande, 1 événement
+    ok 2 - CE-T03 HTTP : deux POST simultanés même clé → 1 commande, 1 événement
       ---
-      duration_ms: 7.105
+      duration_ms: 23.333292
       type: 'test'
-      location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:111:3'
-      failureType: 'testCodeFailure'
-      error: |-
-        Expected values to be strictly deep-equal:
-        + actual - expected
-        
-          [
-        +   undefined,
-        +   undefined
-        -   'RECEIVED',
-        -   'REPLAY_SAME_RECEIPT'
-          ]
-        
-      code: 'ERR_ASSERTION'
-      name: 'AssertionError'
-      expected:
-        0: 'RECEIVED'
-        1: 'REPLAY_SAME_RECEIPT'
-      actual:
-      operator: 'deepStrictEqual'
-      stack: |-
-        TestContext.<anonymous> (file:///Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:116:12)
-        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-        async Test.run (node:internal/test_runner/test:1054:7)
-        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
       ...
     # Subtest: POST /api/site/quote (F_QUOTE_ORDER.quote_unpriced_no_window) → RECEIVED priced:false ; falsifié (order_falsified_amount) → 409
-    not ok 3 - POST /api/site/quote (F_QUOTE_ORDER.quote_unpriced_no_window) → RECEIVED priced:false ; falsifié (order_falsified_amount) → 409
+    ok 3 - POST /api/site/quote (F_QUOTE_ORDER.quote_unpriced_no_window) → RECEIVED priced:false ; falsifié (order_falsified_amount) → 409
       ---
-      duration_ms: 3.782958
+      duration_ms: 26.119708
       type: 'test'
-      location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:123:3'
-      failureType: 'testCodeFailure'
-      error: |-
-        {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: application/json exigé","persistence":"NONE","durable":false,"verdict":null}
-        
-        415 !== 200
-        
-      code: 'ERR_ASSERTION'
-      name: 'AssertionError'
-      expected: 200
-      actual: 415
-      operator: 'strictEqual'
-      stack: |-
-        TestContext.<anonymous> (file:///Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:125:12)
-        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-        async Test.run (node:internal/test_runner/test:1054:7)
-        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
       ...
     # Subtest: GET /api/site/receipt : bon jeton 200 ; absent 401 ; faux 404 = réf inconnue 404 (F_QUOTE_ORDER.lookup_*)
     ok 4 - GET /api/site/receipt : bon jeton 200 ; absent 401 ; faux 404 = réf inconnue 404 (F_QUOTE_ORDER.lookup_*)
       ---
-      duration_ms: 22.38525
+      duration_ms: 22.921416
       type: 'test'
       ...
     # Subtest: GET /api/site/events + POST /api/site/events/ack : client Factory simulé (c0-test-events-01), re-service sans ACK, scopes
-    not ok 5 - GET /api/site/events + POST /api/site/events/ack : client Factory simulé (c0-test-events-01), re-service sans ACK, scopes
+    ok 5 - GET /api/site/events + POST /api/site/events/ack : client Factory simulé (c0-test-events-01), re-service sans ACK, scopes
       ---
-      duration_ms: 16.527333
+      duration_ms: 50.191916
       type: 'test'
-      location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:144:3'
-      failureType: 'testCodeFailure'
-      error: |-
-        Expected values to be strictly equal:
-        
-        1 !== 3
-        
-      code: 'ERR_ASSERTION'
-      name: 'AssertionError'
-      expected: 3
-      actual: 1
-      operator: 'strictEqual'
-      stack: |-
-        TestContext.<anonymous> (file:///Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:147:12)
-        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-        async Test.run (node:internal/test_runner/test:1054:7)
-        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
       ...
-# \# serveur PID 62237 arrêté
+# \# serveur PID 17449 arrêté
     1..5
-not ok 1 - A — serveur BC4 (SITE_BUSINESS_PERSISTENCE=postgresql) sur prodes_site_bc4_test
+ok 1 - A — serveur BC4 (SITE_BUSINESS_PERSISTENCE=postgresql) sur prodes_site_bc4_test
   ---
-  duration_ms: 698.713125
+  duration_ms: 749.380667
   type: 'suite'
-  location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:81:1'
-  failureType: 'subtestsFailed'
-  error: '4 subtests failed'
-  code: 'ERR_TEST_FAILURE'
   ...
-# \# serveur PID 62268 port 3363
+# \# serveur PID 17456 port 3363
 # Subtest: B — serveur BC4, base coupée (SITE_DATABASE_URL vers une base inexistante)
     # Subtest: POST /api/site/order → 503 DB_WRITE_FAILED, jamais accepted:true (F_QUOTE_ORDER.order_valid)
-    not ok 1 - POST /api/site/order → 503 DB_WRITE_FAILED, jamais accepted:true (F_QUOTE_ORDER.order_valid)
+    ok 1 - POST /api/site/order → 503 DB_WRITE_FAILED, jamais accepted:true (F_QUOTE_ORDER.order_valid)
       ---
-      duration_ms: 7.72725
+      duration_ms: 17.226375
       type: 'test'
-      location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:187:3'
-      failureType: 'testCodeFailure'
-      error: |-
-        {"site_status":"CONTENT_TYPE_REFUSED","message":"Content-Type: application/json exigé","persistence":"NONE","durable":false,"verdict":null}
-        
-        415 !== 503
-        
-      code: 'ERR_ASSERTION'
-      name: 'AssertionError'
-      expected: 503
-      actual: 415
-      operator: 'strictEqual'
-      stack: |-
-        TestContext.<anonymous> (file:///Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:189:12)
-        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-        async Test.run (node:internal/test_runner/test:1054:7)
-        async Promise.all (index 0)
-        async Suite.run (node:internal/test_runner/test:1442:7)
-        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
       ...
-# \# serveur PID 62268 arrêté
+# \# serveur PID 17456 arrêté
     1..1
-not ok 2 - B — serveur BC4, base coupée (SITE_DATABASE_URL vers une base inexistante)
+ok 2 - B — serveur BC4, base coupée (SITE_DATABASE_URL vers une base inexistante)
   ---
-  duration_ms: 318.431792
+  duration_ms: 319.554666
   type: 'suite'
-  location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:178:1'
-  failureType: 'subtestsFailed'
-  error: '1 subtest failed'
-  code: 'ERR_TEST_FAILURE'
   ...
-# \# serveur PID 62283 port 3363
+# \# serveur PID 17460 port 3363
 # Subtest: C — configuration invalide
     # Subtest: SITE_BUSINESS_PERSISTENCE inconnue → 503 TRANSACTIONS_CONFIG_INVALID sur devis et commande
-    not ok 1 - SITE_BUSINESS_PERSISTENCE inconnue → 503 TRANSACTIONS_CONFIG_INVALID sur devis et commande
+    ok 1 - SITE_BUSINESS_PERSISTENCE inconnue → 503 TRANSACTIONS_CONFIG_INVALID sur devis et commande
       ---
-      duration_ms: 6.1715
+      duration_ms: 12.7715
       type: 'test'
-      location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:200:3'
-      failureType: 'testCodeFailure'
-      error: |-
-        Expected values to be strictly equal:
-        
-        415 !== 503
-        
-      code: 'ERR_ASSERTION'
-      name: 'AssertionError'
-      expected: 503
-      actual: 415
-      operator: 'strictEqual'
-      stack: |-
-        TestContext.<anonymous> (file:///Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:203:14)
-        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-        async Test.run (node:internal/test_runner/test:1054:7)
-        async Promise.all (index 0)
-        async Suite.run (node:internal/test_runner/test:1442:7)
-        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
       ...
-# \# serveur PID 62283 arrêté
+# \# serveur PID 17460 arrêté
     1..1
-not ok 3 - C — configuration invalide
+ok 3 - C — configuration invalide
   ---
-  duration_ms: 316.151709
+  duration_ms: 317.567917
   type: 'suite'
-  location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/bc4/http.e2e.mjs:195:1'
-  failureType: 'subtestsFailed'
-  error: '1 subtest failed'
-  code: 'ERR_TEST_FAILURE'
   ...
 1..3
 # tests 7
 # suites 3
-# pass 1
-# fail 6
+# pass 7
+# fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1400.123583
-exit=1
+# duration_ms 1457.602042
+exit=0
