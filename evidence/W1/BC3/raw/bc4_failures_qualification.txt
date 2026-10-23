@@ -1,0 +1,9 @@
+# git diff --stat 70467f88 HEAD -- lib/site-db lib/site-transactions db tests/bc4 tests/bc2 lib/site-publish c0 (vide = BC3 n'y touche pas)
+# fin
+
+# 05_stale_unsafe : UPDATE site_generation.snapshot_bytes refusé par db/migrations/005 (BC2, revue F-02) :
+33:  await pool.query("UPDATE site_generation SET snapshot_bytes = snapshot_bytes || '\\x20'::bytea WHERE id = $1", [active.generation_id]);
+46:  await pool.query("UPDATE site_generation SET snapshot_bytes = '\\x7b'::bytea WHERE id = $1", [active.generation_id]);
+1:-- BC2 (review F-02) : les octets reçus d'une génération et son identité sont immuables ; un ACK posé ne change plus.
+13:    RAISE EXCEPTION 'site_generation: octets et identité d''une génération immuables (id=%)', OLD.id;
+23:COMMENT ON FUNCTION site_generation_immutable() IS 'BC2 F-02 - snapshot_bytes, payload_sha256, identité et ACK posé immuables';
