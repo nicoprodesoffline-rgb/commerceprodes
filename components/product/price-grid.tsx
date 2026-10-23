@@ -31,7 +31,7 @@ export function PriceGrid({ rows, selectedRateId, caption }: { rows: PriceGridRo
     );
   }
   return (
-    <div>
+    <div className="relative overflow-x-auto">
       <table className="tabular w-full border-collapse text-sm">
         <caption className="mb-2 text-left text-sm font-semibold">{caption}</caption>
         <thead>

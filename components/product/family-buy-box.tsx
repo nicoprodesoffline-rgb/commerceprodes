@@ -212,6 +212,7 @@ export function FamilyBuyBox({
       {items.length > 1 && (
         <details open={items.length <= 8} className="border-t border-line pt-4">
           <summary className="inline-flex min-h-[34px] cursor-pointer items-center text-sm font-semibold">Variantes proposées ({items.length})</summary>
+          <div className="relative overflow-x-auto">
           <table className="tabular mt-2 w-full text-sm">
             <thead>
               <tr className="border-b border-line-strong text-left text-xs text-ink-3">
@@ -228,7 +229,7 @@ export function FamilyBuyBox({
                 return (
                   <tr key={i.public_item_key} className={`h-[42px] border-b border-line ${isSel ? "bg-signal-subtle" : ""}`}>
                     <td className="py-1 pr-2">{i.axes.map((a) => axisValue(a.value)).join(" · ")}</td>
-                    <td className="py-1 pr-2 font-mono text-xs">{i.public_item_key}</td>
+                    <td className="py-1 pr-2 font-mono text-xs whitespace-nowrap">{i.public_item_key}</td>
                     <td className="py-1 pr-2 text-right whitespace-nowrap">{first?.unit_amount ? price(first.unit_amount, first.tax_basis_or_status) : "indisponible"}</td>
                     <td className="py-1 text-right">
                       {isSel ? (
@@ -244,6 +245,7 @@ export function FamilyBuyBox({
               })}
             </tbody>
           </table>
+          </div>
         </details>
       )}
     </section>

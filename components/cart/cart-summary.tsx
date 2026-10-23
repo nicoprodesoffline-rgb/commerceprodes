@@ -73,7 +73,7 @@ export function CartLines({
             return (
               <tr key={`${l.public_item_key}-${i}`} data-testid="cart-line" className="grid grid-cols-2 gap-x-3 gap-y-1 border-t border-line px-3 py-3 sm:table-row sm:px-0 sm:py-0">
                 <td className="col-span-2 min-w-0 sm:px-3 sm:py-3">
-                  <Link href={`/famille/${l.family_slug}?article=${l.public_item_key}`} className="font-medium underline-offset-2 hover:underline">{l.family_name}</Link>
+                  <Link href={`/famille/${l.family_slug}?article=${l.public_item_key}`} className="inline-flex min-h-[34px] items-center font-medium underline-offset-2 hover:underline">{l.family_name}</Link>
                   <span className="block text-xs text-ink-2">{axesText(l.axes)}</span>
                   <span className="block font-mono text-xs text-ink-3">Réf. {l.public_item_key}</span>
                   <LineStatus pl={pl} />

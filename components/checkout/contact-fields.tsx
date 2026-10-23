@@ -87,7 +87,7 @@ export function ErrorSummary({ errors, id }: { errors: FieldErrors; id: string }
       <p className="font-semibold">Corrigez {list.length === 1 ? "le champ suivant" : `les ${list.length} champs suivants`} :</p>
       <ul className="mt-1 list-disc pl-5 text-sm">
         {list.map(([k, msg]) => (
-          <li key={k}><a href={`#f-${k}`} className="underline">{msg}</a></li>
+          <li key={k}><a href={`#f-${k}`} className="inline-flex min-h-[34px] items-center underline">{msg}</a></li>
         ))}
       </ul>
     </div>

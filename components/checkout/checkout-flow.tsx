@@ -9,7 +9,7 @@
  * le serveur répond `CART_STALE` / `CATALOG_CHANGED` et le client redemande une vérification (revue A2 F-10).
  */
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { CartLines, PreviewProblem, StaleBanner, totalsNote } from "@/components/cart/cart-summary";
 import { bases, quoteAllowed, useCartPreview } from "@/components/cart/use-cart-preview";
@@ -25,6 +25,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
   const [message, setMessage] = useState("");
   const [confirmedFor, setConfirmedFor] = useState<string | null>(null);
   const [tried, setTried] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [sending, setSending] = useState(false);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const submitter = useRef(new Submitter()).current;
@@ -33,6 +34,10 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
   // Empreinte de ce qui est confirmé : toute variation de l'aperçu (prix, lignes, génération) annule la confirmation.
   const fingerprint = useMemo(() => (preview ? JSON.stringify([preview.catalogue_sequence, preview.total_amount, preview.lines.map((l) => [l.public_item_key, l.quantity, l.selection?.rate_id, l.selection?.unit_amount])]) : null), [preview]);
   const confirmed = confirmedFor !== null && confirmedFor === fingerprint;
+  // Envoi refusé par le contrôle de saisie : le résumé des erreurs reçoit le focus APRÈS son rendu.
+  useEffect(() => {
+    if (attempt > 0) document.getElementById("error-summary")?.focus();
+  }, [attempt]);
 
   if (outcome?.kind === "received") return <ResultPanel outcome={outcome} />;
   if (!ready || state.kind === "loading") return <p role="status" className="text-ink-3">Vérification du panier auprès du serveur…</p>;
@@ -57,7 +62,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
     e.preventDefault();
     setTried(true);
     if (Object.keys(errors).length > 0) {
-      requestAnimationFrame(() => document.getElementById("error-summary")?.focus());
+      setAttempt((n) => n + 1);
       return;
     }
     if (!preview || stale || !allowed || (mode === "order" && !confirmed)) return;

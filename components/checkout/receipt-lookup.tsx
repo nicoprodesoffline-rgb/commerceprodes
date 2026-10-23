@@ -31,13 +31,19 @@ export function ReceiptLookup() {
     }
   }
 
+  // Lien de consultation : lu au chargement ET à chaque changement de fragment (même page, autre lien collé).
   useEffect(() => {
-    const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const r = h.get("ref") ?? "";
-    const c = h.get("code") ?? "";
-    if (r) setRef(r);
-    if (c) setCode(c);
-    if (r && c) void lookup(r, c);
+    const fromHash = () => {
+      const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const r = h.get("ref") ?? "";
+      const c = h.get("code") ?? "";
+      if (r) setRef(r);
+      if (c) setCode(c);
+      if (r && c) void lookup(r, c);
+    };
+    fromHash();
+    window.addEventListener("hashchange", fromHash);
+    return () => window.removeEventListener("hashchange", fromHash);
   }, []);
 
   const d = state.kind === "found" ? state.data : null;
@@ -75,6 +81,7 @@ export function ReceiptLookup() {
               État : {d.status === "RECEIVED" ? (d.kind === "order" ? "reçue — en attente de traitement" : "reçue") : d.status}
               {d.receipt.created_at_utc ? ` · reçue le ${parisDate(d.receipt.created_at_utc)}` : ""}
             </p>
+            <div className="relative overflow-x-auto">
             <table className="tabular mt-3 w-full text-sm">
               <caption className="sr-only">Lignes enregistrées</caption>
               <thead>
@@ -98,6 +105,7 @@ export function ReceiptLookup() {
                 ))}
               </tbody>
             </table>
+            </div>
             {d.receipt.total_amount && <p className="mt-2 text-right font-semibold">Total : {money(d.receipt.total_amount)} <span className="font-normal text-ink-2">(taxes et port non calculés)</span></p>}
           </section>
         )}
