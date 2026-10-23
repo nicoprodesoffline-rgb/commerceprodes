@@ -1,17 +1,19 @@
-# 2026-10-23T00:05:17Z commit testé 0aa6bdc8c4dcbd7e7a0805e41912bc1515e86a4e node v22.23.1 npm 10.9.8 psql (PostgreSQL) 18.6 (Homebrew)
-?? evidence/W1/BC2/raw/build.txt
-?? evidence/W1/BC2/raw/c0_check.txt
-?? evidence/W1/BC2/raw/c0_twin.txt
-?? evidence/W1/BC2/raw/db_setup.txt
-?? evidence/W1/BC2/raw/git_state.txt
-?? evidence/W1/BC2/raw/http_bc2_3331.txt
-?? evidence/W1/BC2/raw/http_db_after.txt
-?? evidence/W1/BC2/raw/http_spike_default_3331.txt
-?? evidence/W1/BC2/raw/http_spike_diff.txt
-?? evidence/W1/BC2/raw/mutation_no_pointer_lock.txt
-?? evidence/W1/BC2/raw/npm_ci.txt
-?? evidence/W1/BC2/raw/server_pid.txt
-?? evidence/W1/BC2/raw/start_3331.txt
-?? evidence/W1/BC2/raw/test_bc2.txt
-?? evidence/W1/BC2/raw/typecheck.txt
+# 2026-10-23T00:32:39Z commit testé 522ed1df4002784c1e845c720fa9f615a10db9b5 node v22.23.1 npm 10.9.8 psql (PostgreSQL) 18.6 (Homebrew)
+ M evidence/W1/BC2/raw/build.txt
+ M evidence/W1/BC2/raw/c0_check.txt
+ M evidence/W1/BC2/raw/c0_twin.txt
+ M evidence/W1/BC2/raw/db_setup.txt
+ M evidence/W1/BC2/raw/git_state.txt
+ M evidence/W1/BC2/raw/http_bc2_3331.txt
+ M evidence/W1/BC2/raw/http_db_after.txt
+ M evidence/W1/BC2/raw/http_spike_default_3331.txt
+ M evidence/W1/BC2/raw/http_spike_diff.txt
+ M evidence/W1/BC2/raw/npm_ci.txt
+ M evidence/W1/BC2/raw/server_pid.txt
+ M evidence/W1/BC2/raw/start_3331.txt
+ M evidence/W1/BC2/raw/test_bc2.txt
+ M evidence/W1/BC2/raw/typecheck.txt
+?? evidence/W1/BC2/raw/http_body_limits_3331.txt
+?? evidence/W1/BC2/raw/http_body_limits_3331_heap128.txt
+?? evidence/W1/BC2/raw/start_3331_heap128.txt
 git_diff_c0: []

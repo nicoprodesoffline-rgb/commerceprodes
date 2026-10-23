@@ -1,11 +1,12 @@
-# 2026-10-23T00:05:17Z commit testé 0aa6bdc8c4dcbd7e7a0805e41912bc1515e86a4e node v22.23.1 npm 10.9.8 psql (PostgreSQL) 18.6 (Homebrew) BASE_URL=http://127.0.0.1:3331 node tests/bc2/http-smoke.mjs
+# 2026-10-23T00:32:39Z commit testé 522ed1df4002784c1e845c720fa9f615a10db9b5 node v22.23.1 npm 10.9.8 psql (PostgreSQL) 18.6 (Homebrew) BASE_URL=http://127.0.0.1:3331 node tests/bc2/http-smoke.mjs
 PASS H01 STAGE F_SIMPLE_READY s1 -> 200 STAGED sans ACK — obtenu: 200 STAGED
 PASS H02 ACTIVATE avant tout média -> 422 MEDIA_MISSING, pas d'ACK — obtenu: 422 ["MEDIA_MISSING"]
 PASS H03 PUT média octets faux -> 422 MEDIA_HASH_MISMATCH — obtenu: 422 ["MEDIA_HASH_MISMATCH"]
 PASS H04 PUT média correct -> 201 STORED — obtenu: 201 STORED
 PASS H05 VERIFY_MEDIA -> 200 VERIFIED — obtenu: 200 VERIFIED
+PASS H05b connexion PostgreSQL de l'ACTIVATE tuée sous verrou -> 503 ACTIVATION_ABORTED, pas d'ACK, serveur vivant, rien d'activé — obtenu: victime=79726 503 ACTIVATION_ABORTED serveur_vivant=true pointeur=null
 PASS H06 ACTIVATE avec la clé ACK (hors scope) -> 401 SIGNATURE_INVALID — obtenu: 401
-PASS H07 ACTIVATE -> 200 ACTIVATED, ACK = ack_s1.json hors activated_at_utc/signature — obtenu: 200 ACTIVATED activated_at=2026-10-23T00:05:40Z
+PASS H07 ACTIVATE (après la connexion tuée de H05b) -> 200 ACTIVATED, ACK = ack_s1.json hors activated_at_utc/signature — obtenu: 200 ACTIVATED activated_at=2026-10-23T00:33:03Z
 PASS H08 ACK vérifié par verifyAck (C0) -> ACK_VALID ; octets canoniques — obtenu: ACK_VALID
 PASS H09 re-ACTIVATE -> REPLAY_ACK, mêmes octets — obtenu: 200 REPLAY_ACK
 PASS H10 re-STAGE des mêmes octets -> REPLAY_ACK, mêmes octets — obtenu: 200 REPLAY_ACK
@@ -14,5 +15,5 @@ PASS H12 STATUS sans en-têtes -> 401 — obtenu: 401
 PASS H13 ACTIVATE corps invalide -> 400 REQUEST_INVALID — obtenu: 400
 PASS H14 STAGE clé RETIRED -> 401 — obtenu: 401
 PASS H15 STAGE octets non canoniques -> 422 INTEGRITY_MISMATCH — obtenu: 422
-# HTTP BC2 : 15/15 PASS, 0 FAIL
+# HTTP BC2 : 16/16 PASS, 0 FAIL
 http_bc2_exit=0

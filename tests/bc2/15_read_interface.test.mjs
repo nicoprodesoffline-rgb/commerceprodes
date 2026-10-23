@@ -40,11 +40,22 @@ test("readActiveForUpdate : une transaction BC4 ouverte retient l'activation, qu
   assert.equal((await siteDb.getActiveGeneration(pool)).payload_sha256, c.doc.payload_sha256);
 });
 
-test("getActiveGeneration : octets ACTIVE altérés en base -> status UNSAFE (fail-closed)", async () => {
+test("getActiveGeneration : écriture des octets ACTIVE refusée (migration 005) ; corruption par le propriétaire -> UNSAFE, snapshot null", async () => {
   const active = await siteDb.getActiveGeneration(pool);
   assert.equal(active.status, "ACTIVE");
-  await pool.query("UPDATE site_generation SET snapshot_bytes = snapshot_bytes || '\\x20'::bytea WHERE id = $1", [active.generation_id]);
+  await assert.rejects(
+    pool.query("UPDATE site_generation SET snapshot_bytes = snapshot_bytes || '\\x20'::bytea WHERE id = $1", [active.generation_id]),
+    /immuables/,
+  );
+  // Le rôle propriétaire peut désactiver le déclencheur (dette F-09) : on simule ainsi une corruption hors receiver.
+  await pool.query("ALTER TABLE site_generation DISABLE TRIGGER site_generation_immutable");
+  try {
+    await pool.query("UPDATE site_generation SET snapshot_bytes = snapshot_bytes || '\\x20'::bytea WHERE id = $1", [active.generation_id]);
+  } finally {
+    await pool.query("ALTER TABLE site_generation ENABLE TRIGGER site_generation_immutable");
+  }
   const after = await siteDb.getActiveGeneration(pool);
   assert.equal(after.status, "UNSAFE");
+  assert.equal(after.snapshot, null, "jamais un document non vérifié (F-05)");
   assert.equal(after.catalogue_sequence, active.catalogue_sequence);
 });

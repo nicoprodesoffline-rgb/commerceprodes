@@ -16,7 +16,8 @@ export interface ActiveGeneration {
   generation_id: number;
   catalogue_sequence: number;
   payload_sha256: string;
-  snapshot: Snapshot;
+  /** `null` dès que `status` vaut `UNSAFE` (review F-05) : jamais un document non vérifié. */
+  snapshot: Snapshot | null;
   status: "ACTIVE" | "UNSAFE";
 }
 
@@ -62,7 +63,7 @@ function interpret(row: PointerRow | undefined): ActiveGeneration | null {
     generation_id: toSafeInt(row.generation_id),
     catalogue_sequence: toSafeInt(row.p_sequence as string),
     payload_sha256: row.p_sha as string,
-    snapshot: doc as unknown as Snapshot,
+    snapshot: consistent ? (doc as unknown as Snapshot) : null,
     status: consistent ? "ACTIVE" : "UNSAFE",
   };
 }

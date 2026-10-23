@@ -1,4 +1,4 @@
-# 2026-10-23T00:05:17Z commit testé 0aa6bdc8c4dcbd7e7a0805e41912bc1515e86a4e node v22.23.1 npm 10.9.8 psql (PostgreSQL) 18.6 (Homebrew) BASE_URL=http://127.0.0.1:3331 PHASE=default node spike/http-tests.mjs
+# 2026-10-23T00:32:39Z commit testé 522ed1df4002784c1e845c720fa9f615a10db9b5 node v22.23.1 npm 10.9.8 psql (PostgreSQL) 18.6 (Homebrew) BASE_URL=http://127.0.0.1:3331 PHASE=default node spike/http-tests.mjs
 PASS | S05-q1 | PI-SIMPLE001 qty 1 | attendu: 200 RATE-PI-SIMPLE001-BASE-1 189.00 | obtenu: 200 RATE-PI-SIMPLE001-BASE-1 189.00
 PASS | S05-q9 | PI-SIMPLE001 qty 9 | attendu: 200 RATE-PI-SIMPLE001-BASE-1 189.00 | obtenu: 200 RATE-PI-SIMPLE001-BASE-1 189.00
 PASS | S05-q10 | PI-SIMPLE001 qty 10 | attendu: 200 RATE-PI-SIMPLE001-BASE-2 179.50 | obtenu: 200 RATE-PI-SIMPLE001-BASE-2 179.50
@@ -10,8 +10,8 @@ PASS | S06-revalidate | lignes affichées → reçu avec les mêmes rate_id/mont
 PASS | S06-requires-displayed | ligne sans rate_id/unit_amount affichés refusée | attendu: 400 INVALID_LINE | obtenu: 400 INVALID_LINE
 PASS | S06-no-cookie | aucun Set-Cookie (pas de cartId) sur preview/quote/panier/fiche | attendu: aucun | obtenu: aucun
 PASS | S06-no-second-cart | ancien panier serveur /api/cart/share absent | attendu: 404 | obtenu: 404
-PASS | S07-first | devis valide → reçu étiqueté SIMULATION | attendu: 200 + simulation:true + NONE_CONTRACTUAL_SIMULATION + receipt_id | obtenu: 200 label=true receipt=SIM-DEV-fa55e0ed1323c4aa
-PASS | S07-replay | même clé + même payload → même reçu | attendu: 200 SIM-DEV-fa55e0ed1323c4aa identique | obtenu: 200 SIM-DEV-fa55e0ed1323c4aa identique=true
+PASS | S07-first | devis valide → reçu étiqueté SIMULATION | attendu: 200 + simulation:true + NONE_CONTRACTUAL_SIMULATION + receipt_id | obtenu: 200 label=true receipt=SIM-DEV-b3a3b36d639ea9e8
+PASS | S07-replay | même clé + même payload → même reçu | attendu: 200 SIM-DEV-b3a3b36d639ea9e8 identique | obtenu: 200 SIM-DEV-b3a3b36d639ea9e8 identique=true
 PASS | S07-dup-diff | même clé + payload différent | attendu: 409 DUPLICATE_KEY_DIFFERENT_PAYLOAD | obtenu: 409 DUPLICATE_KEY_DIFFERENT_PAYLOAD
 PASS | S07-no-key | idempotency_key absente | attendu: 400 IDEMPOTENCY_KEY_REQUIRED | obtenu: 400 IDEMPOTENCY_KEY_REQUIRED
 PASS | S07-contact | contact minimal invalide | attendu: 400 INVALID_CONTACT | obtenu: 400 INVALID_CONTACT

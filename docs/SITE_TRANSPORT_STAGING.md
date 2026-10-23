@@ -11,7 +11,7 @@ appelle `evaluatePublication` à chaque opération et interprète l'étape d'arr
 
 | Variable | Valeur |
 |---|---|
-| `SITE_DATABASE_URL` | base `prodes_site*` (voir `docs/SITE_DB_SCHEMA.md`), aucune valeur par défaut |
+| `SITE_DATABASE_URL` | base `prodes_site*` sur hôte `localhost`/`127.0.0.1`/`::1` (voir `docs/SITE_DB_SCHEMA.md`), aucune valeur par défaut ; hôte distant seulement avec `SITE_ALLOW_REMOTE_DB=1`, `jarvis` toujours refusé |
 | `SITE_ENV` | `staging` ou `production` |
 | `SITE_KEYRING_PATH` | trousseau C0 ; aucune valeur par défaut. Staging/tests : `c0/fixtures/keys/test_keyring.json` (secrets `TEST_SECRET_NOT_FOR_PRODUCTION`) |
 | `SITE_ACK_KEY_ID` | clé de scope `activation_ack`, statut `ACTIVE` (staging : `c0-test-ack-01`) |
@@ -19,6 +19,31 @@ appelle `evaluatePublication` à chaque opération et interprète l'étape d'arr
 
 Configuration invalide → **toutes** les routes répondent `503 {"transport_error":"RECEIVER_CONFIG_INVALID"}` (ou
 `SITE_DB_CONFIG_INVALID`) ; rien n'est stagé ni activé. La configuration est relue à chaque requête.
+
+## Ordre de traitement d'une requête, plafonds de corps (review F-01, F-03)
+
+1. Configuration (invalide → `503`).
+2. **Porte de transport, AVANT toute lecture du corps et de la base** : `x-c0-key-id` désigne une clé connue de scope
+   `site_snapshot.publish`, statut `ACTIVE` ou `VERIFY_ONLY`, et `x-c0-signature` fait 64 hex minuscules ; sinon
+   `401 {"error_codes":["SIGNATURE_INVALID"],"stage":"transport_gate"}`. C'est un contrôle d'accès : le HMAC est
+   ensuite vérifié par la fonction pure C0 (étape `signature`) ou, pour VERIFY_MEDIA/ACTIVATE, avant tout verrou.
+3. **Lecture bornée du corps par route** : `Content-Length` supérieur au plafond → `413` immédiat (corps non lu) ;
+   sans `Content-Length`, lecture en flux avec compteur, interrompue au premier octet au-delà du plafond → `413`.
+   Corps `413` : `{"outcome":"TRANSPORT_ERROR","transport_error":"BODY_TOO_LARGE","max_bytes":…,"error_codes":[]}`.
+
+| Route | Plafond du corps |
+|---|---|
+| `POST stage` | 33 554 432 octets (32 MiB, plafond C0 du snapshot, §4) |
+| `PUT media/{sha256}` | 20 971 520 octets (20 MiB, taille maximale d'un média C0, §8.5) |
+| `POST verify-media`, `POST activate` | 262 144 octets (256 KiB) |
+| `GET status` | corps jamais lu |
+
+**Journal** : les refus `401` de la porte de transport, `401` de la vérification HMAC avant verrou (VERIFY_MEDIA,
+ACTIVATE, PUT média) et `413` **n'écrivent aucune ligne** (pas de remplissage du journal append-only par un tiers).
+Les refus rendus par l'évaluation C0 après la porte (y compris `SIGNATURE_INVALID` du STAGE, où le HMAC ne peut être
+calculé qu'après lecture du document) restent journalisés, une ligne bornée par requête. Risque résiduel : le
+`key_id` n'est pas secret ; un tiers qui le connaît peut écrire une ligne par STAGE de ≤ 32 MiB — limitation de débit
+`DEFERRED_FOR_PROD`.
 
 ## En-têtes
 
@@ -50,20 +75,24 @@ média **vide**, l'ACTIVE relue en base, la politique et l'horloge du receiver.
 | `parse` `canonical` `version` `shape` `semantic` `integrity` `signature` `sequence` (refus), ou `environment` | refus (tableau des statuts ci-dessous) | journal seulement |
 | `sequence` + `REPLAY_ACK` (même séquence et même SHA que l'ACTIVE) | `200`, corps = **ACK stocké, octets identiques**, `x-c0-outcome: REPLAY_ACK` | journal |
 | `media` ou au-delà (ou `ACTIVATED` à blanc) | `200 {"accepted":true,"outcome":"STAGED","idempotent":false,"generation":{…}}` — **jamais d'ACK** | ligne `STAGED` |
+| ACTIVE relue UNSAFE (F-02) | `409 CATALOG_UNSAFE`, `stage: "active_integrity"` | journal seulement |
 | idem, `(séquence, SHA)` déjà reçue | `200 …"idempotent":true…`, `generation.status` = état courant | aucune |
 
 ### `PUT /api/site/publish/media/{sha256}`
 
-Corps : octets bruts du média. `Content-Type` facultatif (indicatif). Ordre : chemin (`400 MEDIA_PATH_INVALID`) →
-signature média (`401 SIGNATURE_INVALID`) → taille 1 o … 20 MiB (`413 MEDIA_SIZE_OUT_OF_RANGE`) → SHA-256 recalculé
+Corps : octets bruts du média. `Content-Type` facultatif (indicatif). Ordre : porte de transport (`401`) → corps
+borné à 20 MiB (`413 BODY_TOO_LARGE`) → chemin (`400 MEDIA_PATH_INVALID`) → signature média (`401 SIGNATURE_INVALID`,
+sans journal) → taille ≥ 1 o (`413 MEDIA_SIZE_OUT_OF_RANGE`, sans journal) → SHA-256 recalculé
 ≠ chemin (`422 MEDIA_HASH_MISMATCH`, rien stocké) → stockage adressé par contenu : `201 STORED`, `200 ALREADY_STORED`,
 ou `200 REPAIRED` (octets vérifiés remplaçant une ligne altérée). Le PUT ne vérifie pas le type : c'est VERIFY_MEDIA,
 contre le `mime` déclaré par `media_refs` (C0 §8.5).
 
 ### `POST /api/site/publish/verify-media`
 
-Corps JSON strict : `{"publication_id", "catalogue_sequence", "payload_sha256"}` (sinon `400 REQUEST_INVALID`) ;
-génération inconnue → `404 GENERATION_NOT_STAGED`. Store média = octets des `media_refs` présents en base.
+Corps JSON strict : `{"publication_id", "catalogue_sequence", "payload_sha256"}` (sinon `400 REQUEST_INVALID`).
+**Authentification avant tout verrou** (F-03), dans cet ordre : clé de publication (sinon `401`), génération connue
+(sinon `404 GENERATION_NOT_STAGED`), HMAC du contexte C0 §7 de la génération **stockée** (sinon `401`,
+`stage: "transport_gate"`), sans ligne de journal. Store média = octets des `media_refs` présents en base.
 
 | Arrêt | Réponse | État |
 |---|---|---|
@@ -74,7 +103,8 @@ génération inconnue → `404 GENERATION_NOT_STAGED`. Store média = octets des
 
 ### `POST /api/site/publish/activate`
 
-Même corps et mêmes en-têtes que verify-media. **Une transaction** : `SELECT … FOR UPDATE` du pointeur ACTIVE, relecture
+Même corps, mêmes en-têtes et même authentification avant verrou que verify-media (un ACTIVATE non signé ne prend
+aucun verrou). Puis **une transaction** : `SELECT … FOR UPDATE` du pointeur ACTIVE, relecture
 de l'ACTIVE dans le verrou, ligne cible `FOR UPDATE`, store média relu en base, **horloge serveur**, appel complet
 d'`evaluatePublication`, écritures, journal, **COMMIT, puis** réponse. `lock_timeout` 15 s.
 
@@ -86,7 +116,11 @@ d'`evaluatePublication`, écritures, journal, **COMMIT, puis** réponse. `lock_t
 | refus `media` | `422`/`415` | `VERIFIED` → `STAGED` |
 | refus `signature` | `401` | aucun |
 | autre refus (`STALE_SEQUENCE`, `SEQUENCE_COLLISION`, `IDENTITY_CONFLICT`, `COVERAGE_UNPROVEN`, `CATALOG_UNSAFE`, environnement) | `409`/`422` | cible `REJECTED` (une ligne `ACTIVE`/`SUPERSEDED` garde son statut) |
+| ACTIVE relue **UNSAFE** (F-02 : ligne non `ACTIVE`, pointeur ≠ ligne, octets non canoniques, `payload_sha256` recalculé ≠ stocké) | `409 CATALOG_UNSAFE`, `stage: "active_integrity"` | aucune activation par-dessus ; cible inchangée ; refus journalisé |
 | exception, connexion perdue, échec du COMMIT | `503 {"transport_error":"ACTIVATION_ABORTED"}` — **aucun ACK** | ROLLBACK complet ; `ACTIVATE_ABORTED` journalisé hors transaction |
+
+`VERIFIED` est **informatif** : il dit « étape `media` franchie », jamais « l'activation passera » ; à l'activation,
+`verified_at = COALESCE(verified_at, now)` signifie de même « étape `media` franchie ».
 
 Sur `503`, l'émetteur **rejoue ACTIVATE** à l'identique : si le COMMIT avait eu lieu, il reçoit `REPLAY_ACK` (même ACK).
 L'ACTIVATE revérifie les médias lui-même : une génération `STAGED` dont tous les médias sont présents et conformes peut
@@ -110,7 +144,7 @@ code de `error_codes` (liste triée) : `PAYLOAD_MALFORMED` 400, `SCHEMA_UNSUPPOR
 `IDENTITY_CONFLICT` / `STALE_SEQUENCE` / `SEQUENCE_COLLISION` / `CATALOG_UNSAFE` 409, `MEDIA_TYPE_REJECTED` 415,
 `STAGE_HOLD` 202, autres codes snapshot 422. Erreurs de transport (non C0) : `{"outcome":"TRANSPORT_ERROR",
 "transport_error":…, "error_codes":[]}` — `REQUEST_INVALID` 400, `MEDIA_PATH_INVALID` 400, `GENERATION_NOT_STAGED` 404,
-`MEDIA_SIZE_OUT_OF_RANGE` 413, `ACTIVATION_ABORTED` 503, `RECEIVER_UNAVAILABLE` 503, `RECEIVER_CONFIG_INVALID` 503,
+`MEDIA_SIZE_OUT_OF_RANGE` 413, `BODY_TOO_LARGE` 413, `ACTIVATION_ABORTED` 503, `RECEIVER_UNAVAILABLE` 503, `RECEIVER_CONFIG_INVALID` 503,
 `SITE_DB_CONFIG_INVALID` 503.
 
 ## Contrôle d'environnement `data_label` (contrôle receiver, C0 §15)
@@ -134,8 +168,8 @@ Recette : `tests/bc2/*.test.mjs` (`npm run test:bc2`) et `tests/bc2/http-smoke.m
 
 ## Ce que ce transport ne prouve pas
 
-HTTPS, authentification de production, secrets réels et leur rotation, anti-rejeu horodaté, limites de débit, corps de plus de
-32 MiB en flux (le corps est lu en mémoire), médias volumineux, CDN, Unicode au-delà de 14.0 entre Python et Node
+HTTPS, authentification de production, secrets réels et leur rotation, anti-rejeu horodaté (une signature de PUT
+média se rejoue sans limite de temps, sans effet grâce à l'adressage par contenu — F-08), limites de débit, CDN, Unicode au-delà de 14.0 entre Python et Node
 (DF-0089), signature asymétrique de l'ACK (DF-0093).
 
 ---
