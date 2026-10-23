@@ -8,9 +8,11 @@ DB=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:543
 { echo "sha=$(git rev-parse HEAD)"; echo "date_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"; echo "node=$(node --version)"; psql -X -At "${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc4_test}" -c "select version()"; } > $OUT/env.txt 2>&1
 scripts/db/create-local.sh prodes_site_bc4 prodes_site_bc4_test > $OUT/create_local.txt 2>&1
 SITE_DATABASE_URL=postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc4 node scripts/db/migrate.mjs > $OUT/migrate_dev.txt 2>&1
+# Idempotence : second passage → tout « skip », applied=0.
+SITE_DATABASE_URL=postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc4 node scripts/db/migrate.mjs > $OUT/migrate_dev_again.txt 2>&1; echo "exit=$?" >> $OUT/migrate_dev_again.txt
 npm run c0:check > $OUT/c0_check.txt 2>&1; echo "exit=$?" >> $OUT/c0_check.txt
 npm run typecheck > $OUT/typecheck.txt 2>&1; echo "exit=$?" >> $OUT/typecheck.txt
-npm run build > $OUT/build.txt 2>&1; echo "exit=$?" >> $OUT/build.txt
+env -i PATH="$PATH" HOME="$HOME" NEXT_TELEMETRY_DISABLED=1 npm run build > $OUT/build.txt 2>&1; echo "exit=$?" >> $OUT/build.txt
 npm run test:bc4 > $OUT/test_bc4.txt 2>&1; echo "exit=$?" >> $OUT/test_bc4.txt
 npm run test:bc4:http > $OUT/test_bc4_http.txt 2>&1; echo "exit=$?" >> $OUT/test_bc4_http.txt
 # Suite BC2 inchangée, rejouée sur la base BC4 de test (jamais prodes_site_bc2_test : aucune base partagée).
@@ -24,6 +26,6 @@ node --test $COPY > $OUT/test_http_a2_port3351.txt 2>&1; echo "exit=$?" >> $OUT/
 rm -f $COPY
 npm run c0:vendor-test > $OUT/c0_vendor_test.txt 2>&1; echo "exit=$?" >> $OUT/c0_vendor_test.txt
 (npm run c0:build && npm run c0:test) > $OUT/c0_ts_test.txt 2>&1; echo "exit=$?" >> $OUT/c0_ts_test.txt
-for f in c0_check typecheck build test_bc4 test_bc4_http test_bc2_on_bc4_db test_http_a2_port3351 c0_vendor_test c0_ts_test; do
+for f in migrate_dev_again c0_check typecheck build test_bc4 test_bc4_http test_bc2_on_bc4_db test_http_a2_port3351 c0_vendor_test c0_ts_test; do
   printf '%-24s %s %s\n' "$f" "$(tail -1 $OUT/$f.txt)" "$(grep -E '^# (pass|fail) ' $OUT/$f.txt | tr '\n' ' ')"
 done | tee $OUT/summary.txt
