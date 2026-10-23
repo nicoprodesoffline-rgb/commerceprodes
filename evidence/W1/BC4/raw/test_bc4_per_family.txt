@@ -10,3 +10,4 @@
 10_events_poll_ack.test.mjs # pass 9 # fail 0 # skipped 0 
 11_receipt.test.mjs # pass 4 # fail 0 # skipped 0 
 12_history_frozen.test.mjs # pass 3 # fail 0 # skipped 0 
+13_receipt_bytes.test.mjs # pass 3 # fail 0 # skipped 0 
