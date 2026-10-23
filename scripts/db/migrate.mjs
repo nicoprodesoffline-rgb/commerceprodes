@@ -20,8 +20,20 @@ const DIR = join(ROOT, "db", "migrations");
 const FILE_RE = /^(\d{3})_[a-z0-9_]+\.sql$/;
 const LOCK_KEY = 4242001; // pg_advisory_xact_lock : migrations SITE
 
-export function siteDatabaseName(url) {
-  const name = decodeURIComponent(new URL(url).pathname.replace(/^\//, ""));
+// Même garde que lib/site-db/pool.ts (review F-04) : hôte local sauf SITE_ALLOW_REMOTE_DB=1, jamais jarvis,
+// aucun paramètre qui changerait la cible réelle de pg.
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+const FORBIDDEN_PARAMS = ["host", "hostaddr", "options", "dbname", "database", "service", "servicefile"];
+
+export function siteDatabaseName(url, env = process.env) {
+  const parsed = new URL(url);
+  for (const key of parsed.searchParams.keys()) {
+    if (FORBIDDEN_PARAMS.includes(key.toLowerCase())) throw new Error(`paramètre '${key}' refusé dans SITE_DATABASE_URL`);
+  }
+  const host = decodeURIComponent(parsed.hostname).toLowerCase();
+  if (host === "" || /(^|\.)jarvis($|\.)/.test(host) || host.startsWith("jarvis")) throw new Error("hôte de base refusé (jamais JARVIS, hôte explicite obligatoire)");
+  if (!LOCAL_HOSTS.has(host) && env.SITE_ALLOW_REMOTE_DB !== "1") throw new Error("hôte de base non local refusé (SITE_ALLOW_REMOTE_DB=1 requis)");
+  const name = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
   if (!/^prodes_site[a-z0-9_]*$/.test(name)) throw new Error(`SITE_DATABASE_URL vise '${name}' : seules les bases prodes_site* sont admises`);
   return name;
 }
