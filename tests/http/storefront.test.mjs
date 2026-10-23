@@ -11,6 +11,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
+import { request as httpRequest } from "node:http";
 import path from "node:path";
 import pg from "pg";
 
@@ -20,6 +21,7 @@ const BASE = `http://127.0.0.1:${PORT}`;
 const DB_URL = process.env.SITE_TEST_DATABASE_URL ?? "postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc3_test";
 process.env.SITE_TEST_DATABASE_URL = DB_URL; // lu par tests/bc2/helpers.mjs (resetDb)
 const { loadCase, mediaHeaders, resetDb } = await import("../bc2/helpers.mjs");
+const { MiB, bigMedia, bigSnapshot, jsonOfSize } = await import("./machine-payloads.mjs");
 const C0 = path.join(ROOT, "c0", "fixtures");
 const ORACLE = JSON.parse(readFileSync(path.join(C0, "VERDICTS.json"), "utf8")).cases;
 const KEYRING_PATH = path.join(C0, "keys", "test_keyring.json");
@@ -577,4 +579,104 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.equal((await get("/recu")).status, 200);
     });
   });
+
+  // ── 4. Routes machine hors proxy navigateur (revue I1 D-02) ────────────────
+  // Avant correctif, `proxy.ts` couvrait `/api/site/publish/**` : Next 16 tronquait le corps à 10 MiB
+  // (`proxyClientMaxBodySize`) → média de 15/20 MiB 401 SIGNATURE_INVALID, STAGE de 12/31 MiB 400 PAYLOAD_MALFORMED,
+  // flux signé surdimensionné 400 au lieu de 413. Chaque assertion ci-dessous échoue sur l'ancien `matcher`.
+  describe("4 — routes machine signées hors proxy navigateur (plafonds de corps BC2 intacts)", () => {
+    before(async () => {
+      await resetDb();
+    });
+
+    test("4.1 PUT média légitime signé de 15 et 20 MiB → 201 STORED (octets entiers reçus), sans en-tête du proxy", async () => {
+      for (const size of [15 * MiB, 20 * MiB]) {
+        const m = bigMedia(size);
+        const r = await http("PUT", `/api/site/publish/media/${m.sha256}`, { body: m.bytes, headers: m.headers });
+        assert.equal(r.status, 201, `${size} octets : ${r.status} ${r.text.slice(0, 200)}`);
+        assert.equal(r.json.outcome, "STORED");
+        assert.equal(r.json.size, size);
+        assert.equal(r.json.sha256, m.sha256);
+        assert.equal(Number(await scalar("SELECT octet_length(bytes) FROM site_media WHERE sha256 = $1", [m.sha256])), size);
+        assert.equal(r.headers.get("content-security-policy"), null, "route machine : le proxy navigateur n'est pas passé");
+        assert.equal(r.headers.get("x-content-type-options"), "nosniff", "en-têtes de next.config.ts toujours servis");
+      }
+      assert.doesNotMatch(logs.join(""), /Request body exceeded/, "aucune troncature du corps par le proxy");
+    });
+
+    test("4.2 STAGE légitime signé de 12 et 31 MiB → 200 STAGED ; JSON hors contrat de 12 MiB → SCHEMA_UNSUPPORTED (corps entier), jamais PAYLOAD_MALFORMED", async () => {
+      for (const size of [12 * MiB, 31 * MiB]) {
+        await resetDb();
+        const s = bigSnapshot(size);
+        assert.ok(s.bytes.length > size - 4096 && s.bytes.length <= size, `taille construite ${s.bytes.length}`);
+        const r = await http("POST", "/api/site/publish/stage", { body: s.bytes, headers: s.headers });
+        assert.equal(r.status, 200, `${s.bytes.length} octets : ${r.status} ${r.text.slice(0, 300)}`);
+        assert.equal(r.json.outcome, "STAGED");
+        assert.equal(r.headers.get("content-security-policy"), null);
+      }
+      const j = jsonOfSize(12 * MiB);
+      const r = await http("POST", "/api/site/publish/stage", { body: j.bytes, headers: j.headers });
+      assert.equal(r.status, 400);
+      assert.deepEqual(r.json.error_codes, ["SCHEMA_UNSUPPORTED"], `corps tronqué ? ${r.text.slice(0, 200)}`);
+      assert.doesNotMatch(logs.join(""), /Request body exceeded/);
+    });
+
+    test("4.3 STAGE signé de 40 MiB en flux sans Content-Length → 413 BODY_TOO_LARGE (plafond BC2 32 MiB), pas 400", async () => {
+      const j = jsonOfSize(1024);
+      const r = await streamWithoutLength("/api/site/publish/stage", j.headers, 40 * MiB);
+      assert.equal(r.status, 413, r.body.slice(0, 200));
+      assert.equal(JSON.parse(r.body).transport_error, "BODY_TOO_LARGE");
+    });
+
+    test("4.4 /api/site/events et /events/ack (BC4) hors proxy : 401 signé BC4, sans CSP ni contrôle CSRF du proxy", async () => {
+      const g = await get("/api/site/events?cursor=&limit=10");
+      assert.equal(g.status, 401);
+      assert.equal(g.headers.get("content-security-policy"), null);
+      // Sans `Content-Type` JSON : le proxy aurait répondu 415 CONTENT_TYPE_REFUSED si la route lui était soumise.
+      const a = await http("POST", "/api/site/events/ack", { body: "{}", json: false, headers: { "content-type": "text/plain" } });
+      assert.notEqual(a.json?.site_status, "CONTENT_TYPE_REFUSED");
+      assert.equal(a.status, 401);
+      assert.equal(a.headers.get("content-security-policy"), null);
+    });
+
+    test("4.5 le proxy couvre toujours la boutique : CSP sur les pages, CSRF sur les POST du site, exclusion limitée au préfixe exact", async () => {
+      assert.match((await get("/recherche")).headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/);
+      const csrf = await http("POST", "/api/site/cart/preview", { body: "{}", json: false, headers: { "content-type": "text/plain" } });
+      assert.equal(csrf.status, 415);
+      assert.equal(csrf.json.site_status, "CONTENT_TYPE_REFUSED");
+      for (const p of ["/api/site/publishx", "/api/site/eventsx"]) {
+        const r = await get(p);
+        assert.equal(r.status, 404, p);
+        assert.match(r.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/, `${p} reste sous le proxy`);
+      }
+    });
+  });
 });
+
+/** Envoie `total` octets en flux (Transfer-Encoding: chunked, aucun Content-Length) ; s'arrête à la réponse. */
+function streamWithoutLength(p, headers, total) {
+  return new Promise((resolve, reject) => {
+    const req = httpRequest({ host: "127.0.0.1", port: PORT, path: p, method: "POST", headers: { ...headers } });
+    const chunk = Buffer.alloc(MiB, 0x61);
+    let sent = 0;
+    let done = false;
+    req.on("response", (res) => {
+      const parts = [];
+      res.on("data", (d) => parts.push(d));
+      res.on("end", () => {
+        done = true;
+        req.destroy();
+        resolve({ status: res.statusCode, body: Buffer.concat(parts).toString("utf8"), sent });
+      });
+    });
+    req.on("error", () => { if (!done) { done = true; resolve({ status: "ERR", body: "{}", sent }); } });
+    const pump = () => {
+      while (!done && sent < total) {
+        sent += MiB;
+        if (!req.write(chunk)) return void req.once("drain", pump);
+      }
+      if (!done) req.end();
+    };
+    pump();
+  });
+}
