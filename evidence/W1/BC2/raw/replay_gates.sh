@@ -38,6 +38,14 @@ echo "listener_pid: $(lsof -nP -iTCP:3331 -sTCP:LISTEN -t | tr '\n' ' ')" >> $R/
 { echo "$H"; psql -X -h localhost -p 54318 -U postgres -d prodes_site_bc2 -c "SELECT id, operation, publication_id, catalogue_sequence, outcome, error_codes, stage, detail FROM site_publication_log ORDER BY id" -c "SELECT catalogue_sequence, status, activated_at FROM site_generation" -c "SELECT generation_id, catalogue_sequence, payload_sha256 FROM site_active_pointer"; } > $R/http_db_after.txt 2>&1
 kill $PID; wait $PID 2>/dev/null; echo "kill $PID -> wait status=$?" >> $R/server_pid.txt; sleep 1
 echo "listener_after_kill: [$(lsof -nP -iTCP:3331 -sTCP:LISTEN -t | tr '\n' ' ')]" >> $R/server_pid.txt
+# Même mesure, serveur à tas JS plafonné (128 MiB) : une rétention de références JS ferait échouer ou tomber le serveur.
+env -i PATH="$PATH" HOME="$HOME" NEXT_TELEMETRY_DISABLED=1 SITE_ENV=staging SITE_DATABASE_URL=$DEV_URL \
+  SITE_KEYRING_PATH="$C/c0/fixtures/keys/test_keyring.json" SITE_ACK_KEY_ID=c0-test-ack-01 SITE_WITHDRAWAL_HOLD_POLICY="$POLICY" \
+  node --max-old-space-size=128 node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3331 > $R/start_3331_heap128.txt 2>&1 &
+PID2=$!; for i in $(seq 1 60); do curl -s -o /dev/null http://127.0.0.1:3331/ && break; sleep 0.5; done
+{ echo "$H node --max-old-space-size=128 … next start (PID $PID2) ; SERVER_PID=$PID2 node tests/bc2/http-body-limits.mjs"; SERVER_PID=$PID2 BASE_URL=http://127.0.0.1:3331 SITE_DEV_DATABASE_URL=$DEV_URL node tests/bc2/http-body-limits.mjs; echo "http_body_limits_heap128_exit=$?"; } > $R/http_body_limits_3331_heap128.txt 2>&1
+kill $PID2; wait $PID2 2>/dev/null; echo "heap128: server_pid=$PID2 kill -> wait status=$?" >> $R/server_pid.txt; sleep 1
+echo "listener_after_kill_heap128: [$(lsof -nP -iTCP:3331 -sTCP:LISTEN -t | tr '\n' ' ')]" >> $R/server_pid.txt
 { echo "# diff spike/logs/http-tests-default.log vs run 3331 (lignes PASS/FAIL)"; diff <(grep -E '^(PASS|FAIL) ' spike/logs/http-tests-default.log) <(grep -E '^(PASS|FAIL) ' $R/http_spike_default_3331.txt); echo "diff_exit=$?"; } > $R/http_spike_diff.txt
 { echo "$H"; git status --short; echo "git_diff_c0: [$(git diff --stat 5f69e742 -- c0 | tail -1)]"; } > $R/git_state.txt
 grep -hE "_exit=|# (tests|pass|fail) |C0_VENDOR|MIGRATIONS_|listener|PASS, |HTTP BC2|LIMITES BC2" $R/*.txt
