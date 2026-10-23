@@ -63,8 +63,11 @@ async function stopServer(server) {
   console.log(`# serveur PID ${server.child.pid} arrêté`);
 }
 
+// Garde CSRF du SITE (BC3) : tout POST porte `Content-Type: application/json` et un `Origin` same-origin.
+const POST_HEADERS = { "content-type": "application/json", origin: BASE };
+
 async function http(method, p, { body, headers = {} } = {}) {
-  const res = await fetch(BASE + p, { method, headers, body });
+  const res = await fetch(BASE + p, { method, headers: method === "POST" ? { ...POST_HEADERS, ...headers } : headers, body });
   const bytes = new Uint8Array(await res.arrayBuffer());
   const text = new TextDecoder().decode(bytes);
   let json = null;
