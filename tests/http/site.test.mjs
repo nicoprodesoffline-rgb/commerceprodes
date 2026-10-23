@@ -1,18 +1,19 @@
 // Tests HTTP du SITE sur le contrat C0 gelé (W1/A2) — `node --test tests/http/site.test.mjs`.
 //
-// Prérequis : `npm run build`. Chaque bloc lance SON serveur `next start` sur 127.0.0.1:3341
+// Prérequis : `npm run build`. Chaque bloc lance SON serveur `next start` sur 127.0.0.1:$SITE_TEST_PORT (défaut 3341)
 // (PID tenu par le test, tué par le test : jamais de kill global), avec une source fixture C0
 // (`SITE_CATALOG_SOURCE=fixture`, `SITE_CATALOG_FIXTURE`) et un instant figé `SITE_NOW_UTC`.
 // Chaque test cite le cas `c0/fixtures/VERDICTS.json` ou la fixture qu'il utilise.
 import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { request as httpRequest } from "node:http";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
-const PORT = 3341;
+const PORT = Number(process.env.SITE_TEST_PORT ?? 3341); // revue A2 F-06
 const BASE = `http://127.0.0.1:${PORT}`;
 const C0 = path.join(ROOT, "c0", "fixtures");
 const ORACLE = JSON.parse(readFileSync(path.join(C0, "VERDICTS.json"), "utf8")).cases;
@@ -65,10 +66,10 @@ async function stopServer(server) {
 
 function scenario(name, env, body) {
   describe(name, () => {
-    let server;
-    before(async () => (server = await startServer(env)));
-    after(async () => stopServer(server));
-    body();
+    const ctx = { server: null };
+    before(async () => (ctx.server = await startServer(env)));
+    after(async () => stopServer(ctx.server));
+    body(ctx);
   });
 }
 
@@ -179,11 +180,20 @@ scenario(`A — ${S7} @ ${S7_NOW}`, { SITE_CATALOG_SOURCE: "fixture", SITE_CATAL
     for (const p of ["/famille/inconnue", "/categorie/inconnue"]) assert.equal((await get(p)).status, 404, p);
   });
 
-  test("fiche Famille : fenêtres publiées affichées telles quelles, fenêtre expirée masquée — snapshot_s7 PI-000000CHJ", async () => {
+  test("fiche Famille : grille = une sélection selectPrice par palier publié, ordre du DTO (revue F-04) — snapshot_s7 PI-000000CHJ, PI-000000CJS", async () => {
     const r = await get("/famille/panneau-paliers");
-    for (const rate of ["R-401-B1", "R-401-T10", "R-401-T20", "R-401-P2", "R-401-B2"]) assert.match(r.text, new RegExp(`data-rate-id="${rate}"`), rate);
-    for (const rate of ["R-401-B0", "R-401-P1"]) assert.doesNotMatch(r.text, new RegExp(`data-rate-id="${rate}"`), `${rate} expirée à ${S7_NOW}`);
-    assert.match(r.text, /data-rate-id="R-401-P2" data-state="FUTURE"/);
+    const rows = [...r.text.matchAll(/data-rate-id="([^"]+)" data-tier="(\d+)"/g)].map((m) => [m[1], Number(m[2])]);
+    assert.deepEqual(rows, [["R-401-B1", 1], ["R-401-T10", 10], ["R-401-T20", 20]]);
+    for (const rate of ["R-401-B0", "R-401-P1", "R-401-P2", "R-401-B2"]) assert.doesNotMatch(r.text, new RegExp(`data-rate-id="${rate}"`), `${rate} non sélectionnée à ${S7_NOW}`);
+    // Parité grille ↔ aperçu serveur (même fonction C0, même instant).
+    for (const [rate, tier] of rows) {
+      const pv = await preview([{ public_item_key: PANNEAU, variant_axes: {}, quantity: tier }]);
+      assert.equal(pv.json.lines[0].selection.rate_id, rate, `palier ${tier}`);
+    }
+    const p = await get("/famille/potelet-paliers");
+    assert.match(p.text, /data-rate-id="R-402-A" data-tier="1"/);
+    assert.match(p.text, /data-tier="5" data-unavailable="PRICE_WINDOW_UNAVAILABLE"/, "palier 5+ futur : code C0, aucun prix");
+    assert.doesNotMatch(p.text, /data-rate-id="R-402-F"/);
   });
 
   test("médias : octets servis = SHA-256 et taille déclarés, bon Content-Type — snapshot_s7 media_refs", async () => {
@@ -425,11 +435,12 @@ scenario(`C — ${ID} @ 2026-10-22T12:00:00Z`, { SITE_CATALOG_SOURCE: "fixture",
   test("/article : SUPERSEDED → 308 vers la canonique, canonique → fiche, RETIRED → 410, absente → 404 — cas F_IDENTITY.select_superseded, select_retired, select_canonical", async () => {
     const sup = await get("/article/PI-000000JW3");
     assert.equal(sup.status, 308);
-    assert.equal(new URL(sup.headers.get("location")).pathname, "/article/PI-000000JVF");
+    assert.equal(sup.headers.get("location"), "/article/PI-000000JVF", "Location relative (revue F-02)");
     assert.equal(ORACLE["F_IDENTITY.select_superseded"].expect["superseded_by.PI-000000JW3"], "PI-000000JVF");
     const canon = await get("/article/PI-000000JVF");
     assert.equal(canon.status, 307);
-    const loc = new URL(canon.headers.get("location"));
+    assert.match(canon.headers.get("location"), /^\/famille\/[a-z0-9-]+\?article=PI-000000JVF$/, "Location relative (revue F-02)");
+    const loc = new URL(canon.headers.get("location"), BASE);
     assert.match(loc.pathname, /^\/famille\//);
     assert.equal(loc.searchParams.get("article"), "PI-000000JVF");
     assert.equal((await get(loc.pathname + loc.search)).status, 200);
@@ -437,6 +448,25 @@ scenario(`C — ${ID} @ 2026-10-22T12:00:00Z`, { SITE_CATALOG_SOURCE: "fixture",
     assert.equal(ret.status, 410);
     assert.equal((await get("/article/PI-00000001R")).status, 404, "clé bien formée absente de la génération");
     assert.equal((await get("/article/n-importe-quoi")).status, 404);
+  });
+
+  test("/article derrière un autre Host / X-Forwarded-Host : Location reste relative, jamais localhost (revue F-02) — snapshot_gen_c", async () => {
+    for (const headers of [{ host: "boutique.prodes.example" }, { host: "boutique.prodes.example", "x-forwarded-host": "evil.example", "x-forwarded-proto": "https" }]) {
+      for (const [p, status, location] of [["/article/PI-000000JW3", 308, "/article/PI-000000JVF"], ["/article/PI-000000JVF", 307, null]]) {
+        const r = await new Promise((resolve, reject) => {
+          const req = httpRequest({ host: "127.0.0.1", port: PORT, path: p, method: "GET", headers }, (res) => {
+            res.resume();
+            res.on("end", () => resolve({ status: res.statusCode, location: res.headers.location }));
+          });
+          req.on("error", reject);
+          req.end();
+        });
+        assert.equal(r.status, status, `${p} ${JSON.stringify(headers)}`);
+        assert.ok(r.location.startsWith("/"), `Location relative : ${r.location}`);
+        assert.doesNotMatch(r.location, /localhost|127\.0\.0\.1|evil|boutique|http/);
+        if (location) assert.equal(r.location, location);
+      }
+    }
   });
 
   test("aperçu et commande d'un vieux panier : ITEM_SUPERSEDED (canonique donnée) + ITEM_RETIRED — cas F_IDENTITY.order_with_tombstoned_keys", async () => {
@@ -475,9 +505,11 @@ const UNAVAILABLE = [
   ["E2 — SITE_CATALOG_SOURCE=db (BC2 non fourni)", { SITE_CATALOG_SOURCE: "db" }, "DB_SOURCE_NOT_PROVIDED"],
   ["E3 — fixture refusée par C0 (F_SIMPLE_READY/snapshot_buy_leak.json)", { SITE_CATALOG_SOURCE: "fixture", SITE_CATALOG_FIXTURE: "F_SIMPLE_READY/snapshot_buy_leak.json" }, "SNAPSHOT_REFUSED"],
   ["E4 — nom de fixture hors c0/fixtures/documents", { SITE_CATALOG_SOURCE: "fixture", SITE_CATALOG_FIXTURE: "../../package.json" }, "FIXTURE_NAME_INVALID"],
+  // Contrepartie négative du cas exclu F_SELL_WINDOWS.select_on_overlap (revue F-08) : snapshot_overlap n'est jamais servi.
+  ["E5 — fenêtres qui se recouvrent (F_SELL_WINDOWS/snapshot_overlap.json, cas select_on_overlap)", { SITE_CATALOG_SOURCE: "fixture", SITE_CATALOG_FIXTURE: "F_SELL_WINDOWS/snapshot_overlap.json", SITE_NOW_UTC: "2026-03-29T01:00:00Z" }, "SNAPSHOT_REFUSED", /PRICE_WINDOW_OVERLAP/],
 ];
-for (const [name, env, reason] of UNAVAILABLE) {
-  scenario(name, env, () => {
+for (const [name, env, reason, logPattern] of UNAVAILABLE) {
+  scenario(name, env, (ctx) => {
     test(`pages en erreur, API 503 ${reason}, aucun verdict ni prix`, async () => {
       // Next 16 : une page qui lève rend la coquille d'erreur (HTTP 500) ; le texte « Catalogue
       // indisponible » (app/error.tsx) est rendu côté client. Aucune donnée de catalogue dans le HTML.
@@ -495,6 +527,59 @@ for (const [name, env, reason] of UNAVAILABLE) {
       }
       assert.equal((await get("/media/ed9aaaaa1debb1f00870b9b41636dc75b64eb0437ed9c58dcbb18047b73b41ec")).status, 503);
       assert.equal((await get("/article/PI-00000001R")).status, 503);
+      if (logPattern) assert.match(ctx.server.logs.join(""), logPattern, "cause C0 consignée au journal serveur");
+    });
+  });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// G. Garde d'horloge SITE_NOW_UTC / SITE_ENV (revue A2, F-05 ; F-08 select_offset_instant)
+// ═════════════════════════════════════════════════════════════════════════════
+
+const FORCED = "2026-03-29T01:00:00Z";
+scenario(`G1 — SITE_ENV=production : SITE_NOW_UTC=${FORCED} ignoré`, { SITE_ENV: "production", SITE_CATALOG_SOURCE: "fixture", SITE_CATALOG_FIXTURE: S7, SITE_NOW_UTC: FORCED }, (ctx) => {
+  test("l'horloge serveur fait foi, avertissement au démarrage, bandeau sans instant figé", async () => {
+    const lower = new Date(Date.now() - 1000).toISOString().replace(/\.\d{3}Z$/, "Z");
+    const pv = await preview([{ public_item_key: PANNEAU, variant_axes: {}, quantity: 1 }]);
+    const upper = new Date(Date.now() + 1000).toISOString().replace(/\.\d{3}Z$/, "Z");
+    assert.equal(pv.status, 200);
+    assert.notEqual(pv.json.instant_utc, FORCED);
+    assert.ok(pv.json.instant_utc >= lower && pv.json.instant_utc <= upper, `instant serveur ${pv.json.instant_utc}`);
+    assert.match(ctx.server.logs.join(""), /SITE_NOW_UTC est défini mais IGNORÉ \(SITE_ENV=production\)/);
+    const home = await get("/");
+    assert.doesNotMatch(home.text, /instant figé/);
+  });
+});
+
+scenario("G2 — SITE_ENV=staging : SITE_NOW_UTC honoré", { SITE_ENV: "staging", SITE_CATALOG_SOURCE: "fixture", SITE_CATALOG_FIXTURE: S7, SITE_NOW_UTC: FORCED }, () => {
+  test("instant figé utilisé (promo de printemps R-401-P1 9.90) — cas F_SELL_WINDOWS.select_spring_dst_switch", async () => {
+    const pv = await preview([{ public_item_key: PANNEAU, variant_axes: {}, quantity: 1 }]);
+    assert.equal(pv.json.instant_utc, FORCED);
+    assert.equal(pv.json.lines[0].selection.rate_id, "R-401-P1");
+    assert.equal(pv.json.lines[0].selection.unit_amount, "9.90");
+  });
+});
+
+const CLOCK_INVALID = [
+  // Contrepartie négative du cas exclu F_SELL_WINDOWS.select_offset_instant (revue F-08).
+  ["G3 — SITE_NOW_UTC à offset (cas F_SELL_WINDOWS.select_offset_instant)", { SITE_NOW_UTC: "2026-10-20T08:00:00+02:00" }, "SITE_NOW_UTC_INVALID"],
+  ["G4 — SITE_NOW_UTC avec fraction", { SITE_NOW_UTC: "2026-10-20T09:00:00.000Z" }, "SITE_NOW_UTC_INVALID"],
+  ["G5 — SITE_ENV inconnu", { SITE_ENV: "prod" }, "SITE_ENV_INVALID"],
+];
+for (const [name, env, reason] of CLOCK_INVALID) {
+  scenario(name, { SITE_CATALOG_SOURCE: "fixture", SITE_CATALOG_FIXTURE: S7, ...env }, (ctx) => {
+    test(`API 503 CONFIG_INVALID ${reason} (jamais un 500 vide), pages en erreur, consigné au démarrage`, async () => {
+      for (const route of ["/api/site/order", "/api/site/quote", "/api/site/cart/preview"]) {
+        const r = await post(route, doc("F_QUOTE_ORDER/order_valid.json"));
+        assert.equal(r.status, 503, route);
+        assert.equal(r.json?.site_status, "CONFIG_INVALID", route);
+        assert.equal(r.json.reason, reason, route);
+        assert.equal(r.json.verdict, null);
+      }
+      const page = await get("/famille/panneau-paliers");
+      assert.equal(page.status, 500);
+      assert.doesNotMatch(page.text, /data-rate-id=/);
+      assert.match(ctx.server.logs.join(""), new RegExp(`CONFIGURATION INVALIDE : ${reason}`));
     });
   });
 }
@@ -527,8 +612,8 @@ for (const c of businessCases()) {
   const now = i.now_utc ?? i.instant_utc;
   if (i.generation.status !== "ACTIVE") excluded.push([c.case_id, `génération ${i.generation.status} : la fixture sert ACTIVE`]);
   else if (Array.isArray(i.register) && i.register.length > 0) excluded.push([c.case_id, "registre non vide : idempotence persistée = BC4"]);
-  else if (!UTC.test(now)) excluded.push([c.case_id, `instant ${now} non C0 : l'instant est celui du serveur, jamais fourni`]);
-  else if (fixture === "F_SELL_WINDOWS/snapshot_overlap.json") excluded.push([c.case_id, "snapshot_overlap refusé par validateSnapshotBytes (PRICE_WINDOW_OVERLAP) : non servable"]);
+  else if (!UTC.test(now)) excluded.push([c.case_id, `instant ${now} non C0 : l'instant est celui du serveur, jamais fourni — contrepartie négative testée en G3`]);
+  else if (fixture === "F_SELL_WINDOWS/snapshot_overlap.json") excluded.push([c.case_id, "snapshot_overlap refusé par validateSnapshotBytes (PRICE_WINDOW_OVERLAP) : non servable — contrepartie négative testée en E5"]);
   else {
     const key = `${fixture}|${now}`;
     if (!groups.has(key)) groups.set(key, { fixture, now, cases: [] });
