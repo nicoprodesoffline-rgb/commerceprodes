@@ -21,8 +21,6 @@ jamais une base Factory. Propriétaire : BC2 (receiver de publication). Lecteurs
 - Idempotent : une migration appliquée est sautée si son SHA-256 est inchangé ; modifiée → `MIGRATION_DRIFT` (échec).
   On n'édite jamais une migration appliquée : on en ajoute une.
 - **Plages réservées : BC2 = `001`–`009` ; BC4 = `010`–`019`.** BC2 a livré `001`–`005` ; BC4 a livré `010`–`016`
-- **Plages réservées : BC2 = `001`–`009` ; BC4 = `010`–`019`.** BC2 a livré `001`–`005` ; BC4 a livré `010`–`016`
-  (section « BC4 — transactions » ci-dessous).
   (section « BC4 — transactions » ci-dessous).
 
 | Migration | Objet |
