@@ -1,0 +1,100 @@
+Chromium 148.0.7778.96
+
+## K1 parcours clavier complet (aucun clic)
+menu Catégories atteint en 3 Tab, ouvert (Entrée) : true
+catégorie : /categorie/signaletique (3 Tab)
+fiche : /famille/gmce-demo (5 Tab)
+variante par flèche : référence = PI-00000037S ; url = /famille/gmce-demo?article=PI-00000037S
+quantité 10 : « Pour 10 : 12,00 € (base fiscale non précisée) l'unité, soit 12,00 € pour la ligne. »
+panier : total « 120,00 € (base fiscale non précisée) »
+devis envoyé au clavier : titre focalisé « Demande de devis reçue », référence QR-093430006c75853c27e0941be44b6a41
+DOM après envoi : <img onerror> injecté = false ; <script>alert = false
+capture K1-devis-recu-clavier.png (/devis, 1440px)
+lien de consultation : http://127.0.0.1:3364/recu#ref=QR-093430006c75853c27e0941be44b6a41&code=<masqué> (code dans le fragment : true)
+
+## R1 reçu : fragment, Referer, persistance du code
+reçu affiché ; location.hash après consultation contient le code : true
+champ « Code d'accès » pré-rempli (type password) : true
+requêtes portant le code en paramètre d'URL : http://127.0.0.1:3364/api/site/receipt?ref=QR-093430006c75853c27e0941be44b6a41&access_token=<masqué>
+Referer contenant le code : false ; Referers vus :  ; http://127.0.0.1:3364/recu ; 
+axe recu-trouve : 0 violation(s)  ; incomplets: color-contrast ; 50 passées
+cibles < 34 px (largeur OU hauteur) reçu : 0
+défilement horizontal reçu 1440 : non
+focus reçu : 14 arrêts, sans indicateur visible : 0
+capture R1-recu-1440.png (/recu#ref=QR-093430006c75853c27e0941be44b6a41&code=<masqué>, 1440px)
+navigation reçu → panier : document.referrer = «  »
+retour arrière : code de nouveau dans l'URL = true ; reçu ré-affiché = true
+
+## A11Y axe / cibles / focus sur les surfaces non couvertes par le builder
+axe categorie : 0 violation(s)  ; incomplets: color-contrast ; 47 passées
+cibles < 34 px (largeur OU hauteur) catégorie : 0
+focus catégorie : 12 arrêts, sans indicateur visible : 0
+axe recherche : 0 violation(s)  ; incomplets: color-contrast ; 47 passées
+cibles < 34 px (largeur OU hauteur) recherche : 0
+axe 404 : 0 violation(s)  ; incomplets: color-contrast ; 45 passées
+404 : statut titre « Famille introuvable | PRODES »
+focus fiche : 18 arrêts, sans indicateur visible : 0
+focus panier : 17 arrêts, sans indicateur visible : 0
+axe commande : 0 violation(s)  ; incomplets: color-contrast ; 51 passées
+cibles < 34 px (largeur OU hauteur) commande : 1 → input[checkbox] « INPUT » 20×20 (label englobant 862×43)
+focus commande : 16 arrêts, sans indicateur visible : 0
+champs commande : q-header,f-organisation_name,f-contact_name,f-email,f-phone,
+axe commande-recue : 0 violation(s)  ; incomplets: color-contrast ; 45 passées
+cibles < 34 px (largeur OU hauteur) commande reçue : 0
+capture A11Y-commande-recue-1440.png (/commande, 1440px)
+axe devis-panier-vide : 0 violation(s)  ; incomplets: color-contrast ; 45 passées
+
+## REFLOW 1440 / 1024 / 390 / 320 et zoom CSS 200 % (1280 px) sur chaque surface
+défilement horizontal 1440px / : non
+défilement horizontal 1440px /categorie/signaletique : non
+défilement horizontal 1440px /famille/gmce-demo : non
+défilement horizontal 1440px /recherche?q=gmce : non
+défilement horizontal 1440px /panier : non
+défilement horizontal 1440px /devis : non
+défilement horizontal 1440px /commande : non
+défilement horizontal 1440px /recu : non
+défilement horizontal 1440px /famille/inconnue : non
+défilement horizontal 1024px / : non
+défilement horizontal 1024px /categorie/signaletique : non
+défilement horizontal 1024px /famille/gmce-demo : non
+défilement horizontal 1024px /recherche?q=gmce : non
+défilement horizontal 1024px /panier : non
+défilement horizontal 1024px /devis : non
+défilement horizontal 1024px /commande : non
+défilement horizontal 1024px /recu : non
+défilement horizontal 1024px /famille/inconnue : non
+défilement horizontal 390px / : non
+défilement horizontal 390px /categorie/signaletique : non
+défilement horizontal 390px /famille/gmce-demo : non
+défilement horizontal 390px /recherche?q=gmce : non
+défilement horizontal 390px /panier : non
+défilement horizontal 390px /devis : non
+défilement horizontal 390px /commande : non
+défilement horizontal 390px /recu : non
+défilement horizontal 390px /famille/inconnue : non
+défilement horizontal 320px / : non
+défilement horizontal 320px /categorie/signaletique : non
+défilement horizontal 320px /famille/gmce-demo : non
+défilement horizontal 320px /recherche?q=gmce : non
+défilement horizontal 320px /panier : non
+défilement horizontal 320px /devis : non
+défilement horizontal 320px /commande : non
+défilement horizontal 320px /recu : non
+défilement horizontal 320px /famille/inconnue : non
+capture REFLOW-commande-320.png (/commande, 320px)
+capture REFLOW-fiche-320.png (/famille/gmce-demo?article=PI-000000358, 320px)
+zoom CSS 200 % / : scrollWidth 1280 / clientWidth 1280 → ok
+zoom CSS 200 % /famille/gmce-demo : scrollWidth 1280 / clientWidth 1280 → ok
+zoom CSS 200 % /panier : scrollWidth 1280 / clientWidth 1280 → ok
+zoom CSS 200 % /commande : scrollWidth 1280 / clientWidth 1280 → ok
+capture ZOOM-css200-commande.png (/commande, 1280px)
+zoom CSS 200 % /recu : scrollWidth 1280 / clientWidth 1280 → ok
+
+## console : 6 entrée(s)
+  http://127.0.0.1:3364/ : Failed to load resource: the server responded with a status of 404 (Not Found)
+  http://127.0.0.1:3364/famille/inconnue : Failed to load resource: the server responded with a status of 404 (Not Found)
+  http://127.0.0.1:3364/famille/inconnue : Failed to load resource: the server responded with a status of 404 (Not Found)
+  http://127.0.0.1:3364/famille/inconnue : Failed to load resource: the server responded with a status of 404 (Not Found)
+  http://127.0.0.1:3364/famille/inconnue : Failed to load resource: the server responded with a status of 404 (Not Found)
+  http://127.0.0.1:3364/famille/inconnue : Failed to load resource: the server responded with a status of 404 (Not Found)
+exit=0

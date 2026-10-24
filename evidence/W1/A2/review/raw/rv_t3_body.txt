@@ -1,0 +1,25 @@
+# PID 22299 démarré {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-20T09:00:00Z"}
+## RV-08 lecture stricte / bornée (POST /api/site/order sauf mention)
+JSON valide (référence) → HTTP 200 []
+non-JSON → HTTP 400 ["PAYLOAD_MALFORMED"]
+virgule finale → HTTP 400 ["PAYLOAD_MALFORMED"]
+BOM + JSON valide → HTTP 400 ["PAYLOAD_MALFORMED"]
+UTF-8 invalide (C3 28) → HTTP 400 ["PAYLOAD_MALFORMED"]
+surlong UTF-8 (C0 AF) → HTTP 400 ["PAYLOAD_MALFORMED"]
+surrogate isolé \ud800 → HTTP 400 ["PAYLOAD_MALFORMED"]
+clé dupliquée brute (kind) → HTTP 400 ["PAYLOAD_MALFORMED"]
+clé dupliquée après NFC (é composé / décomposé dans variant_axes) → HTTP 400 ["PAYLOAD_MALFORMED"]
+espace NBSP hors SP/HT/LF/CR → HTTP 400 ["PAYLOAD_MALFORMED"]
+profondeur 64 (dans message) → HTTP 422 ["INVALID_DATA"]
+profondeur 65 → HTTP 400 ["PAYLOAD_MALFORMED"]
+NaN → HTTP 400 ["PAYLOAD_MALFORMED"]
+-0 → HTTP 422 ["INVALID_DATA"]
+taille 262144 o → HTTP 200 []
+taille 262145 o → HTTP 400 ["PAYLOAD_MALFORMED"]
+flux chunké 50 Mio → HTTP 400 {"contract_version":"site_business.v1","kind":"order","persistence":"NONE_UNTIL_BC4","durable":false,"catalogue_sequence ; octets envoyés avant réponse ≈ 1179648 ; 3 ms
+aperçu '{' → HTTP 400 ["PAYLOAD_MALFORMED"]
+devis BOM+{} → HTTP 400 ["PAYLOAD_MALFORMED"]
+aperçu 262145 o → HTTP 400 ["PAYLOAD_MALFORMED"]
+serveur toujours vivant après les attaques : GET / → HTTP 200 
+flux chunké 50 Mio → connexion coupée par le serveur (EPIPE) après ≈ 1179648 octets, 24 ms
+# PID 22299 arrêté, port libre=true

@@ -1,0 +1,19 @@
+{
+  "case_id": "F_SELL_WINDOWS.select_autumn_promo_start",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_s7.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-10-24T22:00:00Z",
+    "public_item_key": "PI-000000CHJ",
+    "quantity": 1,
+    "variant_axes": {}
+  },
+  "notes": "Promotion starts at Paris midnight (CEST)",
+  "scenario": "F_SELL_WINDOWS"
+}

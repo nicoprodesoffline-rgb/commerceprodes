@@ -1,0 +1,6 @@
+# 2026-10-23T00:10:00Z HEAD a9dede140b34cbf52dfc9288baccc876f5324d08 reviewer
+
+> typecheck
+> tsc --noEmit
+
+typecheck_exit=0

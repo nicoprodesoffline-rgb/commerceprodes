@@ -1,0 +1,8 @@
+== modif seule de c0/python/m.py -> exit=1 | C0_FROZEN_CODE_MISMATCH archived_from=9ffe100032438ee7e9051e | dest=[]
+== modif seule de c0/ts/test/a.test.ts -> exit=1 | C0_FROZEN_CODE_MISMATCH archived_from=7438f185578f06f8ba4257 | dest=[]
+== modif seule de c0/fixtures/V.json -> exit=1 | C0_FROZEN_CODE_MISMATCH archived_from=de969a01c9d21758bca1f3 | dest=[]
+== modif seule de c0/ts/src/a.ts -> exit=1 | C0_FROZEN_CODE_MISMATCH archived_from=71775556b1e5355eb2495e | dest=[]
+== modif seule de c0/ts/package.json -> exit=0 | C0_SYNC_OK archived_from=2c4df33734dc383a558530f20e3814483de | dest=[c0]
+== ajout c0/ts/src/new.ts -> exit=1 | C0_FROZEN_CODE_MISMATCH archived_from=acb1c837409e926e731864 | dest=[]
+== symlink dans c0/fixtures (sans gel distinct) -> exit=1 | C0_SYNC_FAILED entrée non prise en charge 120000 blob c0/fixtures/lnk | dest=[]
+== bit exécutable (100755) -> exit=1 | C0_SYNC_FAILED entrée non prise en charge 100755 blob c0/fixtures/V.json | dest=[]

@@ -1,0 +1,24 @@
+{
+  "catalogue_sequence": 6,
+  "contact": {
+    "contact_name": "STAGING_FIXTURE Contact",
+    "email": "achats@example.invalid",
+    "organisation_name": "STAGING_FIXTURE Mairie Exemple",
+    "phone": null
+  },
+  "contract_version": "site_business.v1",
+  "idempotency_key": "quote:qo:0003",
+  "kind": "quote_request",
+  "lines": [
+    {
+      "displayed": {
+        "rate_id": "R-401-T10",
+        "unit_amount": "11.00"
+      },
+      "public_item_key": "PI-000000CHJ",
+      "quantity": 10,
+      "variant_axes": {}
+    }
+  ],
+  "message": "STAGING_FIXTURE Merci de nous adresser un devis."
+}

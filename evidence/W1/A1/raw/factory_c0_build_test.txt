@@ -1,0 +1,82 @@
+# 2026-10-22T23:39:34Z Factory b831750ed340def887e0bfe7f1836603a3db2855 — git status avant :
+?? evidence/W1/P0/raw/suite_debug0.env.txt
+?? evidence/W1/P0/raw/suite_debug0.txt
+# check-ignore:
+.gitignore:31:c0/ts/dist/	c0/ts/dist/verdicts.ts.json
+# tsc Version 5.9.3
+
+> prodes-c0-contracts@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> prodes-c0-contracts@0.1.0 test
+> node --test "dist/test/*.test.js"
+
+TAP version 13
+# Subtest: every case matches its declared verdict and result digest; registry written
+ok 1 - every case matches its declared verdict and result digest; registry written
+  ---
+  duration_ms: 183.038542
+  type: 'test'
+  ...
+# Subtest: media are real bytes with their computed SHA-256
+ok 2 - media are real bytes with their computed SHA-256
+  ---
+  duration_ms: 0.73625
+  type: 'test'
+  ...
+# Subtest: each D11 scenario has accepted and refused cases
+ok 3 - each D11 scenario has accepted and refused cases
+  ---
+  duration_ms: 0.579875
+  type: 'test'
+  ...
+# Subtest: every testable error code has a negative case
+ok 4 - every testable error code has a negative case
+  ---
+  duration_ms: 0.165167
+  type: 'test'
+  ...
+# Subtest: identity: valid vectors encode and decode identically to Python
+ok 5 - identity: valid vectors encode and decode identically to Python
+  ---
+  duration_ms: 1.291625
+  type: 'test'
+  ...
+# Subtest: identity: invalid vectors refused with the same code as Python
+ok 6 - identity: invalid vectors refused with the same code as Python
+  ---
+  duration_ms: 0.143125
+  type: 'test'
+  ...
+# Subtest: identity: every substitution and every transposition is detected (5 keys per namespace)
+ok 7 - identity: every substitution and every transposition is detected (5 keys per namespace)
+  ---
+  duration_ms: 4.130166
+  type: 'test'
+  ...
+# Subtest: canonical bytes and pinned digest vector (same as the Python suite)
+ok 8 - canonical bytes and pinned digest vector (same as the Python suite)
+  ---
+  duration_ms: 0.488083
+  type: 'test'
+  ...
+# Subtest: money is exact BigInt cents, never Number
+ok 9 - money is exact BigInt cents, never Number
+  ---
+  duration_ms: 0.236875
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 242.367959
+factory_build_test_exit=0
+# git status après :
+?? evidence/W1/P0/raw/suite_debug0.env.txt
+?? evidence/W1/P0/raw/suite_debug0.txt

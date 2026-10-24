@@ -1,0 +1,34 @@
+# 2026-10-23T00:10:17Z HEAD a9dede140b34cbf52dfc9288baccc876f5324d08 reviewer
+role prodes_site: OK
+base prodes_site_rv_bc2_test: créée
+create_test_exit=0
+role prodes_site: OK
+NOTICE:  database "prodes_site_rv_bc2" does not exist, skipping
+base prodes_site_rv_bc2: créée
+create_dev_exit=0
+role prodes_site: OK
+base prodes_site_rv_bc2: déjà présente
+create_again_exit=0
+apply 001_site_generation.sql sha256=74b3fbf0f2a253250d30f1eddb33e17aae62acd52fa63a284ab11c2aac3a65c7
+apply 002_site_active_pointer.sql sha256=0e2021c60e60c16504ddc580cd805a6b2424b592e1a540830f329dd19a87f605
+apply 003_site_media.sql sha256=05be388af596569182401b31775bc088739349f502d3c9f1e44495337fc3287d
+apply 004_site_publication_log.sql sha256=e7274db2eb00a68d82827d77e7d141387ba9a7ea3ab614a5a6cacdba4842d564
+MIGRATIONS_OK db=prodes_site_rv_bc2 applied=4
+migrate_exit=0
+skip 001_site_generation.sql
+skip 002_site_active_pointer.sql
+skip 003_site_media.sql
+skip 004_site_publication_log.sql
+MIGRATIONS_OK db=prodes_site_rv_bc2 applied=0
+migrate_again_exit=0
+REFUS: nom de base 'prodes_factory' hors préfixe prodes_site_
+create_factory_refused_exit=2
+MIGRATIONS_FAILED SITE_DATABASE_URL vise 'prodes_factory' : seules les bases prodes_site* sont admises
+migrate_factory_refused_exit=1
+REFUS: PGHOST=jarvis n'est pas local
+create_remote_host_refused_exit=2
+001|001_site_generation.sql|74b3fbf0f2a253250d30f1eddb33e17aae62acd52fa63a284ab11c2aac3a65c7
+002|002_site_active_pointer.sql|0e2021c60e60c16504ddc580cd805a6b2424b592e1a540830f329dd19a87f605
+003|003_site_media.sql|05be388af596569182401b31775bc088739349f502d3c9f1e44495337fc3287d
+004|004_site_publication_log.sql|e7274db2eb00a68d82827d77e7d141387ba9a7ea3ab614a5a6cacdba4842d564
+1||||

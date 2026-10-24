@@ -1,103 +1,79 @@
-"use client";
+/**
+ * Paliers SELL de la variante choisie : CHAQUE ligne est la sélection C0 `selectPrice` d'un palier publié à
+ * l'instant serveur (`priceRows`, lib/site-catalog/view.ts, revue A2 F-04), ou le code C0 qui l'empêche.
+ * Aucun calcul, aucun test local de date ou de quantité. `selectedRateId` = fenêtre retenue par le SERVEUR pour la
+ * quantité saisie (aperçu), jamais déduite localement. Attributs `data-rate-id` / `data-tier` / `data-unavailable`
+ * conservés (tests A2).
+ */
+import { codeMessage } from "@/components/site/codes";
+import { basisLabel, money, quantityRange } from "@/components/site/format";
 
-import { PriceTierDisplay } from "lib/supabase/types";
+export type PriceGridRow = {
+  tier_quantity: number;
+  selected: boolean;
+  error_codes: string[];
+  rate_id: string | null;
+  unit_amount: string | null;
+  currency: string | null;
+  tax_basis_or_status: string | null;
+  quantity_min: number;
+  quantity_max: number | null;
+  validity_label: string | null;
+};
 
-function formatPriceFR(price: number): string {
-  return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2 }).format(price) + " € HT";
-}
-
-export function PriceGrid({
-  tiers,
-  pricingType,
-  basePrice,
-}: {
-  tiers: PriceTierDisplay[];
-  pricingType: "fixed" | "percentage" | null;
-  basePrice: number;
-}) {
-  if (!tiers || tiers.length === 0) return null;
-
-  return (
-    <div className="mt-4 mb-2">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-        Tarifs dégressifs
-      </h3>
-      <div className="overflow-hidden rounded-md border border-gray-200">
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="py-2 px-3 text-left font-medium text-gray-600 text-xs uppercase tracking-wide">
-                Quantité
-              </th>
-              <th className="py-2 px-3 text-right font-medium text-gray-600 text-xs uppercase tracking-wide">
-                Prix unitaire
-              </th>
-              <th className="py-2 px-3 text-right font-medium text-gray-600 text-xs uppercase tracking-wide">
-                Économie
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Ligne de référence : 1 unité */}
-            <tr className="bg-gray-50 border-b border-gray-100">
-              <td className="py-2 px-3 text-gray-500 text-sm">1 unité</td>
-              <td className="py-2 px-3 text-right text-gray-700 font-medium">
-                {formatPriceFR(basePrice)}
-              </td>
-              <td className="py-2 px-3 text-right text-gray-400 text-xs">—</td>
-            </tr>
-
-            {/* Paliers dégressifs */}
-            {tiers.map((tier, i) => {
-              let unitPrice: number | null = null;
-              if (pricingType === "fixed" && tier.price != null) {
-                // tier.price = discount amount, not final price
-                unitPrice = basePrice - tier.price;
-              } else if (pricingType === "percentage" && tier.discountPercent != null) {
-                unitPrice = basePrice * (1 - tier.discountPercent / 100);
-              }
-
-              // Guard against corrupt data
-              if (unitPrice !== null && (unitPrice <= 0 || unitPrice >= basePrice)) {
-                unitPrice = null;
-              }
-
-              const savings =
-                unitPrice != null && basePrice > 0
-                  ? Math.round(((basePrice - unitPrice) / basePrice) * 100)
-                  : null;
-
-              return (
-                <tr
-                  key={i}
-                  className="border-b border-gray-100 last:border-0 bg-white hover:bg-red-50 transition-colors"
-                >
-                  <td className="py-2 px-3 text-gray-700">
-                    À partir de{" "}
-                    <span className="font-medium">{tier.minQuantity}</span>{" "}
-                    unité{tier.minQuantity > 1 ? "s" : ""}
-                  </td>
-                  <td className="py-2 px-3 text-right font-semibold text-[#cc1818]">
-                    {unitPrice != null ? formatPriceFR(unitPrice) : "—"}
-                  </td>
-                  <td className="py-2 px-3 text-right">
-                    {savings != null && savings > 0 ? (
-                      <span className="inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-                        -{savings} %
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 text-xs">—</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <p className="mt-1 text-xs text-gray-400">
-        Prix unitaire HT — hors taxes et hors frais de livraison
+export function PriceGrid({ rows, selectedRateId, caption }: { rows: PriceGridRow[]; selectedRateId?: string | null; caption: string }) {
+  if (!rows.some((r) => r.selected)) {
+    return (
+      <p className="rounded-[9px] border border-caution bg-white p-3 text-sm" data-testid="price-unavailable">
+        <strong className="font-semibold">Prix indisponible</strong> : aucun prix de vente publié ne s&apos;applique à cette variante en ce moment.
+        Vous pouvez l&apos;ajouter au panier pour une demande de devis sans prix ; la commande n&apos;est pas possible.
       </p>
+    );
+  }
+  return (
+    <div className="relative overflow-x-auto">
+      <table className="tabular w-full border-collapse text-sm">
+        <caption className="mb-2 text-left text-sm font-semibold">{caption}</caption>
+        <thead>
+          <tr className="border-b border-line-strong text-left text-xs text-ink-3">
+            <th scope="col" className="py-2 pr-3 font-medium">Quantité</th>
+            <th scope="col" className="py-2 pr-3 text-right font-medium">Prix unitaire</th>
+            <th scope="col" className="hidden py-2 font-medium sm:table-cell">Validité</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const current = r.selected && r.rate_id !== null && r.rate_id === selectedRateId;
+            return r.selected ? (
+              <tr
+                key={`t${r.tier_quantity}`}
+                data-rate-id={r.rate_id ?? undefined}
+                data-tier={r.tier_quantity}
+                aria-current={current ? "true" : undefined}
+                className={`h-[34px] border-b border-line ${current ? "bg-signal-subtle" : ""}`}
+              >
+                <td className={`py-1.5 pr-3 ${current ? "border-l-2 border-signal pl-2" : ""}`}>
+                  {quantityRange(r.quantity_min, r.quantity_max)}
+                  {current && <span className="ml-2 text-xs font-medium text-signal">quantité choisie</span>}
+                </td>
+                <td className="py-1.5 pr-3 text-right font-semibold whitespace-nowrap">
+                  {money(r.unit_amount ?? "")} <span className="font-normal">{basisLabel(r.tax_basis_or_status)}</span>
+                </td>
+                <td className={`hidden py-1.5 text-xs sm:table-cell ${current ? "text-ink-2" : "text-ink-3"}`}>{r.validity_label}</td>
+              </tr>
+            ) : (
+              <tr key={`t${r.tier_quantity}`} data-tier={r.tier_quantity} data-unavailable={r.error_codes.join(",")} className="h-[34px] border-b border-line">
+                <td className="py-1.5 pr-3">À partir de {r.tier_quantity}</td>
+                <td className="py-1.5 text-ink-2" colSpan={2}>
+                  Prix indisponible pour cette quantité en ce moment
+                  <span className="sr-only"> — {r.error_codes.map(codeMessage).join(" ")}</span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p className="mt-2 text-xs text-ink-3">Prix de vente PRODES publiés, base indiquée sur chaque ligne. Taxes, port et remises : non calculés.</p>
     </div>
   );
 }

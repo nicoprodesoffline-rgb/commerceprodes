@@ -1,31 +1,11 @@
-export default {
-  experimental: {
-    ppr: true,
-    inlineCss: true,
-    useCache: true,
-  },
-  images: {
-    formats: ["image/avif", "image/webp"],
-    remotePatterns: [
-      // Supabase Storage (primary image source)
-      {
-        protocol: "https",
-        hostname: "mvnaeddtvyaqkdliivdk.supabase.co",
-        pathname: "/storage/v1/object/public/**",
-      },
-      // WordPress import (prodes.fr migrated images)
-      {
-        protocol: "https",
-        hostname: "prodes.fr",
-        pathname: "/wp-content/uploads/**",
-      },
-      // Admin-managed category images (any HTTPS source)
-      {
-        protocol: "https",
-        hostname: "**",
-      },
-    ],
-  },
+import type { NextConfig } from "next";
+
+// Spike BC1-D : aucune option expérimentale (ppr, useCache, inlineCss retirés).
+// images.unoptimized : l'optimiseur d'images n'est pas utilisé (médias servis
+// par /media/[sha256] depuis la fixture) — réduit aussi la surface GHSA-2464-fhr4-w9xw.
+const config: NextConfig = {
+  poweredByHeader: false,
+  images: { unoptimized: true },
   async headers() {
     return [
       {
@@ -33,16 +13,12 @@ export default {
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
-          },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ],
       },
     ];
   },
 };
+
+export default config;

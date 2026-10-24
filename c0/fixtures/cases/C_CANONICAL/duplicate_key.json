@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.duplicate_key",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/duplicate_key.json"
+    }
+  },
+  "notes": "Duplicate key, even with the same value",
+  "scenario": "C_CANONICAL"
+}

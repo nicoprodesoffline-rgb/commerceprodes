@@ -1,34 +1,31 @@
 import Link from "next/link";
-import type { CategoryWithCount } from "lib/supabase/types";
 
-export default function CategoryGrid({
-  categories,
-}: {
-  categories: CategoryWithCount[];
-}) {
-  if (!categories.length) return null;
+export type CategoryTile = { key: string; name: string; familyCount: number; children: { key: string; name: string }[] };
 
+/** Catégories racines du DTO et leurs sous-catégories (ordre du DTO). */
+export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
+  if (categories.length === 0) return null;
   return (
-    <section>
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Nos catégories</h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {categories.map((cat) => (
-          <Link
-            key={cat.id}
-            href={`/search/${cat.slug}`}
-            className="group flex flex-col rounded-xl border border-gray-200 bg-white p-4 hover:border-blue-400 hover:shadow-md transition-all duration-150"
-          >
-            <span className="font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">
-              {cat.name}
-            </span>
-            <span className="mt-1 text-xs text-gray-500">
-              {cat.product_count > 0
-                ? `${cat.product_count} produit${cat.product_count > 1 ? "s" : ""}`
-                : ""}
-            </span>
+    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {categories.map((c) => (
+        <li key={c.key} className="rounded-[14px] border border-line bg-white p-4">
+          <Link href={`/categorie/${c.key}`} className="inline-flex min-h-[34px] items-center font-semibold hover:underline">
+            {c.name}
           </Link>
-        ))}
-      </div>
-    </section>
+          <p className="text-xs text-ink-3">{c.familyCount === 0 ? "Aucune famille classée directement" : `${c.familyCount} famille${c.familyCount > 1 ? "s" : ""}`}</p>
+          {c.children.length > 0 && (
+            <ul className="mt-2 flex flex-wrap gap-2" aria-label={`Sous-catégories de ${c.name}`}>
+              {c.children.map((s) => (
+                <li key={s.key}>
+                  <Link href={`/categorie/${s.key}`} className="inline-flex min-h-[34px] items-center rounded-full border border-line-strong px-3 text-sm hover:bg-surface">
+                    {s.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }

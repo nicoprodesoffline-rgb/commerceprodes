@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.exponent",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/exponent.json"
+    }
+  },
+  "notes": "Exponent notation is a float token",
+  "scenario": "C_CANONICAL"
+}

@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.trailing_comma",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/trailing_comma.json"
+    }
+  },
+  "notes": "Trailing comma",
+  "scenario": "C_CANONICAL"
+}

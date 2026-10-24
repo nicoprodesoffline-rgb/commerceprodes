@@ -1,0 +1,14 @@
+# 2026-10-22T23:59:23Z commit testé fdbfe6a3a487ea9bf59081fa5dbaf40cbac6511e node v22.23.1 npm 10.9.8 (vérification hors code : API GitHub Advisories, indépendante du commit)
+## gh api /advisories/GHSA-2464-fhr4-w9xw
+{"ghsa_id":"GHSA-2464-fhr4-w9xw","html_url":"https://github.com/advisories/GHSA-2464-fhr4-w9xw","published_at":"2026-10-22T15:52:53Z","severity":"critical","summary":"Next.js: Unauthenticated Remote Code Execution in Image Optimization API when SVG files are used","updated_at":"2026-10-22T15:52:56Z","vulns":[{"patched":"15.5.28","pkg":"next","range":"\u003e= 10.0.0, \u003c= 15.5.27"},{"patched":"16.4.1","pkg":"next","range":"\u003e= 16.0.0, \u003c= 16.4.0"}]}
+## gh api /advisories/GHSA-673q-mjm6-r5xr
+{"ghsa_id":"GHSA-673q-mjm6-r5xr","html_url":"https://github.com/advisories/GHSA-673q-mjm6-r5xr","published_at":"2026-10-22T16:42:31Z","severity":"critical","summary":"Next.js: Unauthenticated Remote Code Execution in `use cache` functions returning typed arrays","updated_at":"2026-10-22T16:42:32Z","vulns":[{"patched":"16.4.1","pkg":"next","range":"\u003e= 16.0.0, \u003c= 16.4.0"}]}
+## gh api /advisories/GHSA-p3m5-59mp-jv5r
+{"ghsa_id":"GHSA-p3m5-59mp-jv5r","html_url":"https://github.com/advisories/GHSA-p3m5-59mp-jv5r","published_at":"2026-10-22T15:50:34Z","severity":"high","summary":"Next.js: Denial of Service in App Router using Server Actions","updated_at":"2026-10-22T15:50:35Z","vulns":[{"patched":"15.5.28","pkg":"next","range":"\u003e= 13.0.0, \u003c= 15.5.27"},{"patched":"16.4.1","pkg":"next","range":"\u003e= 16.0.0, \u003c= 16.4.0"}]}
+## gh api '/advisories?ecosystem=npm&affects=next@16.4.2' (vide = aucun avis)
+## gh api '/advisories?ecosystem=npm&affects=react@19.3.0' (vide = aucun avis)
+## gh api '/advisories?ecosystem=npm&affects=react-dom@19.3.0' (vide = aucun avis)
+## témoin positif : affects=next@16.4.0
+{"ghsa_id":"GHSA-673q-mjm6-r5xr","severity":"critical"}
+{"ghsa_id":"GHSA-2464-fhr4-w9xw","severity":"critical"}
+{"ghsa_id":"GHSA-p3m5-59mp-jv5r","severity":"high"}

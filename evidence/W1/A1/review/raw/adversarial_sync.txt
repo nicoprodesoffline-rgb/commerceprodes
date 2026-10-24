@@ -1,0 +1,110 @@
+##### S1 re-sync indépendant (7a5ac012, gel b88f5cdf) vers dest temporaire, comparé à l'arbre commité
+C0_SYNC_OK archived_from=7a5ac0120d808c2f08d3be7d6f935eb8388afba8 frozen=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=b73f1968252785007b1e0b27af603e9bae6966d1527d0c6666bc93ac5e509c5d
+exit=0
+MANIFESTE IDENTIQUE octet pour octet
+ARBRE IDENTIQUE
+C0_VENDOR_OK sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=b73f1968252785007b1e0b27af603e
+c0
+
+##### S2 --sha dont c0/ts/src diffère du gel
+old=1a4997762d6b8d2f9bb8f85ffaca8e9037fd1b5f src_tree=899b1af9b72ab2f7e191d58f48171ff892931a50 gel_src_tree=899b1af9b72ab2f7e191d58f48171ff892931a50
+C0_SYNC_OK archived_from=1a4997762d6b8d2f9bb8f85ffaca8e9037fd1b5f frozen=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=749bff47a07db8d2944492b87e27c03a28dbc11a275128e92bc196c6e54d21f0
+exit=0
+dest après refus:
+c0
+
+##### S2b HEAD du worktree Factory (970588da) vs gel
+C0_SYNC_OK archived_from=970588da809bdf1938f2224907e02b16f0b4a2c0 frozen=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=b73f1968252785007b1e0b27
+exit=0
+
+##### S3 SHA abrégé
+C0_SYNC_FAILED les SHA doivent être complets (40 caractères hexadécimaux)
+exit=1
+
+##### S4 SHA gelé inexistant
+C0_SYNC_FAILED SHA gelé introuvable dans /Users/nico/Desktop/prodes-data-factory-poc/.claude/worktrees/w1-candidate : 1111111111111111111111111111111111111111
+exit=1
+
+##### S5 --sha inexistant
+fatal: Needed a single revision
+node:internal/errors:983
+  const err = new Error(message);
+              ^
+
+Error: Command failed: git -C /Users/nico/Desktop/prodes-data-factory-poc/.claude/worktrees/w1-candidate rev-parse --verify 2222222222222222222222222222222222222222^{commit}
+fatal: Needed a single revision
+
+    at genericNodeError (node:internal/errors:983:15)
+    at wrappedFn (node:internal/errors:537:14)
+    at checkExecSyncError (node:child_process:916:11)
+    at execFileSync (node:child_process:952:15)
+    at git (file:///Users/nico/Desktop/prodes-w1/review-a1/scripts/c0/sync.mjs:31:10)
+    at file:///Users/nico/Desktop/prodes-w1/review-a1/scripts/c0/sync.mjs:46:18
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {
+  status: 128,
+  signal: null,
+  output: [
+    null,
+    Buffer(0) [Uint8Array] [],
+    Buffer(32) [Uint8Array] [
+      102,  97, 116,  97, 108,  58,  32,
+       78, 101, 101, 100, 101, 100,  32,
+       97,  32, 115, 105, 110, 103, 108,
+      101,  32, 114, 101, 118, 105, 115,
+      105, 111, 110,  10
+    ]
+  ],
+  pid: 64506,
+  stdout: Buffer(0) [Uint8Array] [],
+  stderr: Buffer(32) [Uint8Array] [
+    102,  97, 116,  97, 108,  58,  32,
+     78, 101, 101, 100, 101, 100,  32,
+     97,  32, 115, 105, 110, 103, 108,
+    101,  32, 114, 101, 118, 105, 115,
+    105, 111, 110,  10
+  ]
+}
+
+Node.js v22.23.1
+exit=1
+
+##### S6 --factory pas un dépôt
+fatal: not a git repository (or any of the parent directories): .git
+node:internal/errors:983
+  const err = new Error(message);
+exit=1
+
+##### S7 option inconnue / valeur manquante
+C0_SYNC_FAILED valeur manquante pour --sha
+exit=1
+C0_SYNC_FAILED argument inconnu : --bogus (attendus : --factory --sha --frozen-sha --dest)
+exit=1
+
+##### S8 SHA majuscules (b88f5cdf, valide)
+fatal: Needed a single revision
+node:internal/errors:983
+
+##### S9 dest avec c0 préexistant (dist/ + parasite) : remplacement complet
+C0_SYNC_OK archived_from=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 frozen=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=749bff47a07db8
+exit=0
+/private/tmp/claude-501/-Users-nico-Desktop-prodes-data-factory-poc/59d02b74-f20c-445d-87e2-ad7a5f23288d/scratchpad/sync9.G2brjO/c0:
+C0_SOURCE.json
+fixtures
+README.md
+ts
+
+/private/tmp/claude-501/-Users-nico-Desktop-prodes-data-factory-poc/59d02b74-f20c-445d-87e2-ad7a5f23288d/scratchpad/sync9.G2brjO/c0/ts:
+package-lock.json
+package.json
+src
+test
+tsconfig.json
+C0_VENDOR_OK sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=749bff47a07db8d29444
+
+##### S10 couple python-only: sha dont c0/python diffère mais ts identique
+python-only candidate 1a4997762d6b8d2f9bb8f85ffaca8e9037fd1b5f
+C0_SYNC_OK archived_from=1a4997762d6b8d2f9bb8f85ffaca8e9037fd1b5f frozen=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=749bff47a07db8d2944492b87e27c03a28dbc11a275128e92bc196c6e54d21f0
+exit=0
+(fin S10)

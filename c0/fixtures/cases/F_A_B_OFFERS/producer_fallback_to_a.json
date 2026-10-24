@@ -1,0 +1,15 @@
+{
+  "case_id": "F_A_B_OFFERS.producer_fallback_to_a",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_source_coverage",
+  "input": {
+    "manifest": {
+      "$doc": "documents/F_A_B_OFFERS/private_manifest_g2.json"
+    },
+    "snapshot": {
+      "$doc": "documents/F_A_B_OFFERS/snapshot_g2_fallback_a.json"
+    }
+  },
+  "notes": "CE-T15: payload still sells 301 at A's price while the source says NON_READY",
+  "scenario": "F_A_B_OFFERS"
+}

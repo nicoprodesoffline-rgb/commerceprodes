@@ -1,0 +1,41 @@
+{
+  "case_id": "F_FULL_CORRUPT.massive_listed_released",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/F_FULL_CORRUPT/ack_s10.json"
+      },
+      "snapshot": {
+        "$doc": "documents/F_FULL_CORRUPT/snapshot_s10_active.json"
+      }
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/full_family_1.png"
+        },
+        "sha256": "b0197f900b5f23c7b2cb19e8c1590c2f46a3e9c7117c1580f1711d625f59cd9d"
+      }
+    ],
+    "now_utc": "2026-10-20T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": 5,
+      "released_expected_withdrawals_digest": "339f366174e572f8cf54d2bb9e799d59bdc3b93eb1194bd074c48e76c5b99ed0"
+    },
+    "snapshot": {
+      "$bytes": "documents/F_FULL_CORRUPT/snapshot_massive_listed_over_policy.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "5cbc33be82c43fb5ea7fde9fb1b9973094aa93337405c5f676a85ca7cb9ce6b5"
+    }
+  },
+  "notes": "Same publication after a documented release bound to its withdrawals digest",
+  "scenario": "F_FULL_CORRUPT"
+}

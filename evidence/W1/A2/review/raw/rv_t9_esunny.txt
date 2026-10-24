@@ -1,0 +1,13 @@
+# PID 31083 démarré {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_ESUNNY_FORBIDDEN/snapshot_s1.json","SITE_NOW_UTC":"2026-10-20T12:00:00Z"}
+## RV-13 ESUNNY : combinaisons
+blanc/sol (interdite) sur clé blanc/murale → HTTP 200 INVALID_VARIANT
+blanc/murale axes en ordre inverse → HTTP 200 R-ESUNNY-203
+axe manquant → HTTP 200 INVALID_VARIANT
+axe en trop → HTTP 200 INVALID_VARIANT
+casse de la valeur → HTTP 200 INVALID_VARIANT
+même ligne, ordre d'axes différent (doublon canonique) → HTTP 422 ["DUPLICATE_LINE"]
+doublon via échappement \u006c → HTTP 422 ["DUPLICATE_LINE"]
+page famille 200 ; Items rendus=PI-00000069X,PI-0000006AP,PI-0000006BC ; mention blanc/sol=null
+order_forbidden_combination → HTTP 422 REJECTED ["INVALID_VARIANT"]
+order_allowed_combination → HTTP 200 RECEIVED []
+# PID 31083 arrêté, port libre=true

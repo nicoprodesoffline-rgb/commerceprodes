@@ -1,0 +1,34 @@
+{
+  "case_id": "F_ESUNNY_FORBIDDEN.activate",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/esunny_family.png"
+        },
+        "sha256": "0f70467dc2e4c5d657e663e9e52ac3c48e07d8d619586ff0566c8172e13c24e0"
+      }
+    ],
+    "now_utc": "2026-10-20T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_ESUNNY_FORBIDDEN/snapshot_s1.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "2827943d6ac8d49455e86b42b482a41988cd1cab4d969a7b06d2060bc4e5b3de"
+    }
+  },
+  "notes": "Three of four combinations; blanc+sol is explicitly forbidden and has no Item",
+  "scenario": "F_ESUNNY_FORBIDDEN"
+}

@@ -1,0 +1,20 @@
+{
+  "case_id": "F_QUOTE_ORDER.order_item_not_published",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_order_submit",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_s7.json"
+      },
+      "status": "ACTIVE"
+    },
+    "now_utc": "2026-10-20T09:00:00Z",
+    "register": [],
+    "request": {
+      "$bytes": "documents/F_QUOTE_ORDER/order_item_not_published.json"
+    }
+  },
+  "notes": "Well-formed key absent from the ACTIVE generation",
+  "scenario": "F_QUOTE_ORDER"
+}

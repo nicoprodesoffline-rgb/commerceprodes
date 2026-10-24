@@ -1,0 +1,19 @@
+{
+  "case_id": "F_SELL_WINDOWS.select_spring_dst_switch",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_s7.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-03-29T01:00:00Z",
+    "public_item_key": "PI-000000CHJ",
+    "quantity": 1,
+    "variant_axes": {}
+  },
+  "notes": "DST switch instant (02:00 CET -> 03:00 CEST) inside the promotion",
+  "scenario": "F_SELL_WINDOWS"
+}

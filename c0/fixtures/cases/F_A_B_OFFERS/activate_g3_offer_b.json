@@ -1,0 +1,47 @@
+{
+  "case_id": "F_A_B_OFFERS.activate_g3_offer_b",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/F_A_B_OFFERS/ack_g2.json"
+      },
+      "snapshot": {
+        "$doc": "documents/F_A_B_OFFERS/snapshot_g2_b_preferred_no_sell.json"
+      }
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/ab_family_301.png"
+        },
+        "sha256": "40e3747d97cd6308247bcaba8f9eea21526d352ff1b46cfea95808d5fb937a59"
+      },
+      {
+        "file": {
+          "$media": "media/ab_family_302.png"
+        },
+        "sha256": "7d724c26875d198059eefcd0e6e2fdbe2dd98685ce0a563c1edc5f6e521f6917"
+      }
+    ],
+    "now_utc": "2026-10-21T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_A_B_OFFERS/snapshot_g3_offer_b_priced.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "c6dbbbe1ae7008767579730612a260b14fcffbcbf1999ebe0709440288a8bb85"
+    }
+  },
+  "notes": "ID-T07: B priced, 301 comes back with the same key and a new public price version",
+  "scenario": "F_A_B_OFFERS"
+}

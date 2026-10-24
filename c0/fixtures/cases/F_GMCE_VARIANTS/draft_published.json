@@ -1,0 +1,40 @@
+{
+  "case_id": "F_GMCE_VARIANTS.draft_published",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/gmce_family.png"
+        },
+        "sha256": "bdc052e346fa8f7813cf76228e472d5e0e91ac3901ddc71069214f1d99cdaec5"
+      },
+      {
+        "file": {
+          "$media": "media/gmce_item_rouge.png"
+        },
+        "sha256": "b020140e8822d96407cce4ec28d1ee2df7c25cf7c98f8e2fe0ee49bd73039c6c"
+      }
+    ],
+    "now_utc": "2026-10-20T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_GMCE_VARIANTS/snapshot_draft_published.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "31f7f69035e12b876e9817100f8afaf3065d9fbfb86965794a7804b58f072999"
+    }
+  },
+  "notes": "Only status READY may be transported",
+  "scenario": "F_GMCE_VARIANTS"
+}

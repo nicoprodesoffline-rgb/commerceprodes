@@ -1,0 +1,8 @@
+# SHA=5f0768ce5c957d0ffb6a30d2fcc3c0667facda3d 2026-10-23T07:27:40Z — npm run c0:check
+$ npm run c0:check
+
+> c0:check
+> node scripts/c0/check.mjs
+
+C0_VENDOR_OK sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=b73f1968252785007b1e0b27af603e9bae6966d1527d0c6666bc93ac5e509c5d
+exit=0

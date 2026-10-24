@@ -1,0 +1,19 @@
+# 2026-10-23T00:50:27Z HEAD c5dc9d0278337a8aaec9a8e8b7542a2189e915f7 reviewer (re-review)
+PASS H-R01 STAGE sans en-têtes -> (s1 déjà ACTIVE)  — obtenu: 401 ["SIGNATURE_INVALID"] stage=transport_gate
+PASS H-R02 STAGE document neuf sans en-têtes -> 401 SIGNATURE_INVALID — obtenu: 401 {"accepted":false,"outcome":"REJECTED","operation":"STAGE","error_codes":["SIGNATURE_INVALID"],"stage":"transport_gate"}
+PASS H-R03 en-tête x-c0-key-id dupliqué (deux valeurs) -> 401 — obtenu: 401 ["SIGNATURE_INVALID"]
+PASS H-R04 signature en majuscules -> 401 — obtenu: 401
+PASS H-R05 key_id inconnu -> 401, pas d'écho de la signature — obtenu: 401 {"accepted":false,"outcome":"REJECTED","operation":"STAGE","error_codes":["SIGNATURE_INVALID"],"stage":"transport_gate"}
+PASS H-R06 STAGE corps non-JSON -> 400 PAYLOAD_MALFORMED — obtenu: 400 {"accepted":false,"outcome":"REJECTED","error_codes":["PAYLOAD_MALFORMED"],"stage":"parse","detail":{},"operation":"STAGE"}
+PASS H-R07 ACTIVATE corps non-JSON -> 400 REQUEST_INVALID — obtenu: 400
+PASS H-R08 ACTIVATE publication_id injection SQL -> 400 (jeton C0 refusé) — obtenu: 400 REQUEST_INVALID
+PASS H-R09 STATUS publication_id injection SQL -> 400 — obtenu: 400 REQUEST_INVALID
+PASS H-R10 STATUS séquence non décimale -> 400 — obtenu: 400
+PASS H-R11 STATUS signé -> 200 sans octets ni signature — obtenu: 200 keys=publication_id,projection_id,scope_key,catalogue_sequence,payload_sha256,status,is_active,staged_at_utc,verified_at_utc,activated_at_utc,has_ack,last_result
+PASS H-R12 STATUS avec la signature d'une autre génération -> 401 — obtenu: 401
+PASS H-R13 data_label PRODUCTION sur receiver staging -> 422 SNAPSHOT_INVALID envelope.data_label_environment — obtenu: 422 {"rules":["envelope.data_label_environment"]}
+FAIL H-R14 ACTIVATE génération inconnue sans signature -> 404 GENERATION_NOT_STAGED (avant toute vérif de signature) — obtenu: 401 undefined
+PASS H-R15 VERIFY_MEDIA sans signature sur génération existante ->  — obtenu: 401 ["SIGNATURE_INVALID"] (non signé)
+PASS H-R16 aucune réponse d'erreur ne contient signature/secret/mot de passe/chemin — obtenu: []
+# adv_http : 15/16 attendus, 1 écart(s)
+exit=0

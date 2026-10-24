@@ -1,0 +1,14 @@
+# 2026-10-23T00:09:51Z HEAD a9dede140b34cbf52dfc9288baccc876f5324d08 reviewer
+
+added 64 packages, and audited 65 packages in 3s
+
+found 0 vulnerabilities
+npm_ci_exit=0
+prodes-commerce-bc1-d@ /Users/nico/Desktop/prodes-w1/review-bc2
+├── @types/pg@8.23.1
+├── next@16.4.2
+├─┬ pg@8.23.1
+│ └─┬ pg-pool@3.14.0
+│   └── pg@8.23.1 deduped
+└── typescript@5.9.3
+

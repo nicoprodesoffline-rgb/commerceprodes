@@ -1,0 +1,18 @@
+{
+  "case_id": "F_SIMPLE_READY.verify_ack_sequence_boolean",
+  "data_label": "STAGING_FIXTURE",
+  "function": "verify_ack",
+  "input": {
+    "ack": {
+      "$doc": "documents/F_SIMPLE_READY/ack_verify_ack_sequence_boolean.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "publication": {
+      "$doc": "documents/F_SIMPLE_READY/snapshot_s1.json"
+    }
+  },
+  "notes": "R-04: catalogue_sequence true (genuinely signed) is not the integer 1",
+  "scenario": "F_SIMPLE_READY"
+}

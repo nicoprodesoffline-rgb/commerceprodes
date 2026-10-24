@@ -1,0 +1,19 @@
+{
+  "case_id": "F_QUOTE_ORDER.lookup_found",
+  "data_label": "STAGING_FIXTURE",
+  "function": "lookup_receipt",
+  "input": {
+    "records": [
+      {
+        "access_token_sha256": "34692f68c1507062bedfa81480b1e5527ac0340af7f53a4d323dbe962df21759",
+        "ref": "ORD-2026-000001"
+      }
+    ],
+    "request": {
+      "access_token": "TEST_SECRET_NOT_FOR_PRODUCTION/receipt-token-0001",
+      "ref": "ORD-2026-000001"
+    }
+  },
+  "notes": "Legitimate token",
+  "scenario": "F_QUOTE_ORDER"
+}

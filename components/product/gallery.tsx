@@ -1,96 +1,45 @@
 "use client";
 
-import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
-import { GridTileImage } from "components/grid/tile";
-import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { MediaImage } from "@/components/site/media-image";
 
-export function Gallery({
-  images,
-}: {
-  images: { src: string; altText: string }[];
-}) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const imageIndex = searchParams.has("image")
-    ? parseInt(searchParams.get("image")!)
-    : 0;
+export type GalleryImage = { sha256: string; caption: string };
 
-  const updateImage = (index: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("image", index);
-    router.replace(`?${params.toString()}`, { scroll: false });
-  };
-
-  const nextImageIndex = imageIndex + 1 < images.length ? imageIndex + 1 : 0;
-  const previousImageIndex =
-    imageIndex === 0 ? images.length - 1 : imageIndex - 1;
-
-  const buttonClassName =
-    "h-full px-6 transition-all ease-in-out hover:scale-110 hover:text-black dark:hover:text-white flex items-center justify-center";
-
+/**
+ * Galerie Famille-first (UX-P08) : l'image principale de la FAMILLE est toujours la première, puis les médias des
+ * variantes (ordre du DTO, sans doublon). Vignettes = boutons (`aria-pressed`), clavier natif.
+ */
+export function Gallery({ familyName, images }: { familyName: string; images: GalleryImage[] }) {
+  const [index, setIndex] = useState(0);
+  const current = images[index] ?? images[0]!;
   return (
-    <form>
-      <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden">
-        {images[imageIndex] && (
-          <Image
-            className="h-full w-full object-contain"
-            fill
-            sizes="(min-width: 1024px) 66vw, 100vw"
-            alt={images[imageIndex]?.altText as string}
-            src={images[imageIndex]?.src as string}
-            priority={true}
-          />
-        )}
-
-        {images.length > 1 ? (
-          <div className="absolute bottom-[15%] flex w-full justify-center">
-            <div className="mx-auto flex h-11 items-center rounded-full border border-white bg-neutral-50/80 text-neutral-500 backdrop-blur-sm dark:border-black dark:bg-neutral-900/80">
+    <div>
+      <figure>
+        <MediaImage
+          sha256={current.sha256}
+          alt={`${familyName} — ${current.caption}`}
+          className="aspect-square w-full rounded-[14px] border border-line [image-rendering:pixelated]"
+          testId="family-image"
+        />
+        <figcaption className="mt-2 text-sm text-ink-2" aria-live="polite">{current.caption}</figcaption>
+      </figure>
+      {images.length > 1 && (
+        <ul className="mt-3 flex flex-wrap gap-2" aria-label="Images de la famille et des variantes">
+          {images.map((img, i) => (
+            <li key={img.sha256}>
               <button
-                formAction={() => updateImage(previousImageIndex.toString())}
-                aria-label="Previous product image"
-                className={buttonClassName}
+                type="button"
+                aria-pressed={i === index}
+                aria-label={`Afficher l'image : ${img.caption}`}
+                onClick={() => setIndex(i)}
+                className={`block h-[64px] w-[64px] overflow-hidden rounded-[9px] border-2 ${i === index ? "border-ink" : "border-line"}`}
               >
-                <ArrowLeftIcon className="h-5" />
+                <MediaImage sha256={img.sha256} alt="" className="h-full w-full [image-rendering:pixelated]" />
               </button>
-              <div className="mx-1 h-6 w-px bg-neutral-500"></div>
-              <button
-                formAction={() => updateImage(nextImageIndex.toString())}
-                aria-label="Next product image"
-                className={buttonClassName}
-              >
-                <ArrowRightIcon className="h-5" />
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      {images.length > 1 ? (
-        <ul className="my-12 flex items-center flex-wrap justify-center gap-2 overflow-auto py-1 lg:mb-0">
-          {images.map((image, index) => {
-            const isActive = index === imageIndex;
-
-            return (
-              <li key={image.src} className="h-20 w-20">
-                <button
-                  formAction={() => updateImage(index.toString())}
-                  aria-label="Select product image"
-                  className="h-full w-full"
-                >
-                  <GridTileImage
-                    alt={image.altText}
-                    src={image.src}
-                    width={80}
-                    height={80}
-                    active={isActive}
-                  />
-                </button>
-              </li>
-            );
-          })}
+            </li>
+          ))}
         </ul>
-      ) : null}
-    </form>
+      )}
+    </div>
   );
 }

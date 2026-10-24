@@ -1,0 +1,8 @@
+# PID 32887 démarré {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-20T09:00:00Z"}
+/ 200 montants € visibles=null
+/categorie/mobilier 200 montants=null
+/categorie/mobilier-chaises 200 montants=null
+/categorie/signaletique 200 montants=null
+/famille/panneau-paliers 200 grille=R-401-B1:ACTIVE,R-401-P2:FUTURE,R-401-B2:FUTURE,R-401-T10:ACTIVE,R-401-T20:ACTIVE montants=["12,00 € HT  du ","10,50 € HT  du ","12,00 € HT  du ","11,00 € HT  du ","10,00 € HT  du "]
+/famille/potelet-paliers 200 grille=R-402-A:ACTIVE,R-402-F:FUTURE montants=["5,25 € (base fiscale non qualifiée)  d","4,75 € (base fiscale non qualifiée)  d"]
+# PID 32887 arrêté, port libre=true

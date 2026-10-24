@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.nfc_composed",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/nfc_composed.json"
+    }
+  },
+  "notes": "Same value already NFC and compact: must give the same canonical bytes as nfc_decomposed",
+  "scenario": "C_CANONICAL"
+}

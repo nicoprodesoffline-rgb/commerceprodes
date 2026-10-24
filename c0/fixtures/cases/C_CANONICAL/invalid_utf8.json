@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.invalid_utf8",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/invalid_utf8.json"
+    }
+  },
+  "notes": "Invalid UTF-8 sequence",
+  "scenario": "C_CANONICAL"
+}

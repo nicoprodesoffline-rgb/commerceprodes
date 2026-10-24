@@ -1,44 +1,47 @@
 {
+  "name": "prodes-commerce-bc1-d",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "prettier": "prettier --write --ignore-unknown .",
-    "prettier:check": "prettier --check --ignore-unknown .",
-    "test": "npm run prettier:check",
+    "typecheck": "tsc --noEmit",
+    "test:http": "node --test tests/http/site.test.mjs",
+    "test:storefront": "npm run bc2:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc3_test} SITE_TEST_PORT=${SITE_TEST_PORT:-3361} node --test --test-concurrency=1 tests/http/storefront.test.mjs",
     "agent-ops:test": "node --test tests/agent-ops/*.test.mjs",
     "agent-ops:quality": "node scripts/agent_ops/quality-gate.mjs",
     "agent-ops:review": "node scripts/agent_ops/review-pack.mjs",
-    "agent-ops:evals": "node scripts/agent_ops/run-skill-evals.mjs --dry-run --split optimization"
+    "agent-ops:evals": "node scripts/agent_ops/run-skill-evals.mjs --dry-run --split optimization",
+    "c0:sync": "node scripts/c0/sync.mjs",
+    "c0:check": "node scripts/c0/check.mjs",
+    "c0:build": "node -e \"require('node:fs').rmSync('c0/ts/dist',{recursive:true,force:true})\" && tsc -p c0/ts/tsconfig.json",
+    "c0:test": "node --test \"c0/ts/dist/test/*.test.js\"",
+    "c0:vendor-test": "node --test \"tests/c0/*.test.mjs\"",
+    "bc2:build": "node -e \"require('node:fs').rmSync('.bc2-build',{recursive:true,force:true})\" && tsc -p tsconfig.bc2.json",
+    "test:bc2": "npm run bc2:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc2_test} node --test --test-concurrency=1 \"tests/bc2/*.test.mjs\"",
+    "bc4:build": "node -e \"require('node:fs').rmSync('.bc4-build',{recursive:true,force:true})\" && tsc -p tsconfig.bc4.json",
+    "test:bc4": "npm run bc2:build && npm run bc4:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc4_test} node --test --test-concurrency=1 \"tests/bc4/*.test.mjs\"",
+    "test:bc4:http": "npm run bc2:build && npm run bc4:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc4_test} SITE_TEST_PORT=${SITE_TEST_PORT:-3351} node --test --test-concurrency=1 tests/bc4/http.e2e.mjs",
+    "db:create-local": "scripts/db/create-local.sh",
+    "db:migrate": "node scripts/db/migrate.mjs"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
-    "@headlessui/react": "^2.2.0",
-    "@heroicons/react": "^2.2.0",
-    "@supabase/supabase-js": "^2.97.0",
-    "clsx": "^2.1.1",
-    "csv-parse": "^6.1.0",
-    "embla-carousel-react": "^8.6.0",
-    "geist": "^1.3.1",
-    "jspdf": "^4.2.0",
-    "next": "15.6.0-canary.60",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
-    "resend": "^6.9.2",
-    "sonner": "^2.0.1"
+    "next": "16.4.2",
+    "pg": "8.23.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
-    "@tailwindcss/container-queries": "^0.1.1",
-    "@tailwindcss/postcss": "^4.0.14",
-    "@tailwindcss/typography": "^0.5.16",
-    "@types/node": "22.13.10",
-    "@types/react": "19.0.12",
-    "@types/react-dom": "19.0.4",
-    "postcss": "^8.5.3",
-    "prettier": "3.5.3",
-    "prettier-plugin-tailwindcss": "^0.6.11",
-    "tailwindcss": "^4.0.14",
-    "typescript": "5.8.2"
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "22.20.5",
+    "@types/pg": "8.23.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "postcss": "8.5.29",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3"
   }
 }

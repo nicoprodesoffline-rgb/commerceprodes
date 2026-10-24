@@ -1,0 +1,26 @@
+7c7
+< import { migrate } from "../../scripts/db/migrate.mjs";
+---
+> import { migrate } from "/Users/nico/Desktop/prodes-w1/review-bc3/scripts/db/migrate.mjs";
+9c9
+< const DB_RE = /^prodes_site_bc3(_test)?$/; // jamais la base d'un autre lot
+---
+> const DB_RE = /^prodes_site_rv_bc3(_test)?$/; // jamais la base d'un autre lot
+30,31c30,31
+<   process.env.SITE_TEST_DATABASE_URL ??= dbUrl("prodes_site_bc3_test");
+<   const { loadCase, mediaHeaders } = await import("../bc2/helpers.mjs");
+---
+>   process.env.SITE_TEST_DATABASE_URL ??= dbUrl("prodes_site_rv_bc3_test");
+>   const { loadCase, mediaHeaders } = await import("/Users/nico/Desktop/prodes-w1/review-bc3/tests/bc2/helpers.mjs");
+5c5
+< // Serveur `next start` lancé/tué par CE script sur $SITE_TEST_PORT (défaut 3361), base prodes_site_bc3_test.
+---
+> // Serveur `next start` lancé/tué par CE script sur $SITE_TEST_PORT (défaut 3361), base prodes_site_rv_bc3_test.
+15c15
+< const ROOT = path.resolve(import.meta.dirname, "..", "..");
+---
+> const ROOT = "/Users/nico/Desktop/prodes-w1/review-bc3";
+18c18
+< const DB = "prodes_site_bc3_test";
+---
+> const DB = "prodes_site_rv_bc3_test";

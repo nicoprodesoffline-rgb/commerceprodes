@@ -1,0 +1,73 @@
+
+> c0:build
+> node -e "require('node:fs').rmSync('c0/ts/dist',{recursive:true,force:true})" && tsc -p c0/ts/tsconfig.json
+
+
+> c0:test
+> node --test "c0/ts/dist/test/*.test.js"
+
+TAP version 13
+# Subtest: every case matches its declared verdict and result digest; registry written
+ok 1 - every case matches its declared verdict and result digest; registry written
+  ---
+  duration_ms: 165.167125
+  type: 'test'
+  ...
+# Subtest: media are real bytes with their computed SHA-256
+ok 2 - media are real bytes with their computed SHA-256
+  ---
+  duration_ms: 0.676958
+  type: 'test'
+  ...
+# Subtest: each D11 scenario has accepted and refused cases
+ok 3 - each D11 scenario has accepted and refused cases
+  ---
+  duration_ms: 0.609416
+  type: 'test'
+  ...
+# Subtest: every testable error code has a negative case
+ok 4 - every testable error code has a negative case
+  ---
+  duration_ms: 0.162709
+  type: 'test'
+  ...
+# Subtest: identity: valid vectors encode and decode identically to Python
+ok 5 - identity: valid vectors encode and decode identically to Python
+  ---
+  duration_ms: 0.849584
+  type: 'test'
+  ...
+# Subtest: identity: invalid vectors refused with the same code as Python
+ok 6 - identity: invalid vectors refused with the same code as Python
+  ---
+  duration_ms: 0.731
+  type: 'test'
+  ...
+# Subtest: identity: every substitution and every transposition is detected (5 keys per namespace)
+ok 7 - identity: every substitution and every transposition is detected (5 keys per namespace)
+  ---
+  duration_ms: 4.750958
+  type: 'test'
+  ...
+# Subtest: canonical bytes and pinned digest vector (same as the Python suite)
+ok 8 - canonical bytes and pinned digest vector (same as the Python suite)
+  ---
+  duration_ms: 0.492459
+  type: 'test'
+  ...
+# Subtest: money is exact BigInt cents, never Number
+ok 9 - money is exact BigInt cents, never Number
+  ---
+  duration_ms: 0.19575
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 223.305625
+exit=0

@@ -1,0 +1,43 @@
+# 2026-10-23T00:50:27Z HEAD c5dc9d0278337a8aaec9a8e8b7542a2189e915f7 reviewer (re-review) ; rejeu de adv_tx.mjs (1re review), crash_child corrigé (forme callback de pool.connect) ; R06c écrit snapshot_bytes, désormais refusé par 005 (exception attendue)
+PASS R01a COMMIT échoue (contrainte différée) -> 503 sans ACK, pointeur inchangé, s11 non ACTIVE, aucun ack stocké — obtenu: 503 {"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"ACTIVATE","transport_error":"ACTIVATION_ABORTED","error_codes":[]} ptr_seq=10 s11=VERIFIED ack=false logs=[{"operation":"ACTIVATE_ABORTED","outcome":"ROLLED_BACK","detail":{"reason":"P0001"}}]
+PASS R01b reprise après échec du COMMIT -> ACTIVATED, une seule ACTIVE — obtenu: ACTIVATED actives=1
+PASS R02a processus tué (SIGKILL) juste après le COMMIT, avant réponse -> bascule durable s11, ACK stocké — obtenu: signal=SIGKILL stdout=COMMIT acquitté, SIGKILL avant réponse ptr=11 ack_stored=true
+PASS R02b rejeu après crash -> REPLAY_ACK, octets = ack_bytes stockés, ACK_VALID, 0 ligne de plus — obtenu: REPLAY_ACK same=true ACK_VALID
+PASS R03-chain ACTIVATE concurrents s11 et s12 (s12 basée sur s11), 6 tours -> une ACTIVE, issues légales — obtenu: ["ACTIVATED | ACTIVATED -> ptr=12 [10:SUPERSEDED 11:SUPERSEDED 12:ACTIVE]","ACTIVATED | STAGE_HOLD:STAGE_HOLD/BASE_MISMATCH -> ptr=11 [10:SUPERSEDED 11:ACTIVE 12:HOLD]"]
+PASS R03-sibling ACTIVATE concurrents s11 et s12 (s11 et s12 basées sur s10), 6 tours -> une ACTIVE, issues légales — obtenu: ["REJECTED:STALE_SEQUENCE | ACTIVATED -> ptr=12 [10:SUPERSEDED 11:REJECTED 12:ACTIVE]","ACTIVATED | STAGE_HOLD:STAGE_HOLD/BASE_MISMATCH -> ptr=11 [10:SUPERSEDED 11:ACTIVE 12:HOLD]"]
+PASS R04a VERIFIED puis octets média altérés en base (même taille) -> ACTIVATE MEDIA_HASH_MISMATCH, retour STAGED, pas d'ACK — obtenu: 422 ["MEDIA_HASH_MISMATCH"] status=STAGED
+PASS R04b ligne média supprimée -> ACTIVATE MEDIA_MISSING — obtenu: 422 ["MEDIA_MISSING"]
+PASS R04c STAGED + octets conformes, sans VERIFY_MEDIA -> ACTIVATED (étape media rejouée sous verrou) — obtenu: ACTIVATED verified_at=true
+PASS R04d média ACTIVE altéré en base après activation -> getActiveGeneration.status (NOTE : UNSAFE ne couvre que le snapshot) — obtenu: status=ACTIVE
+PASS R05 PUT média : bornes, hash, scopes, séparation de domaine, rejeu idempotent — obtenu: ["taille 0 signée -> 413 \"{\\\"accepted\\\":false,\\\"outcome\\\":\\\"TRANSPORT_ERROR\\\",\\\"operation\\\":\\\"MEDIA_PUT\\\",\\\"transport_error\\\":\\\"MEDIA_SIZE_OUT_OF_RANGE\\\",\\\"error_codes\\\":[]}\"","20 MiB + 1 signé -> 413 \"MEDIA_SIZE_OUT_OF_RANGE\"","20 MiB exact signé -> 201 \"STORED\"","sha chemin ≠ octets (signé) -> 422 [\"MEDIA_HASH_MISMATCH\"]","sha en majuscules -> 400 \"MEDIA_PATH_INVALID\"","signature de A rejouée pour B -> 401 [\"SIGNATURE_INVALID\"]","signature sur une autre taille -> 401 [\"SIGNATURE_INVALID\"]","clé activation_ack (hors scope) -> 401 [\"SIGNATURE_INVALID\"]","signature du domaine snapshot (séparation de domaine) -> 401 [\"SIGNATURE_INVALID\"]","PUT correct -> 201 \"STORED\"","même signature rejouée (mêmes octets) -> 200 \"ALREADY_STORED\"","SVG déclaré image/png au PUT -> 201 \"STORED\"","svg stocké mime=image/png"]
+PASS R06a readActiveForUpdate (FOR SHARE) retient l'ACTIVATE jusqu'au COMMIT de l'appelant — obtenu: vu=s10 bloqué_1.5s=true puis ACTIVATED après 1513 ms
+PASS R06b verrou partagé tenu > 15 s -> ACTIVATE 503 ACTIVATION_ABORTED (lock_timeout), état inchangé — obtenu: 503 ACTIVATION_ABORTED après 15016 ms ; journal={"detail":{"reason":"55P03"}} ; ptr=s10
+/Users/nico/Desktop/prodes-w1/review-bc2/node_modules/pg-pool/index.js:45
+    Error.captureStackTrace(err)
+          ^
+
+error: site_generation: octets et identité d'une génération immuables (id=1)
+    at /Users/nico/Desktop/prodes-w1/review-bc2/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/nico/Desktop/prodes-w1/review-bc2/evidence/W1/BC2/review/adv/adv_tx.mjs:196:3 {
+  length: 198,
+  severity: 'ERROR',
+  code: 'P0001',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: 'PL/pgSQL function site_generation_immutable() line 11 at RAISE',
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'pl_exec.c',
+  line: '3923',
+  routine: 'exec_stmt_raise'
+}
+
+Node.js v22.23.1
+adv_tx_exit=1

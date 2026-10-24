@@ -1,0 +1,4 @@
+
+> c0:build
+> node -e "require('node:fs').rmSync('c0/ts/dist',{recursive:true,force:true})" && tsc -p c0/ts/tsconfig.json
+

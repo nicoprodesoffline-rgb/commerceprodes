@@ -1,0 +1,26 @@
+# 2026-10-23T00:32:39Z commit testé 522ed1df4002784c1e845c720fa9f615a10db9b5 node v22.23.1 npm 10.9.8 psql (PostgreSQL) 18.6 (Homebrew) node --max-old-space-size=128 … next start (PID 83650) ; SERVER_PID=83650 node tests/bc2/http-body-limits.mjs
+# serveur PID 83650, RSS initiale 122512 KiB, journal 10 lignes
+PASS STAGE 100 MiB sans en-têtes | attendu 401 obtenu 401 en 230 ms | envoyés 2 MiB | rss avant=122512KiB pic=124384KiB (+1.8 MiB) | {"accepted":false,"outcome":"REJECTED","operation":"STAGE","error_codes":["SIGNATURE_INVALID"],"stage":"transport_gate"}
+PASS STAGE 100 MiB sans en-têtes, sans Content-Length | attendu 401 obtenu 401 en 210 ms | envoyés 2 MiB | rss avant=124384KiB pic=124864KiB (+0.5 MiB) | {"accepted":false,"outcome":"REJECTED","operation":"STAGE","error_codes":["SIGNATURE_INVALID"],"stage":"transport_gate"}
+PASS STAGE 100 MiB signé, Content-Length 100 MiB | attendu 413 obtenu 413 en 207 ms | envoyés 1 MiB | rss avant=124864KiB pic=125920KiB (+1.0 MiB) | {"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"STAGE","transport_error":"BODY_TOO_LARGE","max_bytes":33554432,"error_codes":[]}
+PASS STAGE 100 MiB signé, flux sans Content-Length | attendu 413 obtenu 413 en 241 ms | envoyés 36 MiB | rss avant=125920KiB pic=180336KiB (+53.1 MiB) | {"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"STAGE","transport_error":"BODY_TOO_LARGE","max_bytes":33554432,"error_codes":[]}
+PASS VERIFY_MEDIA 100 MiB signé, flux | attendu 413 obtenu 413 en 211 ms | envoyés 2 MiB | rss avant=180336KiB pic=180832KiB (+0.5 MiB) | {"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"VERIFY_MEDIA","transport_error":"BODY_TOO_LARGE","max_bytes":262144,"error_codes"
+PASS ACTIVATE 100 MiB signé, Content-Length | attendu 413 obtenu 413 en 209 ms | envoyés 2 MiB | rss avant=180832KiB pic=181152KiB (+0.3 MiB) | {"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"ACTIVATE","transport_error":"BODY_TOO_LARGE","max_bytes":262144,"error_codes":[]}
+PASS PUT média 100 MiB signé, flux | attendu 413 obtenu 413 en 222 ms | envoyés 22 MiB | rss avant=181152KiB pic=184688KiB (+3.5 MiB) | {"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"MEDIA_PUT","transport_error":"BODY_TOO_LARGE","max_bytes":20971520,"error_codes":
+PASS PUT média 100 MiB sans en-têtes | attendu 401 obtenu 401 en 212 ms | envoyés 2 MiB | rss avant=184688KiB pic=184944KiB (+0.3 MiB) | {"accepted":false,"outcome":"REJECTED","operation":"MEDIA_PUT","error_codes":["SIGNATURE_INVALID"],"stage":"transport_gate"}
+PASS rafale 1 : 4 x STAGE 100 MiB signés en parallèle | codes 413,413,413,413 | rss avant=184944KiB pic=278400KiB (+91.3 MiB) après=278400KiB
+PASS rafale 2 : 4 x STAGE 100 MiB signés en parallèle | codes 413,413,413,413 | rss avant=278400KiB pic=309488KiB (+30.4 MiB) après=309488KiB
+PASS rafale 3 : 4 x STAGE 100 MiB signés en parallèle | codes 413,413,413,413 | rss avant=309488KiB pic=314064KiB (+4.5 MiB) après=314064KiB
+PASS rafale 4 : 4 x STAGE 100 MiB signés en parallèle | codes 413,413,413,413 | rss avant=314064KiB pic=315824KiB (+1.7 MiB) après=315824KiB
+PASS rafale 5 : 4 x STAGE 100 MiB signés en parallèle | codes 413,413,413,413 | rss avant=315824KiB pic=378848KiB (+61.5 MiB) après=378848KiB
+PASS rafale 6 : 4 x STAGE 100 MiB signés en parallèle | codes 413,413,413,413 | rss avant=378848KiB pic=388800KiB (+9.7 MiB) après=388800KiB
+PASS rafale 7 : 4 x STAGE 100 MiB signés en parallèle | codes 413,413,413,413 | rss avant=388800KiB pic=391232KiB (+2.4 MiB) après=391232KiB
+PASS rafale 8 : 4 x STAGE 100 MiB signés en parallèle | codes 413,413,413,413 | rss avant=391232KiB pic=394352KiB (+3.0 MiB) après=393104KiB
+PASS rafale 9 : 4 x STAGE 100 MiB signés en parallèle | codes 413,413,413,413 | rss avant=393104KiB pic=395616KiB (+2.5 MiB) après=395616KiB
+PASS rafale 10 : 4 x STAGE 100 MiB signés en parallèle | codes 413,413,413,413 | rss avant=395616KiB pic=397040KiB (+1.4 MiB) après=397040KiB
+PASS rafale 11 : 4 x STAGE 100 MiB signés en parallèle | codes 413,413,413,413 | rss avant=397040KiB pic=400480KiB (+3.4 MiB) après=400480KiB
+PASS rafale 12 : 4 x STAGE 100 MiB signés en parallèle | codes 413,413,413,413 | rss avant=400480KiB pic=404224KiB (+3.7 MiB) après=394880KiB
+PASS plateau (pas d'accumulation) : RSS après rafale 6 -> 12 : 388800 -> 394880 KiB (+5.9 MiB pour 952 MiB envoyés = 0.6 % ; échauffement rafales 1 -> 6 : 107.8 MiB)
+PASS fin | RSS finale 357920 KiB (retenu +229.9 MiB pour 1942 MiB envoyés = 11.8 % ; 5600 MiB proposés) | journal 10 -> 10 lignes
+# LIMITES BC2 : 22/22 PASS, 0 FAIL
+http_body_limits_heap128_exit=0

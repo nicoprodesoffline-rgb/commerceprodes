@@ -1,0 +1,15 @@
+##### A2bis (remplace A2, dd no-op) : un bit inversé dans c0/fixtures/media/simple_family.png
+C0_VENDOR_DRIFT sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 divergences=1
+MODIFIED c0/fixtures/media/simple_family.png attendu=ed9aaaaa1debb1f00870b9b41636dc75b64eb0437ed9c58dcbb18047b73b41ec obtenu=a97ddacbf0ca701f976ae00c7
+exit=1
+##### A21 : un bit inversé dans documents/F_SIMPLE_READY/snapshot_s1.json
+C0_VENDOR_DRIFT sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 divergences=1
+MODIFIED c0/fixtures/documents/F_SIMPLE_READY/snapshot_s1.json attendu=1e5f7c78de8cac16ea8fec647be8fd20c48ca75d223aa399cdb35c8ba14829d2 obtenu=108e9d6
+exit=1
+##### A22 : copie d'un cas dans c0/fixtures/cases/dist/ (consommée par le runner TS, invisible pour check.mjs)
+C0_VENDOR_OK sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=b73f1968252785007b1e0b27af603e
+check_exit=0
+not ok 1 - every case matches its declared verdict and result digest; registry written
+# tests 9
+# pass 8
+# fail 1

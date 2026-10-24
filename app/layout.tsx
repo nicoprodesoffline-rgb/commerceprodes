@@ -1,78 +1,49 @@
-import { CartProvider } from "components/cart/cart-context";
-import { Navbar } from "components/layout/navbar";
-import { WelcomeToast } from "components/welcome-toast";
-import { CompareProvider } from "lib/compare/context";
-import CompareBar from "components/compare/compare-bar";
-import { WishlistProvider } from "lib/wishlist/context";
-import { QuoteProvider } from "lib/quote/context";
-import { WelcomeModal, BuyerBanner } from "components/onboarding/welcome-modal";
-import { PromoBanner } from "components/layout/promo-banner";
-import { MobileBottomNav } from "components/layout/mobile-bottom-nav";
-import { GeistSans } from "geist/font/sans";
-import { ReactNode } from "react";
-import { Toaster } from "sonner";
+import type { Metadata, Viewport } from "next";
+import { CartProvider } from "@/components/cart/cart-provider";
+import { SiteFooter } from "@/components/layout/footer";
+import { SiteHeader } from "@/components/layout/site-header";
+import { isForcedNow, serverNowUtc } from "@/lib/site-catalog/clock";
+import { catalogOrNull } from "@/lib/site-catalog/page";
 import "./globals.css";
-import { baseUrl } from "lib/utils";
 
-const { SITE_NAME } = process.env;
+// Toutes les pages sont rendues à la demande : génération servie et instant serveur lus au runtime.
+export const dynamic = "force-dynamic";
 
-export const metadata = {
-  metadataBase: new URL(baseUrl),
-  title: {
-    default: "PRODES — Équipements pour collectivités",
-    template: "%s | PRODES",
-  },
-  description:
-    "PRODES, spécialiste des équipements pour mairies, écoles et collectivités. 7 000+ références. Devis gratuit sous 24h.",
-  keywords: [
-    "équipements collectivités",
-    "mobilier urbain",
-    "devis gratuit",
-    "mandat administratif",
-    "mairie",
-    "école",
-    "signalisation",
-  ],
-  robots: {
-    follow: true,
-    index: true,
-  },
-  openGraph: {
-    siteName: "PRODES",
-    locale: "fr_FR",
-    type: "website",
-  },
+export const metadata: Metadata = {
+  title: { default: "Catalogue PRODES", template: "%s | PRODES" },
+  // Aucun SEO en W1 (scope verdict : SEO = décision propriétaire) : jamais indexé.
+  robots: { index: false, follow: false },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export const viewport: Viewport = { width: "device-width", initialScale: 1 };
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const catalog = await catalogOrNull();
+  let instant: string | null = null;
+  let forced = false;
+  try {
+    instant = serverNowUtc();
+    forced = isForcedNow();
+  } catch {
+    /* ConfigInvalid : les pages boutique sont servies en 503 par proxy.ts ; l'API refuse. */
+  }
+  const roots = catalog
+    ? catalog.categories
+        .filter((c) => c.parent_category_key === null)
+        .map((c) => ({ key: c.category_key, name: c.name, children: catalog.childCategories(c.category_key).map((s) => ({ key: s.category_key, name: s.name })) }))
+    : [];
   return (
-    <html lang="fr" className={GeistSans.variable} suppressHydrationWarning={true}>
-      <head>
-        <link rel="preconnect" href="https://mvnaeddtvyaqkdliivdk.supabase.co" />
-        <link rel="dns-prefetch" href="https://mvnaeddtvyaqkdliivdk.supabase.co" />
-      </head>
-      <body className="bg-white text-black selection:bg-red-100">
+    <html lang="fr">
+      <body className="flex min-h-screen flex-col">
+        <a href="#contenu" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-[9px] focus:bg-white focus:px-4 focus:py-2">
+          Aller au contenu
+        </a>
         <CartProvider>
-          <WishlistProvider>
-          <QuoteProvider>
-          <CompareProvider>
-            <Navbar />
-            <BuyerBanner />
-            <PromoBanner
-              text="Livraison incluse sur tous nos produits · Devis gratuit sous 24h"
-              active={true}
-            />
-            <main className="pb-16 md:pb-0">
-              {children}
-              <Toaster closeButton />
-              <WelcomeToast />
-              <WelcomeModal />
-            </main>
-            <CompareBar />
-            <MobileBottomNav />
-          </CompareProvider>
-          </QuoteProvider>
-          </WishlistProvider>
+          <SiteHeader dataLabel={catalog?.meta.data_label ?? null} categories={roots} />
+          <main id="contenu" tabIndex={-1} className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 lg:px-8 lg:py-8">
+            {children}
+          </main>
+          <SiteFooter meta={catalog?.meta ?? null} instantUtc={instant} forcedNow={forced} />
         </CartProvider>
       </body>
     </html>

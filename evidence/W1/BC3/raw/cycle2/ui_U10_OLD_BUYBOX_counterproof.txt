@@ -1,0 +1,180 @@
+# Contre-épreuve D-03 : U10 (tests/ui/storefront.ui.mjs) jouée avec l'ANCIEN components/product/family-buy-box.tsx (HEAD da601653), rebuild env -i, port 3368, base prodes_site_bc3c2_ui, Chromium 148, 2026-10-23T07:25:46Z
+# attendu : ÉCHEC — « Pour 3 … soit 12,00 € », « Pour 10 … soit 12,00 € », « Pour 8 … soit 84,00 € » (quantité nouvelle, total ancien)
+TAP version 13
+# \# Chromium 148.0.7778.96
+# \# serveur PID 30474 port 3368 base prodes_site_bc3c2_ui
+# Subtest: BC3 — recette navigateur (Chromium)
+    # Subtest: U10 — fiche (revue I1 D-03) : la quantité affichée n'est jamais accompagnée du prix ou du total d'une autre quantité
+    not ok 1 - U10 — fiche (revue I1 D-03) : la quantité affichée n'est jamais accompagnée du prix ou du total d'une autre quantité
+      ---
+      duration_ms: 3314.040875
+      type: 'test'
+      location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/ui/storefront.ui.mjs:531:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        prix ou total d'une autre quantité affiché dans la région aria-live
+        + actual - expected
+        
+        + [
+        +   {
+        +     busy: null,
+        +     input: '3',
+        +     quote_quantity: null,
+        +     state: null,
+        +     t: 1566,
+        +     text: "Pour 3 : 12,00 € (base fiscale non précisée) l'unité, soit 12,00 € pour la ligne."
+        +   },
+        +   {
+        +     busy: null,
+        +     input: '10',
+        +     quote_quantity: null,
+        +     state: null,
+        +     t: 1653,
+        +     text: "Pour 10 : 12,00 € (base fiscale non précisée) l'unité, soit 12,00 € pour la ligne."
+        +   },
+        +   {
+        +     busy: null,
+        +     input: '8',
+        +     quote_quantity: null,
+        +     state: null,
+        +     t: 2869,
+        +     text: "Pour 8 : 12,00 € (base fiscale non précisée) l'unité, soit 84,00 € pour la ligne."
+        +   },
+        +   {
+        +     busy: null,
+        +     input: '9',
+        +     quote_quantity: null,
+        +     state: null,
+        +     t: 2896,
+        +     text: "Pour 9 : 12,00 € (base fiscale non précisée) l'unité, soit 84,00 € pour la ligne."
+        +   }
+        + ]
+        - []
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual:
+        0:
+          t: 1566
+          input: '3'
+          state: ~
+          quote_quantity: ~
+          busy: ~
+          text: "Pour 3 : 12,00 € (base fiscale non précisée) l'unité, soit 12,00 € pour la ligne."
+        1:
+          t: 1653
+          input: '10'
+          state: ~
+          quote_quantity: ~
+          busy: ~
+          text: "Pour 10 : 12,00 € (base fiscale non précisée) l'unité, soit 12,00 € pour la ligne."
+        2:
+          t: 2869
+          input: '8'
+          state: ~
+          quote_quantity: ~
+          busy: ~
+          text: "Pour 8 : 12,00 € (base fiscale non précisée) l'unité, soit 84,00 € pour la ligne."
+        3:
+          t: 2896
+          input: '9'
+          state: ~
+          quote_quantity: ~
+          busy: ~
+          text: "Pour 9 : 12,00 € (base fiscale non précisée) l'unité, soit 84,00 € pour la ligne."
+      operator: 'deepStrictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///Users/nico/Desktop/prodes-w1/commerce-bc3/tests/ui/storefront.ui.mjs:585:12)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Promise.all (index 8)
+        async Suite.run (node:internal/test_runner/test:1442:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+# \# serveur PID 30474 arrêté
+    1..1
+not ok 1 - BC3 — recette navigateur (Chromium)
+  ---
+  duration_ms: 4322.233375
+  type: 'suite'
+  location: '/Users/nico/Desktop/prodes-w1/commerce-bc3/tests/ui/storefront.ui.mjs:169:1'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 1
+# suites 1
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4544.271875
+## trace brute
+[
+ {
+  "t": 1553,
+  "input": "1",
+  "state": null,
+  "quote_quantity": null,
+  "busy": null,
+  "text": "Pour 1 : 12,00 € (base fiscale non précisée) l'unité, soit 12,00 € pour la ligne."
+ },
+ {
+  "t": 1566,
+  "input": "3",
+  "state": null,
+  "quote_quantity": null,
+  "busy": null,
+  "text": "Pour 3 : 12,00 € (base fiscale non précisée) l'unité, soit 12,00 € pour la ligne."
+ },
+ {
+  "t": 1653,
+  "input": "10",
+  "state": null,
+  "quote_quantity": null,
+  "busy": null,
+  "text": "Pour 10 : 12,00 € (base fiscale non précisée) l'unité, soit 12,00 € pour la ligne."
+ },
+ {
+  "t": 1957,
+  "input": "10",
+  "state": null,
+  "quote_quantity": null,
+  "busy": null,
+  "text": "Prix pour 10 : vérification auprès du serveur…"
+ },
+ {
+  "t": 2061,
+  "input": "7",
+  "state": null,
+  "quote_quantity": null,
+  "busy": null,
+  "text": "Prix pour 7 : vérification auprès du serveur…"
+ },
+ {
+  "t": 2624,
+  "input": "7",
+  "state": null,
+  "quote_quantity": null,
+  "busy": null,
+  "text": "Pour 7 : 12,00 € (base fiscale non précisée) l'unité, soit 84,00 € pour la ligne."
+ },
+ {
+  "t": 2869,
+  "input": "8",
+  "state": null,
+  "quote_quantity": null,
+  "busy": null,
+  "text": "Pour 8 : 12,00 € (base fiscale non précisée) l'unité, soit 84,00 € pour la ligne."
+ },
+ {
+  "t": 2896,
+  "input": "9",
+  "state": null,
+  "quote_quantity": null,
+  "busy": null,
+  "text": "Pour 9 : 12,00 € (base fiscale non précisée) l'unité, soit 84,00 € pour la ligne."
+ }
+]

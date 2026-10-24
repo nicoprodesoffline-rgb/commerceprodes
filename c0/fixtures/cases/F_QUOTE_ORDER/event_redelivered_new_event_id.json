@@ -1,0 +1,20 @@
+{
+  "case_id": "F_QUOTE_ORDER.event_redelivered_new_event_id",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_event",
+  "input": {
+    "consumed": [
+      {
+        "event_id": "EVT-0000000001",
+        "event_type": "quote.requested",
+        "idempotency_key": "quote.requested:DEV-2026-000001",
+        "payload_digest": "9d4471ba671682cf16f92d78f3831dced4ffecb35883dd1acaaa15e070848bf5"
+      }
+    ],
+    "event": {
+      "$bytes": "documents/F_QUOTE_ORDER/event_quote_redelivered_new_id.json"
+    }
+  },
+  "notes": "Same business fact under a new event_id is a replay (seam semantics kept)",
+  "scenario": "F_QUOTE_ORDER"
+}

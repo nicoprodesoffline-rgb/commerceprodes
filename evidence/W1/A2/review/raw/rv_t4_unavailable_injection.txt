@@ -1,0 +1,94 @@
+source absente
+   / 500 « indisponible » dans HTML=false fuites=[] taille=9373
+   /famille 500 fuites=[]
+   preview 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"SOURCE_NOT_CONFIGURED","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   order 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"SOURCE_NOT_CONFIGURED","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   media 503 Catalogue indisponible | article 503 
+   journal serveur : ["[site-catalog] indisponible : SOURCE_NOT_CONFIGURED — SITE_CATALOG_SOURCE doit valoir « fixture » ou « db » (reçu : absent)","⨯ Error: CATALOG_UNAVAILABLE:SOURCE_NOT_CONFIGURED"]
+   --- HTML / (extrait, 600 o) ---
+<!DOCTYPE html><html id="__next_error__"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/1ckvzn7sfprko.js"/><script src="/_next/static/chunks/2r4s4h5xul1n-.js" async=""></script><script src="/_next/static/chunks/2gvu8dyrhibpa.js" async=""></script><script src="/_next/static/chunks/2e268anpfvdoc.js" async=""></script><script src="/_next/static/chunks/turbopack-3-ry682tkyiqk.js" async=""></script><meta name="robots" content="noindex"/><title>PRODES — catalogue STAGING_
+   --- texte visible sans script : "PRODES — catalogue STAGING_FIXTURE"
+source=FIXTURE (casse)
+   / 500 « indisponible » dans HTML=false fuites=[] taille=9373
+   /famille 500 fuites=[]
+   preview 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"SOURCE_NOT_CONFIGURED","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   order 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"SOURCE_NOT_CONFIGURED","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   media 503 Catalogue indisponible | article 503 
+   journal serveur : ["[site-catalog] indisponible : SOURCE_NOT_CONFIGURED — SITE_CATALOG_SOURCE doit valoir « fixture » ou « db » (reçu : \"FIXTURE\")","⨯ Error: CATALOG_UNAVAILABLE:SOURCE_NOT_CONFIGURED"]
+source=db
+   / 500 « indisponible » dans HTML=false fuites=[] taille=9372
+   /famille 500 fuites=[]
+   preview 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"DB_SOURCE_NOT_PROVIDED","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   order 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"DB_SOURCE_NOT_PROVIDED","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   media 503 Catalogue indisponible | article 503 
+   journal serveur : ["[site-catalog] indisponible : DB_SOURCE_NOT_PROVIDED — SITE_CATALOG_SOURCE=db : ActiveGenerationSource (BC2, lib/site-db/generation.ts) n'est pas encore fournie","⨯ Error: CATALOG_UNAVAILABLE:DB_SOURCE_NOT_PROVIDED"]
+fixture vide
+   / 500 « indisponible » dans HTML=false fuites=[] taille=9373
+   /famille 500 fuites=[]
+   preview 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   order 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   media 503 Catalogue indisponible | article 503 
+   journal serveur : ["[site-catalog] indisponible : FIXTURE_NAME_INVALID — SITE_CATALOG_FIXTURE doit nommer <SCÉNARIO>/<fichier>.json sous c0/fixtures/documents (reçu : \"\")","⨯ Error: CATALOG_UNAVAILABLE:FIXTURE_NAME_INVALID"]
+../../package.json
+   / 500 « indisponible » dans HTML=false fuites=[] taille=9373
+   /famille 500 fuites=[]
+   preview 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   order 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   media 503 Catalogue indisponible | article 503 
+   journal serveur : ["[site-catalog] indisponible : FIXTURE_NAME_INVALID — SITE_CATALOG_FIXTURE doit nommer <SCÉNARIO>/<fichier>.json sous c0/fixtures/documents (reçu : \"../../package.json\")","⨯ Error: CATALOG_UNAVAILABLE:FIXTURE_NAME_INVALID"]
+/etc/passwd
+   / 500 « indisponible » dans HTML=false fuites=[] taille=9373
+   /famille 500 fuites=[]
+   preview 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   order 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   media 503 Catalogue indisponible | article 503 
+   journal serveur : ["[site-catalog] indisponible : FIXTURE_NAME_INVALID — SITE_CATALOG_FIXTURE doit nommer <SCÉNARIO>/<fichier>.json sous c0/fixtures/documents (reçu : \"/etc/passwd\")","⨯ Error: CATALOG_UNAVAILABLE:FIXTURE_NAME_INVALID"]
+F_SELL_WINDOWS/../../../package.json
+   / 500 « indisponible » dans HTML=false fuites=[] taille=9373
+   /famille 500 fuites=[]
+   preview 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   order 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   media 503 Catalogue indisponible | article 503 
+   journal serveur : ["[site-catalog] indisponible : FIXTURE_NAME_INVALID — SITE_CATALOG_FIXTURE doit nommer <SCÉNARIO>/<fichier>.json sous c0/fixtures/documents (reçu : \"F_SELL_WINDOWS/../../../package.json\")","⨯ Error: CATALOG_UNAVAILABLE:FIXTURE_NAME_INVALID"]
+%2e%2e encodé
+   / 500 « indisponible » dans HTML=false fuites=[] taille=9373
+   /famille 500 fuites=[]
+   preview 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   order 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   media 503 Catalogue indisponible | article 503 
+   journal serveur : ["[site-catalog] indisponible : FIXTURE_NAME_INVALID — SITE_CATALOG_FIXTURE doit nommer <SCÉNARIO>/<fichier>.json sous c0/fixtures/documents (reçu : \"F_SELL_WINDOWS/%2e%2e%2fx.json\")","⨯ Error: CATALOG_UNAVAILABLE:FIXTURE_NAME_INVALID"]
+s7 + saut de ligne final
+   / 500 « indisponible » dans HTML=false fuites=[] taille=9373
+   /famille 500 fuites=[]
+   preview 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   order 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   media 503 Catalogue indisponible | article 503 
+   journal serveur : ["[site-catalog] indisponible : FIXTURE_NAME_INVALID — SITE_CATALOG_FIXTURE doit nommer <SCÉNARIO>/<fichier>.json sous c0/fixtures/documents (reçu : \"F_SELL_WINDOWS/snapshot_s7.json\\n\")","⨯ Error: CATALOG_UNAVAILABLE:FIXTURE_NAME_INVALID"]
+s7 + octet nul
+   / 500 « indisponible » dans HTML=false fuites=[] taille=9373
+   /famille 500 fuites=[]
+   preview 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   order 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NAME_INVALID","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   media 503 Catalogue indisponible | article 503 
+   journal serveur : ["[site-catalog] indisponible : FIXTURE_NAME_INVALID — SITE_CATALOG_FIXTURE doit nommer <SCÉNARIO>/<fichier>.json sous c0/fixtures/documents (reçu : \"F_SELL_WINDOWS/snapshot_s7.json\\u0001\")","⨯ Error: CATALOG_UNAVAILABLE:FIXTURE_NAME_INVALID"]
+fixture inexistante
+   / 500 « indisponible » dans HTML=false fuites=[] taille=9372
+   /famille 500 fuites=[]
+   preview 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NOT_FOUND","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   order 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"FIXTURE_NOT_FOUND","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   media 503 Catalogue indisponible | article 503 
+   journal serveur : ["[site-catalog] indisponible : FIXTURE_NOT_FOUND — Fixture introuvable : F_SELL_WINDOWS/missing.json","⨯ Error: CATALOG_UNAVAILABLE:FIXTURE_NOT_FOUND"]
+document non-snapshot (order_valid)
+   / 500 « indisponible » dans HTML=false fuites=[] taille=9373
+   /famille 500 fuites=[]
+   preview 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"SNAPSHOT_REFUSED","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   order 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"SNAPSHOT_REFUSED","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   media 503 Catalogue indisponible | article 503 
+   journal serveur : ["[site-catalog] indisponible : SNAPSHOT_REFUSED — F_QUOTE_ORDER/order_valid.json refusé par C0 : INTEGRITY_MISMATCH","⨯ Error: CATALOG_UNAVAILABLE:SNAPSHOT_REFUSED"]
+snapshot_overlap (cas exclu select_on_overlap)
+   / 500 « indisponible » dans HTML=false fuites=[] taille=9373
+   /famille 500 fuites=[]
+   preview 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"SNAPSHOT_REFUSED","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   order 503 {"site_status":"CATALOG_UNAVAILABLE","reason":"SNAPSHOT_REFUSED","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null}
+   media 503 Catalogue indisponible | article 503 
+   journal serveur : ["[site-catalog] indisponible : SNAPSHOT_REFUSED — F_SELL_WINDOWS/snapshot_overlap.json refusé par C0 : PRICE_WINDOW_OVERLAP","⨯ Error: CATALOG_UNAVAILABLE:SNAPSHOT_REFUSED"]

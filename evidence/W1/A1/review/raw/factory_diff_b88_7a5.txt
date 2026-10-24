@@ -1,0 +1,9 @@
+ c0/README.md                                       |   2 +-
+ docs/contracts/c0_public_identity_v1.md            |   2 +-
+ docs/contracts/c0_site_v1.md                       |   6 +-
+ evidence/WAVE0/BC0/FREEZE.md                       |  33 +++
+ evidence/WAVE0/BC0/review/REVIEW_INDEPENDENT.md    | 277 +++++++++++++++++++++
+ evidence/WAVE0/BC0/review/REVIEW_MANDATE.md        |  90 +++++++
+ .../BC0/review/orch_gf32_independent_check.py      |  45 ++++
+ tests/seams/guards.py                              |   2 +-
+ 8 files changed, 452 insertions(+), 5 deletions(-)

@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.float_integral",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/float_integral.json"
+    }
+  },
+  "notes": "1.0 is a float token even if integral",
+  "scenario": "C_CANONICAL"
+}

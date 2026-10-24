@@ -1,0 +1,31 @@
+# 2026-10-23T00:38:01Z HEAD c5dc9d0278337a8aaec9a8e8b7542a2189e915f7 reviewer (re-review) serveur PID 97117 port 3332
+rss_initiale=109MiB journal=10
+STAGE 100 MiB sans en-têtes (Content-Length) | codes=401 | rss_avant=109MiB pic=110MiB (+1 MiB) après=110MiB | journal +0 | corps={"accepted":false,"outcome":"REJECTED","operation":"STAGE","error_codes":["SIGNATURE_INVALID"],"stage":"transport_gate"}
+STAGE 100 MiB sans en-têtes (chunked) | codes=401 | rss_avant=110MiB pic=111MiB (+1 MiB) après=111MiB | journal +0 | corps={"accepted":false,"outcome":"REJECTED","operation":"STAGE","error_codes":["SIGNATURE_INVALID"],"stage":"transport_gate"}
+STAGE 100 MiB clé connue+signature 64hex, Content-Length | codes=413 | rss_avant=111MiB pic=112MiB (+0 MiB) après=112MiB | journal +0 | corps={"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"STAGE","transport_error":"BODY_TOO_LARGE","max_bytes":33554432,"error_codes":[]}
+STAGE 100 MiB clé connue+signature 64hex, chunked | codes=413 | rss_avant=112MiB pic=160MiB (+48 MiB) après=160MiB | journal +0 | corps={"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"STAGE","transport_error":"BODY_TOO_LARGE","max_bytes":33554432,"error_codes":[]}
+STAGE Content-Length menteur (annonce 10, envoie 100 MiB) | codes=400 | rss_avant=160MiB pic=160MiB (+0 MiB) après=160MiB | journal +1 | corps={"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"STAGE","transport_error":"BODY_TOO_LARGE","max_bytes":33554432,"error_codes":[]}
+VERIFY_MEDIA 100 MiB signé-format chunked | codes=413 | rss_avant=160MiB pic=160MiB (+0 MiB) après=160MiB | journal +0 | corps={"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"VERIFY_MEDIA","transport_error":"BODY_TOO_LARGE","max_bytes":262144,"error_codes":[]}
+ACTIVATE 100 MiB signé-format Content-Length | codes=413 | rss_avant=160MiB pic=160MiB (+0 MiB) après=160MiB | journal +0 | corps={"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"ACTIVATE","transport_error":"BODY_TOO_LARGE","max_bytes":262144,"error_codes":[]}
+PUT média 100 MiB signé-format chunked | codes=413 | rss_avant=160MiB pic=183MiB (+22 MiB) après=183MiB | journal +0 | corps={"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"MEDIA_PUT","transport_error":"BODY_TOO_LARGE","max_bytes":20971520,"error_codes":[]}
+PUT média 100 MiB sans en-têtes | codes=401 | rss_avant=183MiB pic=183MiB (+0 MiB) après=183MiB | journal +0 | corps={"accepted":false,"outcome":"REJECTED","operation":"MEDIA_PUT","error_codes":["SIGNATURE_INVALID"],"stage":"transport_gate"}
+4 x STAGE 300 MiB chunked parallèles (signé-format) — tour 1 | codes=413 413 413 413 | rss_avant=183MiB pic=293MiB (+110 MiB) après=293MiB | journal +0 | corps={"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"STAGE","transport_error":"BODY_TOO_LARGE","max_bytes":33554432,"error_codes":[]}
+4 x STAGE 300 MiB chunked parallèles (signé-format) — tour 2 | codes=413 413 413 413 | rss_avant=293MiB pic=334MiB (+41 MiB) après=334MiB | journal +0 | corps={"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"STAGE","transport_error":"BODY_TOO_LARGE","max_bytes":33554432,"error_codes":[]}
+4 x STAGE 300 MiB chunked parallèles (signé-format) — tour 3 | codes=413 413 413 413 | rss_avant=334MiB pic=345MiB (+11 MiB) après=345MiB | journal +0 | corps={"accepted":false,"outcome":"TRANSPORT_ERROR","operation":"STAGE","transport_error":"BODY_TOO_LARGE","max_bytes":33554432,"error_codes":[]}
+4 x STAGE 300 MiB sans en-têtes parallèles — tour 1 | codes=401 401 401 401 | rss_avant=345MiB pic=345MiB (+0 MiB) après=345MiB | journal +0 | corps={"accepted":false,"outcome":"REJECTED","operation":"STAGE","error_codes":["SIGNATURE_INVALID"],"stage":"transport_gate"}
+4 x STAGE 300 MiB sans en-têtes parallèles — tour 2 | codes=401 401 401 401 | rss_avant=345MiB pic=345MiB (+0 MiB) après=345MiB | journal +0 | corps={"accepted":false,"outcome":"REJECTED","operation":"STAGE","error_codes":["SIGNATURE_INVALID"],"stage":"transport_gate"}
+--- résiduel : clé publique connue + signature fausse + corps 30 MiB (< plafond) : lu en entier, refus C0 journalisé ?
+STAGE 30 MiB clé connue+signature fausse | codes=400 | rss_avant=345MiB pic=435MiB (+90 MiB) après=435MiB | journal +1 | corps={"accepted":false,"outcome":"REJECTED","error_codes":["PAYLOAD_MALFORMED"],"stage":"parse","detail":{},"operation":"STAGE"}
+8 x STAGE 30 MiB clé connue+signature fausse parallèles | codes=400 400 400 400 400 400 400 400 | rss_avant=435MiB pic=659MiB (+223 MiB) après=659MiB | journal +8 | corps={"accepted":false,"outcome":"REJECTED","error_codes":["PAYLOAD_MALFORMED"],"stage":"parse","detail":{},"operation":"STAGE"}
+rss_finale=659MiB ; serveur vivant=oui ; journal=20
+STAGE|REJECTED|["PAYLOAD_MALFORMED"]|parse|{"key_id": "c0-test-publish-02"}
+STAGE|REJECTED|["PAYLOAD_MALFORMED"]|parse|{"key_id": "c0-test-publish-02"}
+STAGE|REJECTED|["PAYLOAD_MALFORMED"]|parse|{"key_id": "c0-test-publish-02"}
+# résiduel 30 MiB clé connue + signature fausse, rafales de 8 (240 MiB/rafale)
+rafale 1 : rss 288 -> 665 MiB
+rafale 2 : rss 665 -> 718 MiB
+rafale 3 : rss 718 -> 721 MiB
+rafale 4 : rss 721 -> 695 MiB
+rafale 5 : rss 695 -> 728 MiB
+rafale 6 : rss 728 -> 699 MiB
+journal=68

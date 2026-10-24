@@ -1,0 +1,7 @@
+# SHA=5f0768ce5c957d0ffb6a30d2fcc3c0667facda3d 2026-10-23T07:27:39Z — npm run typecheck
+$ npm run typecheck
+
+> typecheck
+> tsc --noEmit
+
+exit=0

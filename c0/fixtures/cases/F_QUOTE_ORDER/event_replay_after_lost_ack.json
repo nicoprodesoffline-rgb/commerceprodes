@@ -1,0 +1,20 @@
+{
+  "case_id": "F_QUOTE_ORDER.event_replay_after_lost_ack",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_event",
+  "input": {
+    "consumed": [
+      {
+        "event_id": "EVT-0000000001",
+        "event_type": "quote.requested",
+        "idempotency_key": "quote.requested:DEV-2026-000001",
+        "payload_digest": "9d4471ba671682cf16f92d78f3831dced4ffecb35883dd1acaaa15e070848bf5"
+      }
+    ],
+    "event": {
+      "$bytes": "documents/F_QUOTE_ORDER/event_quote_requested.json"
+    }
+  },
+  "notes": "CE-T18: ACK lost, the same event comes back: no second effect",
+  "scenario": "F_QUOTE_ORDER"
+}

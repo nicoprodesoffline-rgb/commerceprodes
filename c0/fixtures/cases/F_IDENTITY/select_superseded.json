@@ -1,0 +1,21 @@
+{
+  "case_id": "F_IDENTITY.select_superseded",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_IDENTITY/snapshot_gen_c.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-10-22T12:00:00Z",
+    "public_item_key": "PI-000000JW3",
+    "quantity": 1,
+    "variant_axes": {
+      "modele": "D"
+    }
+  },
+  "notes": "Superseded key: refused and the canonical key is given",
+  "scenario": "F_IDENTITY"
+}

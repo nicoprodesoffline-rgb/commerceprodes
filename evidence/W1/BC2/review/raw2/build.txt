@@ -1,0 +1,37 @@
+# 2026-10-23T00:36:35Z HEAD c5dc9d0278337a8aaec9a8e8b7542a2189e915f7 reviewer (re-review) env -i build
+
+> build
+> next build
+
+▲ Next.js 16.4.2 (Turbopack)
+✓ Running next.config.ts took 1540ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.6s
+  Running TypeScript ...
+  Finished TypeScript in 1757ms ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/1) ...
+✓ Generating static pages using 11 workers (1/1) in 81ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/site/cart/preview
+├ ƒ /api/site/order
+├ ƒ /api/site/publish/activate
+├ ƒ /api/site/publish/media/[sha256]
+├ ƒ /api/site/publish/stage
+├ ƒ /api/site/publish/status
+├ ƒ /api/site/publish/verify-media
+├ ƒ /api/site/quote
+├ ƒ /categorie/[key]
+├ ƒ /famille/[slug]
+├ ƒ /media/[sha256]
+└ ƒ /panier
+
+
+ƒ  (Dynamic)  server-rendered on demand
+
+build_exit=0

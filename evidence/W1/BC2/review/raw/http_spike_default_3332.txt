@@ -1,0 +1,70 @@
+# 2026-10-23T00:10:48Z HEAD a9dede140b34cbf52dfc9288baccc876f5324d08 reviewer BASE_URL=http://127.0.0.1:3332 PHASE=default node spike/http-tests.mjs
+PASS | S05-q1 | PI-SIMPLE001 qty 1 | attendu: 200 RATE-PI-SIMPLE001-BASE-1 189.00 | obtenu: 200 RATE-PI-SIMPLE001-BASE-1 189.00
+PASS | S05-q9 | PI-SIMPLE001 qty 9 | attendu: 200 RATE-PI-SIMPLE001-BASE-1 189.00 | obtenu: 200 RATE-PI-SIMPLE001-BASE-1 189.00
+PASS | S05-q10 | PI-SIMPLE001 qty 10 | attendu: 200 RATE-PI-SIMPLE001-BASE-2 179.50 | obtenu: 200 RATE-PI-SIMPLE001-BASE-2 179.50
+PASS | S05-q19 | PI-SIMPLE001 qty 19 | attendu: 200 RATE-PI-SIMPLE001-BASE-2 179.50 | obtenu: 200 RATE-PI-SIMPLE001-BASE-2 179.50
+PASS | S05-q20 | PI-SIMPLE001 qty 20 | attendu: 200 RATE-PI-SIMPLE001-BASE-3 169.90 | obtenu: 200 RATE-PI-SIMPLE001-BASE-3 169.90
+PASS | S05-sum | somme exacte serveur (10×179.50 + 3×12.40 + 349.00) | attendu: 1795.00|37.20|349.00|2181.20 | obtenu: 1795.00|37.20|349.00|2181.20
+PASS | S05-type | unit_amount sérialisé en chaîne | attendu: string | obtenu: string
+PASS | S06-revalidate | lignes affichées → reçu avec les mêmes rate_id/montants | attendu: 200 + lignes identiques | obtenu: 200 same=true
+PASS | S06-requires-displayed | ligne sans rate_id/unit_amount affichés refusée | attendu: 400 INVALID_LINE | obtenu: 400 INVALID_LINE
+PASS | S06-no-cookie | aucun Set-Cookie (pas de cartId) sur preview/quote/panier/fiche | attendu: aucun | obtenu: aucun
+PASS | S06-no-second-cart | ancien panier serveur /api/cart/share absent | attendu: 404 | obtenu: 404
+PASS | S07-first | devis valide → reçu étiqueté SIMULATION | attendu: 200 + simulation:true + NONE_CONTRACTUAL_SIMULATION + receipt_id | obtenu: 200 label=true receipt=SIM-DEV-3afb16747a88c53b
+PASS | S07-replay | même clé + même payload → même reçu | attendu: 200 SIM-DEV-3afb16747a88c53b identique | obtenu: 200 SIM-DEV-3afb16747a88c53b identique=true
+PASS | S07-dup-diff | même clé + payload différent | attendu: 409 DUPLICATE_KEY_DIFFERENT_PAYLOAD | obtenu: 409 DUPLICATE_KEY_DIFFERENT_PAYLOAD
+PASS | S07-no-key | idempotency_key absente | attendu: 400 IDEMPOTENCY_KEY_REQUIRED | obtenu: 400 IDEMPOTENCY_KEY_REQUIRED
+PASS | S07-contact | contact minimal invalide | attendu: 400 INVALID_CONTACT | obtenu: 400 INVALID_CONTACT
+PASS | S07-refusal-not-stored | refus (PRICE_CHANGED) puis même clé valide | attendu: 409 puis 200 | obtenu: 409 puis 200
+PASS | S08-accepted | commande au montant affiché | attendu: 200 ORDER 189.00 + SIMULATION | obtenu: 200 ORDER 189.00 label=true
+PASS | S08-falsified | montant falsifié 1.00 | attendu: 409 PRICE_CHANGED | obtenu: 409 PRICE_CHANGED
+PASS | S08-stale-tier | qty 10 envoyée avec le palier 1-9 (189.00) | attendu: 409 PRICE_CHANGED (attendu 179.50) | obtenu: 409 PRICE_CHANGED 179.50
+PASS | S08-equal-amount-other-notation | 189 au lieu de 189.00 (même valeur) | attendu: 200 | obtenu: 200
+PASS | S08-forbidden | ESUNNY acrylique×400 | attendu: 400 INVALID_VARIANT FORBIDDEN_COMBINATION | obtenu: 400 INVALID_VARIANT FORBIDDEN_COMBINATION
+PASS | S08-absent | GMCE bleu/L (non publié) | attendu: 400 INVALID_VARIANT ABSENT_COMBINATION | obtenu: 400 INVALID_VARIANT ABSENT_COMBINATION
+PASS | S08-unknown-item | item inconnu | attendu: 400 INVALID_VARIANT | obtenu: 400 INVALID_VARIANT
+PASS | S08-no-window | quantité 0 (aucune fenêtre) | attendu: 409 PRICE_WINDOW_UNAVAILABLE | obtenu: 409 PRICE_WINDOW_UNAVAILABLE
+PASS | S08-fractional | quantité 1.5 | attendu: 400 INVALID_QUANTITY | obtenu: 400 INVALID_QUANTITY
+PASS | S08-partial-refused | 1 ligne valide + 1 falsifiée → aucun reçu | attendu: 409 sans receipt_id | obtenu: 409 receipt=undefined
+PASS | S08-bad-json | corps non JSON | attendu: 400 INVALID_REQUEST | obtenu: 400 INVALID_REQUEST
+PASS | S08-no-success-flag | aucune réponse ne contient "success" | attendu: 0 | obtenu: 0
+PASS | S03-promo-future | GMCE rouge/M qty 1 avant la promo | attendu: BASE RATE-PI-GMCE0001-BASE-1 12.40 | obtenu: BASE RATE-PI-GMCE0001-BASE-1 12.40
+PASS | S09-/admin | /admin GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/admin/login | /admin/login GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/admin/devis | /admin/devis GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/admin/devis/1 | /admin/devis/1 GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/admin/produits | /admin/produits GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/admin/catalogue | /admin/catalogue GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/admin/import | /admin/import GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/admin/auth | /api/admin/auth GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/admin/export-products | /api/admin/export-products GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/admin/products-list | /api/admin/products-list GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/admin/ia/categories-list | /api/admin/ia/categories-list GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/admin/paniers-abandonnes/1/recover | /api/admin/paniers-abandonnes/1/recover GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/admin/products/1 | /api/admin/products/1 GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/admin/devis/1 | /api/admin/devis/1 GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/admin/site-config | /api/admin/site-config GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/checkout | /api/checkout GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/checkout | /checkout GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/checkout/confirmation | /checkout/confirmation GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/checkout/bon-de-commande | /api/checkout/bon-de-commande GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/devis | /api/devis GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/devis-express | /api/devis-express GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/devis-express | /devis-express GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/devis-status/X | /api/devis-status/X GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/revalidate | /api/revalidate GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/track | /api/track GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/mes-commandes | /mes-commandes GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/mon-devis/X | /mon-devis/X GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/panier/abc | /panier/abc GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/cart/share | /api/cart/share GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/cart/abandon | /api/cart/abandon GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/cart | /cart GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/contact | /api/contact GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/search | /api/search GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/product-by-sku | /api/product-by-sku GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/products-by-handles | /api/products-by-handles GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+PASS | S09-/api/product-pdf/x | /api/product-pdf/x GET+POST (cookie forgé + Bearer) | attendu: 404/404 | obtenu: 404/404
+
+PHASE=default instant=2026-10-22T20:00:00.000Z : 66/66 PASS, 0 FAIL
+http_tests_exit=0

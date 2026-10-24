@@ -1,0 +1,146 @@
+
+> test:storefront
+> npm run bc2:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc3_test} SITE_TEST_PORT=${SITE_TEST_PORT:-3361} node --test --test-concurrency=1 tests/http/storefront.test.mjs
+
+
+> bc2:build
+> node -e "require('node:fs').rmSync('.bc2-build',{recursive:true,force:true})" && tsc -p tsconfig.bc2.json
+
+TAP version 13
+# \# serveur PID 16289 port 3361 base prodes_site_bc3_test
+# Subtest: BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver BC2, transactions BC4)
+    # Subtest: 0 — aucune génération : pages boutique 503 rendues côté serveur (HTML), /recu 200, API 503, rien de servi
+    ok 1 - 0 — aucune génération : pages boutique 503 rendues côté serveur (HTML), /recu 200, API 503, rien de servi
+      ---
+      duration_ms: 122.967416
+      type: 'test'
+      ...
+    # Subtest: 1 — F_SIMPLE_READY.activate_first (1 famille, 1 article, palier unique HT)
+        # Subtest: pages 200 / 404 / redirection relative, source db, séquence affichée
+        ok 1 - pages 200 / 404 / redirection relative, source db, séquence affichée
+          ---
+          duration_ms: 159.977
+          type: 'test'
+          ...
+        # Subtest: médias servis depuis site_media : octets = SHA-256 et taille déclarés, Content-Type déclaré ; non déclaré → 404
+        ok 2 - médias servis depuis site_media : octets = SHA-256 et taille déclarés, Content-Type déclaré ; non déclaré → 404
+          ---
+          duration_ms: 12.30375
+          type: 'test'
+          ...
+        # Subtest: en-têtes de sécurité : CSP à nonce appliqué aux scripts, HSTS seulement en HTTPS, nosniff, frame DENY
+        ok 3 - en-têtes de sécurité : CSP à nonce appliqué aux scripts, HSTS seulement en HTTPS, nosniff, frame DENY
+          ---
+          duration_ms: 29.625292
+          type: 'test'
+          ...
+        # Subtest: recherche serveur : nom, référence PI, requête HTML échappée, longueur bornée
+        ok 4 - recherche serveur : nom, référence PI, requête HTML échappée, longueur bornée
+          ---
+          duration_ms: 29.702084
+          type: 'test'
+          ...
+        # Subtest: cart/preview : palier publié, DUPLICATE_LINE, prix du navigateur refusé, corps > 256 Kio refusé
+        ok 5 - cart/preview : palier publié, DUPLICATE_LINE, prix du navigateur refusé, corps > 256 Kio refusé
+          ---
+          duration_ms: 17.253041
+          type: 'test'
+          ...
+        # Subtest: CSRF avant persistance : Content-Type absent/autre → 415, Origin ou Sec-Fetch-Site étrangers → 403, aucune ligne écrite
+        ok 6 - CSRF avant persistance : Content-Type absent/autre → 415, Origin ou Sec-Fetch-Site étrangers → 403, aucune ligne écrite
+          ---
+          duration_ms: 72.556125
+          type: 'test'
+          ...
+        # Subtest: validation des formulaires : champs manquants, trop longs, e-mail/téléphone invalides, injection → 4xx propres, rien écrit
+        ok 7 - validation des formulaires : champs manquants, trop longs, e-mail/téléphone invalides, injection → 4xx propres, rien écrit
+          ---
+          duration_ms: 104.956375
+          type: 'test'
+          ...
+        # Subtest: parcours complet : aperçu → devis RECEIVED persisté → commande RECEIVED persistée → reçus consultables (jeton une fois)
+        ok 8 - parcours complet : aperçu → devis RECEIVED persisté → commande RECEIVED persistée → reçus consultables (jeton une fois)
+          ---
+          duration_ms: 62.938041
+          type: 'test'
+          ...
+# \# 9 pages et 13 scripts inspectés
+        # Subtest: aucun secret, chemin local ou JARVIS dans le HTML ni dans le JS servis
+        ok 9 - aucun secret, chemin local ou JARVIS dans le HTML ni dans le JS servis
+          ---
+          duration_ms: 116.441042
+          type: 'test'
+          ...
+        # Subtest: 144 requêtes legacy → 404 : 36 chemins × GET/POST × (sans en-têtes | cookie forgé + Bearer)
+        ok 10 - 144 requêtes legacy → 404 : 36 chemins × GET/POST × (sans en-têtes | cookie forgé + Bearer)
+          ---
+          duration_ms: 812.766417
+          type: 'test'
+          ...
+        1..10
+    ok 2 - 1 — F_SIMPLE_READY.activate_first (1 famille, 1 article, palier unique HT)
+      ---
+      duration_ms: 1480.831375
+      type: 'suite'
+      ...
+    # Subtest: 2 — F_ESUNNY_FORBIDDEN.activate (3 combinaisons publiées sur 4 possibles)
+        # Subtest: variante interdite blanc + sol : INVALID_VARIANT à l'aperçu et à la commande, 0 ligne ; fiche sans produit cartésien
+        ok 1 - variante interdite blanc + sol : INVALID_VARIANT à l'aperçu et à la commande, 0 ligne ; fiche sans produit cartésien
+          ---
+          duration_ms: 25.743791
+          type: 'test'
+          ...
+        1..1
+    ok 3 - 2 — F_ESUNNY_FORBIDDEN.activate (3 combinaisons publiées sur 4 possibles)
+      ---
+      duration_ms: 133.760083
+      type: 'suite'
+      ...
+    # Subtest: 3 — F_IDENTITY : CART_STALE / CATALOG_CHANGED réels après activation d'une nouvelle génération par BC2, puis registre d'identité
+        # Subtest: panier composé sur la génération 1, génération 2 activée par BC2 → commande CART_STALE, devis chiffré CATALOG_CHANGED, 0 ligne
+        ok 1 - panier composé sur la génération 1, génération 2 activée par BC2 → commande CART_STALE, devis chiffré CATALOG_CHANGED, 0 ligne
+          ---
+          duration_ms: 72.026042
+          type: 'test'
+          ...
+        # Subtest: génération 3 : Item supplanté → 308 vers la canonique (relative) → fiche ; retiré → 410 ; panier → ITEM_SUPERSEDED/ITEM_RETIRED
+        ok 2 - génération 3 : Item supplanté → 308 vers la canonique (relative) → fiche ; retiré → 410 ; panier → ITEM_SUPERSEDED/ITEM_RETIRED
+          ---
+          duration_ms: 76.248542
+          type: 'test'
+          ...
+        # Subtest: média manquant/altéré dans site_media → /media 404 (jamais d'octets non vérifiés), fiche toujours servie
+        ok 3 - média manquant/altéré dans site_media → /media 404 (jamais d'octets non vérifiés), fiche toujours servie
+          ---
+          duration_ms: 20.92025
+          type: 'test'
+          ...
+        # Subtest: génération ACTIVE devenue UNSAFE (pointeur ≠ ligne) → pages 503, aperçu 503 CATALOG_UNSAFE, commande refusée, 0 ligne
+        ok 4 - génération ACTIVE devenue UNSAFE (pointeur ≠ ligne) → pages 503, aperçu 503 CATALOG_UNSAFE, commande refusée, 0 ligne
+          ---
+          duration_ms: 28.697166
+          type: 'test'
+          ...
+        1..4
+    ok 4 - 3 — F_IDENTITY : CART_STALE / CATALOG_CHANGED réels après activation d'une nouvelle génération par BC2, puis registre d'identité
+      ---
+      duration_ms: 283.757208
+      type: 'suite'
+      ...
+# \# serveur PID 16289 arrêté, port 3361 libre
+    1..4
+ok 1 - BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver BC2, transactions BC4)
+  ---
+  duration_ms: 2531.281042
+  type: 'suite'
+  ...
+1..1
+# tests 16
+# suites 4
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2601.548834
+exit=0

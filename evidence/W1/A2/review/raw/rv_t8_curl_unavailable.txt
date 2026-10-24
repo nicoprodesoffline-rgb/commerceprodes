@@ -1,0 +1,23 @@
+# PID 28936, SITE_CATALOG_SOURCE absent
+HTTP/1.1 500 Internal Server Error
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+Vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding
+Link: </logo-prodes.png>; rel=preload; as="image", </_next/static/chunks/0rl55982eropr.css>; rel=preload; as="style"
+Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate
+Content-Type: text/html; charset=utf-8
+Date: Fri, 23 Oct 2026 00:20:40 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+taille=    9373
+Catalogue indisponible dans HTML serveur : 0
+CATALOG_UNAVAILABLE dans HTML : 0
+digest : digest\":\"2050548240\"}
+19:[\"$\"
+texte visible sans JS :  
+
+famille 500
+panier 200
+lsof=1 (1 = libre)

@@ -1,0 +1,18 @@
+{
+  "case_id": "F_SIMPLE_READY.verify_ack_valid",
+  "data_label": "STAGING_FIXTURE",
+  "function": "verify_ack",
+  "input": {
+    "ack": {
+      "$doc": "documents/F_SIMPLE_READY/ack_s1.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "publication": {
+      "$doc": "documents/F_SIMPLE_READY/snapshot_s1.json"
+    }
+  },
+  "notes": "Factory checks the SITE ACK: activation_ack key, same seq/sha/ids, active_digest",
+  "scenario": "F_SIMPLE_READY"
+}

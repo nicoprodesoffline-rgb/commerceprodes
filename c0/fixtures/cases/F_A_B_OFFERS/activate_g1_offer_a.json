@@ -1,0 +1,40 @@
+{
+  "case_id": "F_A_B_OFFERS.activate_g1_offer_a",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/ab_family_301.png"
+        },
+        "sha256": "40e3747d97cd6308247bcaba8f9eea21526d352ff1b46cfea95808d5fb937a59"
+      },
+      {
+        "file": {
+          "$media": "media/ab_family_302.png"
+        },
+        "sha256": "7d724c26875d198059eefcd0e6e2fdbe2dd98685ce0a563c1edc5f6e521f6917"
+      }
+    ],
+    "now_utc": "2026-10-10T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_A_B_OFFERS/snapshot_g1_offer_a.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "f538eb742d0a1b91d9ab642e402bfcc19206a3e4f292ff2d8600505af7c6fb5e"
+    }
+  },
+  "notes": "Item 301 sold from preferred Offer A",
+  "scenario": "F_A_B_OFFERS"
+}

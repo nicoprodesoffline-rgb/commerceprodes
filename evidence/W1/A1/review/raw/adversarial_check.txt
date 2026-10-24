@@ -1,0 +1,87 @@
+
+##### A1 témoin intact
+C0_VENDOR_OK sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=b73f1968252785007b1e0b27af603e9bae6966d1527d0c6666bc93ac5e509c5d
+exit=0
+
+##### A2 un octet altéré dans une fixture PNG
+C0_VENDOR_OK sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=b73f1968252785007b1e0b27af603e9bae6966d1527d0c6666bc93ac5e509c5d
+exit=0
+
+##### A3 un octet altéré dans ts/src/signing.ts
+C0_VENDOR_DRIFT sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 divergences=1
+MODIFIED c0/ts/src/signing.ts attendu=39a0be5c776f30085a3dc9e9121c24b200c907775de64e7b49d96c77d58f63ed obtenu=079bb5bdcc261592f74c4a3db12f294196cef307255425d3ed398649277a4eff
+exit=1
+
+##### A4 fichier ajouté c0/ts/src/extra.ts
+C0_VENDOR_DRIFT sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 divergences=1
+ADDED c0/ts/src/extra.ts
+exit=1
+
+##### A5 fichier supprimé du dossier
+C0_VENDOR_DRIFT sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 divergences=1
+MISSING c0/fixtures/identity_vectors.json
+exit=1
+
+##### A6 clé supprimée du manifeste (files)
+C0_VENDOR_DRIFT tree_digest du manifeste incohérent avec son champ files
+exit=1
+
+##### A7 manifeste forgé de façon cohérente (fixture modifiée + files + tree_digest recalculés)
+C0_VENDOR_OK sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=831afe372ec22cae0056b1006e089cf8a48e226c1f00c7f8843dde191fe11a09
+exit=0
+
+##### A8 frozen_code_sha réécrit dans le manifeste (autre SHA valide)
+C0_VENDOR_OK sha=0000000000000000000000000000000000000001 files=452 tree_digest=b73f1968252785007b1e0b27af603e9bae6966d1527d0c6666bc93ac5e509c5d
+exit=0
+
+##### A9 fichier caché dans c0/ts/src/node_modules/ (exclusion à toute profondeur)
+C0_VENDOR_OK sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=b73f1968252785007b1e0b27af603e9bae6966d1527d0c6666bc93ac5e509c5d
+exit=0
+
+##### A10 fichier caché dans c0/fixtures/dist/
+C0_VENDOR_OK sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=b73f1968252785007b1e0b27af603e9bae6966d1527d0c6666bc93ac5e509c5d
+exit=0
+
+##### A11 lien symbolique ajouté
+C0_VENDOR_DRIFT sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 divergences=1
+UNSUPPORTED c0/fixtures/link.json
+exit=1
+
+##### A12 lien symbolique nommé dist
+C0_VENDOR_DRIFT sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 divergences=1
+UNSUPPORTED c0/ts/src/dist
+exit=1
+
+##### A13 dossier vide ajouté
+C0_VENDOR_OK sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=b73f1968252785007b1e0b27af603e9bae6966d1527d0c6666bc93ac5e509c5d
+exit=0
+
+##### A14 bit exécutable changé (chmod +x)
+C0_VENDOR_OK sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=b73f1968252785007b1e0b27af603e9bae6966d1527d0c6666bc93ac5e509c5d
+exit=0
+
+##### A15 manifeste supprimé
+C0_VENDOR_DRIFT manifeste absent : c0/C0_SOURCE.json
+exit=1
+
+##### A16 manifeste JSON invalide
+C0_VENDOR_DRIFT manifeste illisible : Expected property name or '}' in JSON at position 2 (line 2 column 1)
+exit=1
+
+##### A17 c0 entier est un lien symbolique vers une copie
+C0_VENDOR_OK sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=b73f1968252785007b1e0b27af603e9bae6966d1527d0c6666bc93ac5e509c5d
+exit=0
+
+##### A18 manifeste: frozen_code_identity.trees falsifié (40 hex quelconque)
+C0_VENDOR_OK sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 files=452 tree_digest=b73f1968252785007b1e0b27af603e9bae6966d1527d0c6666bc93ac5e509c5d
+exit=0
+
+##### A19 fichier ajouté nommé C0_SOURCE.json en sous-dossier
+C0_VENDOR_DRIFT sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 divergences=1
+ADDED c0/fixtures/C0_SOURCE.json
+exit=1
+
+##### A20 CRLF: fin de ligne convertie sur un fichier
+C0_VENDOR_DRIFT sha=b88f5cdf2ca64eca8de4d19c077262e11f9e7e54 divergences=1
+MODIFIED c0/ts/src/errors.ts attendu=68808227ffa719ff222dc9c3b9a17b98b5f72f2fbcff560fa501b11901415afc obtenu=dbef4b5af3a2343ed679ab22149814bc059f55eabe1f2984df09a7b00333c307
+exit=1

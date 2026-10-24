@@ -1,0 +1,13 @@
+{
+  "case_id": "F_QUOTE_ORDER.event_quote_requested",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_event",
+  "input": {
+    "consumed": [],
+    "event": {
+      "$bytes": "documents/F_QUOTE_ORDER/event_quote_requested.json"
+    }
+  },
+  "notes": "First poll: applied once, no PII in the payload",
+  "scenario": "F_QUOTE_ORDER"
+}

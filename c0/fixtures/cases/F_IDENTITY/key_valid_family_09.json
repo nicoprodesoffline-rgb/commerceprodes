@@ -1,0 +1,11 @@
+{
+  "case_id": "F_IDENTITY.key_valid_family_09",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_public_key",
+  "input": {
+    "namespace": "family",
+    "value": "PF-0000000ZT"
+  },
+  "notes": "ID-T01: sequence 31 encodes to PF-0000000ZT",
+  "scenario": "F_IDENTITY"
+}

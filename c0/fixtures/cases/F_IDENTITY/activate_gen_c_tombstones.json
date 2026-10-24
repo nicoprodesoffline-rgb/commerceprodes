@@ -1,0 +1,41 @@
+{
+  "case_id": "F_IDENTITY.activate_gen_c_tombstones",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/F_IDENTITY/ack_gen_b.json"
+      },
+      "snapshot": {
+        "$doc": "documents/F_IDENTITY/snapshot_gen_b.json"
+      }
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/identity_family_602.png"
+        },
+        "sha256": "ac403e49d737d1429e580e4f416d4eee8536f30d2b080e322b8db033f3fd3291"
+      }
+    ],
+    "now_utc": "2026-10-22T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_IDENTITY/snapshot_gen_c.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "a431817d187868ae86b357f93c8e832ec0431655562a3e4489b495cd10f2f9de"
+    }
+  },
+  "notes": "ID-T09 (DTO side): 604 SUPERSEDED by 603, 601 RETIRED; both tombstones published",
+  "scenario": "F_IDENTITY"
+}

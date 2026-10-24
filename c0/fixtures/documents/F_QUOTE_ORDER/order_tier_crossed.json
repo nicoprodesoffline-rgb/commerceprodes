@@ -1,0 +1,24 @@
+{
+  "catalogue_sequence": 7,
+  "contact": {
+    "contact_name": "STAGING_FIXTURE Contact",
+    "email": "achats@example.invalid",
+    "organisation_name": "STAGING_FIXTURE Mairie Exemple",
+    "phone": null
+  },
+  "contract_version": "site_business.v1",
+  "currency": "EUR",
+  "idempotency_key": "order:qo:0003",
+  "kind": "order",
+  "lines": [
+    {
+      "line_total": "120.00",
+      "public_item_key": "PI-000000CHJ",
+      "quantity": 10,
+      "rate_id": "R-401-B1",
+      "unit_amount": "12.00",
+      "variant_axes": {}
+    }
+  ],
+  "total_amount": "120.00"
+}
