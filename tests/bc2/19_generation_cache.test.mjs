@@ -200,6 +200,44 @@ for (const [name, transform] of Object.entries(MUTANTS)) {
   });
 }
 
+/** Âge non glissant : un lecteur toutes les 30 s pendant 6 min, l'âge court depuis la vérification, pas depuis le dernier usage. */
+async function continuousTrafficScenario(mod) {
+  let now = 1_000_000;
+  mod.resetGenerationCache();
+  mod.setGenerationCacheClock(() => now);
+  try {
+    await mod.getActiveGeneration(pool);
+    for (let i = 0; i < 12; i += 1) { now += 30_000; await mod.getActiveGeneration(pool); }
+    assert.equal(mod.generationCacheStats().full_loads, 2, "trafic continu pendant 6 min : une revérification complète a eu lieu (expiration non glissante)");
+  } finally {
+    mod.resetGenerationCache();
+  }
+}
+
+/** Réserve R1 (8f) : horloge murale reculée d'1 h après la vérification -> âge négatif = expiré, revérification complète. */
+async function clockGoesBackScenario(mod) {
+  let now = 1_000_000_000;
+  mod.resetGenerationCache();
+  mod.setGenerationCacheClock(() => now);
+  try {
+    await mod.getActiveGeneration(pool);
+    now -= 3_600_000;
+    const after = await mod.getActiveGeneration(pool);
+    assert.equal(after.status, "ACTIVE");
+    assert.equal(mod.generationCacheStats().full_loads, 2, "horloge reculée : âge négatif traité comme expiré (revérification complète)");
+  } finally {
+    mod.resetGenerationCache();
+  }
+}
+
+test("expiration NON glissante sous trafic continu (1 lecteur / 30 s pendant 6 min -> une revérification)", async () => {
+  await continuousTrafficScenario(siteDb);
+});
+
+test("[R1] horloge qui recule d'1 h : âge négatif = expiré, revérification complète", async () => {
+  await clockGoesBackScenario(siteDb);
+});
+
 // --- mutants des conditions de la relecture 8f --------------------------------------------------------------------------
 
 async function mutantModule(transform, fn) {
@@ -223,7 +261,7 @@ test("garde-fou discriminant : le mutant « résultat de load() non gelé » est
 
 test("garde-fou discriminant : le mutant « sans âge maximal » est refusé par le test d'âge", async () => {
   await mutantModule(
-    (src) => mutate(src, "hit", (l) => l.replace(/clock\(\) - verified\.at < [\w.]+/, "true")),
+    (src) => mutate(src, "hit", (l) => l.replace("isFresh(verified)", "true")),
     async (mutant) => {
       let now = 1_000_000;
       mutant.resetGenerationCache();
@@ -234,5 +272,19 @@ test("garde-fou discriminant : le mutant « sans âge maximal » est refusé par
       assert.equal(mutant.generationCacheStats().full_loads, 1, "le mutant ne relit PAS au-delà de 5 min (donc le test d'âge l'attrape)");
       mutant.resetGenerationCache();
     },
+  );
+});
+
+test("garde-fou discriminant : le mutant « âge négatif accepté » est refusé par le test d'horloge qui recule", async () => {
+  await mutantModule(
+    (src) => mutate(src, "age", (l) => l.replace("age >= 0 && ", "")),
+    (mutant) => assert.rejects(clockGoesBackScenario(mutant), (e) => e instanceof assert.AssertionError && /âge négatif traité comme expiré/.test(e.message)),
+  );
+});
+
+test("garde-fou discriminant : le mutant « expiration glissante » est refusé par le trafic continu", async () => {
+  await mutantModule(
+    (src) => mutate(src, "counthits", (l) => l.replace("stats.hits += 1;", "stats.hits += 1; verified.at = clock();")),
+    (mutant) => assert.rejects(continuousTrafficScenario(mutant), (e) => e instanceof assert.AssertionError && /expiration non glissante/.test(e.message)),
   );
 });

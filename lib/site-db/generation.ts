@@ -122,6 +122,16 @@ export function setGenerationCacheClock(now: () => number): void {
 }
 
 let verified: { key: string; value: ActiveGeneration; at: number } | null = null;
+
+/**
+ * Vérification encore valable : âge mesuré depuis la vérification complète (pas depuis le dernier usage), strictement
+ * inférieur à l'âge maximal. Un âge NÉGATIF (horloge murale reculée : NTP, réglage manuel) vaut expiré, jamais « récent »
+ * (réserve R1 de la contre-vérification 8f).
+ */
+function isFresh(entry: { at: number }): boolean {
+  const age = clock() - entry.at;
+  return age >= 0 && age < GENERATION_CACHE_MAX_AGE_MS; // MUTATION_POINT:age
+}
 const inflight = new Map<string, Promise<ActiveGeneration | null>>();
 const stats = { probes: 0, hits: 0, full_loads: 0 };
 
@@ -144,8 +154,8 @@ async function readActive(q: Queryable, lock: string): Promise<ActiveGeneration 
   const probe = (await q.query<ProbeRow>(`${SELECT_PROBE}${lock}`)).rows[0];
   stats.probes += 1;
   const key = probe === undefined ? null : cacheKey(probe);
-  if (key !== null && verified !== null && verified.key === key && clock() - verified.at < GENERATION_CACHE_MAX_AGE_MS) { // MUTATION_POINT:hit
-    stats.hits += 1;
+  if (key !== null && verified !== null && verified.key === key && isFresh(verified)) { // MUTATION_POINT:hit
+    stats.hits += 1; // MUTATION_POINT:counthits
     return verified.value;
   }
   const load = async (): Promise<ActiveGeneration | null> => {
