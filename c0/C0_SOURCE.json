@@ -1,7 +1,7 @@
 {
   "factory_repo": "nicoprodesoffline-rgb/prodes-data-factory-poc",
-  "frozen_code_sha": "b88f5cdf2ca64eca8de4d19c077262e11f9e7e54",
-  "archived_from_sha": "7a5ac0120d808c2f08d3be7d6f935eb8388afba8",
+  "frozen_code_sha": "f1cf9e277bd090a4e7947b39f2e3dd700eea9e42",
+  "archived_from_sha": "b69c41c7072bb0307d75d8ca15a415fd7ced6659",
   "archive_paths": [
     "c0/README.md",
     "c0/fixtures",
@@ -22,7 +22,7 @@
     "trees": {
       "c0/fixtures": "c2bf3496239b3e92e4a45f67ba55237495041208",
       "c0/python": "f2f0b1180424f9231469971e4f786ec38d8e70b0",
-      "c0/ts/src": "899b1af9b72ab2f7e191d58f48171ff892931a50",
+      "c0/ts/src": "b49a30044ca7a59038f89571c8f33d7669c00e11",
       "c0/ts/test": "64c20e6a54b307fb403a0f9c52b4aa3350e54f84"
     }
   },
@@ -34,9 +34,9 @@
   ],
   "tree_digest_rule": "sha256 de la concaténation triée (octets UTF-8 du chemin) de \"<chemin>\\t<sha256>\\n\"",
   "file_count": 452,
-  "tree_digest": "0a73d9c740906864629edba8e9b36c1a72493ce325053067b4b97ab4f05f478a",
+  "tree_digest": "b2e5505a9501cebaf0269ff44cd1bac70fb25c205f3eb5284a7a9e88712bcabb",
   "files": {
-    "c0/README.md": "0015d494f327ef888cc1209017b90729d48bb6066acc49bdaca29437de75014c",
+    "c0/README.md": "a7b85096908cf187610bfcc363e3ffd933d3d0d1430eba702c2ee103f961577a",
     "c0/fixtures/EXPECTED_DIGESTS.json": "3ce98725806a88e28c7e5b0193d1e692f70a37aed909414bd2b6a78cb7c749ba",
     "c0/fixtures/VERDICTS.json": "d350e3bd8425fd4c934151743d401efcbc212c8fdd376ad20278114debb00db6",
     "c0/fixtures/cases/C_CANONICAL/astral_key_order.json": "c4e7fea8f3b0c2d7bf59d8bde7e548c9520d97fd539c8af7c43536580ddc9e04",
@@ -488,16 +488,5 @@
     "c0/ts/test/parity.test.ts": "d671e87a11422f84a8e66d155eba407b8dc5857c7f3f624003d9fd7523a9d249",
     "c0/ts/test/units.test.ts": "e7a3d8a0b332843060cc7ccb55edaf97e058a0f2d8bbf37224826b2a63b29adc",
     "c0/ts/tsconfig.json": "370e57cd328b15c4f4bb44cae9267951d1758c5145d227460f872fdcf9c2adae"
-  },
-  "local_amendments": [
-    {
-      "id": "W6-P-selectPriceIn",
-      "decision": "Owner A14 (2026-10-27), « on suit ta reco » — evidence/W5W6/OWNER_ARBITRAGES_20261027.md",
-      "scope": "c0/ts/src/business.ts : ajout de selectPriceIn(gen: Generation, …) ; selectPrice = new Generation + selectPriceIn, calcul identique",
-      "file": "c0/ts/src/business.ts",
-      "sha256_before": "3d7399d716606a4d268e4c5dc82e89a6df0d55c851111568f93fd3b868ebe536",
-      "sha256_after": "1657fafa4b9a49aad57ded1d4d9ae2ddc216da9261d8941e7e365fb690b25b1e",
-      "note": "frozen_code_sha et frozen_code_identity décrivent le code gelé de la Factory (b88f5cdf), SANS cet ajout : la copie vendue s'en écarte de cette seule fonction jusqu'à ce que le même ajout soit porté dans c0/ts/src de la Factory puis resynchronisé"
-    }
-  ]
+  }
 }

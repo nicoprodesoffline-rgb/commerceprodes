@@ -2,7 +2,7 @@
 
 Le contrat Factory ↔ SITE **C0 v1** (`site_snapshot.v1`, `site_activation.v1`, `site_business.v1`,
 `site_events.v1`) a **une seule autorité** : le dépôt Factory `nicoprodesoffline-rgb/prodes-data-factory-poc`,
-code gelé au commit `b88f5cdf2ca64eca8de4d19c077262e11f9e7e54` (`C0_FROZEN` v1). Le dossier `c0/` de
+code gelé au commit `f1cf9e277bd090a4e7947b39f2e3dd700eea9e42` (`C0_FROZEN` v1, regel du 27/10/2026 : v1 de `b88f5cdf` + ajout `selectPriceIn` de l'arbitrage Owner A14, mêmes octets et verdicts). Le dossier `c0/` de
 Commerce en est une **copie vendue, épinglée au SHA**, jamais un fork.
 
 ## Pourquoi ce mécanisme
@@ -28,9 +28,9 @@ Contenu vendu : `c0/README.md`, `c0/fixtures/`, `c0/ts/src/`, `c0/ts/test/` et l
 compilation du jumeau (`c0/ts/package.json`, `c0/ts/tsconfig.json`, `c0/ts/package-lock.json`). Le Python et
 les outils de génération restent côté Factory.
 
-**Code gelé vs commit archivé.** `frozen_code_sha` (`b88f5cdf…`) est le code gelé ; `archived_from_sha` est le
-commit Factory réellement archivé (actuellement `7a5ac012…`, tête de PR #29, dont `c0/README.md` porte le statut
-`C0_FROZEN`). `sync.mjs` refuse (`C0_FROZEN_CODE_MISMATCH`, avant toute écriture) si `c0/python`, `c0/ts/src`,
+**Code gelé vs commit archivé.** `frozen_code_sha` (`f1cf9e27…`) est le code gelé ; `archived_from_sha` est le
+commit Factory réellement archivé (actuellement `b69c41c7…`, candidat W5+W6, dont `c0/README.md` porte le statut
+`C0_FROZEN` et le regel). `sync.mjs` refuse (`C0_FROZEN_CODE_MISMATCH`, avant toute écriture) si `c0/python`, `c0/ts/src`,
 `c0/ts/test` ou `c0/fixtures` n'ont pas le même objet tree git aux deux SHA, ou si `c0/ts/package.json`,
 `c0/ts/tsconfig.json`, `c0/ts/package-lock.json` n'ont pas le même blob ; les identifiants des quatre trees sont
 consignés dans `frozen_code_identity` du manifeste (les trois blobs de configuration sont vérifiés mais pas
@@ -57,7 +57,7 @@ npm run c0:check && npm run c0:build && npm run c0:test && npm run c0:vendor-tes
 commit postérieur au gel (docs seulement) : le code doit y être identique au `--frozen-sha`, sinon refus.
 Sans `--frozen-sha`, `frozen_code_sha = --sha` : c'est une déclaration de l'opérateur, bornée par les valeurs
 épinglées du test (à rendre obligatoire en v2). Commande de l'état actuel :
-`npm run c0:sync -- --factory <Factory> --sha 7a5ac0120d808c2f08d3be7d6f935eb8388afba8 --frozen-sha b88f5cdf2ca64eca8de4d19c077262e11f9e7e54`.
+`npm run c0:sync -- --factory <Factory> --sha b69c41c7072bb0307d75d8ca15a415fd7ced6659 --frozen-sha f1cf9e277bd090a4e7947b39f2e3dd700eea9e42`.
 Mettre ensuite à jour la constante attendue de `tests/c0/vendor.test.mjs` et `contract_version` dans
 `scripts/c0/lib.mjs`, comparer les deux registres de verdicts (SHA-256), et livrer le tout dans un commit
 dédié revu. Un SHA non gelé, une branche ou un working tree ne sont jamais des sources acceptables.

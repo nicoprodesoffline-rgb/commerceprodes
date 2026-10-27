@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const CHECK = join(ROOT, "scripts", "c0", "check.mjs");
 const SYNC = join(ROOT, "scripts", "c0", "sync.mjs");
-const FROZEN = "b88f5cdf2ca64eca8de4d19c077262e11f9e7e54";
+const FROZEN = "f1cf9e277bd090a4e7947b39f2e3dd700eea9e42";
 const TARGET = "c0/fixtures/VERDICTS.json";
 
 // Valeurs attendues ÉPINGLÉES (F-02) : elles ne changent que dans un commit de re-sync revu (nouvelle
@@ -20,15 +20,15 @@ const TARGET = "c0/fixtures/VERDICTS.json";
 const PINNED = {
   factory_repo: "nicoprodesoffline-rgb/prodes-data-factory-poc",
   frozen_code_sha: FROZEN,
-  archived_from_sha: "7a5ac0120d808c2f08d3be7d6f935eb8388afba8",
+  archived_from_sha: "b69c41c7072bb0307d75d8ca15a415fd7ced6659",
   file_count: 452,
-  // W6-P (Owner A14) : seul c0/ts/src/business.ts diffère du code gelé (ajout de selectPriceIn) ; voir local_amendments.
-  tree_digest: "0a73d9c740906864629edba8e9b36c1a72493ce325053067b4b97ab4f05f478a",
+  // Regel du 27/10 (fusion officielle W5+W6) : selectPriceIn (Owner A14) fait partie du code gelé, aucun amendement local.
+  tree_digest: "b2e5505a9501cebaf0269ff44cd1bac70fb25c205f3eb5284a7a9e88712bcabb",
   contract_version: ["site_snapshot.v1", "site_activation.v1", "site_business.v1", "site_events.v1"],
   trees: {
     "c0/fixtures": "c2bf3496239b3e92e4a45f67ba55237495041208",
     "c0/python": "f2f0b1180424f9231469971e4f786ec38d8e70b0",
-    "c0/ts/src": "899b1af9b72ab2f7e191d58f48171ff892931a50",
+    "c0/ts/src": "b49a30044ca7a59038f89571c8f33d7669c00e11",
     "c0/ts/test": "64c20e6a54b307fb403a0f9c52b4aa3350e54f84",
   },
 };
@@ -38,11 +38,8 @@ function assertPinned(manifest) {
     assert.equal(manifest[k], PINNED[k], k);
   }
   assert.deepEqual(manifest.contract_version, PINNED.contract_version);
-  // Levée ciblée du gel C0 (A14) : exactement UN amendement, sur UN fichier, empreinte avant = celle du code gelé.
-  assert.equal(manifest.local_amendments.length, 1);
-  assert.equal(manifest.local_amendments[0].id, "W6-P-selectPriceIn");
-  assert.equal(manifest.local_amendments[0].file, "c0/ts/src/business.ts");
-  assert.equal(manifest.local_amendments[0].sha256_before, "3d7399d716606a4d268e4c5dc82e89a6df0d55c851111568f93fd3b868ebe536");
+  // La copie vendue est exactement le code gelé : plus aucun amendement local.
+  assert.equal(manifest.local_amendments, undefined);
   assert.deepEqual(manifest.frozen_code_identity.paths, Object.keys(PINNED.trees));
   assert.deepEqual(manifest.frozen_code_identity.trees, PINNED.trees);
 }
@@ -115,7 +112,7 @@ test("(b) un drift simulé (octet modifié, fichier ajouté, dist/ ou node_modul
   }
 });
 
-test("(c) C0_SOURCE.json correspond aux valeurs épinglées (gel b88f5cdf…, archive 7a5ac012…, trees, tree_digest)", () => {
+test("(c) C0_SOURCE.json correspond aux valeurs épinglées (gel f1cf9e27…, archive b69c41c7…, trees, tree_digest)", () => {
   assertPinned(JSON.parse(readFileSync(join(ROOT, "c0", "C0_SOURCE.json"), "utf8")));
 });
 

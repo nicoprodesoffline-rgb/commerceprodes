@@ -1,6 +1,9 @@
 # C0 — contrats Factory ↔ SITE, deux implémentations et golden fixtures
 
 Statut : `C0_FROZEN` v1 (2026-10-23, code `b88f5cdf`, review indépendante `FREEZE_RECOMMENDED`) / `TESTED_SYNTHETIC`.
+**Regel du 2026-10-27 (fusion officielle W5+W6, GO Owner, issue #43)** : code gelé de référence = `f1cf9e277bd090a4e7947b39f2e3dd700eea9e42`.
+Seul écart avec `b88f5cdf` : l'ajout ciblé `selectPriceIn` dans `c0/ts/src/business.ts` (Owner A14), même calcul ; `c0/python`,
+`c0/ts/test` et `c0/fixtures` sont identiques (mêmes objets tree), versions de contrat inchangées (`site_*.v1`), parité 249 cas.
 Contrat normatif : [`docs/contracts/c0_site_v1.md`](../docs/contracts/c0_site_v1.md) et
 [`docs/contracts/c0_public_identity_v1.md`](../docs/contracts/c0_public_identity_v1.md).
 
