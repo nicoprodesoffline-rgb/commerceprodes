@@ -13,7 +13,8 @@
  * Le seul calcul est `unit_amount × quantity` et leur somme, en centimes BigInt (formats C0), pour
  * l'aperçu : EXCEPTION DOCUMENTÉE D-W1-08 (voir `previewCart`).
  */
-import { selectPrice, validateOrderSubmit, validateQuoteRequest, MAX_BYTES } from "@/c0/ts/src/business";
+import { validateOrderSubmit, validateQuoteRequest, MAX_BYTES } from "@/c0/ts/src/business";
+import { selectPriceOnServed } from "@/lib/site-db/select-price";
 import { centsToMoney, moneyCents } from "@/c0/ts/src/formats";
 import { MalformedPayload, hasDuplicateLines, isObject, parseBytes, type Json, type JsonObject } from "@/c0/ts/src/jsonc";
 
@@ -167,7 +168,7 @@ export function previewCart(input: Omit<Input, "register">): PreviewResponse {
   const codes = new Set<string>();
   let total = 0n;
   for (const line of lines) {
-    const r = selectPrice(input.generation, line["public_item_key"]!, line["variant_axes"]!, line["quantity"]!, input.nowUtc);
+    const r = selectPriceOnServed(input.generation, line["public_item_key"]!, line["variant_axes"]!, line["quantity"]!, input.nowUtc);
     for (const c of r.error_codes) codes.add(c);
     let lineTotal: string | null = null;
     if (r.accepted && r.selection) {

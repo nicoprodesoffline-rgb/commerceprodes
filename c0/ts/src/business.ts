@@ -89,7 +89,15 @@ function lookup(
 export type SelectResult = Verdict & { selection: JsonObject | null; superseded_by: Superseded };
 
 export function selectPrice(generation: Json, publicItemKey: Json, variantAxes: Json, quantity: Json, instantUtc: Json): SelectResult {
-  const gen = new Generation(generation);
+  return selectPriceIn(new Generation(generation), publicItemKey, variantAxes, quantity, instantUtc);
+}
+
+/**
+ * LEVÉE CIBLÉE DU GEL C0 (Owner A14, 2026-10-27, issue #43, lot W6-P) : le calcul de `selectPrice`, à l'identique,
+ * sur une `Generation` DÉJÀ construite (le constructeur valide la forme du document entier : coûteux sur un grand
+ * document, inutile à répéter pour une même génération vérifiée). `selectPrice` = `new Generation` + `selectPriceIn`.
+ */
+export function selectPriceIn(gen: Generation, publicItemKey: Json, variantAxes: Json, quantity: Json, instantUtc: Json): SelectResult {
   const superseded: Superseded = {};
   const stop = (codes: string[]): SelectResult => ({ ...rejected(codes), selection: null, superseded_by: superseded });
   if (gen.status === "UNSAFE") return stop(["CATALOG_UNSAFE"]);

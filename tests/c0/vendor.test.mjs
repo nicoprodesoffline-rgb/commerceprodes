@@ -22,7 +22,8 @@ const PINNED = {
   frozen_code_sha: FROZEN,
   archived_from_sha: "7a5ac0120d808c2f08d3be7d6f935eb8388afba8",
   file_count: 452,
-  tree_digest: "b73f1968252785007b1e0b27af603e9bae6966d1527d0c6666bc93ac5e509c5d",
+  // W6-P (Owner A14) : seul c0/ts/src/business.ts diffère du code gelé (ajout de selectPriceIn) ; voir local_amendments.
+  tree_digest: "0a73d9c740906864629edba8e9b36c1a72493ce325053067b4b97ab4f05f478a",
   contract_version: ["site_snapshot.v1", "site_activation.v1", "site_business.v1", "site_events.v1"],
   trees: {
     "c0/fixtures": "c2bf3496239b3e92e4a45f67ba55237495041208",
@@ -37,6 +38,11 @@ function assertPinned(manifest) {
     assert.equal(manifest[k], PINNED[k], k);
   }
   assert.deepEqual(manifest.contract_version, PINNED.contract_version);
+  // Levée ciblée du gel C0 (A14) : exactement UN amendement, sur UN fichier, empreinte avant = celle du code gelé.
+  assert.equal(manifest.local_amendments.length, 1);
+  assert.equal(manifest.local_amendments[0].id, "W6-P-selectPriceIn");
+  assert.equal(manifest.local_amendments[0].file, "c0/ts/src/business.ts");
+  assert.equal(manifest.local_amendments[0].sha256_before, "3d7399d716606a4d268e4c5dc82e89a6df0d55c851111568f93fd3b868ebe536");
   assert.deepEqual(manifest.frozen_code_identity.paths, Object.keys(PINNED.trees));
   assert.deepEqual(manifest.frozen_code_identity.trees, PINNED.trees);
 }

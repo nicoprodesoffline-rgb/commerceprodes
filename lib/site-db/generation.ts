@@ -17,6 +17,7 @@ import type { PoolClient } from "pg";
 import { isCanonical, parseBytes, type Json } from "../../c0/ts/src/jsonc";
 import { MAX_BYTES, payloadSha256, type Snapshot } from "../../c0/ts/src/snapshot";
 import { getPool, type Queryable } from "./pool";
+import { markVerified } from "./verified";
 
 export interface ActiveGeneration {
   generation_id: number;
@@ -141,6 +142,7 @@ async function readActive(q: Queryable, lock: string): Promise<ActiveGeneration 
     // Seul un document VÉRIFIÉ (ACTIVE) est conservé, avec la clé de la ligne réellement lue et vérifiée.
     if (active !== null && active.status === "ACTIVE" && active.snapshot !== null && fullKey !== null) {
       deepFreeze(active);
+      markVerified(active.snapshot);
       verified = { key: fullKey, value: active };
     } else {
       verified = null;

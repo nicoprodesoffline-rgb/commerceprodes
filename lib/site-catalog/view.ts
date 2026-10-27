@@ -4,7 +4,7 @@
  */
 import type { PriceGridRow } from "@/components/product/price-grid";
 import type { SelectorAxis } from "@/components/product/variant-selector";
-import { selectPrice } from "@/c0/ts/src/business";
+import { selectPriceOnServed } from "@/lib/site-db/select-price";
 import type { C0Generation } from "@/lib/site-business/validate";
 import type { Family, Item, PriceWindow } from "./catalog";
 
@@ -32,7 +32,7 @@ export function priceRows(generation: C0Generation, item: Item, nowUtc: string):
   const seen = new Set<string>();
   const rows: PriceGridRow[] = [];
   for (const tier of tiers) {
-    const r = selectPrice(generation, item.public_item_key, item.variant_axes, tier, nowUtc);
+    const r = selectPriceOnServed(generation, item.public_item_key, item.variant_axes, tier, nowUtc);
     const rateId = r.accepted && r.selection ? (r.selection["rate_id"] as string) : null;
     if (rateId !== null) {
       if (seen.has(rateId)) continue;

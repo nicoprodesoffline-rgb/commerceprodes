@@ -34,7 +34,7 @@
   ],
   "tree_digest_rule": "sha256 de la concaténation triée (octets UTF-8 du chemin) de \"<chemin>\\t<sha256>\\n\"",
   "file_count": 452,
-  "tree_digest": "b73f1968252785007b1e0b27af603e9bae6966d1527d0c6666bc93ac5e509c5d",
+  "tree_digest": "0a73d9c740906864629edba8e9b36c1a72493ce325053067b4b97ab4f05f478a",
   "files": {
     "c0/README.md": "0015d494f327ef888cc1209017b90729d48bb6066acc49bdaca29437de75014c",
     "c0/fixtures/EXPECTED_DIGESTS.json": "3ce98725806a88e28c7e5b0193d1e692f70a37aed909414bd2b6a78cb7c749ba",
@@ -475,7 +475,7 @@
     "c0/ts/package-lock.json": "3230f349bd665e8563d768bd2d4d240c3f8c6116f6966e4221de5cb58959f918",
     "c0/ts/package.json": "82983b6dddd63c51fbabfc4b3cb7aed41b7aa0d2917c5316d2ebc49831dead81",
     "c0/ts/src/activation.ts": "f051909903e9429b2e53c389a2e43701e011b4fff5f582da683c765e13b880cc",
-    "c0/ts/src/business.ts": "3d7399d716606a4d268e4c5dc82e89a6df0d55c851111568f93fd3b868ebe536",
+    "c0/ts/src/business.ts": "1657fafa4b9a49aad57ded1d4d9ae2ddc216da9261d8941e7e365fb690b25b1e",
     "c0/ts/src/errors.ts": "68808227ffa719ff222dc9c3b9a17b98b5f72f2fbcff560fa501b11901415afc",
     "c0/ts/src/events.ts": "69cf3f25e1bd66d0ea0ef532cf59b5ee5c6ad911f6e62062948f0faaed594ea8",
     "c0/ts/src/formats.ts": "86b23efef651e5259b8667d78b86a0ff8763cde1f501915e1f8aae45a139a720",
@@ -488,5 +488,16 @@
     "c0/ts/test/parity.test.ts": "d671e87a11422f84a8e66d155eba407b8dc5857c7f3f624003d9fd7523a9d249",
     "c0/ts/test/units.test.ts": "e7a3d8a0b332843060cc7ccb55edaf97e058a0f2d8bbf37224826b2a63b29adc",
     "c0/ts/tsconfig.json": "370e57cd328b15c4f4bb44cae9267951d1758c5145d227460f872fdcf9c2adae"
-  }
+  },
+  "local_amendments": [
+    {
+      "id": "W6-P-selectPriceIn",
+      "decision": "Owner A14 (2026-10-27), « on suit ta reco » — evidence/W5W6/OWNER_ARBITRAGES_20261027.md",
+      "scope": "c0/ts/src/business.ts : ajout de selectPriceIn(gen: Generation, …) ; selectPrice = new Generation + selectPriceIn, calcul identique",
+      "file": "c0/ts/src/business.ts",
+      "sha256_before": "3d7399d716606a4d268e4c5dc82e89a6df0d55c851111568f93fd3b868ebe536",
+      "sha256_after": "1657fafa4b9a49aad57ded1d4d9ae2ddc216da9261d8941e7e365fb690b25b1e",
+      "note": "frozen_code_sha et frozen_code_identity décrivent le code gelé de la Factory (b88f5cdf), SANS cet ajout : la copie vendue s'en écarte de cette seule fonction jusqu'à ce que le même ajout soit porté dans c0/ts/src de la Factory puis resynchronisé"
+    }
+  ]
 }
