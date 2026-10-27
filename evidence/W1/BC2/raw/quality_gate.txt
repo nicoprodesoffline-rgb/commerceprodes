@@ -1,0 +1,27 @@
+# 2026-10-23T00:05:53Z commit testé 0aa6bdc8c4dcbd7e7a0805e41912bc1515e86a4e node scripts/agent_ops/quality-gate.mjs
+# Commerce Agent Ops Quality Gate
+
+## Reasons
+- fallback
+
+## Recommended Commands
+- `node scripts/agent_ops/review-pack.mjs`
+
+## Changed Files
+- evidence/W1/BC2/raw/build.txt
+- evidence/W1/BC2/raw/c0_check.txt
+- evidence/W1/BC2/raw/c0_twin.txt
+- evidence/W1/BC2/raw/db_setup.txt
+- evidence/W1/BC2/raw/git_state.txt
+- evidence/W1/BC2/raw/http_bc2_3331.txt
+- evidence/W1/BC2/raw/http_db_after.txt
+- evidence/W1/BC2/raw/http_spike_default_3331.txt
+- evidence/W1/BC2/raw/http_spike_diff.txt
+- evidence/W1/BC2/raw/mutation_no_pointer_lock.txt
+- evidence/W1/BC2/raw/npm_ci.txt
+- evidence/W1/BC2/raw/quality_gate.txt
+- evidence/W1/BC2/raw/server_pid.txt
+- evidence/W1/BC2/raw/start_3331.txt
+- evidence/W1/BC2/raw/test_bc2.txt
+- evidence/W1/BC2/raw/typecheck.txt
+quality_gate_exit=0

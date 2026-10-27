@@ -1,0 +1,21 @@
+{
+  "catalogue_sequence": null,
+  "contact": {
+    "contact_name": "STAGING_FIXTURE Contact",
+    "email": "achats@example.invalid",
+    "organisation_name": "STAGING_FIXTURE Mairie Exemple",
+    "phone": null
+  },
+  "contract_version": "site_business.v1",
+  "idempotency_key": "quote:qo:0002",
+  "kind": "quote_request",
+  "lines": [
+    {
+      "displayed": null,
+      "public_item_key": "PI-000000CJS",
+      "quantity": 5,
+      "variant_axes": {}
+    }
+  ],
+  "message": "STAGING_FIXTURE Merci de nous adresser un devis."
+}

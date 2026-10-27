@@ -1,0 +1,41 @@
+{
+  "case_id": "F_FULL_CORRUPT.massive_withdrawal_unexplained",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/F_FULL_CORRUPT/ack_s10.json"
+      },
+      "snapshot": {
+        "$doc": "documents/F_FULL_CORRUPT/snapshot_s10_active.json"
+      }
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/full_family_1.png"
+        },
+        "sha256": "b0197f900b5f23c7b2cb19e8c1590c2f46a3e9c7117c1580f1711d625f59cd9d"
+      }
+    ],
+    "now_utc": "2026-10-20T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_FULL_CORRUPT/snapshot_massive_withdrawal_unexplained.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "c19a87771a859b8a70ef945bfce0300eb9ab89412193e702618a5704173f7cbf"
+    }
+  },
+  "notes": "Universe intact (20), 18 NON_READY, but no withdrawal listed: held",
+  "scenario": "F_FULL_CORRUPT"
+}

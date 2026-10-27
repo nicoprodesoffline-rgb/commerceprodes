@@ -1,0 +1,8 @@
+# diff spike/logs/http-tests-default.log (16.4.0, port 3311) vs run 3321
+12,13c12,13
+< PASS | S07-first | devis valide → reçu étiqueté SIMULATION | attendu: 200 + simulation:true + NONE_CONTRACTUAL_SIMULATION + receipt_id | obtenu: 200 label=true receipt=SIM-DEV-7a3f28400eac479d
+< PASS | S07-replay | même clé + même payload → même reçu | attendu: 200 SIM-DEV-7a3f28400eac479d identique | obtenu: 200 SIM-DEV-7a3f28400eac479d identique=true
+---
+> PASS | S07-first | devis valide → reçu étiqueté SIMULATION | attendu: 200 + simulation:true + NONE_CONTRACTUAL_SIMULATION + receipt_id | obtenu: 200 label=true receipt=SIM-DEV-de2aed5f305f97b9
+> PASS | S07-replay | même clé + même payload → même reçu | attendu: 200 SIM-DEV-de2aed5f305f97b9 identique | obtenu: 200 SIM-DEV-de2aed5f305f97b9 identique=true
+diff_exit=1

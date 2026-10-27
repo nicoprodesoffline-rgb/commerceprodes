@@ -1,0 +1,19 @@
+{
+  "case_id": "F_SELL_WINDOWS.select_quantity_zero",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_s7.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-10-20T06:00:00Z",
+    "public_item_key": "PI-000000CHJ",
+    "quantity": 0,
+    "variant_axes": {}
+  },
+  "notes": "Quantities are integers >= 1",
+  "scenario": "F_SELL_WINDOWS"
+}

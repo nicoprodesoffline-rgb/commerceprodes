@@ -1,0 +1,40 @@
+{
+  "case_id": "F_IDENTITY.bad_check_symbol_in_snapshot",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/identity_family_601.png"
+        },
+        "sha256": "240ed2d4d5ee99d13a4eb50f36e2ca4fb18168e6aadf3b2f86804a95301b9a99"
+      },
+      {
+        "file": {
+          "$media": "media/identity_family_602.png"
+        },
+        "sha256": "ac403e49d737d1429e580e4f416d4eee8536f30d2b080e322b8db033f3fd3291"
+      }
+    ],
+    "now_utc": "2026-10-20T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_IDENTITY/snapshot_bad_check_symbol.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "26edac7c2e0adeb87a62ec4eef1789560e56b1ae4564ada6c7d55b26e934e732"
+    }
+  },
+  "notes": "ID-T01: a key with a wrong check symbol is not a key",
+  "scenario": "F_IDENTITY"
+}

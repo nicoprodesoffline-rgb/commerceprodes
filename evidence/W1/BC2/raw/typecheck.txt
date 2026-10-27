@@ -1,0 +1,6 @@
+# 2026-10-23T00:32:39Z commit testé 522ed1df4002784c1e845c720fa9f615a10db9b5 node v22.23.1 npm 10.9.8 psql (PostgreSQL) 18.6 (Homebrew)
+
+> typecheck
+> tsc --noEmit
+
+typecheck_exit=0

@@ -1,0 +1,18 @@
+{
+  "case_id": "F_QUOTE_ORDER.poll_limit_zero",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_poll_request",
+  "input": {
+    "issued_cursors": [],
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "request": {
+      "credential_key_id": "c0-test-events-01",
+      "cursor": null,
+      "limit": 0
+    }
+  },
+  "notes": "Page size out of 1..500",
+  "scenario": "F_QUOTE_ORDER"
+}

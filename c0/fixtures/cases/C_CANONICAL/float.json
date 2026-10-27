@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.float",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/float.json"
+    }
+  },
+  "notes": "A number with a fraction is never accepted: amounts are strings",
+  "scenario": "C_CANONICAL"
+}

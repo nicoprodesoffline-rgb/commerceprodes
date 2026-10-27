@@ -1,0 +1,4 @@
+PASS | S08-before-windows | instant 2025-06-01 (avant toute fenêtre) | attendu: 409 PRICE_WINDOW_UNAVAILABLE | obtenu: 409 PRICE_WINDOW_UNAVAILABLE
+PASS | S08-before-ui | fiche affiche « Prix indisponible » | attendu: texte présent | obtenu: présent
+
+PHASE=before instant=2025-06-01T00:00:00.000Z : 2/2 PASS, 0 FAIL

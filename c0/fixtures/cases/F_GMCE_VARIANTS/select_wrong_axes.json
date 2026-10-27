@@ -1,0 +1,22 @@
+{
+  "case_id": "F_GMCE_VARIANTS.select_wrong_axes",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_GMCE_VARIANTS/snapshot_s1.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-10-20T12:00:00Z",
+    "public_item_key": "PI-000000363",
+    "quantity": 1,
+    "variant_axes": {
+      "couleur": "bleu",
+      "taille": "M"
+    }
+  },
+  "notes": "Axes that do not belong to this key",
+  "scenario": "F_GMCE_VARIANTS"
+}

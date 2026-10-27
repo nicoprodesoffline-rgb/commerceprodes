@@ -1,0 +1,5 @@
+# PID 25999 démarré {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_IDENTITY/snapshot_gen_c.json","SITE_NOW_UTC":"2026-10-22T12:00:00Z"}
+Host normal : /article/PI-000000JW3 (SUPERSEDED) → 308 loc=http://localhost:3342/article/PI-000000JVF ; /article/PI-000000JVF → 307 loc=http://localhost:3342/famille/chaise-pliante?article=PI-000000JVF ; /article/PI-000000JSY → 410 loc=undefined
+Host forgé : /article/PI-000000JW3 (SUPERSEDED) → 308 loc=http://localhost:3342/article/PI-000000JVF ; /article/PI-000000JVF → 307 loc=http://localhost:3342/famille/chaise-pliante?article=PI-000000JVF ; /article/PI-000000JSY → 410 loc=undefined
+X-Forwarded-Host forgé : /article/PI-000000JW3 (SUPERSEDED) → 308 loc=https://localhost:3342/article/PI-000000JVF ; /article/PI-000000JVF → 307 loc=https://localhost:3342/famille/chaise-pliante?article=PI-000000JVF ; /article/PI-000000JSY → 410 loc=undefined
+# PID 25999 arrêté, port libre=true

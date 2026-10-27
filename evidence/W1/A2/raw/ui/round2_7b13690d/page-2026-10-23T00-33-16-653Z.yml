@@ -1,0 +1,114 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]: STAGING_FIXTURE — catalogue PUB-F_SELL_WINDOWS-s7 · séquence 7 · source fixture · devis et commande validés SANS enregistrement · instant figé 2026-10-20T09:00:00Z
+    - navigation "Navigation principale" [ref=e4]:
+      - link "PRODES — Accueil" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "PRODES" [ref=e6]
+      - generic [ref=e7]:
+        - link "Catégories" [ref=e8] [cursor=pointer]:
+          - /url: /#categories
+        - link "Familles" [ref=e9] [cursor=pointer]:
+          - /url: /#familles
+        - link "Panier 10" [ref=e106] [cursor=pointer]:
+          - /url: /panier
+          - text: Panier
+          - generic [ref=e11]: "10"
+  - main [ref=e12]:
+    - generic [ref=e13]:
+      - navigation "Fil d'Ariane" [ref=e14]:
+        - link "Accueil" [ref=e16] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e17]:
+          - generic [aria-hidden] [ref=e18]: /
+          - link "STAGING_FIXTURE Signalétique" [ref=e19] [cursor=pointer]:
+            - /url: /categorie/signaletique
+        - generic [ref=e20]:
+          - generic [aria-hidden] [ref=e21]: /
+          - generic [ref=e22]: STAGING_FIXTURE Panneau à paliers
+      - generic [ref=e23]:
+        - img "Image principale de la famille STAGING_FIXTURE Panneau à paliers" [ref=e25]
+        - generic [ref=e26]:
+          - paragraph [ref=e27]: Famille PF-000000CHM
+          - heading "STAGING_FIXTURE Panneau à paliers" [level=1] [ref=e28]
+          - paragraph [ref=e29]: STAGING_FIXTURE — description courte de démonstration (Panneau à paliers).
+          - region [ref=e30]:
+            - heading "Article PI-000000CHJ" [level=2] [ref=e31]
+            - paragraph [ref=e32]: Variante unique
+            - paragraph [ref=e33]: "Pas d'image propre à cette variante : image de la famille ci-contre."
+            - generic [ref=e34]:
+              - heading "Tarifs par quantité (prix retenus par le serveur maintenant)" [level=3] [ref=e35]
+              - table [ref=e37]:
+                - rowgroup [ref=e38]:
+                  - row [ref=e39]:
+                    - columnheader "Quantité" [ref=e40]
+                    - columnheader "Prix unitaire" [ref=e41]
+                    - columnheader "Validité" [ref=e42]
+                - rowgroup [ref=e43]:
+                  - row [ref=e44]:
+                    - cell "1 à 9" [ref=e45]
+                    - cell "12,00 € HT" [ref=e46]
+                    - cell "du 30/03/2026 00:00 (Paris) au 25/10/2026 00:00 (Paris) exclu R-401-B1" [ref=e47]:
+                      - text: du 30/03/2026 00:00 (Paris) au 25/10/2026 00:00 (Paris) exclu
+                      - generic [ref=e48]: R-401-B1
+                  - row [ref=e49]:
+                    - cell "10 à 19" [ref=e50]
+                    - cell "11,00 € HT" [ref=e51]
+                    - cell "du 01/01/2026 01:00 (Paris) au 01/01/2027 01:00 (Paris) exclu R-401-T10" [ref=e52]:
+                      - text: du 01/01/2026 01:00 (Paris) au 01/01/2027 01:00 (Paris) exclu
+                      - generic [ref=e53]: R-401-T10
+                  - row [ref=e54]:
+                    - cell "20 et plus" [ref=e55]
+                    - cell "10,00 € HT" [ref=e56]
+                    - cell "du 01/01/2026 01:00 (Paris) au 01/01/2027 01:00 (Paris) exclu R-401-T20" [ref=e57]:
+                      - text: du 01/01/2026 01:00 (Paris) au 01/01/2027 01:00 (Paris) exclu
+                      - generic [ref=e58]: R-401-T20
+              - paragraph [ref=e59]: "Prix unitaire tel que publié (base indiquée : HT ou non qualifiée) — aucune TVA, aucun port, aucune remise calculés."
+            - generic [ref=e60]:
+              - generic [ref=e61]:
+                - text: Quantité
+                - spinbutton "Quantité" [ref=e62]: "5"
+              - button "Ajouter au panier" [ref=e63]
+            - status [ref=e105]: "Ajouté au panier — prix retenu par le serveur : 12,00 € HT (R-401-B1)."
+          - region [ref=e64]:
+            - heading "Description" [level=2] [ref=e65]
+            - paragraph [ref=e66]: STAGING_FIXTURE — description longue de démonstration. Données synthétiques, aucune donnée fournisseur réelle (Panneau à paliers).
+          - paragraph [ref=e67]:
+            - text: "Provenance des prix : génération PUB-F_SELL_WINDOWS-s7 / PRJ-F_SELL_WINDOWS-s7, séquence 7 (STAGING_FIXTURE), payload_sha256"
+            - generic [ref=e68]: 4a078aa5be8f…
+            - text: ", instant serveur 2026-10-20T09:00:00Z. Le prix retenu pour une quantité est sélectionné par le serveur (C0 selectPrice), jamais calculé."
+  - contentinfo [ref=e69]:
+    - generic [ref=e71]:
+      - generic [ref=e72]:
+        - link "PRODES — Accueil" [ref=e73] [cursor=pointer]:
+          - /url: /
+          - img "PRODES" [ref=e74]
+        - paragraph [ref=e75]: Au service des Collectivités
+        - paragraph [ref=e76]: Mobilier, signalisation et équipements pour les organismes publics.
+      - generic [ref=e77]:
+        - heading "Liens rapides" [level=3] [ref=e78]
+        - list [ref=e79]:
+          - listitem [ref=e80]:
+            - link "Catalogue" [ref=e81] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e82]:
+            - link "Panier" [ref=e83] [cursor=pointer]:
+              - /url: /panier
+      - generic [ref=e84]:
+        - heading "Nous contacter" [level=3] [ref=e85]
+        - list [ref=e86]:
+          - listitem [ref=e87]:
+            - generic [ref=e88]: 📞
+            - link "04 67 24 30 34" [ref=e90] [cursor=pointer]:
+              - /url: tel:+33467243034
+          - listitem [ref=e91]:
+            - generic [ref=e92]: ✉️
+            - link "contact@prodes.fr" [ref=e94] [cursor=pointer]:
+              - /url: mailto:contact@prodes.fr
+          - listitem [ref=e95]:
+            - generic [ref=e96]: 🕐
+            - paragraph [ref=e98]: Lun–Sam 8h30–19h
+    - generic [ref=e100]:
+      - paragraph [ref=e101]: © 2026 PRODES — prix publiés (HT ou base non qualifiée) — TVA et port non calculés
+      - paragraph [ref=e102]: Marque PRODES — France
+  - alert [ref=e103]

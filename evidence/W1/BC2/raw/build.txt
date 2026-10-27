@@ -1,0 +1,38 @@
+# 2026-10-23T00:32:39Z commit testé 522ed1df4002784c1e845c720fa9f615a10db9b5 node v22.23.1 npm 10.9.8 psql (PostgreSQL) 18.6 (Homebrew)
+# commande: env -i PATH HOME NEXT_TELEMETRY_DISABLED=1 npm run build (aucune variable SITE_*)
+
+> build
+> next build
+
+▲ Next.js 16.4.2 (Turbopack)
+✓ Running next.config.ts took 898ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.3s
+  Running TypeScript ...
+  Finished TypeScript in 1373ms ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/1) ...
+✓ Generating static pages using 11 workers (1/1) in 67ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/site/cart/preview
+├ ƒ /api/site/order
+├ ƒ /api/site/publish/activate
+├ ƒ /api/site/publish/media/[sha256]
+├ ƒ /api/site/publish/stage
+├ ƒ /api/site/publish/status
+├ ƒ /api/site/publish/verify-media
+├ ƒ /api/site/quote
+├ ƒ /categorie/[key]
+├ ƒ /famille/[slug]
+├ ƒ /media/[sha256]
+└ ƒ /panier
+
+
+ƒ  (Dynamic)  server-rendered on demand
+
+build_exit=0

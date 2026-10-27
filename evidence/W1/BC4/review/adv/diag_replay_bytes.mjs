@@ -1,0 +1,14 @@
+import { activate, businessCase, newPool, resetDb, submit } from "/Users/nico/Desktop/prodes-w1/review-bc4/tests/bc4/helpers.mjs";
+await resetDb(); const pool = newPool(); await activate(pool, "F_SELL_WINDOWS.activate");
+const c = businessCase("F_QUOTE_ORDER.order_valid");
+const a = await submit(pool, "order", c.bytes, c.now); const b = await submit(pool, "order", c.bytes, c.now);
+const strip = (j) => { const { access_token, outcome, ...rest } = j; return rest; };
+const A = JSON.stringify(strip(a.body)), B = JSON.stringify(strip(b.body));
+console.log("bytes_equal", A === B);
+const canon = (o) => JSON.stringify(o, (k, v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort()) : v));
+console.log("semantic_equal", canon(strip(a.body)) === canon(strip(b.body)));
+console.log("RECEIVED.receipt keys", Object.keys(a.body.receipt).join(","));
+console.log("REPLAY.receipt keys  ", Object.keys(b.body.receipt).join(","));
+console.log("RECEIVED.line0 keys", Object.keys(a.body.lines[0]).join(","));
+console.log("REPLAY.line0 keys  ", Object.keys(b.body.lines[0]).join(","));
+await pool.end();

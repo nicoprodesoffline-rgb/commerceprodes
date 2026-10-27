@@ -1,0 +1,18 @@
+{
+  "case_id": "F_SIMPLE_READY.verify_ack_other_publication",
+  "data_label": "STAGING_FIXTURE",
+  "function": "verify_ack",
+  "input": {
+    "ack": {
+      "$doc": "documents/F_SIMPLE_READY/ack_other_sequence.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "publication": {
+      "$doc": "documents/F_SIMPLE_READY/snapshot_s1.json"
+    }
+  },
+  "notes": "Genuine signature but for another sequence",
+  "scenario": "F_SIMPLE_READY"
+}

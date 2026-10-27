@@ -1,0 +1,849 @@
+# Commerce HEAD ff3d188ed923db8c83bebec0567a24d769652479 (code = 40231952 : diff hors docs/evidence vide) ; commande : npm run test:http ; SITE_TEST_PORT=3384 ; build .next au même HEAD (npm run build exit 0) ; Node v22.23.1 ; 2026-10-23T16:00:47Z
+
+> test:http
+> node --test tests/http/site.test.mjs
+
+TAP version 13
+# \# serveur PID 83674 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-20T09:00:00Z"}
+# Subtest: A — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-20T09:00:00Z
+    # Subtest: pages 200 : accueil, catégories (parent et feuille), familles, panier — fixture snapshot_s7
+    ok 1 - pages 200 : accueil, catégories (parent et feuille), familles, panier — fixture snapshot_s7
+      ---
+      duration_ms: 119.620208
+      type: 'test'
+      ...
+    # Subtest: fiche Famille : grille = une sélection selectPrice par palier publié, ordre du DTO (revue F-04) — snapshot_s7 PI-000000CHJ, PI-000000CJS
+    ok 2 - fiche Famille : grille = une sélection selectPrice par palier publié, ordre du DTO (revue F-04) — snapshot_s7 PI-000000CHJ, PI-000000CJS
+      ---
+      duration_ms: 43.399084
+      type: 'test'
+      ...
+    # Subtest: médias : octets servis = SHA-256 et taille déclarés, bon Content-Type — snapshot_s7 media_refs
+    ok 3 - médias : octets servis = SHA-256 et taille déclarés, bon Content-Type — snapshot_s7 media_refs
+      ---
+      duration_ms: 18.892042
+      type: 'test'
+      ...
+    # Subtest: cart/preview : paliers 1–9 / 10–19 / 20+ par selectPrice — cas F_SELL_WINDOWS.select_qty{1,9,10,19,20}_now (même fenêtres à 09:00Z)
+    ok 4 - cart/preview : paliers 1–9 / 10–19 / 20+ par selectPrice — cas F_SELL_WINDOWS.select_qty{1,9,10,19,20}_now (même fenêtres à 09:00Z)
+      ---
+      duration_ms: 19.254333
+      type: 'test'
+      ...
+    # Subtest: cart/preview : franchissement exact des seuils 10 et 20 (CE-T02) — snapshot_s7 PI-000000CHJ
+    ok 5 - cart/preview : franchissement exact des seuils 10 et 20 (CE-T02) — snapshot_s7 PI-000000CHJ
+      ---
+      duration_ms: 13.765583
+      type: 'test'
+      ...
+    # Subtest: DUPLICATE_LINE : 5 + 5 refusé, 10 en une ligne → palier 10 (C1, R-01) — cas F_QUOTE_ORDER.order_duplicate_lines_tier_bypass
+    ok 6 - DUPLICATE_LINE : 5 + 5 refusé, 10 en une ligne → palier 10 (C1, R-01) — cas F_QUOTE_ORDER.order_duplicate_lines_tier_bypass
+      ---
+      duration_ms: 24.059125
+      type: 'test'
+      ...
+    # Subtest: commande valide : verdict C0 RECEIVED mais NONE_UNTIL_BC4, jamais durable ni rejouée — cas F_QUOTE_ORDER.order_valid
+    ok 7 - commande valide : verdict C0 RECEIVED mais NONE_UNTIL_BC4, jamais durable ni rejouée — cas F_QUOTE_ORDER.order_valid
+      ---
+      duration_ms: 6.151416
+      type: 'test'
+      ...
+    # Subtest: bout en bout : aperçu → commande des lignes affichées acceptée ; montant falsifié → PRICE_CHANGED — snapshot_s7
+    ok 8 - bout en bout : aperçu → commande des lignes affichées acceptée ; montant falsifié → PRICE_CHANGED — snapshot_s7
+      ---
+      duration_ms: 9.726542
+      type: 'test'
+      ...
+    # Subtest: PRICE_CHANGED : montant falsifié et palier franchi — cas F_QUOTE_ORDER.order_falsified_amount, order_tier_crossed
+    ok 9 - PRICE_CHANGED : montant falsifié et palier franchi — cas F_QUOTE_ORDER.order_falsified_amount, order_tier_crossed
+      ---
+      duration_ms: 12.680334
+      type: 'test'
+      ...
+    # Subtest: CART_STALE / CATALOG_CHANGED : génération portée par le panier ≠ génération servie (CE-T12) — cas F_QUOTE_ORDER.order_stale_generation, quote_stale_generation
+    ok 10 - CART_STALE / CATALOG_CHANGED : génération portée par le panier ≠ génération servie (CE-T12) — cas F_QUOTE_ORDER.order_stale_generation, quote_stale_generation
+      ---
+      duration_ms: 13.353458
+      type: 'test'
+      ...
+    # Subtest: devis non chiffré : aucune fenêtre pour 5 Potelets maintenant → ligne priced:false, commande refusée — cas F_QUOTE_ORDER.quote_unpriced_no_window
+    ok 11 - devis non chiffré : aucune fenêtre pour 5 Potelets maintenant → ligne priced:false, commande refusée — cas F_QUOTE_ORDER.quote_unpriced_no_window
+      ---
+      duration_ms: 13.4215
+      type: 'test'
+      ...
+    # Subtest: PAYLOAD_MALFORMED : non-JSON, flottant, BOM, clé dupliquée, > 256 Kio — cas F_QUOTE_ORDER.order_float_amount
+    ok 12 - PAYLOAD_MALFORMED : non-JSON, flottant, BOM, clé dupliquée, > 256 Kio — cas F_QUOTE_ORDER.order_float_amount
+      ---
+      duration_ms: 50.339
+      type: 'test'
+      ...
+    # Subtest: INVALID_DATA : clé de taxe / port / statut envoyée par le client, prix navigateur dans l'aperçu — cas F_QUOTE_ORDER.order_client_sets_tax
+    ok 13 - INVALID_DATA : clé de taxe / port / statut envoyée par le client, prix navigateur dans l'aperçu — cas F_QUOTE_ORDER.order_client_sets_tax
+      ---
+      duration_ms: 22.83075
+      type: 'test'
+      ...
+    # Subtest: aucun Set-Cookie, aucun champ "success" sur pages et routes
+    ok 14 - aucun Set-Cookie, aucun champ "success" sur pages et routes
+      ---
+      duration_ms: 26.088625
+      type: 'test'
+      ...
+    # Subtest: 144 requêtes legacy → 404 : 36 chemins du spike × GET/POST × (sans en-têtes | cookie forgé + Bearer) — spike/http-tests.mjs S09
+    ok 15 - 144 requêtes legacy → 404 : 36 chemins du spike × GET/POST × (sans en-têtes | cookie forgé + Bearer) — spike/http-tests.mjs S09
+      ---
+      duration_ms: 686.130458
+      type: 'test'
+      ...
+# \# serveur PID 83674 arrêté
+    1..15
+ok 1 - A — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-20T09:00:00Z
+  ---
+  duration_ms: 1576.75525
+  type: 'suite'
+  ...
+# \# serveur PID 83695 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_ESUNNY_FORBIDDEN/snapshot_s1.json","SITE_NOW_UTC":"2026-10-20T12:00:00Z"}
+# Subtest: B — F_ESUNNY_FORBIDDEN/snapshot_s1.json @ 2026-10-20T12:00:00Z
+    # Subtest: INVALID_VARIANT : blanc + sol n'existe pas (aucun produit cartésien) — cas F_ESUNNY_FORBIDDEN.select_forbidden_combination, order_forbidden_combination
+    ok 1 - INVALID_VARIANT : blanc + sol n'existe pas (aucun produit cartésien) — cas F_ESUNNY_FORBIDDEN.select_forbidden_combination, order_forbidden_combination
+      ---
+      duration_ms: 37.082542
+      type: 'test'
+      ...
+    # Subtest: fiche Famille : seuls les 3 Items publiés, libellés d'axes du DTO — fixture snapshot_s1
+    ok 2 - fiche Famille : seuls les 3 Items publiés, libellés d'axes du DTO — fixture snapshot_s1
+      ---
+      duration_ms: 29.163584
+      type: 'test'
+      ...
+# \# serveur PID 83695 arrêté
+    1..2
+ok 2 - B — F_ESUNNY_FORBIDDEN/snapshot_s1.json @ 2026-10-20T12:00:00Z
+  ---
+  duration_ms: 456.999875
+  type: 'suite'
+  ...
+# \# serveur PID 83701 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_IDENTITY/snapshot_gen_c.json","SITE_NOW_UTC":"2026-10-22T12:00:00Z"}
+# Subtest: C — F_IDENTITY/snapshot_gen_c.json @ 2026-10-22T12:00:00Z
+    # Subtest: /article : SUPERSEDED → 308 vers la canonique, canonique → fiche, RETIRED → 410, absente → 404 — cas F_IDENTITY.select_superseded, select_retired, select_canonical
+    ok 1 - /article : SUPERSEDED → 308 vers la canonique, canonique → fiche, RETIRED → 410, absente → 404 — cas F_IDENTITY.select_superseded, select_retired, select_canonical
+      ---
+      duration_ms: 59.807042
+      type: 'test'
+      ...
+    # Subtest: /article derrière un autre Host / X-Forwarded-Host : Location reste relative, jamais localhost (revue F-02) — snapshot_gen_c
+    ok 2 - /article derrière un autre Host / X-Forwarded-Host : Location reste relative, jamais localhost (revue F-02) — snapshot_gen_c
+      ---
+      duration_ms: 16.089417
+      type: 'test'
+      ...
+    # Subtest: aperçu et commande d'un vieux panier : ITEM_SUPERSEDED (canonique donnée) + ITEM_RETIRED — cas F_IDENTITY.order_with_tombstoned_keys
+    ok 3 - aperçu et commande d'un vieux panier : ITEM_SUPERSEDED (canonique donnée) + ITEM_RETIRED — cas F_IDENTITY.order_with_tombstoned_keys
+      ---
+      duration_ms: 23.19325
+      type: 'test'
+      ...
+# \# serveur PID 83701 arrêté
+    1..3
+ok 3 - C — F_IDENTITY/snapshot_gen_c.json @ 2026-10-22T12:00:00Z
+  ---
+  duration_ms: 433.347084
+  type: 'suite'
+  ...
+# \# serveur PID 83703 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_GMCE_VARIANTS/snapshot_s1.json","SITE_NOW_UTC":"2026-10-20T12:00:00Z"}
+# Subtest: D — F_GMCE_VARIANTS/snapshot_s1.json @ 2026-10-20T12:00:00Z
+    # Subtest: fiche à variantes, média d'Item servi et vérifié, présélection ?article= — fixture snapshot_s1
+    ok 1 - fiche à variantes, média d'Item servi et vérifié, présélection ?article= — fixture snapshot_s1
+      ---
+      duration_ms: 44.09175
+      type: 'test'
+      ...
+# \# serveur PID 83703 arrêté
+    1..1
+ok 4 - D — F_GMCE_VARIANTS/snapshot_s1.json @ 2026-10-20T12:00:00Z
+  ---
+  duration_ms: 376.892333
+  type: 'suite'
+  ...
+# \# serveur PID 83707 {}
+# Subtest: E1 — SITE_CATALOG_SOURCE absent
+    # Subtest: pages en erreur, API 503 SOURCE_NOT_CONFIGURED, aucun verdict ni prix
+    ok 1 - pages en erreur, API 503 SOURCE_NOT_CONFIGURED, aucun verdict ni prix
+      ---
+      duration_ms: 55.720791
+      type: 'test'
+      ...
+# \# serveur PID 83707 arrêté
+    1..1
+ok 5 - E1 — SITE_CATALOG_SOURCE absent
+  ---
+  duration_ms: 343.764625
+  type: 'suite'
+  ...
+# \# serveur PID 83710 {"SITE_CATALOG_SOURCE":"db"}
+# Subtest: E2 — SITE_CATALOG_SOURCE=db sans SITE_DATABASE_URL
+    # Subtest: pages en erreur, API 503 SITE_DB_CONFIG_INVALID, aucun verdict ni prix
+    ok 1 - pages en erreur, API 503 SITE_DB_CONFIG_INVALID, aucun verdict ni prix
+      ---
+      duration_ms: 51.701667
+      type: 'test'
+      ...
+# \# serveur PID 83710 arrêté
+    1..1
+ok 6 - E2 — SITE_CATALOG_SOURCE=db sans SITE_DATABASE_URL
+  ---
+  duration_ms: 339.737958
+  type: 'suite'
+  ...
+# \# serveur PID 83716 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SIMPLE_READY/snapshot_buy_leak.json"}
+# Subtest: E3 — fixture refusée par C0 (F_SIMPLE_READY/snapshot_buy_leak.json)
+    # Subtest: pages en erreur, API 503 SNAPSHOT_REFUSED, aucun verdict ni prix
+    ok 1 - pages en erreur, API 503 SNAPSHOT_REFUSED, aucun verdict ni prix
+      ---
+      duration_ms: 64.666417
+      type: 'test'
+      ...
+# \# serveur PID 83716 arrêté
+    1..1
+ok 7 - E3 — fixture refusée par C0 (F_SIMPLE_READY/snapshot_buy_leak.json)
+  ---
+  duration_ms: 359.202292
+  type: 'suite'
+  ...
+# \# serveur PID 83731 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"../../package.json"}
+# Subtest: E4 — nom de fixture hors c0/fixtures/documents
+    # Subtest: pages en erreur, API 503 FIXTURE_NAME_INVALID, aucun verdict ni prix
+    ok 1 - pages en erreur, API 503 FIXTURE_NAME_INVALID, aucun verdict ni prix
+      ---
+      duration_ms: 56.518959
+      type: 'test'
+      ...
+# \# serveur PID 83731 arrêté
+    1..1
+ok 8 - E4 — nom de fixture hors c0/fixtures/documents
+  ---
+  duration_ms: 394.222167
+  type: 'suite'
+  ...
+# \# serveur PID 83734 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_overlap.json","SITE_NOW_UTC":"2026-03-29T01:00:00Z"}
+# Subtest: E5 — fenêtres qui se recouvrent (F_SELL_WINDOWS/snapshot_overlap.json, cas select_on_overlap)
+    # Subtest: pages en erreur, API 503 SNAPSHOT_REFUSED, aucun verdict ni prix
+    ok 1 - pages en erreur, API 503 SNAPSHOT_REFUSED, aucun verdict ni prix
+      ---
+      duration_ms: 64.08425
+      type: 'test'
+      ...
+# \# serveur PID 83734 arrêté
+    1..1
+ok 9 - E5 — fenêtres qui se recouvrent (F_SELL_WINDOWS/snapshot_overlap.json, cas select_on_overlap)
+  ---
+  duration_ms: 353.41025
+  type: 'suite'
+  ...
+# \# serveur PID 83738 {"SITE_ENV":"production","SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-03-29T01:00:00Z"}
+# Subtest: G1 — SITE_ENV=production : SITE_NOW_UTC=2026-03-29T01:00:00Z ignoré
+    # Subtest: l'horloge serveur fait foi, avertissement au démarrage, bandeau sans instant figé
+    ok 1 - l'horloge serveur fait foi, avertissement au démarrage, bandeau sans instant figé
+      ---
+      duration_ms: 29.9005
+      type: 'test'
+      ...
+# \# serveur PID 83738 arrêté
+    1..1
+ok 10 - G1 — SITE_ENV=production : SITE_NOW_UTC=2026-03-29T01:00:00Z ignoré
+  ---
+  duration_ms: 373.072167
+  type: 'suite'
+  ...
+# \# serveur PID 83742 {"SITE_ENV":"staging","SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-03-29T01:00:00Z"}
+# Subtest: G2 — SITE_ENV=staging : SITE_NOW_UTC honoré
+    # Subtest: instant figé utilisé (promo de printemps R-401-P1 9.90) — cas F_SELL_WINDOWS.select_spring_dst_switch
+    ok 1 - instant figé utilisé (promo de printemps R-401-P1 9.90) — cas F_SELL_WINDOWS.select_spring_dst_switch
+      ---
+      duration_ms: 20.700042
+      type: 'test'
+      ...
+# \# serveur PID 83742 arrêté
+    1..1
+ok 11 - G2 — SITE_ENV=staging : SITE_NOW_UTC honoré
+  ---
+  duration_ms: 3418.966917
+  type: 'suite'
+  ...
+# \# serveur PID 83869 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-20T08:00:00+02:00"}
+# Subtest: G3 — SITE_NOW_UTC à offset (cas F_SELL_WINDOWS.select_offset_instant)
+    # Subtest: API 503 CONFIG_INVALID SITE_NOW_UTC_INVALID (jamais un 500 vide), pages en erreur, consigné au démarrage
+    ok 1 - API 503 CONFIG_INVALID SITE_NOW_UTC_INVALID (jamais un 500 vide), pages en erreur, consigné au démarrage
+      ---
+      duration_ms: 41.417416
+      type: 'test'
+      ...
+# \# serveur PID 83869 arrêté
+    1..1
+ok 12 - G3 — SITE_NOW_UTC à offset (cas F_SELL_WINDOWS.select_offset_instant)
+  ---
+  duration_ms: 323.358084
+  type: 'suite'
+  ...
+# \# serveur PID 83873 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-20T09:00:00.000Z"}
+# Subtest: G4 — SITE_NOW_UTC avec fraction
+    # Subtest: API 503 CONFIG_INVALID SITE_NOW_UTC_INVALID (jamais un 500 vide), pages en erreur, consigné au démarrage
+    ok 1 - API 503 CONFIG_INVALID SITE_NOW_UTC_INVALID (jamais un 500 vide), pages en erreur, consigné au démarrage
+      ---
+      duration_ms: 43.887833
+      type: 'test'
+      ...
+# \# serveur PID 83873 arrêté
+    1..1
+ok 13 - G4 — SITE_NOW_UTC avec fraction
+  ---
+  duration_ms: 327.943125
+  type: 'suite'
+  ...
+# \# serveur PID 83879 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_ENV":"prod"}
+# Subtest: G5 — SITE_ENV inconnu
+    # Subtest: API 503 CONFIG_INVALID SITE_ENV_INVALID (jamais un 500 vide), pages en erreur, consigné au démarrage
+    ok 1 - API 503 CONFIG_INVALID SITE_ENV_INVALID (jamais un 500 vide), pages en erreur, consigné au démarrage
+      ---
+      duration_ms: 42.644667
+      type: 'test'
+      ...
+# \# serveur PID 83879 arrêté
+# \# exclu F_QUOTE_ORDER.order_catalog_unsafe — génération UNSAFE : la fixture sert ACTIVE
+# \# exclu F_QUOTE_ORDER.order_double_post_same_key — registre non vide : idempotence persistée = BC4
+# \# exclu F_QUOTE_ORDER.order_replay_lines_reordered — registre non vide : idempotence persistée = BC4
+# \# exclu F_QUOTE_ORDER.order_same_key_other_payload — registre non vide : idempotence persistée = BC4
+# \# exclu F_QUOTE_ORDER.quote_double_post — registre non vide : idempotence persistée = BC4
+# \# exclu F_QUOTE_ORDER.quote_priced_on_unsafe — génération UNSAFE : la fixture sert ACTIVE
+# \# exclu F_QUOTE_ORDER.quote_same_key_other_payload — registre non vide : idempotence persistée = BC4
+# \# exclu F_QUOTE_ORDER.quote_unpriced_on_unsafe — génération UNSAFE : la fixture sert ACTIVE
+# \# exclu F_SELL_WINDOWS.select_offset_instant — instant 2026-10-20T08:00:00+02:00 non C0 : l'instant est celui du serveur, jamais fourni — contrepartie négative testée en G3
+# \# exclu F_SELL_WINDOWS.select_on_overlap — snapshot_overlap refusé par validateSnapshotBytes (PRICE_WINDOW_OVERLAP) : non servable — contrepartie négative testée en E5
+    1..1
+ok 14 - G5 — SITE_ENV inconnu
+  ---
+  duration_ms: 425.341458
+  type: 'suite'
+  ...
+# Subtest: F — rejeu HTTP des cas C0 site_business
+    # Subtest: inventaire des cas exclus (motifs)
+    ok 1 - inventaire des cas exclus (motifs)
+      ---
+      duration_ms: 0.202958
+      type: 'test'
+      ...
+# \# serveur PID 83883 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_ESUNNY_FORBIDDEN/snapshot_s1.json","SITE_NOW_UTC":"2026-10-20T12:00:00Z"}
+    # Subtest: F — F_ESUNNY_FORBIDDEN/snapshot_s1.json @ 2026-10-20T12:00:00Z (3 cas)
+        # Subtest: F_ESUNNY_FORBIDDEN.order_allowed_combination
+        ok 1 - F_ESUNNY_FORBIDDEN.order_allowed_combination
+          ---
+          duration_ms: 30.256417
+          type: 'test'
+          ...
+        # Subtest: F_ESUNNY_FORBIDDEN.order_forbidden_combination
+        ok 2 - F_ESUNNY_FORBIDDEN.order_forbidden_combination
+          ---
+          duration_ms: 5.646541
+          type: 'test'
+          ...
+        # Subtest: F_ESUNNY_FORBIDDEN.select_forbidden_combination
+        ok 3 - F_ESUNNY_FORBIDDEN.select_forbidden_combination
+          ---
+          duration_ms: 6.197167
+          type: 'test'
+          ...
+# \# serveur PID 83883 arrêté
+        1..3
+    ok 2 - F — F_ESUNNY_FORBIDDEN/snapshot_s1.json @ 2026-10-20T12:00:00Z (3 cas)
+      ---
+      duration_ms: 367.385
+      type: 'suite'
+      ...
+# \# serveur PID 83884 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_GMCE_VARIANTS/snapshot_s1.json","SITE_NOW_UTC":"2026-10-20T12:00:00Z"}
+    # Subtest: F — F_GMCE_VARIANTS/snapshot_s1.json @ 2026-10-20T12:00:00Z (3 cas)
+        # Subtest: F_GMCE_VARIANTS.select_draft
+        ok 1 - F_GMCE_VARIANTS.select_draft
+          ---
+          duration_ms: 20.702166
+          type: 'test'
+          ...
+        # Subtest: F_GMCE_VARIANTS.select_variant
+        ok 2 - F_GMCE_VARIANTS.select_variant
+          ---
+          duration_ms: 5.757958
+          type: 'test'
+          ...
+        # Subtest: F_GMCE_VARIANTS.select_wrong_axes
+        ok 3 - F_GMCE_VARIANTS.select_wrong_axes
+          ---
+          duration_ms: 4.911625
+          type: 'test'
+          ...
+# \# serveur PID 83884 arrêté
+        1..3
+    ok 3 - F — F_GMCE_VARIANTS/snapshot_s1.json @ 2026-10-20T12:00:00Z (3 cas)
+      ---
+      duration_ms: 432.487083
+      type: 'suite'
+      ...
+# \# serveur PID 83886 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_IDENTITY/snapshot_gen_c.json","SITE_NOW_UTC":"2026-10-22T12:00:00Z"}
+    # Subtest: F — F_IDENTITY/snapshot_gen_c.json @ 2026-10-22T12:00:00Z (4 cas)
+        # Subtest: F_IDENTITY.order_with_tombstoned_keys
+        ok 1 - F_IDENTITY.order_with_tombstoned_keys
+          ---
+          duration_ms: 28.042
+          type: 'test'
+          ...
+        # Subtest: F_IDENTITY.select_canonical
+        ok 2 - F_IDENTITY.select_canonical
+          ---
+          duration_ms: 6.678958
+          type: 'test'
+          ...
+        # Subtest: F_IDENTITY.select_retired
+        ok 3 - F_IDENTITY.select_retired
+          ---
+          duration_ms: 4.770625
+          type: 'test'
+          ...
+        # Subtest: F_IDENTITY.select_superseded
+        ok 4 - F_IDENTITY.select_superseded
+          ---
+          duration_ms: 5.180958
+          type: 'test'
+          ...
+# \# serveur PID 83886 arrêté
+        1..4
+    ok 4 - F — F_IDENTITY/snapshot_gen_c.json @ 2026-10-22T12:00:00Z (4 cas)
+      ---
+      duration_ms: 376.803
+      type: 'suite'
+      ...
+# \# serveur PID 83888 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-20T09:00:00Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-20T09:00:00Z (23 cas)
+        # Subtest: F_QUOTE_ORDER.order_client_sets_tax
+        ok 1 - F_QUOTE_ORDER.order_client_sets_tax
+          ---
+          duration_ms: 25.262834
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_duplicate_lines_ten_times_one
+        ok 2 - F_QUOTE_ORDER.order_duplicate_lines_ten_times_one
+          ---
+          duration_ms: 4.951958
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_duplicate_lines_tier_bypass
+        ok 3 - F_QUOTE_ORDER.order_duplicate_lines_tier_bypass
+          ---
+          duration_ms: 5.398333
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_falsified_amount
+        ok 4 - F_QUOTE_ORDER.order_falsified_amount
+          ---
+          duration_ms: 6.102375
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_float_amount
+        ok 5 - F_QUOTE_ORDER.order_float_amount
+          ---
+          duration_ms: 4.239417
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_future_window
+        ok 6 - F_QUOTE_ORDER.order_future_window
+          ---
+          duration_ms: 5.044958
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_invalid_email
+        ok 7 - F_QUOTE_ORDER.order_invalid_email
+          ---
+          duration_ms: 5.754292
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_invalid_variant
+        ok 8 - F_QUOTE_ORDER.order_invalid_variant
+          ---
+          duration_ms: 7.528666
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_item_not_published
+        ok 9 - F_QUOTE_ORDER.order_item_not_published
+          ---
+          duration_ms: 6.968125
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_line_total_not_unit_times_quantity
+        ok 10 - F_QUOTE_ORDER.order_line_total_not_unit_times_quantity
+          ---
+          duration_ms: 8.7595
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_same_key_other_axes
+        ok 11 - F_QUOTE_ORDER.order_same_key_other_axes
+          ---
+          duration_ms: 4.366583
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_sequence_boolean
+        ok 12 - F_QUOTE_ORDER.order_sequence_boolean
+          ---
+          duration_ms: 5.451916
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_stale_generation
+        ok 13 - F_QUOTE_ORDER.order_stale_generation
+          ---
+          duration_ms: 4.576042
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_tier_crossed
+        ok 14 - F_QUOTE_ORDER.order_tier_crossed
+          ---
+          duration_ms: 3.171083
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_total_mismatch
+        ok 15 - F_QUOTE_ORDER.order_total_mismatch
+          ---
+          duration_ms: 4.260584
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_unknown_version
+        ok 16 - F_QUOTE_ORDER.order_unknown_version
+          ---
+          duration_ms: 3.913625
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.order_valid
+        ok 17 - F_QUOTE_ORDER.order_valid
+          ---
+          duration_ms: 4.054375
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.quote_blank_organisation
+        ok 18 - F_QUOTE_ORDER.quote_blank_organisation
+          ---
+          duration_ms: 8.152834
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.quote_displayed_price_changed
+        ok 19 - F_QUOTE_ORDER.quote_displayed_price_changed
+          ---
+          duration_ms: 4.666916
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.quote_duplicate_lines
+        ok 20 - F_QUOTE_ORDER.quote_duplicate_lines
+          ---
+          duration_ms: 3.641958
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.quote_priced
+        ok 21 - F_QUOTE_ORDER.quote_priced
+          ---
+          duration_ms: 3.478417
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.quote_stale_generation
+        ok 22 - F_QUOTE_ORDER.quote_stale_generation
+          ---
+          duration_ms: 3.305
+          type: 'test'
+          ...
+        # Subtest: F_QUOTE_ORDER.quote_unpriced_no_window
+        ok 23 - F_QUOTE_ORDER.quote_unpriced_no_window
+          ---
+          duration_ms: 3.628167
+          type: 'test'
+          ...
+# \# serveur PID 83888 arrêté
+        1..23
+    ok 5 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-20T09:00:00Z (23 cas)
+      ---
+      duration_ms: 460.08225
+      type: 'suite'
+      ...
+# \# serveur PID 83889 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2027-01-01T00:00:00Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2027-01-01T00:00:00Z (2 cas)
+        # Subtest: F_QUOTE_ORDER.order_expired_offline
+        ok 1 - F_QUOTE_ORDER.order_expired_offline
+          ---
+          duration_ms: 27.435166
+          type: 'test'
+          ...
+        # Subtest: F_SELL_WINDOWS.select_expired_offline
+        ok 2 - F_SELL_WINDOWS.select_expired_offline
+          ---
+          duration_ms: 6.183167
+          type: 'test'
+          ...
+# \# serveur PID 83889 arrêté
+        1..2
+    ok 6 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2027-01-01T00:00:00Z (2 cas)
+      ---
+      duration_ms: 367.389792
+      type: 'suite'
+      ...
+# \# serveur PID 83891 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-24T22:00:00Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-24T22:00:00Z (2 cas)
+        # Subtest: F_QUOTE_ORDER.order_promo_at_dst_boundary
+        ok 1 - F_QUOTE_ORDER.order_promo_at_dst_boundary
+          ---
+          duration_ms: 27.841458
+          type: 'test'
+          ...
+        # Subtest: F_SELL_WINDOWS.select_autumn_promo_start
+        ok 2 - F_SELL_WINDOWS.select_autumn_promo_start
+          ---
+          duration_ms: 6.15875
+          type: 'test'
+          ...
+# \# serveur PID 83891 arrêté
+        1..2
+    ok 7 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-24T22:00:00Z (2 cas)
+      ---
+      duration_ms: 367.455083
+      type: 'suite'
+      ...
+# \# serveur PID 83892 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-24T21:59:59Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-24T21:59:59Z (2 cas)
+        # Subtest: F_QUOTE_ORDER.order_promo_one_second_early
+        ok 1 - F_QUOTE_ORDER.order_promo_one_second_early
+          ---
+          duration_ms: 34.669625
+          type: 'test'
+          ...
+        # Subtest: F_SELL_WINDOWS.select_autumn_before_promo
+        ok 2 - F_SELL_WINDOWS.select_autumn_before_promo
+          ---
+          duration_ms: 6.561208
+          type: 'test'
+          ...
+# \# serveur PID 83892 arrêté
+        1..2
+    ok 8 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-24T21:59:59Z (2 cas)
+      ---
+      duration_ms: 417.173042
+      type: 'suite'
+      ...
+# \# serveur PID 83901 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-25T01:00:00Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-25T01:00:00Z (1 cas)
+        # Subtest: F_SELL_WINDOWS.select_autumn_dst_switch
+        ok 1 - F_SELL_WINDOWS.select_autumn_dst_switch
+          ---
+          duration_ms: 19.765458
+          type: 'test'
+          ...
+# \# serveur PID 83901 arrêté
+        1..1
+    ok 9 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-25T01:00:00Z (1 cas)
+      ---
+      duration_ms: 3415.031917
+      type: 'suite'
+      ...
+# \# serveur PID 83952 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-25T23:00:00Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-25T23:00:00Z (1 cas)
+        # Subtest: F_SELL_WINDOWS.select_autumn_promo_end
+        ok 1 - F_SELL_WINDOWS.select_autumn_promo_end
+          ---
+          duration_ms: 19.789958
+          type: 'test'
+          ...
+# \# serveur PID 83952 arrêté
+        1..1
+    ok 10 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-25T23:00:00Z (1 cas)
+      ---
+      duration_ms: 358.160958
+      type: 'suite'
+      ...
+# \# serveur PID 83957 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-25T22:59:59Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-25T22:59:59Z (1 cas)
+        # Subtest: F_SELL_WINDOWS.select_autumn_promo_last_second
+        ok 1 - F_SELL_WINDOWS.select_autumn_promo_last_second
+          ---
+          duration_ms: 18.877666
+          type: 'test'
+          ...
+# \# serveur PID 83957 arrêté
+        1..1
+    ok 11 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-25T22:59:59Z (1 cas)
+      ---
+      duration_ms: 3352.001209
+      type: 'suite'
+      ...
+# \# serveur PID 84058 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-20T06:00:00Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-20T06:00:00Z (7 cas)
+        # Subtest: F_SELL_WINDOWS.select_future_tier
+        ok 1 - F_SELL_WINDOWS.select_future_tier
+          ---
+          duration_ms: 19.774
+          type: 'test'
+          ...
+        # Subtest: F_SELL_WINDOWS.select_qty10_now
+        ok 2 - F_SELL_WINDOWS.select_qty10_now
+          ---
+          duration_ms: 3.967458
+          type: 'test'
+          ...
+        # Subtest: F_SELL_WINDOWS.select_qty19_now
+        ok 3 - F_SELL_WINDOWS.select_qty19_now
+          ---
+          duration_ms: 4.342166
+          type: 'test'
+          ...
+        # Subtest: F_SELL_WINDOWS.select_qty1_now
+        ok 4 - F_SELL_WINDOWS.select_qty1_now
+          ---
+          duration_ms: 5.594542
+          type: 'test'
+          ...
+        # Subtest: F_SELL_WINDOWS.select_qty20_now
+        ok 5 - F_SELL_WINDOWS.select_qty20_now
+          ---
+          duration_ms: 4.159417
+          type: 'test'
+          ...
+        # Subtest: F_SELL_WINDOWS.select_qty9_now
+        ok 6 - F_SELL_WINDOWS.select_qty9_now
+          ---
+          duration_ms: 4.427959
+          type: 'test'
+          ...
+        # Subtest: F_SELL_WINDOWS.select_quantity_zero
+        ok 7 - F_SELL_WINDOWS.select_quantity_zero
+          ---
+          duration_ms: 2.97175
+          type: 'test'
+          ...
+# \# serveur PID 84058 arrêté
+        1..7
+    ok 12 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-10-20T06:00:00Z (7 cas)
+      ---
+      duration_ms: 437.043917
+      type: 'suite'
+      ...
+# \# serveur PID 84072 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-11-01T00:00:00Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-11-01T00:00:00Z (1 cas)
+        # Subtest: F_SELL_WINDOWS.select_future_tier_started
+        ok 1 - F_SELL_WINDOWS.select_future_tier_started
+          ---
+          duration_ms: 19.946667
+          type: 'test'
+          ...
+# \# serveur PID 84072 arrêté
+        1..1
+    ok 13 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-11-01T00:00:00Z (1 cas)
+      ---
+      duration_ms: 3363.329875
+      type: 'suite'
+      ...
+# \# serveur PID 84102 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-03-28T22:59:59Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-03-28T22:59:59Z (1 cas)
+        # Subtest: F_SELL_WINDOWS.select_spring_before_promo
+        ok 1 - F_SELL_WINDOWS.select_spring_before_promo
+          ---
+          duration_ms: 19.226375
+          type: 'test'
+          ...
+# \# serveur PID 84102 arrêté
+        1..1
+    ok 14 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-03-28T22:59:59Z (1 cas)
+      ---
+      duration_ms: 3359.284541
+      type: 'suite'
+      ...
+# \# serveur PID 84214 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-03-29T01:00:00Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-03-29T01:00:00Z (1 cas)
+        # Subtest: F_SELL_WINDOWS.select_spring_dst_switch
+        ok 1 - F_SELL_WINDOWS.select_spring_dst_switch
+          ---
+          duration_ms: 21.314791
+          type: 'test'
+          ...
+# \# serveur PID 84214 arrêté
+        1..1
+    ok 15 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-03-29T01:00:00Z (1 cas)
+      ---
+      duration_ms: 414.887083
+      type: 'suite'
+      ...
+# \# serveur PID 84250 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-03-29T22:00:00Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-03-29T22:00:00Z (1 cas)
+        # Subtest: F_SELL_WINDOWS.select_spring_promo_end
+        ok 1 - F_SELL_WINDOWS.select_spring_promo_end
+          ---
+          duration_ms: 19.788375
+          type: 'test'
+          ...
+# \# serveur PID 84250 arrêté
+        1..1
+    ok 16 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-03-29T22:00:00Z (1 cas)
+      ---
+      duration_ms: 374.769792
+      type: 'suite'
+      ...
+# \# serveur PID 84257 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-03-29T21:59:59Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-03-29T21:59:59Z (1 cas)
+        # Subtest: F_SELL_WINDOWS.select_spring_promo_last_second
+        ok 1 - F_SELL_WINDOWS.select_spring_promo_last_second
+          ---
+          duration_ms: 19.346917
+          type: 'test'
+          ...
+# \# serveur PID 84257 arrêté
+        1..1
+    ok 17 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-03-29T21:59:59Z (1 cas)
+      ---
+      duration_ms: 3368.447208
+      type: 'suite'
+      ...
+# \# serveur PID 84424 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-03-28T23:00:00Z"}
+    # Subtest: F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-03-28T23:00:00Z (1 cas)
+        # Subtest: F_SELL_WINDOWS.select_spring_promo_start
+        ok 1 - F_SELL_WINDOWS.select_spring_promo_start
+          ---
+          duration_ms: 19.925333
+          type: 'test'
+          ...
+# \# serveur PID 84424 arrêté
+        1..1
+    ok 18 - F — F_SELL_WINDOWS/snapshot_s7.json @ 2026-03-28T23:00:00Z (1 cas)
+      ---
+      duration_ms: 353.824417
+      type: 'suite'
+      ...
+# \# serveur PID 84427 {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SIMPLE_READY/snapshot_s1.json","SITE_NOW_UTC":"2026-10-20T12:00:00Z"}
+    # Subtest: F — F_SIMPLE_READY/snapshot_s1.json @ 2026-10-20T12:00:00Z (1 cas)
+        # Subtest: F_SIMPLE_READY.select_price
+        ok 1 - F_SIMPLE_READY.select_price
+          ---
+          duration_ms: 18.699666
+          type: 'test'
+          ...
+# \# serveur PID 84427 arrêté
+        1..1
+    ok 19 - F — F_SIMPLE_READY/snapshot_s1.json @ 2026-10-20T12:00:00Z (1 cas)
+      ---
+      duration_ms: 3356.164667
+      type: 'suite'
+      ...
+    1..19
+ok 15 - F — rejeu HTTP des cas C0 site_business
+  ---
+  duration_ms: 24942.7015
+  type: 'suite'
+  ...
+1..15
+# tests 88
+# suites 33
+# pass 88
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 34523.94325
+exit=0

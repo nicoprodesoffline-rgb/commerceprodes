@@ -1,0 +1,19 @@
+{
+  "case_id": "F_SELL_WINDOWS.select_autumn_promo_last_second",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_s7.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-10-25T22:59:59Z",
+    "public_item_key": "PI-000000CHJ",
+    "quantity": 1,
+    "variant_axes": {}
+  },
+  "notes": "Last second of the 25-hour day",
+  "scenario": "F_SELL_WINDOWS"
+}

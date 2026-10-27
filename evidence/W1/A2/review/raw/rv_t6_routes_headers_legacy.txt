@@ -1,0 +1,51 @@
+# PID 24838 démarré {"SITE_CATALOG_SOURCE":"fixture","SITE_CATALOG_FIXTURE":"F_SELL_WINDOWS/snapshot_s7.json","SITE_NOW_UTC":"2026-10-20T09:00:00Z"}
+## RV-09 route média
+média de la génération → 200 image/png len=132 sha_ok=true nosniff=nosniff cache=public, max-age=31536000, immutable
+MAJUSCULES → 404 text/plain;charset=UTF-8 9o
+63 hex → 404 text/plain;charset=UTF-8 9o
+65 hex → 404 text/plain;charset=UTF-8 9o
+média C0 hors génération (esunny_family.png) → 404 text/plain;charset=UTF-8 9o
+traversée ..%2F → 404 text/plain;charset=UTF-8 9o
+traversée ../ → 404 text/html; charset=utf-8 14403o
+sha + .png → 404 text/plain;charset=UTF-8 9o
+sha%00 → 404 text/plain;charset=UTF-8 9o
+nom de fichier C0 → 404 text/plain;charset=UTF-8 9o
+c0 direct → 404 text/html; charset=utf-8 14438o
+keys → 404 text/html; charset=utf-8 14437o
+HEAD média → 200
+POST média → 405
+## RV-10 /article/[key]
+PI-000000CHJ → 307 loc=http://localhost:3342/famille/panneau-paliers?article=PI-000000CHJ set-cookie=- reflète=false
+PI-000000CHK → 404 loc=- set-cookie=- reflète=false
+pi-000000chj → 404 loc=- set-cookie=- reflète=false
+PF-000000CHM → 404 loc=- set-cookie=- reflète=false
+PI-000000CHJ%0d%0aSet-Cookie:%20x=1 → 404 loc=- set-cookie=- reflète=false
+%3Cscript%3Ealert(1)%3C%2Fscript%3E → 404 loc=- set-cookie=- reflète=false
+..%2F..%2Fpanier → 404 loc=- set-cookie=- reflète=false
+PI-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA → 404 loc=- set-cookie=- reflète=false
+%E2%80%AE → 404 loc=- set-cookie=- reflète=false
+__proto__ → 404 loc=- set-cookie=- reflète=false
+constructor → 404 loc=- set-cookie=- reflète=false
+%00 → 404 loc=- set-cookie=- reflète=false
+## RV-11 en-têtes de sécurité (/, /famille, API)
+/ 200 xfo=DENY nosniff=nosniff referrer=strict-origin-when-cross-origin perms=camera=(), microphone=(), geolocation=() csp=ABSENT hsts=ABSENT powered=absent cache=private, no-cache, no-store, max-age=0, must-revalidate
+/famille/panneau-paliers 200 xfo=DENY nosniff=nosniff referrer=strict-origin-when-cross-origin perms=camera=(), microphone=(), geolocation=() csp=ABSENT hsts=ABSENT powered=absent cache=private, no-cache, no-store, max-age=0, must-revalidate
+/panier 200 xfo=DENY nosniff=nosniff referrer=strict-origin-when-cross-origin perms=camera=(), microphone=(), geolocation=() csp=ABSENT hsts=ABSENT powered=absent cache=private, no-cache, no-store, max-age=0, must-revalidate
+API preview headers : cache=no-store nosniff=nosniff ctype=application/json
+/famille/<script> → 404 reflète=false
+?article=<script> → 200 reflète=false
+/categorie/../etc → 404
+## RV-12 legacy : POST avec cookie et Bearer forgés (échantillon)
+POST /api/admin/auth → 404 set-cookie=-
+POST /api/checkout → 404 set-cookie=-
+POST /api/checkout/bon-de-commande → 404 set-cookie=-
+POST /api/devis → 404 set-cookie=-
+POST /api/revalidate → 404 set-cookie=-
+POST /admin → 404 set-cookie=-
+POST /api/admin/products/1 → 404 set-cookie=-
+POST /api/cart/share → 404 set-cookie=-
+POST /api/site/publish → 404 set-cookie=-
+POST /api/site/publish/activate → 404 set-cookie=-
+POST /api/site/receipt → 404 set-cookie=-
+POST /api/site/order/1 → 404 set-cookie=-
+# PID 24838 arrêté, port libre=true

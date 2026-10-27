@@ -1,0 +1,4 @@
+server_pid=3843
+listener_pid: 3843 
+listener_avant_kill: 3843
+kill 3843 ; vivant_apres: non ; listener_after_kill: []

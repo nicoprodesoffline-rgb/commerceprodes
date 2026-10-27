@@ -1,0 +1,11 @@
+{
+  "case_id": "F_IDENTITY.key_invalid_15",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_public_key",
+  "input": {
+    "namespace": "item",
+    "value": 1001
+  },
+  "notes": "Refused key 1001 as item",
+  "scenario": "F_IDENTITY"
+}

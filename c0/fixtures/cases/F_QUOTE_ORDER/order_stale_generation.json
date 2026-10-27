@@ -1,0 +1,20 @@
+{
+  "case_id": "F_QUOTE_ORDER.order_stale_generation",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_order_submit",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_s7.json"
+      },
+      "status": "ACTIVE"
+    },
+    "now_utc": "2026-10-20T09:00:00Z",
+    "register": [],
+    "request": {
+      "$bytes": "documents/F_QUOTE_ORDER/order_stale_generation.json"
+    }
+  },
+  "notes": "CE-T12: cart built on generation 6, ACTIVE is 7",
+  "scenario": "F_QUOTE_ORDER"
+}

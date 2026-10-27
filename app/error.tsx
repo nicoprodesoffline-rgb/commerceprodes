@@ -1,36 +1,15 @@
-'use client';
+"use client";
 
-export default function GlobalError({
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+/**
+ * Erreur pendant le rendu (ex. génération devenue indisponible entre le contrôle du proxy et le rendu) : page
+ * honnête, aucune donnée de catalogue. Le cas nominal « catalogue absent » est servi en 503 par `proxy.ts`.
+ */
+export default function ErrorPage({ reset }: { reset: () => void }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
-      <div className="text-center max-w-md px-4">
-        <div className="text-6xl mb-4">⚠️</div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Une erreur est survenue
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Nous avons été informés et allons corriger cela rapidement.
-        </p>
-        <div className="flex gap-3 justify-center">
-          <button
-            onClick={reset}
-            className="px-4 py-2 bg-[#cc1818] text-white rounded-lg hover:bg-[#aa1414]"
-          >
-            Réessayer
-          </button>
-          <a
-            href="/"
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-          >
-            Retour à l&apos;accueil
-          </a>
-        </div>
-      </div>
+    <div className="py-12" data-testid="catalog-unavailable">
+      <h1 className="text-2xl font-semibold">Catalogue indisponible</h1>
+      <p className="mt-2 text-ink-2">Le catalogue ne peut pas être servi pour le moment. Nous préférons ne rien afficher plutôt qu&apos;un catalogue incomplet ou des prix non vérifiés. Votre panier est conservé.</p>
+      <button type="button" onClick={reset} className="mt-4 h-[42px] rounded-[9px] bg-ink px-4 font-medium text-white">Réessayer</button>
     </div>
   );
 }

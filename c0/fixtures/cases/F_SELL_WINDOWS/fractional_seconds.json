@@ -1,0 +1,40 @@
+{
+  "case_id": "F_SELL_WINDOWS.fractional_seconds",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/sell_family_401.png"
+        },
+        "sha256": "24b1f4076b8b4155a167f63c51095688ae3953389111bd2f2d365b4323de8b13"
+      },
+      {
+        "file": {
+          "$media": "media/sell_family_402.png"
+        },
+        "sha256": "d361a1cb6258ab91b7f7dfe830552f1971029c7aba9a217cfb3f0b3959af6336"
+      }
+    ],
+    "now_utc": "2026-10-20T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_SELL_WINDOWS/snapshot_fractional_seconds.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "bb0fdecb40543b6d721148766600eb5bc517847450612a9f4092d91b497f0205"
+    }
+  },
+  "notes": "No fractional seconds",
+  "scenario": "F_SELL_WINDOWS"
+}

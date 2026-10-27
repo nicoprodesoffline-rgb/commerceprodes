@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.lone_surrogate",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/lone_surrogate.json"
+    }
+  },
+  "notes": "Lone surrogate escape",
+  "scenario": "C_CANONICAL"
+}

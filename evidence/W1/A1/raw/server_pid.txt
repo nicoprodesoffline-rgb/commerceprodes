@@ -1,0 +1,6 @@
+# 2026-10-22T23:59:23Z commit testé fdbfe6a3a487ea9bf59081fa5dbaf40cbac6511e node v22.23.1 npm 10.9.8
+commande: node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3321 (= npx next start, sans enveloppe npx pour tenir le PID)
+server_pid=82252
+listener_pid: 82252 
+kill 82252 -> wait status=143
+listener_after_kill: []

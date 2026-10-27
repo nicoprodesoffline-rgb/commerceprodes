@@ -1,0 +1,22 @@
+# 2026-10-23T00:15:29Z HEAD a9dede140b34cbf52dfc9288baccc876f5324d08 reviewer
+== prodes_site_rv_bc2
+log_rows|30
+signatures_transport_dans_journal|0
+TEST_SECRET_dans_journal|0
+cles_detail_distinctes|generation_status,key_id,media_sha256,rules,second_effect,size,superseded_sequence
+operations|ACTIVATE:ACTIVATED,ACTIVATE:REJECTED,ACTIVATE:REPLAY_ACK,MEDIA_PUT:REJECTED,MEDIA_PUT:STORED,STAGE:REJECTED,STAGE:REPLAY_ACK,STAGE:STAGED,VERIFY_MEDIA:MEDIA_VERIFIED,VERIFY_MEDIA:REJECTED
+ack_signature_dans_journal|0
+== prodes_site_rv_bc2_test
+log_rows|1
+signatures_transport_dans_journal|0
+TEST_SECRET_dans_journal|0
+cles_detail_distinctes|key_id,rules
+operations|STAGE:REJECTED
+ack_signature_dans_journal|0
+== grep secret source
+lib/site-publish/config.ts:7: *                                tests : c0/fixtures/keys/test_keyring.json, secrets TEST_SECRET_NOT_FOR_PRODUCTION)
+grep_exit=0
+== requêtes SQL interpolées (${ dans query)
+lib/site-publish/receiver.ts:269:  const pointer = await q.query(`SELECT generation_id FROM site_active_pointer WHERE singleton = 1${lockPointer ? " FOR UPDATE" : ""}`);
+lib/site-publish/receiver.ts:273:  const { rows } = await q.query(`SELECT ${GENERATION_COLUMNS} FROM site_generation WHERE id = $1`, [id]);
+lib/site-publish/receiver.ts:460:    await client.query(`SET LOCAL lock_timeout = '${LOCK_TIMEOUT}'`);

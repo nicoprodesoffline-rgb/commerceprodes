@@ -1,0 +1,40 @@
+{
+  "case_id": "F_GMCE_VARIANTS.activate",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/gmce_family.png"
+        },
+        "sha256": "bdc052e346fa8f7813cf76228e472d5e0e91ac3901ddc71069214f1d99cdaec5"
+      },
+      {
+        "file": {
+          "$media": "media/gmce_item_rouge.png"
+        },
+        "sha256": "b020140e8822d96407cce4ec28d1ee2df7c25cf7c98f8e2fe0ee49bd73039c6c"
+      }
+    ],
+    "now_utc": "2026-10-20T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_GMCE_VARIANTS/snapshot_s1.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "f0114a3e958c3dbb090d673b09deefddd6605f0290ac00d27a71f58b4f388308"
+    }
+  },
+  "notes": "Two axes, three explicit variants; draft 104 has a key but is NON_READY and absent (ID-T14)",
+  "scenario": "F_GMCE_VARIANTS"
+}

@@ -1,0 +1,36 @@
+## A01 catalogue absent (base vide, aucune génération) — code d2e4a6ca
+GET / -> 503 text/html; charset=utf-8
+GET /panier -> 503 text/html; charset=utf-8
+GET /devis -> 503 text/html; charset=utf-8
+GET /commande -> 503 text/html; charset=utf-8
+GET /recherche?q=x -> 503 text/html; charset=utf-8
+GET /categorie/signaletique -> 503 text/html; charset=utf-8
+GET /famille/gmce-demo -> 503 text/html; charset=utf-8
+GET /article/PI-000000358 -> 503 text/html; charset=utf-8
+GET /recu -> 200 text/html; charset=utf-8
+GET /media/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> 503 text/plain;charset=UTF-8
+HEAD / -> 503
+--- en-têtes + corps de / (nonce masqué)
+HTTP/1.1 503 Service Unavailable
+x-frame-options: DENY
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+permissions-policy: camera=(), microphone=(), geolocation=()
+cache-control: no-store
+content-security-policy: default-src 'self'; script-src 'self' 'nonce-XXX' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+content-type: text/html; charset=utf-8
+cross-origin-opener-policy: same-origin
+retry-after: 60
+Vary: Accept-Encoding
+Date: Fri, 23 Oct 2026 01:30:23 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Catalogue indisponible | PRODES</title>
+<style nonce="XXX">body{margin:0;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#FBFBFA;color:#1A1A18}main{max-width:40rem;margin:0 auto;padding:4rem 1rem}h1{font-size:1.5rem;font-weight:600;margin:0 0 .75rem}p{color:#55554F}a{color:#1A1A18;display:inline-flex;align-items:center;min-height:42px;padding:0 1rem;border:1px solid #D6D6D1;border-radius:9px;text-decoration:none;margin-top:1rem}a:focus-visible{outline:2px solid #1A1A18;outline-offset:2px}.mark{font-weight:700;letter-spacing:.08em}</style></head>
+<body><main data-testid="catalog-unavailable"><p class="mark">PRODES</p><h1>Catalogue indisponible</h1><p>Le catalogue ne peut pas être servi pour le moment.</p><p>Votre panier est conservé sur cet appareil. Aucun prix ni article n'est affiché plutôt qu'un catalogue incomplet.</p><a href="">Réessayer</a></main></body></html>
+--- balises <script> dans le 503 : 0
+--- preview
+{"site_status":"CATALOG_UNAVAILABLE","reason":"NO_ACTIVE_GENERATION","persistence":"NONE_UNTIL_BC4","durable":false,"verdict":null} HTTP 503

@@ -1,0 +1,131 @@
+- generic [active] [ref=f5e1]:
+  - banner [ref=f5e2]:
+    - generic [ref=f5e3]: STAGING_FIXTURE — catalogue PUB-F_SELL_WINDOWS-s7 · séquence 7 · source fixture · devis et commande validés SANS enregistrement · instant figé 2026-10-20T09:00:00Z
+    - navigation "Navigation principale" [ref=f5e4]:
+      - link "PRODES — Accueil" [ref=f5e5] [cursor=pointer]:
+        - /url: /
+        - img "PRODES" [ref=f5e6]
+      - generic [ref=f5e7]:
+        - link "Catégories" [ref=f5e8] [cursor=pointer]:
+          - /url: /#categories
+        - link "Familles" [ref=f5e9] [cursor=pointer]:
+          - /url: /#familles
+        - link "Panier 5" [ref=f5e117] [cursor=pointer]:
+          - /url: /panier
+          - text: Panier
+          - generic [ref=f5e11]: "5"
+  - main [ref=f5e12]:
+    - generic [ref=f5e13]:
+      - navigation "Fil d'Ariane" [ref=f5e14]:
+        - link "Accueil" [ref=f5e16] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f5e17]:
+          - generic [aria-hidden] [ref=f5e18]: /
+          - link "STAGING_FIXTURE Signalétique" [ref=f5e19] [cursor=pointer]:
+            - /url: /categorie/signaletique
+        - generic [ref=f5e20]:
+          - generic [aria-hidden] [ref=f5e21]: /
+          - generic [ref=f5e22]: STAGING_FIXTURE Panneau à paliers
+      - generic [ref=f5e23]:
+        - img "Image principale de la famille STAGING_FIXTURE Panneau à paliers" [ref=f5e25]
+        - generic [ref=f5e26]:
+          - paragraph [ref=f5e27]: Famille PF-000000CHM
+          - heading "STAGING_FIXTURE Panneau à paliers" [level=1] [ref=f5e28]
+          - paragraph [ref=f5e29]: STAGING_FIXTURE — description courte de démonstration (Panneau à paliers).
+          - region [ref=f5e30]:
+            - heading "Article PI-000000CHJ" [level=2] [ref=f5e31]
+            - paragraph [ref=f5e32]: Variante unique
+            - paragraph [ref=f5e33]: "Pas d'image propre à cette variante : image de la famille ci-contre."
+            - generic [ref=f5e34]:
+              - heading "Tarifs par quantité (fenêtres de vente publiées)" [level=3] [ref=f5e35]
+              - table [ref=f5e37]:
+                - rowgroup [ref=f5e38]:
+                  - row [ref=f5e39]:
+                    - columnheader "Quantité" [ref=f5e40]
+                    - columnheader "Prix unitaire" [ref=f5e41]
+                    - columnheader "Validité" [ref=f5e42]
+                - rowgroup [ref=f5e43]:
+                  - row [ref=f5e44]:
+                    - cell "1 à 9" [ref=f5e45]
+                    - cell "12,00 € HT" [ref=f5e46]
+                    - cell "du 30/03/2026 00:00 (Paris) au 25/10/2026 00:00 (Paris) exclu R-401-B1" [ref=f5e47]:
+                      - text: du 30/03/2026 00:00 (Paris) au 25/10/2026 00:00 (Paris) exclu
+                      - generic [ref=f5e48]: R-401-B1
+                  - row [ref=f5e49]:
+                    - cell "1 à 9 À venir" [ref=f5e50]:
+                      - text: 1 à 9
+                      - generic [ref=f5e51]: À venir
+                    - cell "10,50 € HT" [ref=f5e52]
+                    - cell "du 25/10/2026 00:00 (Paris) au 26/10/2026 00:00 (Paris) exclu R-401-P2" [ref=f5e53]:
+                      - text: du 25/10/2026 00:00 (Paris) au 26/10/2026 00:00 (Paris) exclu
+                      - generic [ref=f5e54]: R-401-P2
+                  - row [ref=f5e55]:
+                    - cell "1 à 9 À venir" [ref=f5e56]:
+                      - text: 1 à 9
+                      - generic [ref=f5e57]: À venir
+                    - cell "12,00 € HT" [ref=f5e58]
+                    - cell "du 26/10/2026 00:00 (Paris) au 01/01/2027 01:00 (Paris) exclu R-401-B2" [ref=f5e59]:
+                      - text: du 26/10/2026 00:00 (Paris) au 01/01/2027 01:00 (Paris) exclu
+                      - generic [ref=f5e60]: R-401-B2
+                  - row [ref=f5e61]:
+                    - cell "10 à 19" [ref=f5e62]
+                    - cell "11,00 € HT" [ref=f5e63]
+                    - cell "du 01/01/2026 01:00 (Paris) au 01/01/2027 01:00 (Paris) exclu R-401-T10" [ref=f5e64]:
+                      - text: du 01/01/2026 01:00 (Paris) au 01/01/2027 01:00 (Paris) exclu
+                      - generic [ref=f5e65]: R-401-T10
+                  - row [ref=f5e66]:
+                    - cell "20 et plus" [ref=f5e67]
+                    - cell "10,00 € HT" [ref=f5e68]
+                    - cell "du 01/01/2026 01:00 (Paris) au 01/01/2027 01:00 (Paris) exclu R-401-T20" [ref=f5e69]:
+                      - text: du 01/01/2026 01:00 (Paris) au 01/01/2027 01:00 (Paris) exclu
+                      - generic [ref=f5e70]: R-401-T20
+              - paragraph [ref=f5e71]: "Prix unitaire tel que publié (base indiquée : HT ou non qualifiée) — aucune TVA, aucun port, aucune remise calculés."
+            - paragraph [ref=f5e72]: "7"
+            - generic [ref=f5e73]:
+              - generic [ref=f5e74]:
+                - text: Quantité
+                - spinbutton "Quantité" [ref=f5e75]: "5"
+              - button "Ajouter au panier" [ref=f5e76]
+            - status [ref=f5e118]: "Ajouté au panier — prix retenu par le serveur : 12,00 € HT (R-401-B1)."
+          - region [ref=f5e77]:
+            - heading "Description" [level=2] [ref=f5e78]
+            - paragraph [ref=f5e79]: STAGING_FIXTURE — description longue de démonstration. Données synthétiques, aucune donnée fournisseur réelle (Panneau à paliers).
+          - paragraph [ref=f5e80]:
+            - text: "Provenance des prix : génération PUB-F_SELL_WINDOWS-s7 / PRJ-F_SELL_WINDOWS-s7, séquence 7 (STAGING_FIXTURE), payload_sha256"
+            - generic [ref=f5e81]: 4a078aa5be8f…
+            - text: ", instant serveur 2026-10-20T09:00:00Z. Le prix retenu pour une quantité est sélectionné par le serveur (C0 selectPrice), jamais calculé."
+  - contentinfo [ref=f5e82]:
+    - generic [ref=f5e84]:
+      - generic [ref=f5e85]:
+        - link "PRODES — Accueil" [ref=f5e86] [cursor=pointer]:
+          - /url: /
+          - img "PRODES" [ref=f5e87]
+        - paragraph [ref=f5e88]: Au service des Collectivités
+        - paragraph [ref=f5e89]: Mobilier, signalisation et équipements pour les organismes publics.
+      - generic [ref=f5e90]:
+        - heading "Liens rapides" [level=3] [ref=f5e91]
+        - list [ref=f5e92]:
+          - listitem [ref=f5e93]:
+            - link "Catalogue" [ref=f5e94] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=f5e95]:
+            - link "Panier" [ref=f5e96] [cursor=pointer]:
+              - /url: /panier
+      - generic [ref=f5e97]:
+        - heading "Nous contacter" [level=3] [ref=f5e98]
+        - list [ref=f5e99]:
+          - listitem [ref=f5e100]:
+            - generic [ref=f5e101]: 📞
+            - link "04 67 24 30 34" [ref=f5e103] [cursor=pointer]:
+              - /url: tel:+33467243034
+          - listitem [ref=f5e104]:
+            - generic [ref=f5e105]: ✉️
+            - link "contact@prodes.fr" [ref=f5e107] [cursor=pointer]:
+              - /url: mailto:contact@prodes.fr
+          - listitem [ref=f5e108]:
+            - generic [ref=f5e109]: 🕐
+            - paragraph [ref=f5e111]: Lun–Sam 8h30–19h
+    - generic [ref=f5e113]:
+      - paragraph [ref=f5e114]: © 2026 PRODES — prix publiés (HT ou base non qualifiée) — TVA et port non calculés
+      - paragraph [ref=f5e115]: Marque PRODES — France
+  - alert [ref=f5e116]

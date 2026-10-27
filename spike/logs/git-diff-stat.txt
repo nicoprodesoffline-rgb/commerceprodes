@@ -1,0 +1,289 @@
+ .env.example                                       |     5 -
+ .gitignore                                         |     4 +
+ README.md                                          |    93 +-
+ app/[page]/layout.tsx                              |    12 -
+ app/[page]/opengraph-image.tsx                     |     9 -
+ app/[page]/page.tsx                                |    50 -
+ app/admin/catalogue/page.tsx                       |   532 -
+ app/admin/categories/page.tsx                      |   188 -
+ app/admin/contenu/page.tsx                         |   283 -
+ app/admin/devis/[id]/actions.tsx                   |    96 -
+ app/admin/devis/[id]/page.tsx                      |   143 -
+ app/admin/devis/page.tsx                           |   165 -
+ app/admin/error.tsx                                |    40 -
+ app/admin/ia/page.tsx                              |   591 -
+ app/admin/import/page.tsx                          |   229 -
+ app/admin/layout.tsx                               |    30 -
+ app/admin/login/page.tsx                           |    94 -
+ app/admin/page.tsx                                 |   263 -
+ .../paniers-abandonnes/abandoned-cart-row.tsx      |    88 -
+ app/admin/paniers-abandonnes/page.tsx              |   145 -
+ app/admin/products/[handle]/editor.tsx             |    91 -
+ app/admin/products/[handle]/page.tsx               |   187 -
+ app/admin/products/page.tsx                        |   203 -
+ app/admin/produits/[id]/page.tsx                   |   502 -
+ app/admin/produits/page.tsx                        |   287 -
+ app/admin/seo/page.tsx                             |   212 -
+ app/admin/veille/page.tsx                          |   225 -
+ app/api/admin/analytics/route.ts                   |    98 -
+ app/api/admin/auth/route.ts                        |    98 -
+ app/api/admin/categories/[id]/route.ts             |    54 -
+ app/api/admin/competitive/route.ts                 |    88 -
+ app/api/admin/devis/[id]/route.ts                  |    49 -
+ app/api/admin/devis/[id]/status/route.ts           |    39 -
+ app/api/admin/export-products/route.ts             |    54 -
+ app/api/admin/homepage-sections/route.ts           |    56 -
+ app/api/admin/ia/audit/route.ts                    |    72 -
+ app/api/admin/ia/bulk-price-update/route.ts        |    94 -
+ app/api/admin/ia/categories-list/route.ts          |    17 -
+ app/api/admin/ia/detect-duplicates/route.ts        |    96 -
+ app/api/admin/ia/generate-descriptions/route.ts    |   142 -
+ app/api/admin/ia/thematic-cta/route.ts             |   118 -
+ app/api/admin/import-logs/route.ts                 |    43 -
+ .../admin/paniers-abandonnes/[id]/recover/route.ts |    25 -
+ app/api/admin/products-list/route.ts               |    71 -
+ app/api/admin/products/[id]/route.ts               |   103 -
+ app/api/admin/products/bulk/route.ts               |    79 -
+ app/api/admin/site-config/route.ts                 |    38 -
+ app/api/admin/testimonials/[id]/route.ts           |    33 -
+ app/api/admin/testimonials/route.ts                |    38 -
+ app/api/admin/trigger-webhook/route.ts             |    36 -
+ app/api/cart/abandon/route.ts                      |    53 -
+ app/api/cart/share/route.ts                        |    34 -
+ app/api/checkout/route.ts                          |   206 -
+ app/api/contact/route.ts                           |    70 -
+ app/api/devis-express/route.ts                     |   100 -
+ app/api/devis-status/[orderId]/route.ts            |    24 -
+ app/api/devis/route.ts                             |   269 -
+ app/api/product-by-sku/route.ts                    |    33 -
+ app/api/product-pdf/[handle]/route.ts              |    53 -
+ app/api/products-by-handles/route.ts               |    42 -
+ app/api/revalidate/route.ts                        |     6 -
+ app/api/search/route.ts                            |    73 -
+ app/api/site/cart/preview/route.ts                 |    17 +
+ app/api/site/order/route.ts                        |    12 +
+ app/api/site/quote/route.ts                        |    12 +
+ app/api/track/route.ts                             |    46 -
+ app/cart/cart-actions.tsx                          |    41 -
+ app/cart/page.tsx                                  |   208 -
+ app/categorie/[key]/page.tsx                       |    28 +
+ app/checkout/checkout-form.tsx                     |   321 -
+ app/checkout/confirmation/clear-cart.tsx           |    12 -
+ app/checkout/confirmation/page.tsx                 |    93 -
+ app/checkout/page.tsx                              |    64 -
+ app/compare/compare-client.tsx                     |   221 -
+ app/compare/page.tsx                               |    35 -
+ app/contact/page.tsx                               |   211 -
+ app/devis-express/page.tsx                         |   410 -
+ app/error.tsx                                      |    36 -
+ app/famille/[slug]/page.tsx                        |    78 +
+ app/faq/page.tsx                                   |   151 -
+ app/favicon.ico                                    |   Bin 15086 -> 0 bytes
+ app/gamme-pro-intens/page.tsx                      |   148 -
+ app/globals.css                                    |    43 +-
+ app/layout.tsx                                     |    85 +-
+ app/media/[sha256]/route.ts                        |    13 +
+ app/mentions-legales/page.tsx                      |   127 -
+ app/mes-commandes/page.tsx                         |   123 -
+ app/mon-devis/[orderId]/page.tsx                   |   142 -
+ app/not-found.tsx                                  |    69 +-
+ app/opengraph-image.tsx                            |     5 -
+ app/page.tsx                                       |   383 +-
+ app/panier/[shareId]/page.tsx                      |    56 -
+ app/panier/[shareId]/shared-cart-loader.tsx        |   111 -
+ app/panier/page.tsx                                |    15 +
+ app/product/[handle]/page.tsx                      |   188 -
+ app/robots.ts                                      |    14 -
+ app/search/[collection]/opengraph-image.tsx        |    13 -
+ app/search/[collection]/page.tsx                   |    81 -
+ app/search/children-wrapper.tsx                    |    14 -
+ app/search/layout.tsx                              |    47 -
+ app/search/loading.tsx                             |    14 -
+ app/search/page.tsx                                |    54 -
+ app/sitemap.ts                                     |    60 -
+ app/wishlist/page.tsx                              |   207 -
+ components/admin/analytics-widget.tsx              |   163 -
+ components/admin/kpi-card.tsx                      |    47 -
+ components/admin/sidebar.tsx                       |   100 -
+ components/admin/status-badge.tsx                  |    27 -
+ components/carousel.tsx                            |    45 -
+ components/cart/actions.ts                         |    52 -
+ components/cart/add-to-cart.tsx                    |    94 -
+ components/cart/cart-context.tsx                   |   281 -
+ components/cart/cart-provider.tsx                  |    94 +
+ components/cart/cart-view.tsx                      |   229 +
+ components/cart/delete-item-button.tsx             |    38 -
+ components/cart/edit-item-quantity-button.tsx      |    61 -
+ components/cart/modal.tsx                          |   250 -
+ components/cart/open-cart.tsx                      |    27 -
+ components/cart/share-cart-button.tsx              |    49 -
+ components/checkout/stripe-button.tsx              |    46 -
+ components/compare/compare-bar.tsx                 |    63 -
+ components/faq/faq-accordion.tsx                   |    74 -
+ components/grid/index.tsx                          |    27 -
+ components/grid/three-items.tsx                    |    67 -
+ components/grid/tile.tsx                           |    50 -
+ components/home/category-grid.tsx                  |    18 +-
+ components/home/family-card.tsx                    |    37 +
+ components/home/featured-products.tsx              |    25 -
+ components/home/hero.tsx                           |    18 +-
+ components/home/product-carousel.tsx               |   150 -
+ components/home/testimonials-section.tsx           |    94 -
+ components/home/trust-bar.tsx                      |    23 -
+ components/icons/logo.tsx                          |    16 -
+ components/label.tsx                               |    39 -
+ components/layout/category-sidebar.tsx             |   204 -
+ components/layout/footer-menu.tsx                  |    46 -
+ components/layout/footer.tsx                       |    40 +-
+ components/layout/mobile-bottom-nav.tsx            |    57 -
+ components/layout/navbar/index.tsx                 |   119 -
+ components/layout/navbar/mobile-menu.tsx           |   104 -
+ components/layout/navbar/search.tsx                |    43 -
+ components/layout/product-grid-items.tsx           |   101 -
+ components/layout/promo-banner.tsx                 |    59 -
+ components/layout/search/catalog-filters.tsx       |   123 -
+ components/layout/search/collections.tsx           |    37 -
+ components/layout/search/filter/dropdown.tsx       |    64 -
+ components/layout/search/filter/index.tsx          |    47 -
+ components/layout/search/filter/item.tsx           |    74 -
+ components/layout/site-header.tsx                  |    26 +
+ components/loading-dots.tsx                        |    15 -
+ components/logo-square.tsx                         |    23 -
+ components/onboarding/welcome-modal.tsx            |   141 -
+ components/opengraph-image.tsx                     |    45 -
+ components/price.tsx                               |    20 -
+ components/product-image.tsx                       |    37 -
+ components/product/compare-button.tsx              |    37 -
+ components/product/devis-modal.tsx                 |   190 -
+ components/product/family-buy-box.tsx              |   139 +
+ components/product/gallery.tsx                     |    96 -
+ components/product/mandat-modal.tsx                |    80 -
+ components/product/price-grid.tsx                  |   147 +-
+ components/product/product-badges.tsx              |    83 -
+ components/product/product-card-skeleton.tsx       |    22 -
+ components/product/product-description.tsx         |   404 -
+ components/product/recently-viewed.tsx             |    70 -
+ components/product/variant-selector.tsx            |   109 +-
+ components/product/wishlist-button.tsx             |    48 -
+ components/prose.tsx                               |    15 -
+ components/quick-order/quick-order-bar.tsx         |    92 -
+ components/quote/quote-bar.tsx                     |   209 -
+ components/search/live-search.tsx                  |   193 -
+ components/ui/skeleton.tsx                         |     9 -
+ components/welcome-toast.tsx                       |    36 -
+ data/PRODES_FULLDB_260219.csv                      | 30378 -------------------
+ data/import-report.json                            |    48 -
+ data/supabase_schema.sql                           |   456 -
+ docs/sql-backoffice.sql                            |    86 -
+ docs/sql-migrations/001-abandoned-carts.sql        |    37 -
+ docs/sql-migrations/002-category-cover.sql         |     8 -
+ docs/sql-migrations/003-shared-carts.sql           |    18 -
+ docs/sql-migrations/004-homepage-sections.sql      |    21 -
+ docs/sql-migrations/005-competitive-watch.sql      |    22 -
+ docs/sql-migrations/006-import-logs.sql            |    21 -
+ docs/sql-migrations/007-analytics.sql              |    35 -
+ docs/sql-migrations/008-site-config.sql            |    45 -
+ fixtures/provisional-v0/MANIFEST.sha256            |     8 +
+ fixtures/provisional-v0/SCENARIOS.json             |    13 +
+ fixtures/provisional-v0/gen_provisional.py         |   122 +
+ fixtures/provisional-v0/media/fam_esunny_main.png  |   Bin 0 -> 124 bytes
+ fixtures/provisional-v0/media/fam_gmce_main.png    |   Bin 0 -> 124 bytes
+ fixtures/provisional-v0/media/fam_simple_main.png  |   Bin 0 -> 124 bytes
+ .../provisional-v0/media/item_gmce_rouge_m.png     |   Bin 0 -> 115 bytes
+ .../site_snapshot_provisional_v0.json              |     1 +
+ .../site_snapshot_provisional_v0.pretty.json       |   420 +
+ fonts/Inter-Bold.ttf                               |   Bin 316100 -> 0 bytes
+ lib/admin/n8n-webhooks.ts                          |    35 -
+ lib/analytics/tracker.ts                           |    50 -
+ lib/cart/persist.ts                                |    59 -
+ lib/compare/context.tsx                            |    92 -
+ lib/constants.ts                                   |    51 -
+ lib/email/sender.ts                                |   204 -
+ lib/format.ts                                      |    27 +
+ lib/logger.ts                                      |    25 -
+ lib/pdf/product-pdf.ts                             |   186 -
+ lib/quote/context.tsx                              |   121 -
+ lib/rate-limit.ts                                  |    27 -
+ lib/recently-viewed.ts                             |    23 -
+ lib/seo/score.ts                                   |    80 -
+ lib/shopify/fragments/cart.ts                      |    53 -
+ lib/shopify/fragments/image.ts                     |    10 -
+ lib/shopify/fragments/product.ts                   |    64 -
+ lib/shopify/fragments/seo.ts                       |     8 -
+ lib/shopify/index.ts                               |   543 -
+ lib/shopify/mutations/cart.ts                      |    45 -
+ lib/shopify/queries/cart.ts                        |    10 -
+ lib/shopify/queries/collection.ts                  |    56 -
+ lib/shopify/queries/menu.ts                        |    10 -
+ lib/shopify/queries/page.ts                        |    41 -
+ lib/shopify/queries/product.ts                     |    36 -
+ lib/shopify/types.ts                               |   272 -
+ lib/simulator/http.ts                              |    19 +
+ lib/simulator/index.ts                             |   215 +
+ lib/site-dto/index.ts                              |   342 +
+ lib/site-dto/view.ts                               |    55 +
+ lib/supabase/client.ts                             |    21 -
+ lib/supabase/index.ts                              |  1332 -
+ lib/supabase/index.ts.bak                          |  1186 -
+ lib/supabase/price.ts                              |    64 -
+ lib/supabase/types.ts                              |   261 -
+ lib/supabase/types.ts.bak                          |   186 -
+ lib/type-guards.ts                                 |    31 -
+ lib/utils.ts                                       |    42 -
+ lib/utils/eco.ts                                   |    26 -
+ lib/validation.ts                                  |    28 -
+ lib/wishlist/context.tsx                           |    62 -
+ next.config.ts                                     |    48 +-
+ package-lock.json                                  |  2162 +-
+ package.json                                       |    46 +-
+ pnpm-lock.yaml                                     |  1601 -
+ proxy.ts                                           |    38 -
+ scripts/import-woocommerce.mjs                     |  1013 -
+ spike/FILE_MATRIX.md                               |   256 +
+ spike/http-tests.mjs                               |   208 +
+ spike/logs/build.log                               |    34 +
+ spike/logs/files-at-a985aca2.txt                   |   194 +
+ spike/logs/fixture-shasum-check.log                |     8 +
+ spike/logs/grep-e2.log                             |    17 +
+ spike/logs/http-tests-before-run1-FAIL.log         |     4 +
+ spike/logs/http-tests-before.log                   |     4 +
+ spike/logs/http-tests-default.log                  |    68 +
+ spike/logs/http-tests-promo.log                    |     6 +
+ spike/logs/npm-audit.json                          |    88 +
+ spike/logs/npm-audit.log                           |    15 +
+ spike/logs/npm-ci.log                              |    17 +
+ spike/logs/npm-ls.log                              |    14 +
+ spike/logs/package-json.diff                       |    56 +
+ spike/logs/package.json.before                     |    44 +
+ spike/logs/s04-dom-check.log                       |     4 +
+ spike/logs/screenshots-default.log                 |    40 +
+ spike/logs/screenshots-promo.log                   |     6 +
+ spike/logs/start-before.log                        |     5 +
+ spike/logs/start-default.log                       |     5 +
+ spike/logs/start-promo.log                         |     5 +
+ spike/logs/tsc.log                                 |     1 +
+ spike/screenshots.mjs                              |   127 +
+ spike/screenshots/S01-accueil-1024.png             |   Bin 0 -> 210148 bytes
+ spike/screenshots/S01-accueil-1440.png             |   Bin 0 -> 217044 bytes
+ spike/screenshots/S01-accueil-390.png              |   Bin 0 -> 195240 bytes
+ spike/screenshots/S02-simple-1024.png              |   Bin 0 -> 161905 bytes
+ spike/screenshots/S02-simple-1440.png              |   Bin 0 -> 163611 bytes
+ spike/screenshots/S02-simple-390.png               |   Bin 0 -> 153648 bytes
+ spike/screenshots/S03-gmce-promo-active-1024.png   |   Bin 0 -> 194495 bytes
+ spike/screenshots/S03-gmce-promo-active-1440.png   |   Bin 0 -> 191304 bytes
+ spike/screenshots/S03-gmce-promo-active-390.png    |   Bin 0 -> 183025 bytes
+ spike/screenshots/S03-gmce-promo-future-1024.png   |   Bin 0 -> 194962 bytes
+ spike/screenshots/S03-gmce-promo-future-1440.png   |   Bin 0 -> 192268 bytes
+ spike/screenshots/S03-gmce-promo-future-390.png    |   Bin 0 -> 183203 bytes
+ spike/screenshots/S04-esunny-1024.png              |   Bin 0 -> 170239 bytes
+ spike/screenshots/S04-esunny-1440.png              |   Bin 0 -> 171166 bytes
+ spike/screenshots/S04-esunny-390.png               |   Bin 0 -> 161295 bytes
+ spike/screenshots/S05-panier-1024.png              |   Bin 0 -> 137510 bytes
+ spike/screenshots/S05-panier-1440.png              |   Bin 0 -> 140408 bytes
+ spike/screenshots/S05-panier-390.png               |   Bin 0 -> 141508 bytes
+ .../S05-panier-recu-simulation-1024.png            |   Bin 0 -> 153673 bytes
+ .../S05-panier-recu-simulation-1440.png            |   Bin 0 -> 157227 bytes
+ .../screenshots/S05-panier-recu-simulation-390.png |   Bin 0 -> 157871 bytes
+ tsconfig.json                                      |    32 +-
+ vercel.json                                        |     6 -
+ 288 files changed, 4298 insertions(+), 56598 deletions(-)

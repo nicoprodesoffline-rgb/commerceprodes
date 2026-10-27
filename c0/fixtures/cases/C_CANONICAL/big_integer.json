@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.big_integer",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/big_integer.json"
+    }
+  },
+  "notes": "2^53 is outside the safe integer range",
+  "scenario": "C_CANONICAL"
+}

@@ -1,0 +1,9 @@
+# 2026-10-23T00:32:06Z HEAD 013a678d795de3ca203d0caee8d996406f45c60c — mutation du JS compilé (.bc2-build, ignoré par Git) : client.on("error", onClientError) retiré dans receiver.js et pool.js ; node --test tests/bc2/17_connection_loss.test.mjs ; attendu : échec
+not ok 1 - ACTIVATE : connexion tuée pendant l'attente du verrou du pointeur -> 503 ACTIVATION_ABORTED, pas d'ACK, processus vivant, activation suivante OK
+  failureType: 'uncaughtException'
+  error: 'Connection terminated unexpectedly'
+not ok 2 - withTransaction (lib/site-db, utilisé par BC4) : connexion tuée -> rejet propre, aucune exception non capturée, pool réutilisable
+  failureType: 'uncaughtException'
+# pass 0
+# fail 2
+mutation_exit=

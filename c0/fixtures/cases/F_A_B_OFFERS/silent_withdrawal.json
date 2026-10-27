@@ -1,0 +1,41 @@
+{
+  "case_id": "F_A_B_OFFERS.silent_withdrawal",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/F_A_B_OFFERS/ack_g1.json"
+      },
+      "snapshot": {
+        "$doc": "documents/F_A_B_OFFERS/snapshot_g1_offer_a.json"
+      }
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/ab_family_302.png"
+        },
+        "sha256": "7d724c26875d198059eefcd0e6e2fdbe2dd98685ce0a563c1edc5f6e521f6917"
+      }
+    ],
+    "now_utc": "2026-10-20T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_A_B_OFFERS/snapshot_g2_silent_withdrawal.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "f77d114a0b1ae8fa38e52f36fedd537cfc37967bb0f3ca577480d00d8962d9d7"
+    }
+  },
+  "notes": "301 disappears without being listed in expected_withdrawals",
+  "scenario": "F_A_B_OFFERS"
+}

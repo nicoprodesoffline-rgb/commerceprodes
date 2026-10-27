@@ -1,0 +1,17 @@
+{
+  "name": "prodes-c0-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "C0 contracts (site_snapshot.v1, site_activation.v1, site_business.v1, site_events.v1) - TypeScript twin of c0/python/c0_contracts",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test \"dist/test/*.test.js\""
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

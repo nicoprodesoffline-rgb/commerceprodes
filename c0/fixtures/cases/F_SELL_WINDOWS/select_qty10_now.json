@@ -1,0 +1,19 @@
+{
+  "case_id": "F_SELL_WINDOWS.select_qty10_now",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/F_SELL_WINDOWS/snapshot_s7.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-10-20T06:00:00Z",
+    "public_item_key": "PI-000000CHJ",
+    "quantity": 10,
+    "variant_axes": {}
+  },
+  "notes": "Tier threshold 10 crossed (CE-T02)",
+  "scenario": "F_SELL_WINDOWS"
+}

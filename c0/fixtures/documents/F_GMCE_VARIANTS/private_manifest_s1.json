@@ -1,0 +1,27 @@
+{
+  "as_of_utc": "2026-10-20T06:00:00Z",
+  "entries": [
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000358",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000363",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-00000037S",
+      "reason": null
+    },
+    {
+      "partition": "NON_READY",
+      "public_item_key": "PI-00000038V",
+      "reason": "DRAFT_FANOUT_NO_SELL"
+    }
+  ],
+  "manifest_version": "c0.private_coverage_manifest.v1",
+  "scope_key": "prodes.site.public.staging"
+}

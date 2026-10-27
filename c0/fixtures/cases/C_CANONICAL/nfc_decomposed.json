@@ -1,0 +1,12 @@
+{
+  "case_id": "C_CANONICAL.nfc_decomposed",
+  "data_label": "STAGING_FIXTURE",
+  "function": "canonical_bytes",
+  "input": {
+    "document": {
+      "$bytes": "documents/C_CANONICAL/nfc_decomposed.json"
+    }
+  },
+  "notes": "NFD key and value are normalized to NFC; -0 reads as 0; 2^53-1 is the largest integer",
+  "scenario": "C_CANONICAL"
+}

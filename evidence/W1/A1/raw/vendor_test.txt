@@ -1,0 +1,52 @@
+# 2026-10-22T23:59:23Z commit testé fdbfe6a3a487ea9bf59081fa5dbaf40cbac6511e node v22.23.1 npm 10.9.8
+
+> c0:vendor-test
+> node --test "tests/c0/*.test.mjs"
+
+TAP version 13
+# Subtest: (a) le C0 vendu correspond à son manifeste : C0_VENDOR_OK
+ok 1 - (a) le C0 vendu correspond à son manifeste : C0_VENDOR_OK
+  ---
+  duration_ms: 54.271208
+  type: 'test'
+  ...
+# Subtest: (b) un drift simulé (octet modifié, fichier ajouté, dist/ ou node_modules/ imbriqué, fichier supprimé) est refusé : C0_VENDOR_DRIFT
+ok 2 - (b) un drift simulé (octet modifié, fichier ajouté, dist/ ou node_modules/ imbriqué, fichier supprimé) est refusé : C0_VENDOR_DRIFT
+  ---
+  duration_ms: 1084.105542
+  type: 'test'
+  ...
+# Subtest: (c) C0_SOURCE.json correspond aux valeurs épinglées (gel b88f5cdf…, archive 7a5ac012…, trees, tree_digest)
+ok 3 - (c) C0_SOURCE.json correspond aux valeurs épinglées (gel b88f5cdf…, archive 7a5ac012…, trees, tree_digest)
+  ---
+  duration_ms: 0.801709
+  type: 'test'
+  ...
+# Subtest: (e) un manifeste forgé de façon cohérente passe check.mjs mais est rejeté par les valeurs épinglées
+ok 4 - (e) un manifeste forgé de façon cohérente passe check.mjs mais est rejeté par les valeurs épinglées
+  ---
+  duration_ms: 155.416084
+  type: 'test'
+  ...
+# Subtest: (d) un archived_from_sha dont le code diffère du gel est refusé : C0_FROZEN_CODE_MISMATCH
+ok 5 - (d) un archived_from_sha dont le code diffère du gel est refusé : C0_FROZEN_CODE_MISMATCH
+  ---
+  duration_ms: 1307.745
+  type: 'test'
+  ...
+# Subtest: (f) SHA inconnu ou dépôt invalide : C0_SYNC_FAILED, exit 1, sans trace de pile
+ok 6 - (f) SHA inconnu ou dépôt invalide : C0_SYNC_FAILED, exit 1, sans trace de pile
+  ---
+  duration_ms: 351.476291
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3001.455917
+vendor_test_exit=0

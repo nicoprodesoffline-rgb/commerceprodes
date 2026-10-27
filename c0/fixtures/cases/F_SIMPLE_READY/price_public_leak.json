@@ -1,0 +1,34 @@
+{
+  "case_id": "F_SIMPLE_READY.price_public_leak",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/simple_family.png"
+        },
+        "sha256": "ed9aaaaa1debb1f00870b9b41636dc75b64eb0437ed9c58dcbb18047b73b41ec"
+      }
+    ],
+    "now_utc": "2026-10-20T06:10:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/F_SIMPLE_READY/snapshot_price_public_leak.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "955545e2a032c3671e23f019bf0d0a29a6454a43b24aa56e8d2c567b060872a7"
+    }
+  },
+  "notes": "CE-T15: an Extractor price_public in the payload is an unknown key",
+  "scenario": "F_SIMPLE_READY"
+}

@@ -1,0 +1,156 @@
+TAP version 13
+# \# ADV ADV-01 outcomes ["200:RECEIVED","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT","200:REPLAY_SAME_RECEIPT"]
+# Subtest: ADV module
+    # Subtest: ADV-01 10 POST concurrents même clé (barrière 10) → 1 RECEIVED, 9 REPLAY, 1 objet, 1 événement, reçus identiques
+    ok 1 - ADV-01 10 POST concurrents même clé (barrière 10) → 1 RECEIVED, 9 REPLAY, 1 objet, 1 événement, reçus identiques
+      ---
+      duration_ms: 36.641042
+      type: 'test'
+      ...
+# [site-transactions] ORDER échec de persistance code=23514
+# \# ADV ADV-02 503 ["DB_WRITE_FAILED"] {"reason":"23514"}
+    # Subtest: ADV-02 échec du COMMIT lui-même (contrainte différée violée juste avant COMMIT) → 503 DB_WRITE_FAILED, 0 ligne
+    ok 2 - ADV-02 échec du COMMIT lui-même (contrainte différée violée juste avant COMMIT) → 503 DB_WRITE_FAILED, 0 ligne
+      ---
+      duration_ms: 13.66725
+      type: 'test'
+      ...
+# [site-transactions] connexion perdue pendant l'emprunt code=ECONNRESET
+# [site-transactions] ORDER échec de persistance code=57P01
+# \# ADV ADV-03 killed 503 ["DB_WRITE_FAILED"] {"reason":"57P01"}
+# [site-db] client inactif en erreur code=57P01
+# [site-db] client inactif en erreur code=57P01
+# [site-db] client inactif en erreur code=57P01
+# [site-db] client inactif en erreur code=57P01
+# [site-db] client inactif en erreur code=57P01
+# [site-db] client inactif en erreur code=57P01
+# [site-db] client inactif en erreur code=57P01
+# [site-db] client inactif en erreur code=57P01
+# \# ADV ADV-03 next 200 RECEIVED
+    # Subtest: ADV-03 connexion tuée (pg_terminate_backend) pendant la transaction puis requête suivante sur le même pool → RECEIVED
+    ok 3 - ADV-03 connexion tuée (pg_terminate_backend) pendant la transaction puis requête suivante sur le même pool → RECEIVED
+      ---
+      duration_ms: 232.927834
+      type: 'test'
+      ...
+# \# ADV ADV-04a sessions en attente de verrou pendant BC4 ouvert: 1 chronologie: []
+# \# ADV ADV-04a chronologie finale ["BC4_DONE","ACTIVATION_DONE"] BC4 200 RECEIVED seq reçu 1
+# \# ADV ADV-04a devis chiffré ancienne séquence 409 ["CATALOG_CHANGED"]
+    # Subtest: ADV-04a activation BC2 PENDANT une transaction BC4 : l'activation attend le COMMIT BC4 ; la commande garde la séquence d'origine
+    ok 4 - ADV-04a activation BC2 PENDANT une transaction BC4 : l'activation attend le COMMIT BC4 ; la commande garde la séquence d'origine
+      ---
+      duration_ms: 1625.552459
+      type: 'test'
+      ...
+# [site-transactions] QUOTE échec de persistance code=55P03
+# \# ADV ADV-04b 503 ["DB_WRITE_FAILED"] {"reason":"55P03"} 5006 ms
+    # Subtest: ADV-04b pointeur verrouillé FOR UPDATE (activation longue simulée > lock_timeout 5 s) → 503 DB_WRITE_FAILED 55P03, 0 écriture
+    ok 5 - ADV-04b pointeur verrouillé FOR UPDATE (activation longue simulée > lock_timeout 5 s) → 503 DB_WRITE_FAILED 55P03, 0 écriture
+      ---
+      duration_ms: 5022.708458
+      type: 'test'
+      ...
+# \# ADV ADV-05 128 200 RECEIVED
+# \# ADV ADV-05 "kxxxxxxxxxxxxxxxxxx 422 ["INVALID_DATA"] oracle ["INVALID_DATA"]
+# \# ADV ADV-05 "abcdefg" 422 ["INVALID_DATA"] oracle ["INVALID_DATA"]
+# \# ADV ADV-05 "order qo 0001" 422 ["INVALID_DATA"] oracle ["INVALID_DATA"]
+# \# ADV ADV-05 "commande:é:0001" 422 ["INVALID_DATA"] oracle ["INVALID_DATA"]
+# \# ADV ADV-05 "" 422 ["INVALID_DATA"] oracle ["INVALID_DATA"]
+# \# ADV ADV-05 ":startcolon1" 422 ["INVALID_DATA"] oracle ["INVALID_DATA"]
+# \# ADV ADV-05 12345678 422 ["INVALID_DATA"] oracle ["INVALID_DATA"]
+    # Subtest: ADV-05 clés d'idempotence limites : 128 car. OK ; 129, 7, espace, accent, vide → refus C0, 0 écriture
+    ok 6 - ADV-05 clés d'idempotence limites : 128 car. OK ; 129, 7, espace, accent, vide → refus C0, 0 écriture
+      ---
+      duration_ms: 122.973958
+      type: 'test'
+      ...
+# \# ADV ADV-06 qty0=422:INVALID_DATA qty1000001=422:INVALID_DATA qty1_5=400:PAYLOAD_MALFORMED qtyString=422:INVALID_DATA tax_amount=422:INVALID_DATA shipping_amount=422:INVALID_DATA status=422:INVALID_DATA line_status=422:INVALID_DATA proto_top=422:INVALID_DATA proto_contact=422:INVALID_DATA constructor_key=422:INVALID_DATA email_bad=422:INVALID_DATA email_crlf=422:INVALID_DATA phone_bad=422:INVALID_DATA lines0=422:INVALID_DATA lines201=422:INVALID_DATA currency_usd=422:INVALID_DATA sequence_string=422:INVALID_DATA neg_amount=422:INVALID_DATA unit_3dec=422:INVALID_DATA total_huge=409:PRICE_CHANGED big_int=400:PAYLOAD_MALFORMED
+    # Subtest: ADV-06 falsifications de forme : quantités, clés interdites, __proto__, contact, lignes 0/201 → verdict = oracle C0, HTTP §13, 0 écriture
+    ok 7 - ADV-06 falsifications de forme : quantités, clés interdites, __proto__, contact, lignes 0/201 → verdict = oracle C0, HTTP §13, 0 écriture
+      ---
+      duration_ms: 50.453167
+      type: 'test'
+      ...
+# \# ADV ADV-07 lignes base = lignes C0 ; total 125.75 12575
+    # Subtest: ADV-07 lignes insérées = lignes C0 (pas le corps) : variant_axes/clé client vs base, offer_price_version_public C0
+    ok 8 - ADV-07 lignes insérées = lignes C0 (pas le corps) : variant_axes/clé client vs base, offer_price_version_public C0
+      ---
+      duration_ms: 6.700375
+      type: 'test'
+      ...
+# \# ADV ADV-08 status UNSAFE commande 503 ["CATALOG_UNSAFE"]
+# \# ADV ADV-08 devis non chiffré sur ACTIVE altérée 200 RECEIVED [] (C0 §10.2 : UNSAFE ne bloque que le devis chiffré)
+    # Subtest: ADV-08 UNSAFE par octets ACTIVE altérés mais lisibles (sha ≠) → CATALOG_UNSAFE, 0 écriture ; devis non chiffré ?
+    ok 9 - ADV-08 UNSAFE par octets ACTIVE altérés mais lisibles (sha ≠) → CATALOG_UNSAFE, 0 écriture ; devis non chiffré ?
+      ---
+      duration_ms: 10.401291
+      type: 'test'
+      ...
+# \# ADV ADV-09 événements 3 tous APPLY puis DUPLICATE_NOOP, base64/sha/digest exacts
+    # Subtest: ADV-09 poll : base64 exact, sha, payload_digest recalculé, canonique, APPLY puis EVENT_DUPLICATE_NOOP ; aucune PII
+    ok 10 - ADV-09 poll : base64 exact, sha, payload_digest recalculé, canonique, APPLY puis EVENT_DUPLICATE_NOOP ; aucune PII
+      ---
+      duration_ms: 5.896959
+      type: 'test'
+      ...
+# \# ADV ADV-10 rejeux 200:3 200:3 200:3 curseurs créés 3 delivery_count max 4
+    # Subtest: ADV-10 rejeu d'une requête de poll signée capturée (curseur null) : re-servie, nouveau curseur à chaque fois, delivery_count++
+    ok 11 - ADV-10 rejeu d'une requête de poll signée capturée (curseur null) : re-servie, nouveau curseur à chaque fois, delivery_count++
+      ---
+      duration_ms: 5.020292
+      type: 'test'
+      ...
+# \# ADV ADV-11 limit=1 x4 sans ACK ["EVT-bd130a1ce9800553381f34ef1ae9055b","EVT-bd130a1ce9800553381f34ef1ae9055b","EVT-bd130a1ce9800553381f34ef1ae9055b","EVT-bd130a1ce9800553381f34ef1ae9055b"]
+    # Subtest: ADV-11 limit=1 répété sans ACK : toujours le même événement (le curseur n'avance pas) — blocage en tête de file
+    ok 12 - ADV-11 limit=1 répété sans ACK : toujours le même événement (le curseur n'avance pas) — blocage en tête de file
+      ---
+      duration_ms: 4.988875
+      type: 'test'
+      ...
+# \# ADV ADV-12 inconnu 200 {"contract_version":"site_events.v1","transport":"STAGING_TRANSPORT","accepted":true,"outcome":"ACKED","acked":[],"already_acked":[],"not_delivered":[],"unknown":["EVT-inconnu-0001"]}
+# \# ADV ADV-12 pub 401 ack-key 401 autre corps 401 domaine poll 401 doublon 400 clé en trop 400
+    # Subtest: ADV-12 ACK : id inconnu, partiel, clé publication, signature d'un autre corps, rejeu d'ACK, PENDING
+    ok 13 - ADV-12 ACK : id inconnu, partiel, clé publication, signature d'un autre corps, rejeu d'ACK, PENDING
+      ---
+      duration_ms: 8.486334
+      type: 'test'
+      ...
+# \# ADV ADV-13 bon 200 faux 404 inconnue 404 injection 404 sans jeton 401 vide 401 sans ref 404
+# \# ADV ADV-13 médianes µs : faux jeton 226 / réf inconnue 215 (écart 4.7 %)
+    # Subtest: ADV-13 reçu : 401/404 indiscernables (octets) ; temps comparable réf inconnue vs faux jeton ; aucun id interne
+    ok 14 - ADV-13 reçu : 401/404 indiscernables (octets) ; temps comparable réf inconnue vs faux jeton ; aucun id interne
+      ---
+      duration_ms: 171.422125
+      type: 'test'
+      ...
+# \# ADV ADV-14 lignes inspectées 708 PII/jetons trouvés 0
+# \# ADV ADV-14 colonnes taxe/port/paiement []
+    # Subtest: ADV-14 PII : aucun e-mail/nom dans event_bytes, payload, site_idempotency.receipt_json, site_transaction_log, site_event_cursor
+    ok 15 - ADV-14 PII : aucun e-mail/nom dans event_bytes, payload, site_idempotency.receipt_json, site_transaction_log, site_event_cursor
+      ---
+      duration_ms: 5.835333
+      type: 'test'
+      ...
+# \# ADV ADV-15 1re réponse jeton: string rejeu jeton: undefined
+    # Subtest: ADV-15 rejeu sans jeton : un client qui a perdu la 1re réponse ne peut plus jamais consulter son reçu
+    ok 16 - ADV-15 rejeu sans jeton : un client qui a perdu la 1re réponse ne peut plus jamais consulter son reçu
+      ---
+      duration_ms: 5.423208
+      type: 'test'
+      ...
+    1..16
+ok 1 - ADV module
+  ---
+  duration_ms: 7428.381042
+  type: 'suite'
+  ...
+1..1
+# tests 16
+# suites 1
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7510.557708
+exit=0

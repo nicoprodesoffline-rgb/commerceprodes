@@ -1,0 +1,13 @@
+{
+  "activated_at_utc": "2026-10-10T06:10:00Z",
+  "active_digest": "d1c8ada25c990112e2573309a1b6723131184ab2ad10fe515fa7520ce396bc8f",
+  "catalogue_sequence": 1,
+  "contract_version": "site_activation.v1",
+  "key_id": "c0-test-ack-01",
+  "outcome": "ACTIVATED",
+  "payload_sha256": "aed77e29789f7e6956ce9a094fdc8470a72145de397f7a84f4b29ab53ac62fe3",
+  "projection_id": "PRJ-F_A_B_OFFERS-g1",
+  "publication_id": "PUB-F_A_B_OFFERS-g1",
+  "scope_key": "prodes.site.public.staging",
+  "signature": "db33c2a64ebfda8a4fa1f889be4b7249463400d2fda5e37ff6f35ad58bd29495"
+}

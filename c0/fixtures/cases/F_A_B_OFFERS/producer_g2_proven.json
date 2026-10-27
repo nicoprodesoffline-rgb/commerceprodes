@@ -1,0 +1,15 @@
+{
+  "case_id": "F_A_B_OFFERS.producer_g2_proven",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_source_coverage",
+  "input": {
+    "manifest": {
+      "$doc": "documents/F_A_B_OFFERS/private_manifest_g2.json"
+    },
+    "snapshot": {
+      "$doc": "documents/F_A_B_OFFERS/snapshot_g2_b_preferred_no_sell.json"
+    }
+  },
+  "notes": "301 NON_READY in source and absent from payload",
+  "scenario": "F_A_B_OFFERS"
+}

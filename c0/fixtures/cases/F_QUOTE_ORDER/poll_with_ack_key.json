@@ -1,0 +1,18 @@
+{
+  "case_id": "F_QUOTE_ORDER.poll_with_ack_key",
+  "data_label": "STAGING_FIXTURE",
+  "function": "validate_poll_request",
+  "input": {
+    "issued_cursors": [],
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "request": {
+      "credential_key_id": "c0-test-ack-01",
+      "cursor": null,
+      "limit": 100
+    }
+  },
+  "notes": "ACK key is not an events credential",
+  "scenario": "F_QUOTE_ORDER"
+}

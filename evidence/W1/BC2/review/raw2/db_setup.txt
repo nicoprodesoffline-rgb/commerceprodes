@@ -1,0 +1,31 @@
+# 2026-10-23T00:36:35Z HEAD c5dc9d0278337a8aaec9a8e8b7542a2189e915f7 reviewer (re-review)
+role prodes_site: OK
+base prodes_site_rv_bc2: créée
+base prodes_site_rv_bc2_test: créée
+apply 001_site_generation.sql sha256=74b3fbf0f2a253250d30f1eddb33e17aae62acd52fa63a284ab11c2aac3a65c7
+apply 002_site_active_pointer.sql sha256=0e2021c60e60c16504ddc580cd805a6b2424b592e1a540830f329dd19a87f605
+apply 003_site_media.sql sha256=05be388af596569182401b31775bc088739349f502d3c9f1e44495337fc3287d
+apply 004_site_publication_log.sql sha256=e7274db2eb00a68d82827d77e7d141387ba9a7ea3ab614a5a6cacdba4842d564
+apply 005_site_generation_immutable.sql sha256=5494f0bdd7bf3cdf48c955cbf6158fbe65f223d7d26ff5cade7e1777708cdce1
+MIGRATIONS_OK db=prodes_site_rv_bc2 applied=5
+migrate_exit=0
+skip 001_site_generation.sql
+skip 002_site_active_pointer.sql
+skip 003_site_media.sql
+skip 004_site_publication_log.sql
+skip 005_site_generation_immutable.sql
+MIGRATIONS_OK db=prodes_site_rv_bc2 applied=0
+migrate_again_exit=0
+migrate[postgres://prodes_site:***@jarvis:54318/prodes_site_rv_bc2] MIGRATIONS_FAILED hôte de base refusé (jamais JARVIS, hôte explicite obligatoire)
+migrate[postgres://prodes_site:***@localhost:54318/prodes_site_rv_bc2?host=jarvis] MIGRATIONS_FAILED paramètre 'host' refusé dans SITE_DATABASE_URL
+migrate[postgres://prodes_site:***@localhost:54318/prodes_site_rv_bc2?hostaddr=100.64.0.1] MIGRATIONS_FAILED paramètre 'hostaddr' refusé dans SITE_DATABASE_URL
+migrate[postgres://prodes_site:***@localhost:54318/prodes_site_rv_bc2?options=-csearch_path%3Dx] MIGRATIONS_FAILED paramètre 'options' refusé dans SITE_DATABASE_URL
+migrate[postgres://prodes_site:***@localhost:54318/prodes_site_rv_bc2?dbname=prodes_factory] MIGRATIONS_FAILED paramètre 'dbname' refusé dans SITE_DATABASE_URL
+migrate[postgres://prodes_site:***@10.0.0.5:5432/prodes_site_rv_bc2] MIGRATIONS_FAILED hôte de base non local refusé (SITE_ALLOW_REMOTE_DB=1 requis)
+migrate[postgres://prodes_site:***@JARVIS.tail:5432/prodes_site_rv_bc2] MIGRATIONS_FAILED hôte de base refusé (jamais JARVIS, hôte explicite obligatoire)
+ALLOW_REMOTE+jarvis: MIGRATIONS_FAILED hôte de base refusé (jamais JARVIS, hôte explicite obligatoire)
+001|001_site_generation.sql
+002|002_site_active_pointer.sql
+003|003_site_media.sql
+004|004_site_publication_log.sql
+005|005_site_generation_immutable.sql

@@ -48,3 +48,16 @@ docs/screenshots/
 .worktrees/
 .claude/settings.local.json
 .agent-runs/
+
+# spike BC1-D
+/var/
+/spike/logs/*.pid
+
+# C0 vendu (docs/C0_VENDORING.md) : sorties régénérables et zone de transit de scripts/c0/sync.mjs
+/c0/ts/dist/
+/c0/ts/node_modules/
+/.c0-sync-*/
+
+# BC2 : JS compilé pour node --test (npm run bc2:build)
+/.bc2-build/
+/.bc4-build/
