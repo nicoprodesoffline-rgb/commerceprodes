@@ -12,5 +12,6 @@ export function markVerified(doc: object): void {
 }
 
 export function isVerified(doc: unknown): doc is object {
-  return typeof doc === "object" && doc !== null && verified.has(doc);
+  // Un document vérifié est TOUJOURS gelé en profondeur : un objet inscrit puis dégelé/remplacé n'autorise rien.
+  return typeof doc === "object" && doc !== null && verified.has(doc) && Object.isFrozen(doc);
 }

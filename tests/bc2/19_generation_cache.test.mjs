@@ -110,6 +110,57 @@ test("cache de génération : bascule du pointeur -> nouveau document (pas de g�
   assert.equal(after.status, "ACTIVE");
 });
 
+/** Scénario RV-P4 (relecteur 8f) : le résultat `UNSAFE` est partagé entre lecteurs simultanés ; il doit être gelé. */
+async function sharedUnsafeScenario(mod) {
+  mod.resetGenerationCache();
+  const first = await mod.getActiveGeneration(pool);
+  const original = await tamperSameLength(first.generation_id);
+  try {
+    const readers = await Promise.all(Array.from({ length: 8 }, () => mod.getActiveGeneration(pool)));
+    const [a] = readers;
+    assert.ok(readers.every((r) => r.status === "UNSAFE"));
+    assert.ok(readers.every((r) => Object.isFrozen(r)), "résultat UNSAFE (partageable entre lecteurs simultanés) : gelé avant partage");
+    try { a.status = "ACTIVE"; a.snapshot = { forged: true }; } catch { /* module strict : TypeError attendu */ }
+    for (const r of readers) {
+      assert.equal(r.status, "UNSAFE", "une mutation chez un lecteur ne doit pas être visible chez un autre");
+      assert.equal(r.snapshot, null);
+    }
+    assert.equal((await mod.getActiveGeneration(pool)).status, "UNSAFE", "ni dans la lecture suivante");
+  } finally {
+    await restoreBytes(first.generation_id, original);
+    mod.resetGenerationCache();
+  }
+}
+
+test("[RV-P4] résultat UNSAFE partagé entre lecteurs simultanés : gelé, mutation invisible chez l'autre lecteur", async () => {
+  await sharedUnsafeScenario(siteDb);
+});
+
+test("âge maximal du cache (5 min) : au-delà, relecture et revérification complètes même sonde inchangée", async () => {
+  let now = 1_000_000;
+  siteDb.resetGenerationCache();
+  siteDb.setGenerationCacheClock(() => now);
+  try {
+    const first = await siteDb.getActiveGeneration(pool);
+    assert.equal(first.status, "ACTIVE");
+    now += siteDb.GENERATION_CACHE_MAX_AGE_MS - 1;
+    const young = await siteDb.getActiveGeneration(pool);
+    assert.equal(young.snapshot, first.snapshot, "juste avant 5 min : servi du cache");
+    assert.equal(siteDb.generationCacheStats().full_loads, 1);
+    now += 1;
+    const old = await siteDb.getActiveGeneration(pool);
+    assert.equal(siteDb.generationCacheStats().full_loads, 2, "à 5 min : lecture complète, sonde pourtant inchangée");
+    assert.equal(old.status, "ACTIVE");
+    assert.notEqual(old.snapshot, first.snapshot, "document relu et reconstruit, pas l'ancien objet");
+    assert.equal(old.payload_sha256, first.payload_sha256);
+    const again = await siteDb.getActiveGeneration(pool);
+    assert.equal(again.snapshot, old.snapshot, "la vérification fraîche repart pour 5 min");
+    assert.equal(siteDb.generationCacheStats().full_loads, 2);
+  } finally {
+    siteDb.resetGenerationCache(); // rétablit l'horloge réelle
+  }
+});
+
 // --- mutants : chaque version du cache qui saute la vérification DOIT être refusée par les scénarios ----------------
 
 /** Remplace la ligne repérée par `MUTATION_POINT:<marqueur>` ; `rewrite(ligne)` doit produire une ligne DIFFÉRENTE. */
@@ -148,3 +199,40 @@ for (const [name, transform] of Object.entries(MUTANTS)) {
     }
   });
 }
+
+// --- mutants des conditions de la relecture 8f --------------------------------------------------------------------------
+
+async function mutantModule(transform, fn) {
+  const out = BUILD_GEN.replace(/generation\.js$/, `generation.rv8f.js`);
+  writeFileSync(out, transform(readFileSync(BUILD_GEN, "utf8")));
+  try {
+    delete require.cache[out];
+    return await fn(require(out));
+  } finally {
+    rmSync(out, { force: true });
+    delete require.cache[out];
+  }
+}
+
+test("garde-fou discriminant : le mutant « résultat de load() non gelé » est refusé par RV-P4", async () => {
+  await mutantModule(
+    (src) => mutate(src, "freeze", () => "    const active = interpret(row); // MUTATION_POINT:freeze"),
+    (mutant) => assert.rejects(sharedUnsafeScenario(mutant), (e) => e instanceof assert.AssertionError && /gelé avant partage/.test(e.message)),
+  );
+});
+
+test("garde-fou discriminant : le mutant « sans âge maximal » est refusé par le test d'âge", async () => {
+  await mutantModule(
+    (src) => mutate(src, "hit", (l) => l.replace(/clock\(\) - verified\.at < [\w.]+/, "true")),
+    async (mutant) => {
+      let now = 1_000_000;
+      mutant.resetGenerationCache();
+      mutant.setGenerationCacheClock(() => now);
+      await mutant.getActiveGeneration(pool);
+      now += mutant.GENERATION_CACHE_MAX_AGE_MS;
+      await mutant.getActiveGeneration(pool);
+      assert.equal(mutant.generationCacheStats().full_loads, 1, "le mutant ne relit PAS au-delà de 5 min (donc le test d'âge l'attrape)");
+      mutant.resetGenerationCache();
+    },
+  );
+});

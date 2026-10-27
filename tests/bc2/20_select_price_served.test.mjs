@@ -4,6 +4,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
+import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT, activateBase, newPool, resetDb, siteDb } from "./helpers.mjs";
 
@@ -59,4 +60,56 @@ test("UNSAFE et document vérifié : mêmes verdicts que selectPrice", async () 
   const args = [item.public_item_key, item.variant_axes, 1, "2026-10-27T10:00:00Z"];
   assert.deepEqual(served.selectPriceOnServed(g, ...args), c0.selectPrice(g, ...args));
   assert.deepEqual(served.selectPriceOnServed(g, ...args).error_codes, ["CATALOG_UNSAFE"]);
+});
+
+// Relecture 8f [RV-P6] : le test « copie modifiée » ci-dessus ne distingue pas un registre contourné (une modification en
+// place est vue parce que la Generation garde des références vers les mêmes objets). Ici : changement STRUCTUREL
+// (retrait au registre d'identité), invisible d'une Generation mémorisée pour un document qui ne serait pas vérifié.
+function structuralScenario(selectPriceOnServed, active) {
+  const copy = JSON.parse(JSON.stringify(active.snapshot));
+  const item = copy.families[0].items[0];
+  const args = [item.public_item_key, item.variant_axes, item.public_sell_price_windows[0].quantity_min, "2026-10-27T10:00:00Z"];
+  const g = { snapshot: copy, status: "ACTIVE" };
+  assert.equal(selectPriceOnServed(g, ...args).accepted, true);
+  copy.identity_registry.push({ public_item_key: item.public_item_key, status: "RETIRED", superseded_by: null });
+  assert.equal(selectPriceOnServed(g, ...args).accepted, false, "un Item retiré au registre ne doit plus être vendu (pas de Generation périmée réutilisée)");
+}
+
+test("[RV-P6] document non vérifié modifié STRUCTURELLEMENT (retrait au registre) : jamais de prix périmé", async () => {
+  structuralScenario(served.selectPriceOnServed, await siteDb.getActiveGeneration(pool));
+});
+
+test("garde-fou discriminant : le mutant « isVerified toujours vrai » est refusé par RV-P6 (rouge) alors que l'original passe (vert)", async () => {
+  const dir = join(ROOT, ".bc2-build", "lib", "site-db");
+  const mutVerified = join(dir, "verified.rv6.js");
+  const mutServed = join(dir, "select-price.rv6.js");
+  const vSrc = readFileSync(join(dir, "verified.js"), "utf8");
+  assert.ok(vSrc.includes("verified.has(doc)"), "repère du registre dans le JS compilé");
+  writeFileSync(mutVerified, vSrc.replace(/function isVerified\(doc\) \{[\s\S]*?\n\}/, "function isVerified(doc) { return true; }"));
+  const sSrc = readFileSync(join(dir, "select-price.js"), "utf8");
+  assert.ok(sSrc.includes('require("./verified")'), "import du registre repéré");
+  writeFileSync(mutServed, sSrc.replace('require("./verified")', 'require("./verified.rv6")'));
+  try {
+    delete require.cache[mutServed];
+    const mutant = require(mutServed);
+    const live = await siteDb.getActiveGeneration(pool);
+    assert.throws(() => structuralScenario(mutant.selectPriceOnServed, live), assert.AssertionError, "le mutant doit échouer à RV-P6");
+  } finally {
+    rmSync(mutVerified, { force: true });
+    rmSync(mutServed, { force: true });
+    delete require.cache[mutServed];
+    delete require.cache[mutVerified];
+  }
+  structuralScenario(served.selectPriceOnServed, await siteDb.getActiveGeneration(pool)); // original : vert
+});
+
+test("isVerified exige aussi le gel : objet inscrit mais non gelé -> non vérifié", async () => {
+  const obj = { a: { b: 1 } };
+  verified.markVerified(obj);
+  assert.equal(verified.isVerified(obj), false, "inscrit mais non gelé");
+  Object.freeze(obj);
+  assert.equal(verified.isVerified(obj), true, "inscrit et gelé");
+  assert.equal(verified.isVerified(Object.freeze({})), false, "gelé mais jamais inscrit");
+  const active = await siteDb.getActiveGeneration(pool);
+  assert.equal(verified.isVerified(active.snapshot), true);
 });

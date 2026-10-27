@@ -7,7 +7,9 @@
  *   La clé de la sonde (voir `cacheKey`) couvre : identifiant, séquence, SHA du pointeur ET de la ligne, statut,
  *   version physique de la ligne (`xmin`, `ctid` : tout UPDATE, même déclencheur d'immutabilité désactivé, les change)
  *   et taille des octets. Un document modifié sous la même (identifiant, séquence, SHA) est donc relu, reverifié et
- *   refusé (`UNSAFE`), jamais servi depuis le cache. Seul un résultat `ACTIVE` vérifié est mis en cache.
+ *   refusé (`UNSAFE`), jamais servi depuis le cache. Seul un résultat `ACTIVE` vérifié est mis en cache, pour au plus
+ *   `GENERATION_CACHE_MAX_AGE_MS` (5 min) : au-delà, relecture et revérification complètes même sonde inchangée.
+ *   Tout résultat de lecture complète (`UNSAFE` compris) est gelé avant d'être partagé entre lecteurs simultanés.
  * - Le snapshot est relu depuis les OCTETS stockés (`snapshot_bytes`) par le lecteur strict C0 ;
  *   `status: "UNSAFE"` (fail-closed) si le pointeur et la génération ne concordent pas, si la ligne n'est
  *   pas `ACTIVE` ou si le `payload_sha256` recalculé sur les octets diffère. Aucun marquage opérationnel
@@ -108,7 +110,18 @@ function cacheKey(row: ProbeRow): string | null {
   return [row.generation_id, row.p_sequence, row.p_sha, row.g_status, row.g_sequence, row.g_sha, row.g_xmin, row.g_ctid, row.g_len].join("|"); // MUTATION_POINT:key
 }
 
-let verified: { key: string; value: ActiveGeneration } | null = null;
+/** Âge maximal d'une vérification complète (relecture de sécurité W6-P) : au-delà, relecture et revérification COMPLÈTES même si la sonde est inchangée. */
+export const GENERATION_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
+
+const defaultClock = (): number => Date.now();
+let clock: () => number = defaultClock;
+
+/** Horloge du cache (tests seulement : vieillir le cache sans attendre). `resetGenerationCache` la rétablit. */
+export function setGenerationCacheClock(now: () => number): void {
+  clock = now;
+}
+
+let verified: { key: string; value: ActiveGeneration; at: number } | null = null;
 const inflight = new Map<string, Promise<ActiveGeneration | null>>();
 const stats = { probes: 0, hits: 0, full_loads: 0 };
 
@@ -120,6 +133,7 @@ export function generationCacheStats(): { probes: number; hits: number; full_loa
 /** Vide le cache (tests, changement de base). Sans effet sur la sécurité : la prochaine lecture est complète. */
 export function resetGenerationCache(): void {
   verified = null;
+  clock = defaultClock;
   inflight.clear();
   stats.probes = 0;
   stats.hits = 0;
@@ -130,20 +144,20 @@ async function readActive(q: Queryable, lock: string): Promise<ActiveGeneration 
   const probe = (await q.query<ProbeRow>(`${SELECT_PROBE}${lock}`)).rows[0];
   stats.probes += 1;
   const key = probe === undefined ? null : cacheKey(probe);
-  if (key !== null && verified !== null && verified.key === key) { // MUTATION_POINT:hit
+  if (key !== null && verified !== null && verified.key === key && clock() - verified.at < GENERATION_CACHE_MAX_AGE_MS) { // MUTATION_POINT:hit
     stats.hits += 1;
     return verified.value;
   }
   const load = async (): Promise<ActiveGeneration | null> => {
     stats.full_loads += 1;
     const row = (await q.query<PointerRow>(`${SELECT_ACTIVE}${lock}`)).rows[0];
-    const active = interpret(row);
+    // Tout résultat de `load()` est gelé avant d'être partagé entre lecteurs simultanés (`inflight`), `UNSAFE` compris.
+    const active = deepFreeze(interpret(row)); // MUTATION_POINT:freeze
     const fullKey = row === undefined ? null : cacheKey(row);
     // Seul un document VÉRIFIÉ (ACTIVE) est conservé, avec la clé de la ligne réellement lue et vérifiée.
     if (active !== null && active.status === "ACTIVE" && active.snapshot !== null && fullKey !== null) {
-      deepFreeze(active);
       markVerified(active.snapshot);
-      verified = { key: fullKey, value: active };
+      verified = { key: fullKey, value: active, at: clock() };
     } else {
       verified = null;
     }
