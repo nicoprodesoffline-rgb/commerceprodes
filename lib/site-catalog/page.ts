@@ -2,7 +2,9 @@
  * Accès des pages au catalogue.
  *
  * - `catalogForPage()` est dédoublonné PAR RENDU (React `cache`) : mise en page, page et métadonnées d'une
- *   même requête lisent UNE fois la génération (aucune mémoire entre deux requêtes).
+ *   même requête interrogent UNE fois la source. Entre requêtes (W6-P), la source ne relit le document que si la
+ *   sonde du pointeur/de la ligne de génération a changé (`lib/site-db/generation.ts`) : le contrôle de proxy.ts puis
+ *   le rendu ne coûtent plus deux lectures complètes mais deux sondes légères.
  * - Indisponible : la page d'indisponibilité est servie en HTTP 503 par `proxy.ts` AVANT le rendu
  *   (`catalogAvailability()`). Si la génération disparaît entre ce contrôle et le rendu, l'erreur est consignée
  *   puis relancée : `app/error.tsx` s'affiche (jamais un catalogue vide).

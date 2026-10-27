@@ -1,7 +1,13 @@
 /**
  * Lecture de la génération ACTIVE du SITE, pour BC3/BC4. Contrat : docs/SITE_DB_SCHEMA.md.
  *
- * - Toujours relue en base (aucun cache mémoire comme vérité).
+ * - Le POINTEUR et l'identité physique de la ligne de génération sont relus en base À CHAQUE appel (sonde légère,
+ *   sans les octets du document). Le document, lui, n'est relu, reparsé et reverifié (forme canonique, SHA-256) que
+ *   lorsque la sonde diffère de celle de la dernière vérification complète réussie (W6-P, cache de vérification).
+ *   La clé de la sonde (voir `cacheKey`) couvre : identifiant, séquence, SHA du pointeur ET de la ligne, statut,
+ *   version physique de la ligne (`xmin`, `ctid` : tout UPDATE, même déclencheur d'immutabilité désactivé, les change)
+ *   et taille des octets. Un document modifié sous la même (identifiant, séquence, SHA) est donc relu, reverifié et
+ *   refusé (`UNSAFE`), jamais servi depuis le cache. Seul un résultat `ACTIVE` vérifié est mis en cache.
  * - Le snapshot est relu depuis les OCTETS stockés (`snapshot_bytes`) par le lecteur strict C0 ;
  *   `status: "UNSAFE"` (fail-closed) si le pointeur et la génération ne concordent pas, si la ligne n'est
  *   pas `ACTIVE` ou si le `payload_sha256` recalculé sur les octets diffère. Aucun marquage opérationnel
@@ -21,22 +27,33 @@ export interface ActiveGeneration {
   status: "ACTIVE" | "UNSAFE";
 }
 
-interface PointerRow {
+interface ProbeRow {
   generation_id: string | null;
   p_sequence: string | null;
   p_sha: string | null;
   g_status: string | null;
   g_sequence: string | null;
   g_sha: string | null;
+  /** Version physique de la ligne (xmin, ctid) et taille des octets : lues dans la MÊME instruction que les octets. */
+  g_xmin: string | null;
+  g_ctid: string | null;
+  g_len: string | null;
+}
+
+interface PointerRow extends ProbeRow {
   snapshot_bytes: Buffer | null;
 }
 
-const SELECT_ACTIVE = `
+const PROBE_COLUMNS = `
   SELECT p.generation_id, p.catalogue_sequence AS p_sequence, p.payload_sha256 AS p_sha,
-         g.status AS g_status, g.catalogue_sequence AS g_sequence, g.payload_sha256 AS g_sha, g.snapshot_bytes
+         g.status AS g_status, g.catalogue_sequence AS g_sequence, g.payload_sha256 AS g_sha,
+         g.xmin::text AS g_xmin, g.ctid::text AS g_ctid, octet_length(g.snapshot_bytes)::text AS g_len`;
+const FROM_ACTIVE = `
     FROM site_active_pointer p
     LEFT JOIN site_generation g ON g.id = p.generation_id
    WHERE p.singleton = 1`;
+const SELECT_PROBE = `${PROBE_COLUMNS}${FROM_ACTIVE}`;
+const SELECT_ACTIVE = `${PROBE_COLUMNS}, g.snapshot_bytes${FROM_ACTIVE}`;
 
 /** bigint PostgreSQL (chaîne) -> entier JS exact, sinon erreur (C0 : entiers <= 2^53-1). */
 export function toSafeInt(value: string | number): number {
@@ -54,7 +71,7 @@ function interpret(row: PointerRow | undefined): ActiveGeneration | null {
   if (bytes !== null) {
     try {
       doc = parseBytes(bytes, MAX_BYTES);
-      consistent = consistent && isCanonical(bytes, doc) && payloadSha256(doc as unknown as Snapshot) === row.p_sha;
+      consistent = consistent && isCanonical(bytes, doc) && payloadSha256(doc as unknown as Snapshot) === row.p_sha; // MUTATION_POINT:verify
     } catch {
       consistent = false;
     }
@@ -68,11 +85,80 @@ function interpret(row: PointerRow | undefined): ActiveGeneration | null {
   };
 }
 
+/** Gèle récursivement un document vérifié : il est partagé entre requêtes, aucune requête ne doit pouvoir le modifier. */
+export function deepFreeze<T>(root: T): T {
+  const stack: unknown[] = [root];
+  while (stack.length > 0) {
+    const value = stack.pop();
+    if (value === null || typeof value !== "object" || ArrayBuffer.isView(value)) continue;
+    for (const child of Object.values(value)) stack.push(child);
+    Object.freeze(value);
+  }
+  return root;
+}
+
+/**
+ * Clé de la dernière vérification complète. `null` = ligne absente ou incomplète : jamais mise en cache.
+ * Toute composante qui change (pointeur basculé, statut, SHA, séquence, version physique de la ligne, taille des
+ * octets) impose une relecture et une vérification COMPLÈTES.
+ */
+function cacheKey(row: ProbeRow): string | null {
+  if (row.generation_id === null || row.g_status === null || row.g_xmin === null || row.g_ctid === null || row.g_len === null) return null;
+  return [row.generation_id, row.p_sequence, row.p_sha, row.g_status, row.g_sequence, row.g_sha, row.g_xmin, row.g_ctid, row.g_len].join("|"); // MUTATION_POINT:key
+}
+
+let verified: { key: string; value: ActiveGeneration } | null = null;
+const inflight = new Map<string, Promise<ActiveGeneration | null>>();
+const stats = { probes: 0, hits: 0, full_loads: 0 };
+
+/** Compteurs d'observation (tests, diagnostic) : sondes légères, réponses servies du cache, lectures complètes. */
+export function generationCacheStats(): { probes: number; hits: number; full_loads: number } {
+  return { ...stats };
+}
+
+/** Vide le cache (tests, changement de base). Sans effet sur la sécurité : la prochaine lecture est complète. */
+export function resetGenerationCache(): void {
+  verified = null;
+  inflight.clear();
+  stats.probes = 0;
+  stats.hits = 0;
+  stats.full_loads = 0;
+}
+
+async function readActive(q: Queryable, lock: string): Promise<ActiveGeneration | null> {
+  const probe = (await q.query<ProbeRow>(`${SELECT_PROBE}${lock}`)).rows[0];
+  stats.probes += 1;
+  const key = probe === undefined ? null : cacheKey(probe);
+  if (key !== null && verified !== null && verified.key === key) { // MUTATION_POINT:hit
+    stats.hits += 1;
+    return verified.value;
+  }
+  const load = async (): Promise<ActiveGeneration | null> => {
+    stats.full_loads += 1;
+    const row = (await q.query<PointerRow>(`${SELECT_ACTIVE}${lock}`)).rows[0];
+    const active = interpret(row);
+    const fullKey = row === undefined ? null : cacheKey(row);
+    // Seul un document VÉRIFIÉ (ACTIVE) est conservé, avec la clé de la ligne réellement lue et vérifiée.
+    if (active !== null && active.status === "ACTIVE" && active.snapshot !== null && fullKey !== null) {
+      deepFreeze(active);
+      verified = { key: fullKey, value: active };
+    } else {
+      verified = null;
+    }
+    return active;
+  };
+  // Hors verrou (lecture simple), les arrivées simultanées d'une même clé partagent UNE lecture complète.
+  if (key === null || lock !== "") return load();
+  const pending = inflight.get(key);
+  if (pending !== undefined) return pending;
+  const started = load().finally(() => inflight.delete(key));
+  inflight.set(key, started);
+  return started;
+}
+
 /** Génération ACTIVE (lecture simple, sans verrou), ou null si aucune activation n'a eu lieu. */
 export async function getActiveGeneration(client?: Queryable): Promise<ActiveGeneration | null> {
-  const q: Queryable = client ?? getPool();
-  const { rows } = await q.query<PointerRow>(SELECT_ACTIVE);
-  return interpret(rows[0]);
+  return readActive(client ?? getPool(), "");
 }
 
 /**
@@ -81,6 +167,5 @@ export async function getActiveGeneration(client?: Queryable): Promise<ActiveGen
  * ou le ROLLBACK de l'appelant. L'appelant doit avoir ouvert la transaction (BEGIN).
  */
 export async function readActiveForUpdate(client: PoolClient): Promise<ActiveGeneration | null> {
-  const { rows } = await client.query<PointerRow>(`${SELECT_ACTIVE} FOR SHARE OF p`);
-  return interpret(rows[0]);
+  return readActive(client, " FOR SHARE OF p");
 }

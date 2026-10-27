@@ -3,7 +3,10 @@
  * BC2 `getActiveGeneration()` (`lib/site-db/generation.ts`, contrat docs/SITE_DB_SCHEMA.md), et ses médias
  * depuis `site_media`.
  *
- * - Aucune mémoire de processus comme vérité : chaque appel relit la base (comme BC2 le garantit).
+ * - Aucune mémoire de processus comme VÉRITÉ : chaque appel interroge la base (sonde du pointeur et de la ligne de
+ *   génération, W6-P). Le document n'est relu et reverifié que si la sonde change (voir `lib/site-db/generation.ts`) ;
+ *   la validation C0 (`new Generation`) et l'index des médias sont mémorisés PAR OBJET document vérifié (WeakMap) :
+ *   un document nouvellement lu est un nouvel objet, donc revalidé.
  * - `status: "UNSAFE"` (fail-closed BC2, `snapshot` nul) est remonté tel quel : `loadCatalog` refuse de servir.
  * - La génération ACTIVE est ensuite passée à `new Generation(...)` (C0) : un document que C0 ne sait pas
  *   construire n'est jamais servi (`GENERATION_REFUSED`).
@@ -24,6 +27,11 @@ import { SiteDbConfigError, getPool } from "@/lib/site-db/pool";
 import { CatalogUnavailable, type CatalogSource, type ServedGeneration, type ServedMedia } from "./source";
 
 const SHA_RE = /^[0-9a-f]{64}$/;
+
+/** Documents déjà acceptés par `new Generation` de C0 (clé = l'objet vérifié par BC2, jamais une valeur comparée). */
+const c0Accepted = new WeakSet<object>();
+/** Index SHA -> déclaration de média, par objet document vérifié. */
+const mediaIndex = new WeakMap<object, Map<string, Snapshot["media_refs"][number]>>();
 
 function dbError(error: unknown): never {
   if (error instanceof SiteDbConfigError) throw new CatalogUnavailable("SITE_DB_CONFIG_INVALID", error.message);
@@ -51,10 +59,13 @@ export class ActiveGenerationSource implements CatalogSource {
       return { snapshot: null, status: "UNSAFE", catalogue_sequence: active.catalogue_sequence };
     }
     const snapshot = active.snapshot as unknown as Json;
-    try {
-      new Generation({ snapshot, status: "ACTIVE" });
-    } catch (error) {
-      throw new CatalogUnavailable("GENERATION_REFUSED", `génération ACTIVE ${active.catalogue_sequence} refusée par C0 (${(error as Error).message})`);
+    if (!c0Accepted.has(active.snapshot)) {
+      try {
+        new Generation({ snapshot, status: "ACTIVE" });
+      } catch (error) {
+        throw new CatalogUnavailable("GENERATION_REFUSED", `génération ACTIVE ${active.catalogue_sequence} refusée par C0 (${(error as Error).message})`);
+      }
+      c0Accepted.add(active.snapshot);
     }
     return { snapshot, status: "ACTIVE", catalogue_sequence: active.catalogue_sequence };
   }
@@ -64,7 +75,13 @@ export class ActiveGenerationSource implements CatalogSource {
     const active = await this.active();
     if (active === null) throw new CatalogUnavailable("NO_ACTIVE_GENERATION", "Aucune génération ACTIVE servable");
     if (active.status === "UNSAFE" || active.snapshot === null) throw new CatalogUnavailable("CATALOG_UNSAFE", "génération ACTIVE non sûre (BC2)");
-    const ref = (active.snapshot as Snapshot).media_refs.find((m) => m.sha256 === sha256);
+    let index = mediaIndex.get(active.snapshot);
+    if (index === undefined) {
+      index = new Map();
+      for (const m of active.snapshot.media_refs) if (!index.has(m.sha256)) index.set(m.sha256, m);
+      mediaIndex.set(active.snapshot, index);
+    }
+    const ref = index.get(sha256);
     if (ref === undefined) return null;
     let row: { bytes: Buffer } | undefined;
     try {

@@ -4,6 +4,7 @@
  * Items publiés existent. Aucun prix calculé ici (la sélection est `selectPrice`).
  */
 import type { JsonObject } from "@/c0/ts/src/jsonc";
+import { deepFreeze } from "@/lib/site-db/generation";
 import { CatalogUnavailable, getCatalogSource, type CatalogSource, type ServedGeneration } from "./source";
 
 export type VariantAxes = Record<string, string>;
@@ -101,6 +102,8 @@ function build(served: ServedGeneration, source: CatalogSource["kind"]): Catalog
   );
   const published = new Map<string, { item: Item; family: Family }>();
   for (const family of families) for (const item of family.items) published.set(item.public_item_key, { item, family });
+  const bySlug = new Map<string, Family>();
+  for (const family of families) if (!bySlug.has(family.slug)) bySlug.set(family.slug, family);
   const registry = new Map<string, { status: string; superseded_by: string | null }>();
   for (const entry of doc["identity_registry"] as unknown as { public_item_key: string; status: string; superseded_by: string | null }[]) {
     registry.set(entry.public_item_key, entry);
@@ -126,12 +129,18 @@ function build(served: ServedGeneration, source: CatalogSource["kind"]): Catalog
       const hit = published.get(key);
       return hit ? { kind: "PUBLISHED", ...hit } : { kind: "ABSENT" };
     },
-    familyBySlug: (slug) => families.find((f) => f.slug === slug) ?? null,
+    familyBySlug: (slug) => bySlug.get(slug) ?? null,
     familiesInCategory: (key) =>
       families.filter((f) => f.primary_category_key === key || f.secondary_category_keys.includes(key)),
     childCategories: (key) => categories.filter((c) => c.parent_category_key === key),
   };
 }
+
+/**
+ * Catalogues construits, PAR OBJET document vérifié (W6-P) : le même objet (celui que `lib/site-db/generation.ts`
+ * a vérifié et gardé) donne le même catalogue gelé ; un document relu est un nouvel objet, donc reconstruit.
+ */
+const built = new WeakMap<object, Catalog>();
 
 /** Génération courante ou `CatalogUnavailable` (jamais un catalogue vide servi comme valide). */
 export async function loadCatalog(): Promise<Catalog> {
@@ -140,5 +149,15 @@ export async function loadCatalog(): Promise<Catalog> {
   if (served === null) throw new CatalogUnavailable("NO_ACTIVE_GENERATION", "Aucune génération ACTIVE servable");
   // UNSAFE (BC2 fail-closed) : aucune page ni prix servi depuis un document non vérifié (C0 §10.1 CATALOG_UNSAFE).
   if (served.status === "UNSAFE" || served.snapshot === null) throw new CatalogUnavailable("CATALOG_UNSAFE", "Génération ACTIVE marquée UNSAFE par la lecture BC2");
-  return build(served, source.kind);
+  const memo = built.get(served.snapshot as object);
+  if (memo !== undefined && memo.meta.source === source.kind && memo.meta.catalogue_sequence === served.catalogue_sequence) return memo;
+  const catalog = build(served, source.kind);
+  // Catalogue partagé entre requêtes : rien n'y est modifiable (une requête ne peut pas empoisonner la suivante).
+  deepFreeze(catalog.families);
+  deepFreeze(catalog.categories);
+  Object.freeze(catalog.meta);
+  Object.freeze(catalog.c0Generation);
+  Object.freeze(catalog);
+  built.set(served.snapshot as object, catalog);
+  return catalog;
 }
