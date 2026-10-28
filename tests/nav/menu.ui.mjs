@@ -2,19 +2,18 @@
 // catégories, du fil d'Ariane et des pages catégorie sur des documents C0 à 2, 3 et 4+ niveaux.
 //   npm run c0:build && npx next build   (une fois)
 //   PLAYWRIGHT_DIR=<dossier node_modules contenant playwright> [CHROMIUM=<exécutable>] [NAV_OUT=<dossier captures>] \
-//     node --test --test-concurrency=1 tests/nav/menu.ui.mjs
+//     npm run test:nav:ui
+// CHROMIUM : Playwright 1.61.1 cherche le build 1228 ; s'il manque au cache, pointer un Chrome/Chromium déjà installé
+//   (ex. ~/Library/Caches/ms-playwright/chromium-1223/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing).
 // Un `next start` par scénario sur $NAV_PORT (défaut 3120), lancé et tué (son PID seulement) par ce script.
 import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { removeNavFixtures, writeNavFixtures } from "./nav-fixtures.mjs";
+import { BASE, get, withServer } from "./nav-server.mjs";
 
-const ROOT = path.resolve(import.meta.dirname, "..", "..");
-const PORT = Number(process.env.NAV_PORT ?? 3120);
-const BASE = `http://127.0.0.1:${PORT}`;
 const OUT = process.env.NAV_OUT ? path.resolve(process.env.NAV_OUT) : null;
 if (OUT) mkdirSync(OUT, { recursive: true });
 const require = createRequire(path.join(process.env.PLAYWRIGHT_DIR ?? "", "/"));
@@ -30,53 +29,6 @@ after(async () => {
   await browser?.close();
   removeNavFixtures();
 });
-
-async function portAnswers() {
-  try {
-    await fetch(BASE + "/", { signal: AbortSignal.timeout(500) });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function withServer(fixture, fn) {
-  assert.equal(await portAnswers(), false, `port ${PORT} occupé`);
-  const child = spawn(process.execPath, [path.join(ROOT, "node_modules/next/dist/bin/next"), "start", "-H", "127.0.0.1", "-p", String(PORT)], {
-    cwd: ROOT,
-    env: {
-      PATH: process.env.PATH,
-      HOME: process.env.HOME,
-      NEXT_TELEMETRY_DISABLED: "1",
-      SITE_ENV: "staging",
-      SITE_NOW_UTC: "2026-10-19T06:00:00Z",
-      SITE_CATALOG_SOURCE: "fixture",
-      SITE_CATALOG_FIXTURE: `${fixture}/snapshot_nav.json`,
-    },
-    stdio: ["ignore", "ignore", "pipe"],
-  });
-  let exited = false;
-  child.on("exit", () => (exited = true));
-  const deadline = Date.now() + 30_000;
-  while (!(await portAnswers())) {
-    if (exited || Date.now() > deadline) throw new Error("serveur non démarré");
-    await new Promise((r) => setTimeout(r, 150));
-  }
-  try {
-    await fn();
-  } finally {
-    if (!exited) {
-      const done = new Promise((r) => child.once("exit", r));
-      process.kill(child.pid, "SIGTERM"); // PID lancé par ce script uniquement
-      await done;
-    }
-  }
-}
-
-const get = async (p) => {
-  const r = await fetch(BASE + p);
-  return { status: r.status, text: await r.text() };
-};
 
 async function page(vp) {
   const ctx = await browser.newContext({ viewport: VIEWPORTS[vp] });
@@ -164,6 +116,19 @@ describe("3 niveaux", () => {
         for (let i = 0; i < n + 1; i++) await p.keyboard.press("Tab");
         assert.equal(await button.getAttribute("aria-expanded"), "false", "le focus quitte le menu : il se ferme");
         await shot(p, "l3-clavier");
+        // Souris : un clic sur la marge intérieure, le bord ou la barre de défilement du panneau ne le ferme pas
+        // (le focus part sans destinataire : relatedTarget nul), un clic en dehors le ferme.
+        await p.keyboard.press("Shift+Tab");
+        await p.goto(BASE + "/");
+        await openMenu(p);
+        const panel = await p.locator('[data-testid="category-menu"] ul[data-level="1"]').first().evaluateHandle((ul) => ul.parentElement);
+        const box = await panel.asElement().boundingBox();
+        for (const [dx, dy] of [[6, box.height / 2], [box.width / 2, 6], [box.width - 6, box.height / 2], [box.width / 2, box.height - 6]]) {
+          await p.mouse.click(box.x + dx, box.y + dy);
+          assert.equal(await button.getAttribute("aria-expanded"), "true", `clic sur la marge (${Math.round(dx)},${Math.round(dy)}) : le menu reste ouvert`);
+        }
+        await p.mouse.click(5, 600);
+        assert.equal(await button.getAttribute("aria-expanded"), "false", "un clic en dehors ferme le menu");
       } finally {
         await close();
       }

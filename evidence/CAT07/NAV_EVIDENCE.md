@@ -37,3 +37,14 @@ toutes ses familles sous « signaletique »). Décision pilote (issue Factory #5
 - Les fixtures F_NAV_* sont écrites temporairement sous c0/fixtures/documents (nom exigé par FixtureSource) puis supprimées ;
   le dossier C0 gelé n'est pas modifié dans git. Captures : hors git (prodes-night-20261029/commerce-cat-evidence/).
 - Catégories sans famille masquées : un arbre à rubriques vides n'offre aucun menu (comportement voulu, non mesuré sur données réelles).
+
+## Révision 2 (revue 2 de 8f, PASS_WITH_NOTES)
+- Recette HTTP sans navigateur `tests/nav/navigation.http.mjs` (3 cas sur F_NAV_L2/L3/L4), lancée par `npm run test:nav` avec les 10 cas
+  unitaires (13/13) : fil d'Ariane de 3 maillons, 404 pour un niveau 4+, « Également dans » sans niveau 4+, rubrique vide masquée et en 200.
+  Mutations vérifiées : fil sans ancre niveau 3 -> 1 échec ; « Également dans » sans ancre -> 1 échec ; retrait du noindex -> 1 échec.
+- Recette navigateur : `npm run test:nav:ui` (4/4), avec `PLAYWRIGHT_DIR` et, si le build 1228 de Chromium manque au cache,
+  `CHROMIUM=<exécutable>` (1223 en cache sur le poste de test).
+- Menu : un clic sur la marge intérieure, le bord ou le bas du panneau ne le ferme plus (drapeau posé au pointerdown du conteneur) ;
+  un clic en dehors le ferme. Mutation (drapeau retiré) -> 1 échec.
+- Page d'une rubrique vide : `robots: noindex, follow` propre à la page (le reste du site garde la directive globale `noindex, nofollow`).
+- Suite relancée : test:http 88/88, test:storefront 21/21, agent-ops:test 15/15, tsc et next build sans erreur.

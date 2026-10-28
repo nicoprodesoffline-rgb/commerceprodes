@@ -15,6 +15,9 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
   const button = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const id = useId();
+  // Un pointeur enfoncé dans le menu (marge, bord, barre de défilement) fait perdre le focus sans le donner à un autre
+  // élément (relatedTarget nul) : ce n'est pas une sortie du menu.
+  const pointerDown = useRef(false);
 
   useEffect(() => {
     if (!open) return;
@@ -41,8 +44,18 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
     <div
       className="sm:relative"
       data-testid="category-menu"
+      onPointerDown={() => {
+        pointerDown.current = true;
+        const release = () => {
+          pointerDown.current = false;
+          document.removeEventListener("pointerup", release);
+          document.removeEventListener("pointercancel", release);
+        };
+        document.addEventListener("pointerup", release);
+        document.addEventListener("pointercancel", release);
+      }}
       onBlur={(e) => {
-        if (open && !e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
+        if (open && !pointerDown.current && !e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
       }}
     >
       <button

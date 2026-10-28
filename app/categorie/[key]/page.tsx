@@ -11,8 +11,11 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ key: string }> }): Promise<Metadata> {
   const { key } = await params;
   const catalog = await catalogForPage();
-  const cat = navigationOf(catalog).node(key);
-  return { title: cat?.name ?? "Catégorie introuvable" };
+  const nav = navigationOf(catalog);
+  const cat = nav.node(key);
+  // Une rubrique sans aucune famille (ni dans son sous-arbre) reste servie, mais ne doit jamais être indexée.
+  const empty = cat !== null && cat.subtreeFamilyCount === 0;
+  return { title: cat?.name ?? "Catégorie introuvable", ...(empty ? { robots: { index: false, follow: true } } : {}) };
 }
 
 /** Catégorie : sous-catégories, familles classées ici en principal puis via `secondary_category_keys` (DTO). */
