@@ -31,3 +31,16 @@ Never read, print, write, commit, or summarize secrets. `.env*`, keys, credentia
 - Treat deploy, SQL migration, auth, checkout, import, and email flows as high-risk.
 - Use browser verification for visible UI changes when possible.
 - Use `node scripts/agent_ops/quality-gate.mjs` before merge.
+
+## CI — Factory Lab
+
+- Ce dépôt est **public** : aucun runner self-hosted Factory ne doit y être branché (du code de PR externe
+  s'exécuterait sur la machine). Pas de CI ici à ce jour ; avant d'en créer une, faire décider Nico
+  (passer le dépôt en privé, ou autre vérification).
+- Ne jamais utiliser de runner GitHub-hosted (`ubuntu-latest`, `windows-latest`, `macos-latest`), ni en repli, ni en rerun,
+  ni en `schedule:` sans destinataire nommé. Runner absent = job en file : on attend, on ne contourne pas
+  (pas de `gh workflow enable`, pas de `gh pr merge --admin`).
+- Dev : tests locaux proportionnés. Livraison : une PR, CI finale sur la Factory, preuve lue sur l'API
+  (`run_id`, `head_sha`, `runner_name` = `factorylab-*`, nombre de tests).
+- Ajouter ou modifier une CI : [runbook « ajouter la CI Factory à un dépôt »](https://github.com/nicoprodesoffline-rgb/factory-lab-operations/blob/p4/lab-dev-preparation/runbooks/P8_ADD_FACTORY_CI_TO_REPO.md). Règles complètes :
+  [politique CI commune](https://github.com/nicoprodesoffline-rgb/factory-lab-operations/blob/p4/lab-dev-preparation/policy/claude-ci/CLAUDE_CI_POLICY.md) (factory-lab-operations#12).
