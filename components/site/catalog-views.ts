@@ -2,23 +2,27 @@
  * Projections d'affichage côté serveur sur le catalogue servi (aucune donnée hors DTO, aucun prix calculé,
  * aucun ordre inventé : l'ordre est celui du DTO, déjà normatif — C0 §8.1).
  */
-import type { Catalog, Category, Family } from "@/lib/site-catalog/catalog";
+import type { Catalog, Family } from "@/lib/site-catalog/catalog";
+import { buildNavigation, type Navigation } from "@/lib/site-catalog/navigation";
 import type { Crumb } from "@/components/layout/breadcrumbs";
 
-/** Chaîne des catégories de la racine à `key` (C0 interdit les cycles : `categories.cycle`). */
-export function categoryChain(catalog: Catalog, key: string): Category[] {
-  const chain: Category[] = [];
-  let cur = catalog.categories.find((c) => c.category_key === key);
-  while (cur && chain.length < 64) {
-    chain.unshift(cur);
-    const parent = cur.parent_category_key;
-    cur = parent === null ? undefined : catalog.categories.find((c) => c.category_key === parent);
+const navigations = new WeakMap<Catalog, Navigation>();
+
+/** Navigation (3 niveaux max, rubriques vides masquées) du catalogue servi, construite une fois par catalogue. */
+export function navigationOf(catalog: Catalog): Navigation {
+  let nav = navigations.get(catalog);
+  if (!nav) {
+    nav = buildNavigation(catalog.categories, catalog.families);
+    navigations.set(catalog, nav);
   }
-  return chain;
+  return nav;
 }
 
+/** Fil d'Ariane de la catégorie `key` (ou de son ancêtre de niveau 3 si elle est plus profonde). Jamais plus de 3 maillons. */
 export function categoryCrumbs(catalog: Catalog, key: string): Crumb[] {
-  return categoryChain(catalog, key).map((c) => ({ label: c.name, href: `/categorie/${c.category_key}` }));
+  const nav = navigationOf(catalog);
+  const anchor = nav.anchor(key);
+  return anchor === null ? [] : nav.chain(anchor).map((c) => ({ label: c.name, href: `/categorie/${c.key}` }));
 }
 
 export type FamilyCardData = { slug: string; name: string; description: string; imageSha: string; variantCount: number };

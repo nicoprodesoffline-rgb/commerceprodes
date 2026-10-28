@@ -16,7 +16,7 @@ export function SiteHeader({ dataLabel, categories }: { dataLabel: string | null
           localement et ne sont traitées par personne.
         </p>
       )}
-      <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 lg:px-8">
+      <div className="relative mx-auto flex max-w-[1280px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 lg:px-8">
         <Link href="/" className="inline-flex min-h-[42px] items-center text-xl font-bold tracking-[0.08em] text-ink" aria-label="PRODES — accueil du catalogue">
           PRODES
         </Link>
