@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FamilyGrid } from "@/components/home/family-card";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
-import { categoryCrumbs, familyCard } from "@/components/site/catalog-views";
+import { categoryCrumbs, familyCard, navigationOf } from "@/components/site/catalog-views";
 import { catalogForPage } from "@/lib/site-catalog/page";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ key: string }> }): Promise<Metadata> {
   const { key } = await params;
   const catalog = await catalogForPage();
-  const cat = catalog.categories.find((c) => c.category_key === key);
+  const cat = navigationOf(catalog).node(key);
   return { title: cat?.name ?? "Catégorie introuvable" };
 }
 
@@ -19,12 +19,14 @@ export async function generateMetadata({ params }: { params: Promise<{ key: stri
 export default async function CategoryPage({ params }: { params: Promise<{ key: string }> }) {
   const { key } = await params;
   const catalog = await catalogForPage();
-  const cat = catalog.categories.find((c) => c.category_key === key);
+  const nav = navigationOf(catalog);
+  const cat = nav.node(key);
   if (!cat) notFound();
-  const children = catalog.childCategories(cat.category_key);
-  const families = catalog.familiesInCategory(cat.category_key);
+  const children = nav.visibleChildren(cat.key);
+  const slugs = new Set(nav.familySlugs(cat.key));
+  const families = catalog.families.filter((f) => slugs.has(f.slug));
   const notes: Record<string, string> = {};
-  for (const f of families) if (f.primary_category_key !== key) notes[f.slug] = "classée aussi ici";
+  for (const f of families) if (nav.anchor(f.primary_category_key) !== key) notes[f.slug] = "classée aussi ici";
   return (
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: "Accueil", href: "/" }, ...categoryCrumbs(catalog, key)]} />
@@ -33,8 +35,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ key: 
         <nav aria-label="Sous-catégories">
           <ul className="flex flex-wrap gap-2">
             {children.map((c) => (
-              <li key={c.category_key}>
-                <Link href={`/categorie/${c.category_key}`} className="inline-flex min-h-[34px] items-center rounded-full border border-line-strong bg-white px-3 text-sm hover:bg-surface">
+              <li key={c.key}>
+                <Link href={`/categorie/${c.key}`} className="inline-flex min-h-[34px] items-center rounded-full border border-line-strong bg-white px-3 text-sm hover:bg-surface">
                   {c.name}
                 </Link>
               </li>

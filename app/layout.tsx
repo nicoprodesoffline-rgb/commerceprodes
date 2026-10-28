@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { CartProvider } from "@/components/cart/cart-provider";
 import { SiteFooter } from "@/components/layout/footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { navigationOf } from "@/components/site/catalog-views";
+import type { MenuCategory } from "@/components/layout/category-menu";
+import type { NavNode } from "@/lib/site-catalog/navigation";
 import { isForcedNow, serverNowUtc } from "@/lib/site-catalog/clock";
 import { catalogOrNull } from "@/lib/site-catalog/page";
 import "./globals.css";
@@ -17,6 +20,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
+const toMenu = (nodes: NavNode[]): MenuCategory[] => nodes.map((n) => ({ key: n.key, name: n.name, children: toMenu(n.children) }));
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const catalog = await catalogOrNull();
   let instant: string | null = null;
@@ -27,11 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   } catch {
     /* ConfigInvalid : les pages boutique sont servies en 503 par proxy.ts ; l'API refuse. */
   }
-  const roots = catalog
-    ? catalog.categories
-        .filter((c) => c.parent_category_key === null)
-        .map((c) => ({ key: c.category_key, name: c.name, children: catalog.childCategories(c.category_key).map((s) => ({ key: s.category_key, name: s.name })) }))
-    : [];
+  const roots = catalog ? toMenu(navigationOf(catalog).menu) : [];
   return (
     <html lang="fr">
       <body className="flex min-h-screen flex-col">

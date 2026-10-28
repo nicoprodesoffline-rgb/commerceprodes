@@ -6,6 +6,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "test:nav": "node --test tests/nav/*.test.mjs",
     "test:http": "node --test tests/http/site.test.mjs",
     "test:storefront": "npm run bc2:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc3_test} SITE_TEST_PORT=${SITE_TEST_PORT:-3361} node --test --test-concurrency=1 tests/http/storefront.test.mjs",
     "agent-ops:test": "node --test tests/agent-ops/*.test.mjs",

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { FamilyBuyBox } from "@/components/product/family-buy-box";
 import { Gallery, type GalleryImage } from "@/components/product/gallery";
-import { categoryCrumbs } from "@/components/site/catalog-views";
+import { categoryCrumbs, navigationOf } from "@/components/site/catalog-views";
 import { axesText } from "@/components/site/format";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { catalogForPage } from "@/lib/site-catalog/page";
@@ -56,9 +56,13 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
       if (!images.some((g) => g.sha256 === sha)) images.push({ sha256: sha, caption: `Variante ${axesText(i.axes)}` });
     }
   }
-  const secondary = family.secondary_category_keys
-    .map((k) => catalog.categories.find((c) => c.category_key === k))
-    .filter((c): c is NonNullable<typeof c> => c !== undefined);
+  // Rubriques navigables uniquement (un niveau 4+ est rattaché à son ancêtre de niveau 3), sans doublon ni la principale.
+  const nav = navigationOf(catalog);
+  const primaryAnchor = nav.anchor(family.primary_category_key);
+  const secondary = [...new Set(family.secondary_category_keys.map((k) => nav.anchor(k)))]
+    .filter((k): k is string => k !== null && k !== primaryAnchor)
+    .map((k) => nav.node(k))
+    .filter((c): c is NonNullable<typeof c> => c !== null);
 
   return (
     <div>
@@ -89,9 +93,9 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
             <p className="text-sm text-ink-2" data-testid="secondary-categories">
               Également dans :{" "}
               {secondary.map((c, n) => (
-                <span key={c.category_key}>
+                <span key={c.key}>
                   {n > 0 && ", "}
-                  <Link href={`/categorie/${c.category_key}`} className="underline">{c.name}</Link>
+                  <Link href={`/categorie/${c.key}`} className="underline">{c.name}</Link>
                 </span>
               ))}
             </p>
