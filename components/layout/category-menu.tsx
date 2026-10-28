@@ -15,9 +15,6 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
   const button = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const id = useId();
-  // Un pointeur enfoncé dans le menu (marge, bord, barre de défilement) fait perdre le focus sans le donner à un autre
-  // élément (relatedTarget nul) : ce n'est pas une sortie du menu.
-  const pointerDown = useRef(false);
 
   useEffect(() => {
     if (!open) return;
@@ -44,18 +41,8 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
     <div
       className="sm:relative"
       data-testid="category-menu"
-      onPointerDown={() => {
-        pointerDown.current = true;
-        const release = () => {
-          pointerDown.current = false;
-          document.removeEventListener("pointerup", release);
-          document.removeEventListener("pointercancel", release);
-        };
-        document.addEventListener("pointerup", release);
-        document.addEventListener("pointercancel", release);
-      }}
       onBlur={(e) => {
-        if (open && !pointerDown.current && !e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
+        if (open && !e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
       }}
     >
       <button
@@ -72,6 +59,11 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
         ref={panel}
         id={id}
         hidden={!open}
+        // Appuyer (souris ou toucher) sur une zone non interactive du panneau (marge, bord, barre de défilement) ne doit
+        // pas déplacer le focus hors du menu : sinon onBlur (relatedTarget nul) le fermerait.
+        onMouseDown={(e) => {
+          if (!(e.target as HTMLElement).closest("a,button")) e.preventDefault();
+        }}
         className="absolute inset-x-4 z-40 mt-1 max-h-[70vh] overflow-y-auto sm:inset-x-auto sm:left-0 sm:w-[22rem] rounded-[14px] border border-line bg-white p-3 shadow-lg"
       >
         <MenuList items={categories} level={1} onNavigate={() => setOpen(false)} />

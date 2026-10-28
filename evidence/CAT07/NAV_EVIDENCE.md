@@ -44,7 +44,8 @@ toutes ses familles sous « signaletique »). Décision pilote (issue Factory #5
   Mutations vérifiées : fil sans ancre niveau 3 -> 1 échec ; « Également dans » sans ancre -> 1 échec ; retrait du noindex -> 1 échec.
 - Recette navigateur : `npm run test:nav:ui` (4/4), avec `PLAYWRIGHT_DIR` et, si le build 1228 de Chromium manque au cache,
   `CHROMIUM=<exécutable>` (1223 en cache sur le poste de test).
-- Menu : un clic sur la marge intérieure, le bord ou le bas du panneau ne le ferme plus (drapeau posé au pointerdown du conteneur) ;
-  un clic en dehors le ferme. Mutation (drapeau retiré) -> 1 échec.
+- Menu : un appui (souris ou toucher) sur une zone non interactive du panneau (marge, bord, bas) ne le ferme plus : `onMouseDown`
+  du panneau annule le déplacement du focus hors des liens/boutons ; un clic ou un tap en dehors le ferme. Test souris (4 points) et
+  tactile (`hasTouch`+`isMobile`, 375 px). Mutation (preventDefault retiré) -> échec, y compris avec les clics souris neutralisés.
 - Page d'une rubrique vide : `robots: noindex, follow` propre à la page (le reste du site garde la directive globale `noindex, nofollow`).
 - Suite relancée : test:http 88/88, test:storefront 21/21, agent-ops:test 15/15, tsc et next build sans erreur.

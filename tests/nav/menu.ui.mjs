@@ -129,6 +129,28 @@ describe("3 niveaux", () => {
         }
         await p.mouse.click(5, 600);
         assert.equal(await button.getAttribute("aria-expanded"), "false", "un clic en dehors ferme le menu");
+        // Toucher (mobile, 375 px) : le focus quitte le bouton APRÈS le pointerup ; un tap sur la marge gauche du panneau ne ferme pas
+        // le menu, un tap hors du menu le ferme.
+        const touch = await browser.newContext({ viewport: VIEWPORTS["375"], hasTouch: true, isMobile: true });
+        try {
+          const tp = await touch.newPage();
+          await tp.goto(BASE + "/");
+          const tbutton = tp.locator('button[aria-controls]:has-text("Catégories")');
+          await tbutton.tap();
+          await tp.waitForSelector('[data-testid="category-menu"] ul[data-level="1"]', { state: "visible" });
+          const tpanel = await tp.locator('[data-testid="category-menu"] ul[data-level="1"]').first().evaluateHandle((ul) => ul.parentElement);
+          const tbox = await tpanel.asElement().boundingBox();
+          for (const [dx, dy] of [[6, tbox.height / 2], [tbox.width - 6, tbox.height / 2], [tbox.width / 2, tbox.height - 6]]) {
+            await tp.touchscreen.tap(tbox.x + dx, tbox.y + dy);
+            await tp.waitForTimeout(150);
+            assert.equal(await tbutton.getAttribute("aria-expanded"), "true", `tap sur la marge (${Math.round(dx)},${Math.round(dy)}) : le menu reste ouvert`);
+          }
+          await tp.touchscreen.tap(20, 700);
+          await tp.waitForTimeout(150);
+          assert.equal(await tbutton.getAttribute("aria-expanded"), "false", "un tap hors du menu le ferme");
+        } finally {
+          await touch.close();
+        }
       } finally {
         await close();
       }
