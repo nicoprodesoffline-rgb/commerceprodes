@@ -21,7 +21,8 @@ export type PriceGridRow = {
   validity_label: string | null;
 };
 
-export function PriceGrid({ rows, selectedRateId, caption }: { rows: PriceGridRow[]; selectedRateId?: string | null; caption: string }) {
+/** `showBasis` : chaque ligne porte sa base fiscale (défaut) ; faux = la base est dite UNE fois par le bandeau de la fiche (`BasisNotice`, friction 14). */
+export function PriceGrid({ rows, selectedRateId, caption, showBasis = true }: { rows: PriceGridRow[]; selectedRateId?: string | null; caption: string; showBasis?: boolean }) {
   if (!rows.some((r) => r.selected)) {
     return (
       <p className="rounded-[9px] border border-caution bg-white p-3 text-sm" data-testid="price-unavailable">
@@ -57,7 +58,7 @@ export function PriceGrid({ rows, selectedRateId, caption }: { rows: PriceGridRo
                   {current && <span className="ml-2 text-xs font-medium text-signal">quantité choisie</span>}
                 </td>
                 <td className="py-1.5 pr-3 text-right font-semibold whitespace-nowrap">
-                  {money(r.unit_amount ?? "")} <span className="font-normal">{basisLabel(r.tax_basis_or_status)}</span>
+                  {money(r.unit_amount ?? "")}{showBasis && <> <span className="font-normal">{basisLabel(r.tax_basis_or_status)}</span></>}
                 </td>
                 <td className={`hidden py-1.5 text-xs sm:table-cell ${current ? "text-ink-2" : "text-ink-3"}`}>{r.validity_label}</td>
               </tr>
@@ -73,7 +74,7 @@ export function PriceGrid({ rows, selectedRateId, caption }: { rows: PriceGridRo
           })}
         </tbody>
       </table>
-      <p className="mt-2 text-xs text-ink-3">Prix de vente PRODES publiés, base indiquée sur chaque ligne. Taxes, port et remises : non calculés.</p>
+      {showBasis && <p className="mt-2 text-xs text-ink-3">Prix de vente PRODES publiés, base indiquée sur chaque ligne. Taxes, port et remises : non calculés.</p>}
     </div>
   );
 }

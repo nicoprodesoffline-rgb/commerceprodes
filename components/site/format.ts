@@ -15,6 +15,25 @@ export function basisLabel(basis: string | null | undefined): string {
   return "(base inconnue)";
 }
 
+/**
+ * Friction 14 (V5.1) : la mention LOURDE « (base fiscale non précisée) » n'est plus répétée à chaque ligne quand TOUTES les lignes affichées d'un écran la partagent : elle est
+ * dite UNE fois par le bandeau de l'écran (`BasisNotice`) et sur chaque total. Dès qu'une ligne a une autre base (HT, inconnue) ou qu'aucune ligne n'est chiffrée, CHAQUE ligne garde
+ * sa propre mention. Une base qualifiée (« HT ») reste, elle, toujours écrite sur la ligne (courte et sans ambiguïté). La base fiscale n'est donc jamais masquée : elle est soit sur la
+ * ligne, soit dans le bandeau de l'écran qui contient la ligne, et toujours sur le total.
+ */
+export type UniformBasis = { uniform: true; basis: "UNQUALIFIED" } | { uniform: false };
+
+export function uniformBasis(bases: Iterable<string | null | undefined>): UniformBasis {
+  const seen = new Set<string | null | undefined>(bases);
+  if (seen.size === 1 && seen.has("UNQUALIFIED")) return { uniform: true, basis: "UNQUALIFIED" };
+  return { uniform: false };
+}
+
+/** Le texte du bandeau d'écran. */
+export function basisNoticeText(): string {
+  return "Base fiscale non précisée pour tous les montants de cette page : ni HT ni TTC. Taxes, port et remises : non calculés.";
+}
+
 export function price(amount: string, basis: string | null | undefined): string {
   return `${money(amount)} ${basisLabel(basis)}`;
 }

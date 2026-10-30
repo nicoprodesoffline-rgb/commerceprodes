@@ -8,7 +8,8 @@ import Link from "next/link";
 import { MAX_QUANTITY, type DraftLine } from "@/components/cart/cart-provider";
 import { bases } from "@/components/cart/use-cart-preview";
 import { codeMessage } from "@/components/site/codes";
-import { axesText, basisLabel, money, price } from "@/components/site/format";
+import { BasisNotice } from "@/components/site/basis-notice";
+import { axesText, basisLabel, money, price, uniformBasis } from "@/components/site/format";
 import type { PreviewJson, PreviewLineJson } from "@/lib/site-business/client-types";
 
 export function totalsNote(preview: PreviewJson): string {
@@ -52,7 +53,11 @@ export function CartLines({
 }) {
   const pls = preview && preview.lines.length === lines.length ? preview.lines : null;
   const priced = pls ? pls.filter((l) => l.accepted).length : 0;
+  // Une seule base fiscale pour toutes les lignes chiffrées : dite une fois par le bandeau et sur le total ; sinon chaque ligne porte la sienne (friction 14).
+  const common = pls ? uniformBasis(pls.filter((l) => l.accepted && l.selection).map((l) => l.selection!.tax_basis_or_status)) : ({ uniform: false } as const);
   return (
+    <div className="space-y-2">
+    {common.uniform && <BasisNotice basis={common.basis} />}
     <div className="overflow-hidden rounded-[14px] border border-line bg-white">
       <table className="tabular w-full border-collapse text-sm">
         <caption className="sr-only">Lignes du panier, prix sélectionnés par le serveur</caption>
@@ -103,7 +108,7 @@ export function CartLines({
                 </td>
                 <td className="text-right sm:px-3 sm:py-3">
                   <span className="block text-xs text-ink-3 sm:hidden">Prix unitaire</span>
-                  {loading || !pls ? <span className="text-ink-3">…</span> : sel ? price(sel.unit_amount, sel.tax_basis_or_status) : <span className="text-ink-2">sans prix</span>}
+                  {loading || !pls ? <span className="text-ink-3">…</span> : sel ? (common.uniform ? money(sel.unit_amount) : price(sel.unit_amount, sel.tax_basis_or_status)) : <span className="text-ink-2">sans prix</span>}
                 </td>
                 <td className="text-right font-semibold sm:px-3 sm:py-3">
                   <span className="block text-xs font-normal text-ink-3 sm:hidden">Total ligne</span>
@@ -132,6 +137,7 @@ export function CartLines({
         </div>
         <p className="mt-1 text-xs text-ink-2" data-testid="totals-note">{preview ? totalsNote(preview) : "Montants hors taxes et port, non calculés."} Total calculé par le serveur.</p>
       </div>
+    </div>
     </div>
   );
 }
