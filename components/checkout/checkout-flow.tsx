@@ -11,12 +11,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
-import { CartLines, PreviewProblem, StaleBanner, totalsNote } from "@/components/cart/cart-summary";
-import { bases, quoteAllowed, useCartPreview } from "@/components/cart/use-cart-preview";
+import { CartLines, PreviewProblem, StaleBanner, totalWithBasis, totalsNote } from "@/components/cart/cart-summary";
+import { quoteAllowed, useCartPreview } from "@/components/cart/use-cart-preview";
 import { ContactFields, EMPTY_CONTACT, ErrorSummary, contactBody, validateContact, type Contact } from "@/components/checkout/contact-fields";
 import { ResultPanel } from "@/components/checkout/result-panel";
 import { RECONFIRM, Submitter, type Outcome } from "@/components/checkout/submit";
-import { basisLabel, money } from "@/components/site/format";
 
 export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
   const { ready, ackSequence, acknowledge, clear } = useCart();
@@ -55,8 +54,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
 
   if (!preview) return null;
   const allowed = mode === "order" ? preview.accepted : quoteAllowed(preview);
-  const b = bases(preview);
-  const total = preview.total_amount ? `${money(preview.total_amount)}${b.size === 1 ? ` ${basisLabel([...b][0])}` : ""}` : null;
+  const total = preview.total_amount ? totalWithBasis(preview) : null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

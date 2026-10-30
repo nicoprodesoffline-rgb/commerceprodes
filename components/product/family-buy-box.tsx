@@ -217,7 +217,7 @@ export function FamilyBuyBox({
         ) : priced?.selection ? (
           <span>
             Pour {quantity} : <strong>{unit(priced.selection.unit_amount, priced.selection.tax_basis_or_status)}</strong> l&apos;unité
-            {priced.line_total ? <>, soit {money(priced.line_total)}{fiche.uniform && priced.selection.tax_basis_or_status === fiche.basis ? <> {basisLabel(fiche.basis)}</> : null} pour la ligne</> : null}.
+            {priced.line_total ? <>, soit {money(priced.line_total)} {basisLabel(priced.selection.tax_basis_or_status)} pour la ligne</> : null}.
           </span>
         ) : (
           <span className="text-ink-2">Pour {quantity} : {codesMessage(current.line.error_codes)}</span>

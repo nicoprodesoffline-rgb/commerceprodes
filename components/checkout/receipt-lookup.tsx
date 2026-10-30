@@ -134,7 +134,7 @@ export function ReceiptLookup() {
                     <td className="py-1 pr-2">{axesOf(l.variant_axes)}</td>
                     <td className="py-1 pr-2 text-right">{l.quantity}</td>
                     <td className="py-1 pr-2 text-right">{l.unit_amount ? (receiptBasis.uniform ? money(l.unit_amount) : price(l.unit_amount, l.tax_basis_or_status)) : "sans prix (à chiffrer)"}</td>
-                    {d.kind === "order" && <td className="py-1 text-right">{l.line_total ? money(l.line_total) : "—"}</td>}
+                    {d.kind === "order" && <td className="py-1 text-right">{l.line_total ? (receiptBasis.uniform ? money(l.line_total) : price(l.line_total, l.tax_basis_or_status)) : "—"}</td>}
                   </tr>
                 ))}
               </tbody>

@@ -691,6 +691,51 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.context().close();
   });
 
+  test("U13 — friction 14 (règle « jamais un montant sans sa base ») : un reçu de commande aux bases mêlées porte, sur chaque ligne, la base du prix unitaire ET du total de ligne, et dit que les bases diffèrent", async () => {
+    await scene("F_GMCE_VARIANTS.activate");
+    const page = await newPage();
+    for (const key of ["PI-00000037S", "PI-000000358"]) {
+      await page.goto(BASE + `/famille/gmce-demo?article=${key}`);
+      await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
+      await page.getByRole("button", { name: "Ajouter au panier" }).click();
+      await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    }
+    await page.goto(BASE + "/commande");
+    await page.getByTestId("order-confirm").waitFor();
+    await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie de Test");
+    await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
+    await page.locator("#f-email").fill("achats@example.invalid");
+    await page.getByTestId("order-confirm").check();
+    await page.getByTestId("submit").click();
+    await page.getByTestId("result-received").waitFor();
+    const link = await page.getByTestId("receipt-link").textContent();
+    // Le reçu réel de cette commande (deux lignes « non précisée ») : son affichage uniforme est regroupé en bandeau ; on réécrit UNE ligne en HT dans la réponse du serveur pour
+    // obtenir un reçu aux bases mêlées (le site n'en produit pas aujourd'hui : la règle doit tenir quand même).
+    const reader = await newPage();
+    await reader.goto(link);
+    await reader.getByTestId("receipt-found").waitFor();
+    assert.equal(await reader.getByTestId("basis-notice").count(), 1, "reçu uniforme : un seul bandeau");
+    await reader.context().close();
+    const mixed = await newPage();
+    await mixed.route("**/api/site/receipt**", async (route) => {
+      const response = await route.fetch();
+      const body = await response.json();
+      if (body.receipt?.lines?.[1]) body.receipt.lines[1].tax_basis_or_status = "HT";
+      const { "content-length": _ignored, ...headers } = response.headers();
+      await route.fulfill({ status: response.status(), headers, body: JSON.stringify(body) });
+    });
+    await mixed.goto(link);
+    await mixed.getByTestId("receipt-found").waitFor();
+    assert.equal(await mixed.getByTestId("basis-notice").count(), 0, "bases mêlées : pas de bandeau unique");
+    const rows = (await mixed.getByTestId("receipt-found").locator("tbody tr").allInnerTexts()).map((t) => t.replace(/\s+/g, " "));
+    assert.equal(rows.length, 2);
+    assert.equal((rows[0].match(/\(base fiscale non précisée\)/g) ?? []).length, 2, "ligne « non précisée » : prix unitaire ET total de ligne");
+    assert.equal((rows[1].match(/\bHT\b/g) ?? []).length, 2, "ligne HT : prix unitaire ET total de ligne");
+    assert.match(await mixed.getByTestId("receipt-total").innerText(), /\(bases fiscales différentes/);
+    await mixed.context().close();
+    await page.context().close();
+  });
+
   test("U8 — aucune erreur console (dont violations CSP) sur l'ensemble du parcours", async () => {
     const filtered = consoleErrors.filter((e) => !/status of 503|status of 404|Failed to load resource/.test(e));
     writeFileSync(path.join(OUT, "console_errors_filtered.txt"), filtered.join("\n") + "\n");

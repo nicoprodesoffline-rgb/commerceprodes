@@ -12,6 +12,14 @@ import { BasisNotice } from "@/components/site/basis-notice";
 import { axesText, basisLabel, money, price, uniformBasis } from "@/components/site/format";
 import type { PreviewJson, PreviewLineJson } from "@/lib/site-business/client-types";
 
+/** Le total toujours accompagné de sa base : celle des lignes si elle est unique, sinon « bases fiscales différentes » (jamais un montant sans base). */
+export function totalWithBasis(preview: PreviewJson): string {
+  const b = bases(preview);
+  const total = money(preview.total_amount ?? "");
+  if (b.size === 1) return `${total} ${basisLabel([...b][0])}`;
+  return b.size > 1 ? `${total} (bases fiscales différentes)` : total;
+}
+
 export function totalsNote(preview: PreviewJson): string {
   const b = bases(preview);
   if (b.size === 1 && b.has("HT")) return "Montants hors taxes et port, non calculés.";
@@ -112,7 +120,7 @@ export function CartLines({
                 </td>
                 <td className="text-right font-semibold sm:px-3 sm:py-3">
                   <span className="block text-xs font-normal text-ink-3 sm:hidden">Total ligne</span>
-                  {loading || !pls ? <span className="font-normal text-ink-3">…</span> : sel && pl?.line_total ? money(pl.line_total) : "—"}
+                  {loading || !pls ? <span className="font-normal text-ink-3">…</span> : sel && pl?.line_total ? (common.uniform ? money(pl.line_total) : price(pl.line_total, sel.tax_basis_or_status)) : "—"}
                 </td>
                 {editable && onRemove && (
                   <td className="col-span-2 text-right sm:px-3 sm:py-3">
@@ -132,7 +140,7 @@ export function CartLines({
             {pls && priced < lines.length ? `Total des lignes chiffrées (${priced} sur ${lines.length})` : "Total des lignes"}
           </span>
           <span className="tabular text-lg font-semibold" data-testid="cart-total">
-            {loading || !preview ? "…" : preview.total_amount ? `${money(preview.total_amount)}${bases(preview).size === 1 ? ` ${basisLabel([...bases(preview)][0])}` : ""}` : "—"}
+            {loading || !preview ? "…" : preview.total_amount ? totalWithBasis(preview) : "—"}
           </span>
         </div>
         <p className="mt-1 text-xs text-ink-2" data-testid="totals-note">{preview ? totalsNote(preview) : "Montants hors taxes et port, non calculés."} Total calculé par le serveur.</p>
