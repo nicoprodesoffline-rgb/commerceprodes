@@ -10,7 +10,7 @@ import type { Outcome } from "@/components/checkout/submit";
  * — le code n'est conservé nulle part par le site, ni dans le panier ni dans le stockage du navigateur. Le lien
  * place le code après `#` : il n'est jamais transmis au serveur dans l'adresse de la page.
  */
-export function ResultPanel({ outcome, onRetry }: { outcome: Outcome; onRetry?: () => void }) {
+export function ResultPanel({ outcome, onRetry, cartKept = false }: { outcome: Outcome; onRetry?: () => void; cartKept?: boolean }) {
   const heading = useRef<HTMLHeadingElement>(null);
   const [copied, setCopied] = useState(false);
   useEffect(() => heading.current?.focus(), [outcome]);
@@ -58,7 +58,20 @@ export function ResultPanel({ outcome, onRetry }: { outcome: Outcome; onRetry?: 
         ) : (
           <p className="mt-3 text-sm text-ink-2">Le code d&apos;accès n&apos;est remis qu&apos;au premier envoi : utilisez le lien reçu à ce moment-là.</p>
         )}
-        <Link href="/" className="mt-4 inline-flex h-[42px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Retour au catalogue</Link>
+        {quote && cartKept && (
+          <div className="mt-4 rounded-[9px] border border-line p-3" data-testid="cart-kept">
+            <p className="text-sm font-semibold">Votre panier est conservé</p>
+            <p className="mt-1 text-sm text-ink-2">
+              Ce devis n&apos;est pas une commande. Si vous souhaitez commander ces mêmes articles, passez commande avec ce panier : les prix seront vérifiés de nouveau par le serveur au moment de l&apos;envoi.
+              Une commande est un envoi distinct : elle ne remplace pas votre demande de devis.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Link href="/commande" className="inline-flex h-[42px] items-center rounded-[9px] bg-ink px-4 font-medium text-white" data-testid="order-with-this-cart">Passer commande avec ce panier</Link>
+              <Link href="/panier" className="inline-flex h-[42px] items-center rounded-[9px] border border-line-strong px-4 font-medium hover:bg-surface">Revoir le panier</Link>
+            </div>
+          </div>
+        )}
+        <Link href="/" className={`mt-4 inline-flex h-[42px] items-center rounded-[9px] px-4 font-medium ${quote && cartKept ? "border border-line-strong hover:bg-surface" : "bg-ink text-white"}`}>Retour au catalogue</Link>
       </section>
     );
   }

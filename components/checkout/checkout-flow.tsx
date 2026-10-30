@@ -11,12 +11,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
-import { CartLines, PreviewProblem, StaleBanner, totalsNote } from "@/components/cart/cart-summary";
-import { bases, quoteAllowed, useCartPreview } from "@/components/cart/use-cart-preview";
+import { CartLines, PreviewProblem, StaleBanner, totalWithBasis, totalsNote } from "@/components/cart/cart-summary";
+import { quoteAllowed, useCartPreview } from "@/components/cart/use-cart-preview";
 import { ContactFields, EMPTY_CONTACT, ErrorSummary, contactBody, validateContact, type Contact } from "@/components/checkout/contact-fields";
 import { ResultPanel } from "@/components/checkout/result-panel";
 import { RECONFIRM, Submitter, type Outcome } from "@/components/checkout/submit";
-import { basisLabel, money } from "@/components/site/format";
 
 export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
   const { ready, ackSequence, acknowledge, clear } = useCart();
@@ -39,7 +38,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
     if (attempt > 0) document.getElementById("error-summary")?.focus();
   }, [attempt]);
 
-  if (outcome?.kind === "received") return <ResultPanel outcome={outcome} />;
+  if (outcome?.kind === "received") return <ResultPanel outcome={outcome} cartKept={mode === "quote"} />;
   if (!ready || state.kind === "loading") return <p role="status" className="text-ink-3">Vérification du panier auprès du serveur…</p>;
   if (state.kind === "empty") {
     return (
@@ -55,8 +54,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
 
   if (!preview) return null;
   const allowed = mode === "order" ? preview.accepted : quoteAllowed(preview);
-  const b = bases(preview);
-  const total = preview.total_amount ? `${money(preview.total_amount)}${b.size === 1 ? ` ${basisLabel([...b][0])}` : ""}` : null;
+  const total = preview.total_amount ? totalWithBasis(preview) : null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -90,7 +88,8 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
               })),
             });
       setOutcome(result);
-      if (result.kind === "received") clear();
+      // Une COMMANDE reçue vide le panier ; une demande de DEVIS le conserve (friction 9) : on peut ensuite commander ces mêmes lignes, validées de nouveau par le serveur.
+      if (result.kind === "received" && mode === "order") clear();
       else if (result.kind === "refused" && result.codes.some((c) => RECONFIRM.has(c))) {
         setConfirmedFor(null);
         refresh();

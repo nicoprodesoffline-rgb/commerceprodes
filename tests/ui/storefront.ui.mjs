@@ -571,7 +571,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     let priced = 0;
     let checking = 0;
     const incoherent = [];
-    const PRICED = /^Pour (\d+) : ([\d\s\u00a0\u202f,]+)\s?€.*soit ([\d\s\u00a0\u202f,]+)\s?€ pour la ligne/;
+    const PRICED = /^Pour (\d+) : ([\d\s  ,]+)\s?€.*soit ([\d\s  ,]+)\s?€(?:\sHT|\s\(base fiscale non précisée\))?\spour la ligne/; // friction 14 : la base peut suivre le total de la ligne
     // 1. Ce que voit et entend l'utilisateur. Oracle de TEST seulement (aucun calcul de ce genre côté boutique) :
     //    quantité affichée = quantité saisie, et total de ligne = quantité × prix unitaire affiché.
     for (const r of trace) {
@@ -590,6 +590,167 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     }
     note(`U10 : ${trace.length} états de la région aria-live, ${priced} prix affichés tous cohérents, ${checking} états « vérification… », ${calls} aperçus demandés`);
     assert.ok(priced >= 3 && checking >= 3, `trace insuffisante : ${priced} prix, ${checking} vérifications`);
+    await page.context().close();
+  });
+
+  test("U11 — friction 14 : la base fiscale « non précisée » est dite UNE fois (bandeau) et sur chaque total, jamais masquée ; chaque ligne la garde dès que les bases diffèrent", async () => {
+    await scene("F_GMCE_VARIANTS.activate");
+    const NOTE = /Base fiscale non précisée pour tous les montants de cette page/;
+    const page = await newPage();
+    await page.goto(BASE + "/famille/gmce-demo?article=PI-00000037S");
+    await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
+    assert.equal(await page.getByTestId("basis-notice").count(), 1, "fiche : un seul bandeau");
+    assert.match(await page.getByTestId("basis-notice").innerText(), NOTE);
+    const ficheText = await page.locator("main").innerText();
+    assert.equal((ficheText.match(/\(base fiscale non précisée\)/g) ?? []).length, 1, "fiche : la mention entre parenthèses n'apparaît qu'une fois (total de la ligne), plus à chaque ligne de prix");
+    assert.match(await page.getByTestId("qty-price").innerText(), /soit [\d\s\u00a0\u202f,]+\s€\s\(base fiscale non précisée\)\spour la ligne/, "le total de la ligne porte la mention");
+    assert.equal(await page.locator("table tbody tr [data-testid=basis-notice]").count(), 0);
+    await shot(page, "U11-fiche-bandeau-unique");
+    await page.getByRole("button", { name: "Ajouter au panier" }).click();
+    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.goto(BASE + "/panier");
+    await page.getByTestId("cart-total").getByText(/base fiscale non précisée/).waitFor();
+    assert.equal(await page.getByTestId("basis-notice").count(), 1, "panier : un seul bandeau");
+    for (const row of await page.getByTestId("cart-line").all()) assert.doesNotMatch(await row.innerText(), /base fiscale/, "aucune ligne du panier ne répète la mention");
+    assert.match(await page.getByTestId("cart-total").innerText(), /\(base fiscale non précisée\)/, "le total porte la mention");
+    await shot(page, "U11-panier-bandeau-unique");
+    await page.context().close();
+
+    // Bases DIFFÉRENTES : aucune simplification, chaque ligne garde la sienne (réponse réelle du serveur dont une ligne est réécrite en HT).
+    const mixed = await newPage();
+    await mixed.goto(BASE + "/famille/gmce-demo?article=PI-00000037S");
+    await mixed.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
+    await mixed.getByRole("button", { name: "Ajouter au panier" }).click();
+    await mixed.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await mixed.goto(BASE + "/famille/gmce-demo?article=PI-000000358");
+    await mixed.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
+    await mixed.getByRole("button", { name: "Ajouter au panier" }).click();
+    await mixed.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await mixed.route("**/api/site/cart/preview", async (route) => {
+      const response = await route.fetch();
+      const body = await response.json();
+      if (body.lines?.[1]?.selection) body.lines[1].selection.tax_basis_or_status = "HT";
+      const { "content-length": _ignored, ...headers } = response.headers();
+      await route.fulfill({ status: response.status(), headers, body: JSON.stringify(body) });
+    });
+    await mixed.goto(BASE + "/panier");
+    await mixed.getByTestId("cart-line").nth(1).getByText(/€/).first().waitFor();
+    await mixed.getByTestId("cart-total").getByText(/€/).waitFor();
+    assert.equal(await mixed.getByTestId("basis-notice").count(), 0, "bases différentes : pas de bandeau unique");
+    const rows = await mixed.getByTestId("cart-line").allInnerTexts();
+    assert.match(rows[0], /\(base fiscale non précisée\)/);
+    assert.match(rows[1], / HT/);
+    assert.match(await mixed.getByTestId("totals-note").innerText(), /bases fiscales différentes/);
+    await mixed.context().close();
+  });
+
+  test("U12 — friction 9 : après un DEVIS le panier est conservé et on peut commander ces mêmes lignes (prix revalidés par le serveur) ; la commande, elle, vide le panier", async () => {
+    await scene("F_GMCE_VARIANTS.activate");
+    const page = await newPage();
+    await page.goto(BASE + "/famille/gmce-demo?article=PI-00000037S");
+    await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
+    await page.getByRole("button", { name: "Ajouter au panier" }).click();
+    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.goto(BASE + "/devis");
+    await page.getByRole("heading", { name: "Récapitulatif" }).waitFor();
+    await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie de Test");
+    await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
+    await page.locator("#f-email").fill("achats@example.invalid");
+    await page.getByTestId("submit").click();
+    await page.getByTestId("result-received").waitFor();
+    const quoteRef = await page.getByTestId("receipt-ref").textContent();
+    assert.match(quoteRef, /^QR-[0-9a-f]{32}$/);
+    await page.getByTestId("cart-kept").waitFor();
+    assert.match(await page.getByTestId("cart-kept").innerText(), /Ce devis n'est pas une commande/);
+    assert.match(await page.getByTestId("cart-kept").innerText(), /prix seront vérifiés de nouveau par le serveur/);
+    await shot(page, "U12-devis-recu-panier-conserve");
+    const stored = await page.evaluate(() => window.localStorage.length ? JSON.stringify(window.localStorage) : "");
+    assert.match(stored, /PI-00000037S/, "la ligne est toujours dans le panier du navigateur");
+    assert.ok(!stored.includes(quoteRef), "ni référence ni jeton du devis dans le stockage local");
+    await page.getByTestId("order-with-this-cart").click();
+    await page.waitForURL(/\/commande$/);
+    await page.getByTestId("order-confirm").waitFor();
+    assert.equal(await page.getByTestId("cart-line").count(), 1, "la commande reprend la ligne du devis");
+    await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie de Test");
+    await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
+    await page.locator("#f-email").fill("achats@example.invalid");
+    await page.getByTestId("order-confirm").check();
+    await page.getByTestId("submit").click();
+    await page.getByTestId("result-received").getByText("Commande reçue — en attente de traitement").waitFor();
+    const orderRef = await page.getByTestId("receipt-ref").textContent();
+    assert.match(orderRef, /^ORD-[0-9a-f]{32}$/);
+    assert.equal(await page.getByTestId("cart-kept").count(), 0, "une commande ne propose pas de garder le panier");
+    const order = (await db.query("SELECT status, total_amount FROM site_order WHERE order_ref = $1", [orderRef])).rows[0];
+    const quote = (await db.query("SELECT status FROM site_quote_request WHERE quote_ref = $1", [quoteRef])).rows[0];
+    assert.equal(order.status, "RECEIVED");
+    assert.equal(quote.status, "RECEIVED");
+    assert.equal((await db.query("SELECT count(*)::int AS n FROM site_order")).rows[0].n, 1, "une seule commande");
+    assert.equal((await db.query("SELECT count(*)::int AS n FROM site_quote_request")).rows[0].n, 1, "un seul devis");
+    await page.goto(BASE + "/panier");
+    await page.getByText(/panier est vide/i).waitFor();
+    await page.context().close();
+  });
+
+  test("U13 — friction 14 (règle « jamais un montant sans sa base ») : un reçu de commande aux bases mêlées porte, sur chaque ligne, la base du prix unitaire ET du total de ligne, et dit que les bases diffèrent", async () => {
+    await scene("F_GMCE_VARIANTS.activate");
+    const page = await newPage();
+    for (const key of ["PI-00000037S", "PI-000000358"]) {
+      await page.goto(BASE + `/famille/gmce-demo?article=${key}`);
+      await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
+      await page.getByRole("button", { name: "Ajouter au panier" }).click();
+      await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    }
+    await page.goto(BASE + "/commande");
+    await page.getByTestId("order-confirm").waitFor();
+    await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie de Test");
+    await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
+    await page.locator("#f-email").fill("achats@example.invalid");
+    await page.getByTestId("order-confirm").check();
+    await page.getByTestId("submit").click();
+    await page.getByTestId("result-received").waitFor();
+    const link = await page.getByTestId("receipt-link").textContent();
+    // Le reçu réel de cette commande (deux lignes « non précisée ») : son affichage uniforme est regroupé en bandeau ; on réécrit UNE ligne en HT dans la réponse du serveur pour
+    // obtenir un reçu aux bases mêlées (le site n'en produit pas aujourd'hui : la règle doit tenir quand même).
+    const reader = await newPage();
+    await reader.goto(link);
+    await reader.getByTestId("receipt-found").waitFor();
+    assert.equal(await reader.getByTestId("basis-notice").count(), 1, "reçu uniforme : un seul bandeau");
+    await reader.context().close();
+    const mixed = await newPage();
+    await mixed.route("**/api/site/receipt**", async (route) => {
+      const response = await route.fetch();
+      const body = await response.json();
+      if (body.receipt?.lines?.[1]) body.receipt.lines[1].tax_basis_or_status = "HT";
+      const { "content-length": _ignored, ...headers } = response.headers();
+      await route.fulfill({ status: response.status(), headers, body: JSON.stringify(body) });
+    });
+    await mixed.goto(link);
+    await mixed.getByTestId("receipt-found").waitFor();
+    assert.equal(await mixed.getByTestId("basis-notice").count(), 0, "bases mêlées : pas de bandeau unique");
+    const rows = (await mixed.getByTestId("receipt-found").locator("tbody tr").allInnerTexts()).map((t) => t.replace(/\s+/g, " "));
+    assert.equal(rows.length, 2);
+    assert.equal((rows[0].match(/\(base fiscale non précisée\)/g) ?? []).length, 2, "ligne « non précisée » : prix unitaire ET total de ligne");
+    assert.equal((rows[1].match(/\bHT\b/g) ?? []).length, 2, "ligne HT : prix unitaire ET total de ligne");
+    assert.match(await mixed.getByTestId("receipt-total").innerText(), /\(bases fiscales différentes : HT et non précisée\)/, "HT + non précisée : les deux bases nommées");
+    await mixed.context().close();
+    // Réserve de revue : le libellé nomme les bases RÉELLEMENT présentes, et un total ne s'affiche jamais sans base.
+    const receiptWith = async (rewrite) => {
+      const reader2 = await newPage();
+      await reader2.route("**/api/site/receipt**", async (route) => {
+        const response = await route.fetch();
+        const body = await response.json();
+        rewrite(body.receipt.lines);
+        const { "content-length": _ignored, ...headers } = response.headers();
+        await route.fulfill({ status: response.status(), headers, body: JSON.stringify(body) });
+      });
+      await reader2.goto(link);
+      await reader2.getByTestId("receipt-found").waitFor();
+      const text = (await reader2.getByTestId("receipt-total").innerText()).replace(/\s+/g, " ");
+      await reader2.context().close();
+      return text;
+    };
+    assert.match(await receiptWith((lines) => lines.forEach((l) => { l.tax_basis_or_status = null; })), /\(base fiscale non précisée\)/, "aucune ligne ne porte de base : « non précisée »");
+    assert.match(await receiptWith((lines) => { lines[0].tax_basis_or_status = "HT"; lines[1].tax_basis_or_status = null; }), /\(bases fiscales différentes : HT et inconnue\)/, "HT + inconnue : nommées, pas « HT et non précisée »");
     await page.context().close();
   });
 

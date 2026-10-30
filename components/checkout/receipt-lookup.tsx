@@ -10,13 +10,12 @@
  */
 import { useEffect, useState } from "react";
 import { codeMessage } from "@/components/site/codes";
-import { axisValue, basisLabel, money, parisDate, price } from "@/components/site/format";
+import { BasisNotice } from "@/components/site/basis-notice";
+import { axisValue, money, parisDate, price, totalBasisLabel, uniformBasis } from "@/components/site/format";
 
-/** Base fiscale du total (même règle que le panier) : une seule base → affichée ; plusieurs → dite. */
+/** Base fiscale du total (même règle que le panier) : une seule base → affichée ; aucune → « non précisée » ; plusieurs → nommées. Jamais un total nu. */
 function totalBasis(lines: { unit_amount?: string | null; tax_basis_or_status?: string | null }[]): string {
-  const b = new Set(lines.filter((l) => l.unit_amount).map((l) => l.tax_basis_or_status ?? ""));
-  if (b.size === 1) return basisLabel([...b][0]);
-  return b.size > 1 ? "(bases fiscales différentes : HT et non précisée)" : "";
+  return totalBasisLabel(lines.filter((l) => l.unit_amount).map((l) => l.tax_basis_or_status));
 }
 
 function axesOf(axes: Record<string, string>): string {
@@ -78,6 +77,8 @@ export function ReceiptLookup() {
 
   const d = state.kind === "found" ? state.data : null;
   const lines = d?.receipt.lines ?? [];
+  // Base commune des lignes chiffrées : dite une fois (bandeau) et sur le total ; sinon chaque ligne porte la sienne (friction 14).
+  const receiptBasis = uniformBasis(lines.filter((l) => l.unit_amount).map((l) => l.tax_basis_or_status ?? ""));
   return (
     <div className="space-y-6">
       <form
@@ -111,6 +112,7 @@ export function ReceiptLookup() {
               État : {d.status === "RECEIVED" ? (d.kind === "order" ? "reçue — en attente de traitement" : "reçue") : d.status}
               {d.receipt.created_at_utc ? ` · reçue le ${parisDate(d.receipt.created_at_utc)}` : ""}
             </p>
+            {receiptBasis.uniform && <div className="mt-3"><BasisNotice basis={receiptBasis.basis} /></div>}
             <div className="relative overflow-x-auto">
             <table className="tabular mt-3 w-full text-sm">
               <caption className="sr-only">Lignes enregistrées</caption>
@@ -129,8 +131,8 @@ export function ReceiptLookup() {
                     <td className="py-1 pr-2 font-mono text-xs">{l.public_item_key}</td>
                     <td className="py-1 pr-2">{axesOf(l.variant_axes)}</td>
                     <td className="py-1 pr-2 text-right">{l.quantity}</td>
-                    <td className="py-1 pr-2 text-right">{l.unit_amount ? price(l.unit_amount, l.tax_basis_or_status) : "sans prix (à chiffrer)"}</td>
-                    {d.kind === "order" && <td className="py-1 text-right">{l.line_total ? money(l.line_total) : "—"}</td>}
+                    <td className="py-1 pr-2 text-right">{l.unit_amount ? (receiptBasis.uniform ? money(l.unit_amount) : price(l.unit_amount, l.tax_basis_or_status)) : "sans prix (à chiffrer)"}</td>
+                    {d.kind === "order" && <td className="py-1 text-right">{l.line_total ? (receiptBasis.uniform ? money(l.line_total) : price(l.line_total, l.tax_basis_or_status)) : "—"}</td>}
                   </tr>
                 ))}
               </tbody>

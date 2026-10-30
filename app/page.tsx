@@ -1,6 +1,6 @@
 import { CategoryGrid } from "@/components/home/category-grid";
 import { FamilyGrid } from "@/components/home/family-card";
-import { familyCard } from "@/components/site/catalog-views";
+import { familyCard, navigationOf } from "@/components/site/catalog-views";
 import { catalogForPage } from "@/lib/site-catalog/page";
 
 export const dynamic = "force-dynamic";
@@ -8,14 +8,12 @@ export const dynamic = "force-dynamic";
 /** Accueil : catégories racines puis familles, dans l'ordre du DTO (aucune règle de mise en avant inventée). */
 export default async function HomePage() {
   const catalog = await catalogForPage();
-  const roots = catalog.categories
-    .filter((c) => c.parent_category_key === null)
-    .map((c) => ({
-      key: c.category_key,
-      name: c.name,
-      familyCount: catalog.familiesInCategory(c.category_key).length,
-      children: catalog.childCategories(c.category_key).map((s) => ({ key: s.category_key, name: s.name })),
-    }));
+  const roots = navigationOf(catalog).menu.map((n) => ({
+    key: n.key,
+    name: n.name,
+    familyCount: n.ownFamilyCount,
+    children: n.children.map((s) => ({ key: s.key, name: s.name })),
+  }));
   return (
     <div className="space-y-10">
       <header>

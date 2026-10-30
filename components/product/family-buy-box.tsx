@@ -12,7 +12,8 @@ import { PriceGrid, type PriceGridRow } from "@/components/product/price-grid";
 import { VariantSelector, type SelectorAxis } from "@/components/product/variant-selector";
 import { previewCart } from "@/components/site/api";
 import { codeMessage, codesMessage } from "@/components/site/codes";
-import { axesText, axisValue, money, price, type AxisDisplay } from "@/components/site/format";
+import { BasisNotice } from "@/components/site/basis-notice";
+import { axesText, axisValue, basisLabel, money, price, uniformBasis, type AxisDisplay } from "@/components/site/format";
 import { MediaImage } from "@/components/site/media-image";
 import type { PreviewLineJson } from "@/lib/site-business/client-types";
 
@@ -117,7 +118,7 @@ export function FamilyBuyBox({
       if (r.network) setFeedback({ kind: "error", text: `${codeMessage("NETWORK")} Rien n'a été ajouté.` });
       else if (r.status === 200 && l?.accepted && l.selection && r.json) {
         add(draft, r.json.catalogue_sequence);
-        setFeedback({ kind: "ok", text: `Ajouté au panier — ${quantity} × ${axesText(item.axes)}, ${price(l.selection.unit_amount, l.selection.tax_basis_or_status)} l'unité.` });
+        setFeedback({ kind: "ok", text: `Ajouté au panier — ${quantity} × ${axesText(item.axes)}, ${unit(l.selection.unit_amount, l.selection.tax_basis_or_status)} l'unité.` });
       } else if (r.status === 200 && l && r.json && l.error_codes.length === 1 && l.error_codes[0] === "PRICE_WINDOW_UNAVAILABLE") {
         add(draft, r.json.catalogue_sequence);
         setFeedback({ kind: "ok", text: `Ajouté au panier sans prix — ${quantity} × ${axesText(item.axes)}. Seule une demande de devis sera possible pour cette ligne.` });
@@ -139,6 +140,9 @@ export function FamilyBuyBox({
       : null;
   const priced = current?.state === "line" && current.line.accepted && current.line.selection ? current.line : null;
   const anyPrice = item.rows.some((r) => r.selected);
+  // Base fiscale de TOUTE la fiche : commune → dite une fois par le bandeau et sur le total de la ligne ; sinon chaque montant porte la sienne (friction 14).
+  const fiche = uniformBasis(items.flatMap((i) => i.rows.filter((r) => r.selected).map((r) => r.tax_basis_or_status)));
+  const unit = (amount: string, basis: string | null | undefined) => (fiche.uniform && basis === fiche.basis ? money(amount) : price(amount, basis));
 
   return (
     <section aria-labelledby="buy-h" className="space-y-5 rounded-[14px] border border-line bg-white p-4 sm:p-5">
@@ -164,7 +168,8 @@ export function FamilyBuyBox({
         </div>
       </div>
 
-      <PriceGrid rows={item.rows} selectedRateId={priced?.selection?.rate_id ?? null} caption="Prix de vente PRODES par quantité, en vigueur maintenant" />
+      {fiche.uniform && <BasisNotice basis={fiche.basis} />}
+      <PriceGrid rows={item.rows} selectedRateId={priced?.selection?.rate_id ?? null} caption="Prix de vente PRODES par quantité, en vigueur maintenant" showBasis={!fiche.uniform} />
 
       <div className="flex flex-wrap items-end gap-3">
         <div>
@@ -211,8 +216,8 @@ export function FamilyBuyBox({
           <span className="text-signal">{current.text}</span>
         ) : priced?.selection ? (
           <span>
-            Pour {quantity} : <strong>{price(priced.selection.unit_amount, priced.selection.tax_basis_or_status)}</strong> l&apos;unité
-            {priced.line_total ? <>, soit {money(priced.line_total)} pour la ligne</> : null}.
+            Pour {quantity} : <strong>{unit(priced.selection.unit_amount, priced.selection.tax_basis_or_status)}</strong> l&apos;unité
+            {priced.line_total ? <>, soit {money(priced.line_total)} {basisLabel(priced.selection.tax_basis_or_status)} pour la ligne</> : null}.
           </span>
         ) : (
           <span className="text-ink-2">Pour {quantity} : {codesMessage(current.line.error_codes)}</span>
@@ -253,7 +258,7 @@ export function FamilyBuyBox({
                   <tr key={i.public_item_key} className={`h-[42px] border-b border-line ${isSel ? "bg-signal-subtle" : ""}`}>
                     <td className="py-1 pr-2">{i.axes.map((a) => axisValue(a.value)).join(" · ")}</td>
                     <td className="py-1 pr-2 font-mono text-xs whitespace-nowrap">{i.public_item_key}</td>
-                    <td className="py-1 pr-2 text-right whitespace-nowrap">{first?.unit_amount ? price(first.unit_amount, first.tax_basis_or_status) : "indisponible"}</td>
+                    <td className="py-1 pr-2 text-right whitespace-nowrap">{first?.unit_amount ? unit(first.unit_amount, first.tax_basis_or_status) : "indisponible"}</td>
                     <td className="py-1 text-right">
                       {isSel ? (
                         <span className="text-xs font-medium text-signal">Choisie</span>

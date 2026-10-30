@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
-export type MenuCategory = { key: string; name: string; children: { key: string; name: string }[] };
+export type MenuCategory = { key: string; name: string; children: MenuCategory[] };
 
 /**
  * Menu « Catégories » (bouton de divulgation, WAI-ARIA disclosure) : Entrée/Espace ouvre, Échap ferme et rend
- * le focus au bouton, clic extérieur ferme. Catégories et ordre = ceux du DTO (aucun merchandising).
+ * le focus au bouton, clic extérieur ou sortie du focus ferme. Jusqu'à 3 niveaux (la navigation en garantit le maximum,
+ * `lib/site-catalog/navigation.ts`). Catégories et ordre = ceux du DTO (aucun merchandising).
  */
 export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
   const [open, setOpen] = useState(false);
@@ -37,7 +38,13 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
 
   if (categories.length === 0) return null;
   return (
-    <div className="relative">
+    <div
+      className="sm:relative"
+      data-testid="category-menu"
+      onBlur={(e) => {
+        if (open && !e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
+      }}
+    >
       <button
         ref={button}
         type="button"
@@ -52,29 +59,34 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
         ref={panel}
         id={id}
         hidden={!open}
-        className="absolute left-0 z-40 mt-1 w-[min(22rem,calc(100vw-2rem))] rounded-[14px] border border-line bg-white p-3 shadow-lg"
+        // Appuyer (souris ou toucher) sur une zone non interactive du panneau (marge, bord, barre de défilement) ne doit
+        // pas déplacer le focus hors du menu : sinon onBlur (relatedTarget nul) le fermerait.
+        onMouseDown={(e) => {
+          if (!(e.target as HTMLElement).closest("a,button")) e.preventDefault();
+        }}
+        className="absolute inset-x-4 z-40 mt-1 max-h-[70vh] overflow-y-auto sm:inset-x-auto sm:left-0 sm:w-[22rem] rounded-[14px] border border-line bg-white p-3 shadow-lg"
       >
-        <ul className="space-y-2">
-          {categories.map((c) => (
-            <li key={c.key}>
-              <Link href={`/categorie/${c.key}`} onClick={() => setOpen(false)} className="flex min-h-[34px] items-center rounded-[9px] px-2 font-semibold hover:bg-surface">
-                {c.name}
-              </Link>
-              {c.children.length > 0 && (
-                <ul className="ml-3 border-l border-line pl-2">
-                  {c.children.map((s) => (
-                    <li key={s.key}>
-                      <Link href={`/categorie/${s.key}`} onClick={() => setOpen(false)} className="flex min-h-[34px] items-center rounded-[9px] px-2 text-ink-2 hover:bg-surface hover:text-ink">
-                        {s.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
+        <MenuList items={categories} level={1} onNavigate={() => setOpen(false)} />
       </div>
     </div>
+  );
+}
+
+function MenuList({ items, level, onNavigate, label }: { items: MenuCategory[]; level: number; onNavigate: () => void; label?: string }) {
+  return (
+    <ul aria-label={label} className={level === 1 ? "space-y-2" : "ml-3 border-l border-line pl-2"} data-level={level}>
+      {items.map((c) => (
+        <li key={c.key}>
+          <Link
+            href={`/categorie/${c.key}`}
+            onClick={onNavigate}
+            className={`flex min-h-[34px] items-center rounded-[9px] px-2 hover:bg-surface ${level === 1 ? "font-semibold" : level === 2 ? "text-ink-2 hover:text-ink" : "text-sm text-ink-2 hover:text-ink"}`}
+          >
+            {c.name}
+          </Link>
+          {c.children.length > 0 && <MenuList items={c.children} level={level + 1} onNavigate={onNavigate} label={`Sous-catégories de ${c.name}`} />}
+        </li>
+      ))}
+    </ul>
   );
 }
