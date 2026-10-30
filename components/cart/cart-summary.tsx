@@ -9,23 +9,21 @@ import { MAX_QUANTITY, type DraftLine } from "@/components/cart/cart-provider";
 import { bases } from "@/components/cart/use-cart-preview";
 import { codeMessage } from "@/components/site/codes";
 import { BasisNotice } from "@/components/site/basis-notice";
-import { axesText, basisLabel, money, price, uniformBasis } from "@/components/site/format";
+import { axesText, money, price, totalBasisLabel, uniformBasis } from "@/components/site/format";
 import type { PreviewJson, PreviewLineJson } from "@/lib/site-business/client-types";
 
-/** Le total toujours accompagné de sa base : celle des lignes si elle est unique, sinon « bases fiscales différentes » (jamais un montant sans base). */
+/** Le total toujours accompagné de sa base : celle des lignes si elle est unique, « non précisée » si aucune ligne chiffrée n'en porte, sinon les bases présentes, nommées (jamais un total nu). */
 export function totalWithBasis(preview: PreviewJson): string {
-  const b = bases(preview);
-  const total = money(preview.total_amount ?? "");
-  if (b.size === 1) return `${total} ${basisLabel([...b][0])}`;
-  return b.size > 1 ? `${total} (bases fiscales différentes)` : total;
+  const lineBases = preview.lines.filter((l) => l.accepted && l.selection).map((l) => l.selection!.tax_basis_or_status);
+  return `${money(preview.total_amount ?? "")} ${totalBasisLabel(lineBases)}`;
 }
 
 export function totalsNote(preview: PreviewJson): string {
   const b = bases(preview);
   if (b.size === 1 && b.has("HT")) return "Montants hors taxes et port, non calculés.";
   if (b.size === 1 && b.has("UNQUALIFIED")) return "Base fiscale non précisée par la publication ; taxes et port non calculés.";
-  if (b.size > 1) return "Attention : lignes de bases fiscales différentes (HT et non précisée) additionnées telles quelles ; taxes et port non calculés.";
-  return "Taxes et port non calculés.";
+  if (b.size > 1) return `Attention : lignes de bases fiscales différentes additionnées telles quelles — ${totalBasisLabel(b).replace(/^\(bases fiscales différentes : /, "").replace(/\)$/, "")} ; taxes et port non calculés.`;
+  return "Base fiscale non précisée ; taxes et port non calculés.";
 }
 
 function LineStatus({ pl }: { pl: PreviewLineJson | undefined }) {

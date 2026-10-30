@@ -11,13 +11,11 @@
 import { useEffect, useState } from "react";
 import { codeMessage } from "@/components/site/codes";
 import { BasisNotice } from "@/components/site/basis-notice";
-import { axisValue, basisLabel, money, parisDate, price, uniformBasis } from "@/components/site/format";
+import { axisValue, money, parisDate, price, totalBasisLabel, uniformBasis } from "@/components/site/format";
 
-/** Base fiscale du total (même règle que le panier) : une seule base → affichée ; plusieurs → dite. */
+/** Base fiscale du total (même règle que le panier) : une seule base → affichée ; aucune → « non précisée » ; plusieurs → nommées. Jamais un total nu. */
 function totalBasis(lines: { unit_amount?: string | null; tax_basis_or_status?: string | null }[]): string {
-  const b = new Set(lines.filter((l) => l.unit_amount).map((l) => l.tax_basis_or_status ?? ""));
-  if (b.size === 1) return basisLabel([...b][0]);
-  return b.size > 1 ? "(bases fiscales différentes : HT et non précisée)" : "";
+  return totalBasisLabel(lines.filter((l) => l.unit_amount).map((l) => l.tax_basis_or_status));
 }
 
 function axesOf(axes: Record<string, string>): string {

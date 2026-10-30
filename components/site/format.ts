@@ -34,6 +34,19 @@ export function basisNoticeText(): string {
   return "Base fiscale non précisée pour tous les montants de cette page : ni HT ni TTC. Taxes, port et remises : non calculés.";
 }
 
+/**
+ * La base fiscale d'un TOTAL, toujours dite (réserve de revue f1) : celle des lignes chiffrées si elle est unique ; « non précisée » si aucune ligne chiffrée ne porte de base ;
+ * sinon les bases RÉELLEMENT présentes, nommées (« HT et non précisée », « HT et inconnue »…). Aucune arithmétique, aucune interprétation.
+ */
+export function totalBasisLabel(bases: Iterable<string | null | undefined>): string {
+  const kinds = new Set<"HT" | "UNQUALIFIED" | "NONE" | "OTHER">();
+  for (const b of bases) kinds.add(b === "HT" ? "HT" : b === "UNQUALIFIED" ? "UNQUALIFIED" : b === null || b === undefined || b === "" ? "NONE" : "OTHER");
+  if (kinds.size === 0 || (kinds.size === 1 && kinds.has("NONE"))) return "(base fiscale non précisée)";
+  if (kinds.size === 1) return kinds.has("HT") ? "HT" : kinds.has("UNQUALIFIED") ? "(base fiscale non précisée)" : "(base inconnue)";
+  const names = [kinds.has("HT") ? "HT" : null, kinds.has("UNQUALIFIED") ? "non précisée" : null, kinds.has("NONE") || kinds.has("OTHER") ? "inconnue" : null].filter((n): n is string => n !== null);
+  return `(bases fiscales différentes : ${names.length > 2 ? `${names.slice(0, -1).join(", ")} et ${names[names.length - 1]}` : names.join(" et ")})`;
+}
+
 export function price(amount: string, basis: string | null | undefined): string {
   return `${money(amount)} ${basisLabel(basis)}`;
 }

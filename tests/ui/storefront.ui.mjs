@@ -731,8 +731,26 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     assert.equal(rows.length, 2);
     assert.equal((rows[0].match(/\(base fiscale non précisée\)/g) ?? []).length, 2, "ligne « non précisée » : prix unitaire ET total de ligne");
     assert.equal((rows[1].match(/\bHT\b/g) ?? []).length, 2, "ligne HT : prix unitaire ET total de ligne");
-    assert.match(await mixed.getByTestId("receipt-total").innerText(), /\(bases fiscales différentes/);
+    assert.match(await mixed.getByTestId("receipt-total").innerText(), /\(bases fiscales différentes : HT et non précisée\)/, "HT + non précisée : les deux bases nommées");
     await mixed.context().close();
+    // Réserve de revue : le libellé nomme les bases RÉELLEMENT présentes, et un total ne s'affiche jamais sans base.
+    const receiptWith = async (rewrite) => {
+      const reader2 = await newPage();
+      await reader2.route("**/api/site/receipt**", async (route) => {
+        const response = await route.fetch();
+        const body = await response.json();
+        rewrite(body.receipt.lines);
+        const { "content-length": _ignored, ...headers } = response.headers();
+        await route.fulfill({ status: response.status(), headers, body: JSON.stringify(body) });
+      });
+      await reader2.goto(link);
+      await reader2.getByTestId("receipt-found").waitFor();
+      const text = (await reader2.getByTestId("receipt-total").innerText()).replace(/\s+/g, " ");
+      await reader2.context().close();
+      return text;
+    };
+    assert.match(await receiptWith((lines) => lines.forEach((l) => { l.tax_basis_or_status = null; })), /\(base fiscale non précisée\)/, "aucune ligne ne porte de base : « non précisée »");
+    assert.match(await receiptWith((lines) => { lines[0].tax_basis_or_status = "HT"; lines[1].tax_basis_or_status = null; }), /\(bases fiscales différentes : HT et inconnue\)/, "HT + inconnue : nommées, pas « HT et non précisée »");
     await page.context().close();
   });
 
