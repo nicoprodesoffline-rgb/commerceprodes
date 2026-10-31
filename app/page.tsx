@@ -5,6 +5,7 @@ import { Hero, ProIntensBlock, QuoteBanner, TrustBar } from "@/components/home/h
 import { familyCard, navigationOf } from "@/components/site/catalog-views";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
+import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogForPage } from "@/lib/site-catalog/page";
 import type { NavNode } from "@/lib/site-catalog/navigation";
 
@@ -35,12 +36,13 @@ export default async function HomePage() {
   }));
   const references = catalog.families.reduce((n, f) => n + f.items.length, 0);
   const proIntens = findNode(nav.menu, (n) => /pro[\s-]?intens/i.test(n.name));
+  const basis = catalogBasis(catalog.families, catalog.meta.payload_sha256);
   const now = serverNowUtc();
   const shown = catalog.families.slice(0, HOME_FAMILIES);
   return (
     <div className="space-y-10">
-      <Hero references={references} />
-      <TrustBar references={references} />
+      <Hero references={references} basis={basis} />
+      <TrustBar references={references} basis={basis} />
       <section id="categories" aria-labelledby="cat-h">
         <h2 id="cat-h" className="mb-3 text-lg font-semibold">Nos catégories</h2>
         <CategoryGrid categories={roots} />

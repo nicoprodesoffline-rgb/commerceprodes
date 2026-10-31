@@ -1,21 +1,22 @@
 import Link from "next/link";
+import { NEUTRAL_BASIS_TEXT, type CatalogBasis } from "@/lib/site-catalog/basis";
 
 /**
- * Bandeau d'accroche de l'accueil (V-E01-01/02/03) : promesses limitées aux textes validés par le propriétaire — livraison incluse (C1), prix HT (C2), réponse
+ * Bandeau d'accroche de l'accueil (V-E01-01/02/03) : promesses limitées aux textes validés par le propriétaire — livraison incluse (C1), prix HT seulement si la génération le déclare, réponse
  * rapide aux devis sans délai chiffré (C3). « Catalogue de N références » : N = nombre de variantes publiées, compté par le serveur (C6).
  */
-export function Hero({ references }: { references: number }) {
+export function Hero({ references, basis }: { references: number; basis: CatalogBasis }) {
   const cards = [
     { title: "Livraison incluse", sub: "Sur tout le catalogue" },
     { title: "Collectivités publiques", sub: "Mairies, régions, écoles" },
-    { title: "Prix HT", sub: "La TVA apparaît sur le devis et la facture" },
+    basis === "HT" ? { title: "Prix HT", sub: "La TVA apparaît sur le devis et la facture" } : { title: "Prix et base fiscale", sub: "Précisés sur le devis" },
     { title: "Devis", sub: "Nous vous répondons rapidement" },
   ];
   return (
     <section aria-labelledby="hero-titre" className="rounded-[14px] border border-line bg-white" data-testid="hero">
       <div className="flex flex-col gap-8 p-6 lg:flex-row lg:items-center lg:gap-14 lg:p-10">
         <div className="flex-1">
-          <p className="mb-3 inline-block rounded-full bg-signal-subtle px-3 py-1 text-xs font-semibold uppercase tracking-wide text-signal">Collectivités · Prix HT · Livraison incluse</p>
+          <p className="mb-3 inline-block rounded-full bg-signal-subtle px-3 py-1 text-xs font-semibold uppercase tracking-wide text-signal">{basis === "HT" ? "Collectivités · Prix HT · Livraison incluse" : "Collectivités · Livraison incluse"}</p>
           <h1 id="hero-titre" className="text-3xl font-bold tracking-tight lg:text-4xl">Équipements pour collectivités</h1>
           <p className="mt-3 max-w-lg text-lg text-ink-2">
             Mobilier, signalisation et équipements pour les organismes publics. Catalogue de <span className="tabular font-semibold text-ink" data-testid="reference-count">{references}</span> référence{references > 1 ? "s" : ""}.
@@ -39,8 +40,8 @@ export function Hero({ references }: { references: number }) {
 }
 
 /** Bande de réassurance (V-E01-04) : quatre faits, aucun n'est une promesse non validée (pas de délai, pas de moyen de paiement). */
-export function TrustBar({ references }: { references: number }) {
-  const items = [`${references} référence${references > 1 ? "s" : ""} publiée${references > 1 ? "s" : ""}`, "Livraison incluse sur tout le catalogue", "Prix HT : TVA sur le devis et la facture", "Lun–Sam 8h30–19h"];
+export function TrustBar({ references, basis }: { references: number; basis: CatalogBasis }) {
+  const items = [`${references} référence${references > 1 ? "s" : ""} publiée${references > 1 ? "s" : ""}`, "Livraison incluse sur tout le catalogue", basis === "HT" ? "Prix HT : TVA sur le devis et la facture" : NEUTRAL_BASIS_TEXT.replace(/\.$/, ""), "Lun–Sam 8h30–19h"];
   return (
     <ul aria-label="En bref" className="flex flex-col gap-2 rounded-[14px] border border-line bg-surface px-4 py-3 text-sm text-ink-2 sm:flex-row sm:justify-around" data-testid="trust-bar">
       {items.map((t) => <li key={t} className="flex items-center gap-2"><span aria-hidden="true" className="font-bold text-positive">✓</span>{t}</li>)}

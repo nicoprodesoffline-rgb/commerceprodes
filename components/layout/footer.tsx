@@ -1,14 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
+import { NEUTRAL_BASIS_TEXT, type CatalogBasis } from "@/lib/site-catalog/basis";
 import type { CatalogMeta } from "@/lib/site-catalog/catalog";
 
 /**
  * Pied de page à trois colonnes comme l'historique (marque et baseline, liens rapides, horaires) et barre de mentions.
- * Textes validés par le propriétaire : horaires (C5), livraison incluse (C1), prix HT (C2). Aucune coordonnée en dur
+ * Textes validés par le propriétaire : horaires (C5), livraison incluse (C1), base fiscale dite seulement si la génération la déclare (HT). Aucune coordonnée en dur
  * (pilotées depuis la Factory, S4) et aucun lien vers une page qui n'existe pas encore. Le détail technique de la génération servie
  * reste en second niveau (`<details>`, DA §7).
  */
-export function SiteFooter({ meta, instantUtc, forcedNow }: { meta: CatalogMeta | null; instantUtc: string | null; forcedNow: boolean }) {
+export function SiteFooter({ meta, instantUtc, forcedNow, basis }: { meta: CatalogMeta | null; instantUtc: string | null; forcedNow: boolean; basis: CatalogBasis }) {
   return (
     <footer className="mt-12 bg-ink text-sm text-white/80 print:hidden">
       <div className="mx-auto grid max-w-[1280px] gap-8 px-4 py-10 md:grid-cols-3 lg:px-8">
@@ -35,12 +36,12 @@ export function SiteFooter({ meta, instantUtc, forcedNow }: { meta: CatalogMeta 
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white">Nous joindre</h2>
           <p>Lun–Sam 8h30–19h</p>
           <p className="mt-2">Livraison incluse sur tout le catalogue.</p>
-          <p className="mt-2 text-xs text-white/60">Prix de vente PRODES hors taxes : la TVA apparaît sur le devis et la facture. Transport et remises : non calculés sur ce site.</p>
+          <p className="mt-2 text-xs text-white/60" data-testid="footer-basis">{basis === "HT" ? "Prix de vente PRODES hors taxes : la TVA apparaît sur le devis et la facture." : NEUTRAL_BASIS_TEXT} Transport et remises : non calculés sur ce site.</p>
         </div>
       </div>
       <div className="border-t border-white/15">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-3 px-4 py-4 text-xs text-white/60 md:flex-row md:items-start md:justify-between lg:px-8">
-          <p>© 2026 PRODES — Prix HT — Tous droits réservés</p>
+          <p>© 2026 PRODES{basis === "HT" ? " — Prix HT" : ""} — Tous droits réservés</p>
           <details className="md:text-right">
             <summary className="inline-flex min-h-[34px] cursor-pointer items-center font-medium text-white/80">Détail technique</summary>
             {meta ? (

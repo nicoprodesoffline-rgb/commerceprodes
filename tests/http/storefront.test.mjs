@@ -291,6 +291,13 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.equal(r.headers.get("set-cookie"), null);
     });
 
+    test("base fiscale : la génération déclare HT, le site peut le dire (pied de page, accueil) ; la règle inverse est dans basis.ui", async () => {
+      const home = await get("/");
+      assert.match(home.text, /data-testid="footer-basis">Prix de vente PRODES hors taxes/);
+      assert.match(home.text, /Prix HT/);
+      assert.doesNotMatch(home.text, /Les prix et la base fiscale sont précisés sur le devis/);
+    });
+
     test("recherche instantanée : requête vide ou trop courte, trop longue, JSON échappé, au plus 8 familles publiées", async () => {
       for (const q of ["", "c", "  "]) {
         const r = await get(`/api/site/search?q=${encodeURIComponent(q)}`);

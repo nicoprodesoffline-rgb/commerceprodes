@@ -121,3 +121,19 @@ describe("friction 14 — un montant n'apparaît jamais sans sa base fiscale (fa
     }, { now: "2026-10-20T07:00:00Z", file: FILE });
   });
 });
+
+describe("la base fiscale n'est affirmée que si la génération la déclare (S1-A I4)", () => {
+  test("génération mixte : ni « Prix HT » ni « hors taxes » sur l'accueil, la fiche et le pied de page ; la formule neutre est dite", async () => {
+    await withServer(FIXTURE, async () => {
+      const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" })).newPage();
+      for (const path of ["/", `/famille/gmce-demo?article=${HT_ITEM}`]) {
+        await page.goto(`${BASE}${path}`);
+        await page.getByTestId("footer-basis").waitFor();
+        const chrome = [await page.locator("footer").innerText(), ...(path === "/" ? [await page.getByTestId("hero").innerText(), await page.getByTestId("trust-bar").innerText()] : [])].join("\n");
+        assert.doesNotMatch(chrome, /Prix HT|hors taxes/i, `${path} : aucune base affirmée hors de la donnée`);
+        assert.match(await page.getByTestId("footer-basis").innerText(), /Les prix et la base fiscale sont précisés sur le devis\./, path);
+      }
+      await page.context().close();
+    }, { now: "2026-10-20T07:00:00Z", file: FILE });
+  });
+});

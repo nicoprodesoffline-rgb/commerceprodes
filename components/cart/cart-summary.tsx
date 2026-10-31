@@ -141,7 +141,7 @@ export function CartLines({
             {loading || !preview ? "…" : preview.total_amount ? totalWithBasis(preview) : "—"}
           </span>
         </div>
-        <p className="mt-1 text-xs text-ink-2" data-testid="totals-note">{preview ? totalsNote(preview) : "Montants hors taxes et port, non calculés."} Total calculé par le serveur.</p>
+        <p className="mt-1 text-xs text-ink-2" data-testid="totals-note">{preview ? totalsNote(preview) : "Base fiscale lue au serveur ; taxes et port non calculés."} Total calculé par le serveur.</p>
       </div>
     </div>
     </div>

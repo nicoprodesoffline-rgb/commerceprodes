@@ -8,6 +8,7 @@ import { navigationOf } from "@/components/site/catalog-views";
 import type { MenuCategory } from "@/components/layout/category-menu";
 import type { NavNode } from "@/lib/site-catalog/navigation";
 import { isForcedNow, serverNowUtc } from "@/lib/site-catalog/clock";
+import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogOrNull } from "@/lib/site-catalog/page";
 import "./globals.css";
 
@@ -19,8 +20,8 @@ export const metadata: Metadata = {
   // Aucun SEO en W1 (scope verdict : SEO = décision propriétaire) : jamais indexé.
   robots: { index: false, follow: false },
   // Partage social (T-T15) : titre et description sobres, jamais une marque déclarée à un moteur (C22) ni une image inventée.
-  description: "Catalogue PRODES : mobilier, signalisation et équipements pour les collectivités. Prix HT, livraison incluse.",
-  openGraph: { type: "website", locale: "fr_FR", siteName: "PRODES", title: "Catalogue PRODES", description: "Mobilier, signalisation et équipements pour les collectivités. Prix HT, livraison incluse." },
+  description: "Catalogue PRODES : mobilier, signalisation et équipements pour les collectivités. Livraison incluse.",
+  openGraph: { type: "website", locale: "fr_FR", siteName: "PRODES", title: "Catalogue PRODES", description: "Mobilier, signalisation et équipements pour les collectivités. Livraison incluse." },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
@@ -49,7 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main id="contenu" tabIndex={-1} className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 lg:px-8 lg:py-8">
             {children}
           </main>
-          <SiteFooter meta={catalog?.meta ?? null} instantUtc={instant} forcedNow={forced} />
+          <SiteFooter meta={catalog?.meta ?? null} instantUtc={instant} forcedNow={forced} basis={catalog ? catalogBasis(catalog.families, catalog.meta.payload_sha256) : "NOT_DECLARED"} />
           <CompareBar />
           <MobileBottomNav />
         </CartProvider>
