@@ -213,6 +213,12 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
     assert.equal(pv.json.site_status, "CATALOG_UNAVAILABLE");
     assert.equal(pv.json.reason, "NO_ACTIVE_GENERATION");
     assert.equal((await get("/media/ed9aaaaa1debb1f00870b9b41636dc75b64eb0437ed9c58dcbb18047b73b41ec")).status, 503);
+    // Recherche instantanée (S1-A I2) : catalogue indisponible = 503 explicite, jamais une liste vide qui laisserait croire à « aucun résultat ».
+    const suggest = await get("/api/site/search?q=chaise");
+    assert.equal(suggest.status, 503);
+    assert.match(suggest.headers.get("content-type") ?? "", /^application\/json/);
+    assert.equal(JSON.parse(suggest.text).unavailable, true);
+    assert.deepEqual(JSON.parse(suggest.text).results, []);
     assert.equal((await get("/article/PI-00000001R")).status, 503);
     assert.equal((await get("/panier/abc")).status, 404, "chemin legacy : 404, pas la page d'indisponibilité");
     assert.match(logs.join(""), /\[site-catalog\] indisponible : NO_ACTIVE_GENERATION/);
@@ -279,6 +285,32 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       const api = await preview([{ public_item_key: "PI-00000001R", variant_axes: {}, quantity: 1 }]);
       assert.equal(api.headers.get("x-content-type-options"), "nosniff");
       assert.equal(r.headers.get("set-cookie"), null);
+    });
+
+    test("recherche instantanée : requête vide ou trop courte, trop longue, JSON échappé, au plus 8 familles publiées", async () => {
+      for (const q of ["", "c", "  "]) {
+        const r = await get(`/api/site/search?q=${encodeURIComponent(q)}`);
+        assert.equal(r.status, 200, JSON.stringify(q));
+        assert.deepEqual(JSON.parse(r.text).results, [], JSON.stringify(q));
+      }
+      const found = await get("/api/site/search?q=CHAISE");
+      assert.equal(found.status, 200);
+      assert.match(found.headers.get("content-type") ?? "", /^application\/json/);
+      assert.match(found.headers.get("cache-control") ?? "", /no-store/);
+      const body = JSON.parse(found.text);
+      assert.ok(body.results.length >= 1 && body.results.length <= 8);
+      assert.equal(body.results[0].slug, "chaise-demo");
+      assert.deepEqual(Object.keys(body.results[0]).sort(), ["category", "imageSha", "name", "priceText", "slug"], "rien d'autre que ce qui est publié et affiché");
+      const ref = await get("/api/site/search?q=PI-00000001R");
+      assert.equal(JSON.parse(ref.text).results[0].slug, "chaise-demo");
+      const evil = await get(`/api/site/search?q=${encodeURIComponent('<script>alert(1)</script>"><img src=x onerror=alert(2)>')}`);
+      assert.equal(evil.status, 200);
+      assert.match(evil.headers.get("content-type") ?? "", /^application\/json/, "jamais interprété comme du HTML");
+      assert.doesNotMatch(evil.text, /[<>&]/, "chevrons et esperluette sont échappés (\\u003c…) dans le JSON");
+      assert.equal(JSON.parse(evil.text).query, '<script>alert(1)</script>"><img src=x onerror=alert(2)>', "et le terme est restitué à l'identique une fois le JSON lu");
+      const long = await get(`/api/site/search?q=${"a".repeat(5000)}`);
+      assert.equal(long.status, 200);
+      assert.ok(JSON.parse(long.text).query.length <= 100, "requête bornée à 100 caractères");
     });
 
     test("recherche serveur : nom, référence PI, requête HTML échappée, longueur bornée", async () => {
