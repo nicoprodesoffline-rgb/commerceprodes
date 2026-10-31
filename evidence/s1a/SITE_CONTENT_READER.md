@@ -96,3 +96,16 @@ Un site (instance dédiée, build de production) lit le dossier d'export de l'in
 
 **Constat réel qui a corrigé le lecteur** : le premier essai a été REFUSÉ (`SECTION_FIELD`) parce qu'un texte saisi dans le formulaire de la Factory arrive avec `\r\n`, et le lecteur n'acceptait que `\n`. Corrigé : le retour chariot est accepté dans un texte et normalisé en saut de ligne ; tout autre caractère de contrôle reste refusé (un test existant a été ajusté en conséquence, et un test dédié ajouté). Détail du formulaire côté Factory : l'adresse d'une page est saisie avec sa barre oblique initiale (`/collectivites/ete`).
 Rejeu après correction : `npm run test:content` 77/77, `test:nav:ui` 4/4, `test:storefront` 25/25, `test:basis:ui` 5/5, `test:e2e:flow` 8/8.
+
+## Bout en bout RÉEL des champs optionnels (p0int sur 2366226, 31/10)
+
+Trois pages créées et exportées par l'éditeur de la Factory (A : `nav.order` 20, libellé de bouton « Voir la sélection », image avec texte alternatif ; B : `nav.order` 10, bouton sans libellé ; C : masquée de la barre), lues par un site dédié, puis dépubliées (`e2e-real-fields.mjs`, résultat `e2e-real-fields.json`).
+
+| Étape | Statut | Preuve | Limite |
+|---|---|---|---|
+| Ordre de la barre (B avant A, par `nav.order`) | ✅ BROWSER_VERIFIED | 1440 et 390 px | |
+| Page masquée de la barre mais servie sur son adresse | ✅ | C absente de la barre, `/p/<c>` = 200 | |
+| Libellé du bouton du hero : personnalisé, puis « Découvrir » par défaut | ✅ | A et B, 1440 et 390 px | |
+| `image_alt` rendu sur l'image | ✅ | attribut `alt` égal au texte saisi | |
+| Retrait des trois pages | ✅ | trois 404 | délai de lecture ≤ 5 s |
+| Débordement horizontal | ✅ | 0 px à 1440 et 390 px | |

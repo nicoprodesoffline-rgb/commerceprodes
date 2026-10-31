@@ -1,0 +1,41 @@
+{
+ "steps": {
+  "created_and_exported": {
+   "A": {
+    "saved": true,
+    "exported": true,
+    "with_image": true
+   },
+   "B": {
+    "saved": true,
+    "exported": true,
+    "with_image": false
+   },
+   "C": {
+    "saved": true,
+    "exported": true,
+    "with_image": false
+   }
+  },
+  "pairs_complete": true,
+  "site_serves_all_three": true,
+  "fields_1440": {
+   "bar_order_B_before_A": true,
+   "bar_excludes_C_hidden_from_bar": true,
+   "hero_label_custom_on_A": true,
+   "hero_label_default_on_B": true,
+   "image_alt_on_A": true,
+   "global_overflow_px": 0
+  },
+  "fields_390": {
+   "bar_order_B_before_A": true,
+   "bar_excludes_C_hidden_from_bar": true,
+   "hero_label_custom_on_A": true,
+   "hero_label_default_on_B": true,
+   "image_alt_on_A": true,
+   "global_overflow_px": 0
+  },
+  "C_hidden_from_bar_but_served": true,
+  "all_three_return_404": true
+ }
+}
