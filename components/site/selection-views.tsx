@@ -1,7 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CART_ADDED_EVENT, useCart } from "@/components/cart/cart-provider";
+import { previewCart } from "@/components/site/api";
+import { codeMessage, codesMessage } from "@/components/site/codes";
+import { addWishlistToCart, type WishlistCartResult } from "@/components/site/wishlist-cart";
+import { CarouselRow } from "@/components/site/carousel-row";
 import { MediaImage } from "@/components/site/media-image";
 import { CompareButton, WishlistButton } from "@/components/site/list-buttons";
 import { KEYS, clearList, removeFromList, rememberRecent, useLocalList } from "@/components/site/local-list";
@@ -23,9 +28,49 @@ export function WishlistView() {
   const list = useLocalList(KEYS.wishlist);
   const state = useFamilies(list);
   const gone = state.status === "ready" ? state.missing : [];
+  const { add } = useCart();
+  const [busy, setBusy] = useState(false);
+  const adding = useRef(false);
+  const [result, setResult] = useState<WishlistCartResult | null>(null);
+
+  async function onAddAll() {
+    if (state.status !== "ready" || adding.current) return;
+    const opener = document.activeElement;
+    adding.current = true;
+    setBusy(true);
+    setResult(null);
+    try {
+      const next = await addWishlistToCart(state.families, previewCart, add);
+      setResult(next);
+      if (next.added > 0) window.dispatchEvent(new CustomEvent(CART_ADDED_EVENT, { detail: { opener } }));
+    } finally {
+      adding.current = false;
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-4" data-testid="wishlist-view">
       <h1 className="text-2xl font-semibold">Ma sélection ({list.length})</h1>
+      {state.status === "ready" && state.families.length >= 2 && (
+        <button type="button" onClick={onAddAll} disabled={busy} className="min-h-[42px] rounded-[9px] bg-ink px-4 font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50">
+          {busy ? "Vérification…" : "Ajouter tout au panier"}
+        </button>
+      )}
+      <div aria-live="polite" aria-busy={busy} className="space-y-2 text-sm">
+        {result && <>
+          <p>{result.added} ajouté{result.added > 1 ? "s" : ""}, {result.refused.length} refusé{result.refused.length > 1 ? "s" : ""} par le serveur.</p>
+          {result.unpriced > 0 && <p>{result.unpriced} ajouté{result.unpriced > 1 ? "s" : ""} sans prix : seule une demande de devis sera possible pour ces produits.</p>}
+          {result.refused.length > 0 && <ul className="space-y-1">
+            {result.refused.map(({ family, codes }) => <li key={family.slug}><Link href={`/famille/${family.slug}`} className="underline">{family.name}</Link> : {codesMessage(codes)}</li>)}
+          </ul>}
+          {result.failed.length > 0 && <p>{result.failed.length} non ajouté{result.failed.length > 1 ? "s" : ""} : {codeMessage("NETWORK")} Produits concernés : {result.failed.map((f, i) => <span key={f.slug}>{i > 0 && ", "}<Link href={`/famille/${f.slug}`} className="underline">{f.name}</Link></span>)}</p>}
+          {result.choose.length > 0 && <div>
+            <p>{result.choose.length} produit{result.choose.length > 1 ? "s demandent" : " demande"} de choisir une variante : ouvrez {result.choose.length > 1 ? "leur" : "sa"} fiche.</p>
+            <ul className="mt-1 space-y-1">{result.choose.map((f) => <li key={f.slug}><Link href={`/famille/${f.slug}`} className="underline">{f.name}</Link></li>)}</ul>
+          </div>}
+        </>}
+      </div>
       <Status state={state} empty={emptyBox(<><p className="font-medium text-ink">Votre sélection est vide.</p><p className="mt-1">Utilisez « Ma sélection » sur une fiche ou une carte pour garder un produit ici ; elle reste sur cet appareil.</p><Link href="/recherche" className="mt-3 inline-flex h-[42px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Voir le catalogue</Link></>)} />
       {gone.length > 0 && (
         <p role="note" className="rounded-[9px] border border-line bg-surface px-3 py-2 text-sm text-ink-2">
@@ -144,7 +189,7 @@ export function RecentlyViewed({ slug }: { slug: string }) {
   return (
     <section aria-labelledby="recent-h" className="mt-10" data-testid="recently-viewed">
       <h2 id="recent-h" className="mb-3 text-lg font-semibold">Récemment consultés</h2>
-      <ul className="flex snap-x gap-3 overflow-x-auto pb-2">
+      <CarouselRow label="Récemment consultés">
         {state.families.map((f) => (
           <li key={f.slug} className="w-44 shrink-0 snap-start">
             <Link href={`/famille/${f.slug}`} className="block overflow-hidden rounded-[14px] border border-line bg-white hover:border-ink-3">
@@ -153,7 +198,7 @@ export function RecentlyViewed({ slug }: { slug: string }) {
             </Link>
           </li>
         ))}
-      </ul>
+      </CarouselRow>
     </section>
   );
 }

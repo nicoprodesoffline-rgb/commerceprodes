@@ -1,0 +1,11 @@
+{
+ "checks": {
+  "wishlist_add_all_opens_the_drawer_with_lines": true,
+  "tab_icon_declared": true,
+  "search_status_200": true,
+  "unknown_category_still_404": true,
+  "unknown_family_still_404": true,
+  "rate_limit_returns_429_with_retry_after": true,
+  "other_address_not_limited": true
+ }
+}

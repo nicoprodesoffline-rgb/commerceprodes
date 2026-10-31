@@ -5,6 +5,9 @@ import { lookUp, parseSlugs } from "@/lib/site-catalog/family-lookup";
 import { escapedJson as json } from "@/lib/site-catalog/json-response";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogOrNull } from "@/lib/site-catalog/page";
+import { createLimiter, requestKey } from "@/lib/site-ratelimit/limiter";
+
+const limiter = createLimiter({ limit: 120, windowMs: 60_000, maxKeys: 10_000 });
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +17,12 @@ export const dynamic = "force-dynamic";
  * catalogue indisponible : 503, jamais une liste vide.
  */
 export async function GET(req: Request) {
+  const limit = limiter.take(requestKey(req.headers.get("x-forwarded-for")), Date.now());
+  if (!limit.ok) {
+    const response = json({ families: [], limited: true }, 429);
+    response.headers.set("retry-after", String(limit.retryAfterSeconds));
+    return response;
+  }
   const slugs = parseSlugs(new URL(req.url).searchParams.get("slugs"));
   const catalog = await catalogOrNull();
   if (catalog === null) return json({ families: [], missing: [], unavailable: true }, 503);

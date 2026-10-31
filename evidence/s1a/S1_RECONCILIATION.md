@@ -1,6 +1,6 @@
 # S1 — rapprochement de l'inventaire Commerce avec ce qui est livré (issue #63)
 
-Source : `docs/commerce/frontend_commerce_inventaire.json` (branche `commerce-front`, vague S1 = **172 lignes**), décisions C1–C22. État : branche `s1a/vitrine`, dernier commit rapproché `018178e8`.
+Source : `docs/commerce/frontend_commerce_inventaire.json` (branche `commerce-front`, vague S1 = **172 lignes**), décisions C1–C22. État : branche `s1a/vitrine`, dernier état rapproché : `4947b900` + les six lots S1.
 Une seule valeur par ligne : **LIVRÉ** (code + test ou capture), **PARTIEL** (livré mais différent ou incomplet : la dernière colonne dit ce qui manque), **À FAIRE**. Une ligne peut en plus porter « attend GO » : elle n'est ni construite ni lancée sans décision.
 Limite : ce tableau classe ce que j'ai livré et mesuré en I1–I4 et suites ; les lignes « existant 67b66503 » viennent du moteur du site avant S1-A et sont couvertes par `test:storefront`, sans avoir été rejouées une à une. Aucune ligne n'est « validée » par un humain (OWNER_UAT jamais déclaré).
 
@@ -8,13 +8,13 @@ Limite : ce tableau classe ce que j'ai livré et mesuré en I1–I4 et suites ; 
 
 | Valeur | Lignes |
 |---|---:|
-| LIVRÉ | 89 |
+| LIVRÉ | 95 |
 | PARTIEL | 51 |
-| À FAIRE | 32 |
+| À FAIRE | 26 |
 | Total | 172 |
 
 Lignes qui **attendent un GO** (toutes valeurs confondues) : 40, dont : dégel C0 (demande sans ligne, champs d'organisme et de marché) (10), coordonnées (7), domaine public + image validée (2), paiement (C9 supplantée le 31/10) (2), dégel C0 (S2 : éco-participation, documents) (2), base fiscale non décidée + livraison (C1/C10) (2), dégel C0 (S2) (2), texte juridique (propriétaire) (2), domaine public + SEO (propriétaire) (2), e-mails (2), dégel C0 (S2) : date de mise en ligne (1), dégel C0 : ventes, date de mise en ligne (1), dégel C0 : stock (C15) (1), dégel C0 (S1-B) (1), base fiscale non décidée (C2/C10) (1), paiement (1), SEO public (propriétaire) (1).
-Lignes À FAIRE **sans GO nouveau**, construites ensuite par petits lots : V-E03-15 et T-T15-06 (squelette de chargement de la recherche), V-E05-13 (quantité minimale), V-E18-04 (« ajouter tout au panier » des familles à variante unique), T-T01-07 (icône d'onglet), T-SRV-01 (limite d'envois) ; et, pour passer V-E01-15 de PARTIEL à LIVRÉ, les flèches des carrousels.
+Six lignes qui n'attendaient aucun GO ont été construites après le premier état de ce tableau : V-E01-15 (flèches de carrousel), V-E03-15 et T-T15-06 (squelette de chargement de la recherche), V-E05-13 (quantité minimale), V-E18-04 (« ajouter tout au panier » des favoris à variante unique), T-T01-07 (icône d'onglet) ; T-SRV-01 (limite d'envois) est livrée en partie (deux routes de lecture).
 Le « devis express » sans produit (V-E12-*) **ne peut pas** être construit sans GO : le contrat C0 exige au moins une ligne par demande de devis et fixe les clés du contact.
 
 ## Tableau
@@ -29,7 +29,7 @@ Le « devis express » sans produit (V-E12-*) **ne peut pas** être construit sa
 | `V-E01-09` | Bloc PRO-INTENS sombre : pastille « ★ Gamme exclusive », bouton « Voir la gamme → » (/gamm | PARTIEL | 1e693a7a (bloc conditionnel + /gamme-pro-intens) | Pas de carrousel de 8 cartes ; bloc affiché seulement si la Factory publie la catégorie |
 | `V-E01-10` | Bandeau rouge « Besoin d'un devis personnalisé ? » + bouton « Demander un devis → » (/devi | LIVRÉ | tuiles 897c9488 / 0de6726c ; test:content 85/85 ; b786e2e2 | Textes limités aux décisions C1–C3 ; « HT » seulement si la génération le déclare (39acc139) |
 | `V-E01-13` | Carrousel « Nouveautés » (12 produits) ; « Voir tout » → /search?sort=newest | À FAIRE | — | Aucune date de mise en ligne dans C0 — **attend GO : dégel C0 (S2) : date de mise en ligne** |
-| `V-E01-15` | Chaque carrousel : flèches précédent/suivant (ordinateur, bibliothèque Embla), défilement  | PARTIEL | carrousels : similaires, récemment vus, sections éditoriales (défilement et accroche) | Flèches précédent / suivant absentes (construction prévue, sans GO) |
+| `V-E01-15` | Chaque carrousel : flèches précédent/suivant (ordinateur, bibliothèque Embla), défilement  | LIVRÉ | carousel-row.tsx ; lots S1 (31/10) ; tests/nav/s1-components.test.mjs | Flèches et défilement tactile ; non vues au navigateur (le catalogue local ne déborde pas) : test pur du composant |
 | `V-E01-16` | En cas d'échec de lecture de la base, la page s'affiche quand même (sections vides) | LIVRÉ | test:storefront (503 explicite sans catalogue) | Variante assumée : indisponibilité dite, jamais des sections vides |
 | `V-E03-01` | Titre « Tout le catalogue » ou « Résultats pour « … » » | LIVRÉ | listes b786e2e2, f9e0fd4f ; capture-lists.json ; tests/nav/listing.test.mjs |  |
 | `V-E03-02` | Compteur « N produit(s) » ou « N résultat(s) » ; message « Aucun produit ne correspond à c | LIVRÉ | listes b786e2e2, f9e0fd4f ; capture-lists.json ; tests/nav/listing.test.mjs |  |
@@ -43,7 +43,7 @@ Le « devis express » sans produit (V-E12-*) **ne peut pas** être construit sa
 | `V-E03-11` | Tri « Trier par » : Pertinence, Les plus populaires, Nouveautés, Prix croissant, Prix décr | PARTIEL | listes b786e2e2, f9e0fd4f ; capture-lists.json ; tests/nav/listing.test.mjs | Pertinence, prix ↑↓, nom ; « populaires » et « nouveautés » absents — **attend GO : dégel C0 : ventes, date de mise en ligne** |
 | `V-E03-12` | Le tri conserve la recherche mais | LIVRÉ | listes b786e2e2, f9e0fd4f ; capture-lists.json ; tests/nav/listing.test.mjs |  |
 | `V-E03-13` | Grille de cartes produit (1/2/3 colonnes) — voir carte produit T8 | LIVRÉ | listes b786e2e2, f9e0fd4f ; capture-lists.json ; tests/nav/listing.test.mjs |  |
-| `V-E03-15` | Écran de chargement : squelette gris (titre + 8 tuiles) | À FAIRE | — | Squelette de chargement : seulement sur la recherche (un loading.tsx racine casse le vrai 404, constaté en I1) — construction prévue, sans GO |
+| `V-E03-15` | Écran de chargement : squelette gris (titre + 8 tuiles) | LIVRÉ | app/recherche/loading.tsx ; tests/nav/shell.test.mjs ; capture-lots.json | Squelette de la recherche seulement : tout loading.tsx racine ou de segment à 404 est interdit par un test (il casse le vrai 404) ; 404 de catégorie et de famille rejoués |
 | `V-E03-16` | Rafraîchissement complet des résultats quand la recherche change | LIVRÉ | listes b786e2e2, f9e0fd4f ; capture-lists.json ; tests/nav/listing.test.mjs |  |
 | `V-E04-01` | Titre = nom de la catégorie ; « N produits dans cette catégorie » ; message « Aucun produi | LIVRÉ | listes b786e2e2, f9e0fd4f ; capture-lists.json ; tests/nav/listing.test.mjs |  |
 | `V-E04-02` | Mêmes filtres prix/stock et mêmes tris que E03 (même cadre) | PARTIEL | listes b786e2e2, f9e0fd4f ; capture-lists.json ; tests/nav/listing.test.mjs | Prix et tri présents ; filtre « disponibles » absent — **attend GO : dégel C0 : stock (C15)** |
@@ -57,7 +57,7 @@ Le « devis express » sans produit (V-E12-*) **ne peut pas** être construit sa
 | `V-E05-09` | Prix HT : fourchette « min – max » si plusieurs variantes et aucune choisie ; sinon prix d | PARTIEL | fiche existante 67b66503 ; test:storefront 25/25 | Prix de la variante choisie sur la fiche ; « à partir de » sur les cartes ; pas de fourchette min – max |
 | `V-E05-11` | Courte description HTML | LIVRÉ | fiche existante 67b66503 ; test:storefront 25/25 ; JSON-LD 0e31b7ee |  |
 | `V-E05-12` | Sélecteur de variantes : un groupe par axe à au moins 2 valeurs ; pastilles de couleur (35 | PARTIEL | fiche existante 67b66503 ; test:storefront 25/25 | Axes de variante publiés ; pastilles de couleur absentes (la correspondance des noms de couleurs reste à fournir) |
-| `V-E05-13` | Champ Quantité (minimum = quantité minimale du produit) + message « Quantité minimale : N  | À FAIRE | — | Quantité minimale (plus petit palier publié) : construction prévue, sans GO |
+| `V-E05-13` | Champ Quantité (minimum = quantité minimale du produit) + message « Quantité minimale : N  | LIVRÉ | minimum-quantity.ts ; tests/nav/minimum-quantity.test.mjs | Plus petit palier publié ; le serveur reste l'autorité ; non vu au navigateur (aucune variante locale ne démarre au-dessus de 1) |
 | `V-E05-15` | Tableau « Tarifs dégressifs » : ligne « 1 unité », un palier par seuil (« À partir de N un | LIVRÉ | fiche existante 67b66503 ; test:storefront 25/25 ; JSON-LD 0e31b7ee |  |
 | `V-E05-17` | Bouton vert « Ajouter au panier » : ajoute la variante × quantité au panier navigateur, ou | LIVRÉ | fiche existante 67b66503 ; test:storefront 25/25 ; JSON-LD 0e31b7ee |  |
 | `V-E05-18` | Bouton « Demander un devis » (« Réponse sous 24h ») → fenêtre devis produit (W1) | LIVRÉ | fiche existante 67b66503 ; test:storefront 25/25 ; JSON-LD 0e31b7ee |  |
@@ -119,7 +119,7 @@ Le « devis express » sans produit (V-E12-*) **ne peut pas** être construit sa
 | `V-E15-02` | Liens e-mail et téléphone cliquables ; lien externe vers l'hébergeur | À FAIRE | — | Mentions légales : page provisoire noindex — **attend GO : texte juridique (propriétaire)** |
 | `V-E18-01` | Titre « Ma sélection (N) » ; état vide « Votre sélection est vide — Cliquez sur ♥ sur n'im | LIVRÉ | 0e31b7ee ; capture-selection.json ; local-list / family-lookup |  |
 | `V-E18-02` | Grille : image, titre, « Réf : », prix normal HT, croix « Retirer des favoris » | LIVRÉ | 0e31b7ee ; capture-selection.json ; local-list / family-lookup |  |
-| `V-E18-04` | À partir de 2 produits : « Ajouter tout au panier » (quantité 1 chacun, prix normal ; mess | À FAIRE | — | « Ajouter tout au panier » : pour les familles à variante unique ; construction prévue, sans GO |
+| `V-E18-04` | À partir de 2 produits : « Ajouter tout au panier » (quantité 1 chacun, prix normal ; mess | LIVRÉ | wishlist-cart.ts ; capture-lots.json ; tests/http/storefront.test.mjs | Familles à variante unique, prix vérifié par le serveur ; les familles à plusieurs variantes demandent un choix sur leur fiche |
 | `V-E19-01` | « ⚠️ Une erreur est survenue — Nous avons été informés et allons corriger cela rapidement. | LIVRÉ | app/error.tsx existant (67b66503) | Non rejoué en I1–I4 |
 | `V-E20-01` | « 404 — Cette page n'existe pas ou a été déplacée. » ; champ de recherche (→ /search?q=) ; | LIVRÉ | coque 906f106e ; tests/nav/shell.test.mjs ; capture-shell.json ; test:nav (vrai 404) |  |
 | `V-E21-01` | Icône panier dans l'en-tête avec pastille du nombre d'articles ; clic = ouverture | LIVRÉ | 1e693a7a ; capture-cart.json |  |
@@ -134,7 +134,7 @@ Le « devis express » sans produit (V-E12-*) **ne peut pas** être construit sa
 | `T-T01-04` | Ordre d'affichage : en-tête → bandeau acheteur → bandeau promo → page → messages (toasts)  | PARTIEL | coque 906f106e ; tests/nav/shell.test.mjs ; capture-shell.json | Ordre de l'ancien site non reproduit à l'identique (pas de bandeau acheteur ni promo : C12) |
 | `T-T01-05` | Mémoires partagées par toutes les pages : panier, favoris, devis groupé, comparateur | LIVRÉ | 0e31b7ee ; capture-selection.json ; local-list / family-lookup |  |
 | `T-T01-06` | Mode sombre désactivé ; contour rouge PRODES au clavier ; mise en forme des descriptions p | LIVRÉ | 0e31b7ee ; capture-selection.json ; local-list / family-lookup |  |
-| `T-T01-07` | Icône d'onglet (favicon) | À FAIRE | — | Icône d'onglet à partir du logo : construction prévue, sans GO |
+| `T-T01-07` | Icône d'onglet (favicon) | LIVRÉ | app/layout.tsx (metadata.icons) ; capture-lots.json | Icône d'onglet = logo du site |
 | `T-T02-01` | Barre rouge supérieure : téléphone cliquable « [numéro] », horaires « Lun–Sam 8h30–19h »,  | PARTIEL | coque 906f106e ; tests/nav/shell.test.mjs ; capture-shell.json | Horaires et livraison incluse ; téléphone absent — **attend GO : coordonnées** |
 | `T-T02-02` | Logo PRODES (image /logo-prodes.png) → accueil | LIVRÉ | coque 906f106e ; tests/nav/shell.test.mjs ; capture-shell.json |  |
 | `T-T02-04` | Lien « Devis express » (grand écran) | PARTIEL | coque 906f106e ; tests/nav/shell.test.mjs ; capture-shell.json | Lien « Demande de devis » (pas de page « devis express » : voir V-E12) |
@@ -172,7 +172,7 @@ Le « devis express » sans produit (V-E12-*) **ne peut pas** être construit sa
 | `T-T15-02` | app/sitemap.ts : plan du site (accueil, catalogue, devis express, FAQ, contact, mentions l | À FAIRE | — | robots.txt et plan du site : adresses absolues et politique d'indexation — **attend GO : domaine public + SEO (propriétaire)** |
 | `T-T15-03` | Images de partage social générées (app/opengraph-image.tsx, components/opengraph-image.tsx | À FAIRE | — | Image de partage : décision de publication — **attend GO : domaine public + image validée** |
 | `T-T15-05` | Adresse de base du site : VERCEL_PROJECT_PRODUCTION_URL sinon http://localhost:3000 (lib/u | PARTIEL | 4d72391b (SITE_PUBLIC_ORIGIN pour les canoniques éditoriaux) | Pas de base d'adresse globale |
-| `T-T15-06` | Écrans de chargement : squelette du catalogue (E03) ; squelettes de cartes components/prod | À FAIRE | — | Squelette de chargement : seulement sur la recherche (un loading.tsx racine casse le vrai 404, constaté en I1) — construction prévue, sans GO |
+| `T-T15-06` | Écrans de chargement : squelette du catalogue (E03) ; squelettes de cartes components/prod | LIVRÉ | app/recherche/loading.tsx ; tests/nav/shell.test.mjs ; capture-lots.json | Squelette de la recherche seulement : tout loading.tsx racine ou de segment à 404 est interdit par un test (il casse le vrai 404) ; 404 de catégorie et de famille rejoués |
 | `T-T03-04` | Libellés pour lecteurs d'écran du menu mobile (« Open mobile menu », « Close mobile menu » | LIVRÉ | coque 906f106e ; tests/nav/shell.test.mjs ; capture-shell.json ; 030f6973 |  |
 | `API-26` | Passe commande : contrôle, totaux TVA et RDV, référence, enregistrement, 2 e-mails | PARTIEL | cd7613cf, d0cd83e3 ; test:e2e:flow 8/8 | Enregistrement et reçu livrés ; les 2 e-mails non — **attend GO : e-mails** |
 | `API-30` | Enregistre une demande de devis produit, 2 e-mails | PARTIEL | cd7613cf, d0cd83e3 ; test:e2e:flow 8/8 | Enregistrement et reçu livrés ; les 2 e-mails non — **attend GO : e-mails** |
@@ -189,7 +189,7 @@ Le « devis express » sans produit (V-E12-*) **ne peut pas** être construit sa
 | `DB-10` | Prix dégressifs par palier (prix fixe ou remise %) | LIVRÉ | données C0 lues par lib/site-catalog ; navigation des catégories ; test:nav, test:storefront | Remplacement Supabase par le catalogue C0 ACTIVE |
 | `DB-16` | Menus de navigation (hérité Shopify) | LIVRÉ | données C0 lues par lib/site-catalog ; navigation des catégories ; test:nav, test:storefront | Remplacement Supabase par le catalogue C0 ACTIVE |
 | `DB-17` | Liens des menus | LIVRÉ | données C0 lues par lib/site-catalog ; navigation des catégories ; test:nav, test:storefront | Remplacement Supabase par le catalogue C0 ACTIVE |
-| `T-SRV-01` | Limite d'envois par adresse IP (contact, devis, recherche, PDF, suivi) | À FAIRE | — | Limite d'envois par adresse : construction prévue, sans GO (relevé par 8f sur /api/site/search) |
+| `T-SRV-01` | Limite d'envois par adresse IP (contact, devis, recherche, PDF, suivi) | PARTIEL | lib/site-ratelimit/limiter.ts ; tests purs ; capture-lots.json | Recherche instantanée et lecture de familles : 120 requêtes / minute / adresse, puis 429 avec délai ; non posé sur devis, commande et reçu (routes C0 : hors périmètre) |
 | `T-SRV-02` | Une ligne JSON horodatée par événement | PARTIEL | journaux de bord du site | Pas de ligne JSON horodatée systématique |
 | `T-SRV-03` | Interdiction d'affichage en cadre, référent, caméra/micro coupés | LIVRÉ | proxy.ts ; test:storefront 25/25 |  |
 | `T-SRV-06` | Lecture métier de la base (panier, produits, promotions, devis) et règle de prix dégressif | LIVRÉ | proxy.ts ; test:storefront 25/25 |  |

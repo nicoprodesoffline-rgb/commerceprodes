@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { lookUp, parseSlugs, LOOKUP_MAX } from "../../lib/site-catalog/family-lookup.ts";
 
-const fam = (slug, items = 1) => ({ slug, name: slug.toUpperCase(), description_short: "d", image_main_sha256: "", axes: [{ label: "Longueur" }], items: Array.from({ length: items }, (_, i) => ({ public_item_key: `PI-${slug}${i}` })) });
+const fam = (slug, items = 1) => ({ slug, name: slug.toUpperCase(), description_short: "d", image_main_sha256: "", axes: [{ axis_key: "longueur", label: "Longueur" }], items: Array.from({ length: items }, (_, i) => ({ public_item_key: `PI-${slug}${i}`, variant_axes: { longueur: "120" } })) });
 const DB = { a: fam("a"), b: fam("b", 2), c: fam("c") };
 const prices = { a: "12.50", b: "7.00", c: "7.00" };
 const run = (slugs) => lookUp(slugs, (s) => DB[s] ?? null, (f) => (prices[f.slug] ? { amount: prices[f.slug], basis: "HT" } : null), (p) => (p ? p.amount : "Sur devis"), () => "Cat");
@@ -34,4 +34,16 @@ test("référence seulement pour une famille à une variante ; le nombre de vari
   assert.equal(out.found[1].reference, null);
   assert.equal(out.found[1].variantCount, 2);
   assert.deepEqual(out.found[0].axes, ["Longueur"]);
+});
+
+test("single expose seulement la variante unique avec ses axes publiés", () => {
+  const out = run(["a", "b"]);
+  assert.deepEqual(out.found[0].single, {
+    public_item_key: "PI-a0", variant_axes: { longueur: "120" }, axes: [{ label: "Longueur", value: "120" }],
+  });
+  assert.equal(out.found[1].single, null);
+  const noAxes = { ...fam("unique"), axes: [], items: [{ public_item_key: "PI-unique0", variant_axes: {} }] };
+  const result = lookUp(["unique"], () => noAxes, () => null, () => "Sur devis", () => null);
+  assert.deepEqual(result.found[0].single.axes, []);
+  assert.deepEqual(Object.keys(result.found[0]).sort(), ["axes", "best", "category", "description", "imageSha", "name", "priceText", "reference", "single", "slug", "variantCount"]);
 });

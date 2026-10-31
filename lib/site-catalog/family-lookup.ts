@@ -18,6 +18,7 @@ export const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,119}$/;
 export type LookedUp = {
   slug: string; name: string; description: string; category: string | null; imageSha: string | null;
   variantCount: number; reference: string | null; axes: string[]; priceText: string; best: boolean;
+  single: { public_item_key: string; variant_axes: Record<string, string>; axes: { label: string; value: string }[] } | null;
 };
 
 export function parseSlugs(raw: string | null): string[] {
@@ -46,6 +47,11 @@ export function lookUp(
     slug: family.slug, name: family.name, description: family.description_short, category: categoryOf(family),
     imageSha: family.image_main_sha256 || null, variantCount: family.items.length,
     reference: family.items.length === 1 ? family.items[0]!.public_item_key : null,
+    single: family.items.length === 1 ? {
+      public_item_key: family.items[0]!.public_item_key,
+      variant_axes: family.items[0]!.variant_axes,
+      axes: family.axes.map((a) => ({ label: a.label, value: family.items[0]!.variant_axes[a.axis_key] ?? "" })),
+    } : null,
     axes: family.axes.map((a) => a.label), priceText: priceText(price),
     best: lowest !== null && price !== null && cents(price.amount) === lowest,
   }));

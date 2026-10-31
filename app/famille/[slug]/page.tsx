@@ -2,14 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { FamilyGrid } from "@/components/home/family-card";
+import { FamilyCard } from "@/components/home/family-card";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { FamilyBuyBox } from "@/components/product/family-buy-box";
 import { Gallery, type GalleryImage } from "@/components/product/gallery";
 import { categoryCrumbs, familyCard, navigationOf } from "@/components/site/catalog-views";
 import { CompareButton, WishlistButton } from "@/components/site/list-buttons";
 import { RecentlyViewed } from "@/components/site/selection-views";
-import { axesText } from "@/components/site/format";
+import { CarouselRow } from "@/components/site/carousel-row";
+import { BasisNotice } from "@/components/site/basis-notice";
+import { axesText, uniformBasis } from "@/components/site/format";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
@@ -73,6 +75,8 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
 
   // « Produits similaires » : les autres familles de la même catégorie principale (ordre du DTO), 8 au plus.
   const similar = catalog.families.filter((f) => f.slug !== family.slug && f.primary_category_key === family.primary_category_key).slice(0, 8);
+  const similarCards = similar.map((f) => ({ ...familyCard(f), from: familyPrice(catalog, f, instant) }));
+  const similarBasis = uniformBasis(similarCards.map((f) => f.from?.basis).filter((b) => b !== undefined));
   const crumbs = [{ label: "Accueil", href: "/" }, ...categoryCrumbs(catalog, family.primary_category_key), { label: family.name }];
   // Données structurées « Fil d'Ariane » : chevrons échappés pour qu'aucune valeur ne puisse fermer la balise.
   const breadcrumbLd = JSON.stringify({
@@ -133,7 +137,10 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
       {similar.length > 0 && (
         <section aria-labelledby="similar-h" className="mt-10 print:hidden" data-testid="similar-families">
           <h2 id="similar-h" className="mb-3 text-lg font-semibold">Produits similaires</h2>
-          <FamilyGrid prices families={similar.map((f) => ({ ...familyCard(f), from: familyPrice(catalog, f, instant) }))} label="Familles de la même catégorie" />
+          {similarBasis.uniform && <div className="mb-3"><BasisNotice basis={similarBasis.basis} /></div>}
+          <CarouselRow label="Familles de la même catégorie">
+            {similarCards.map((f) => <FamilyCard key={f.slug} data={f} from={f.from} showBasis={!similarBasis.uniform} />)}
+          </CarouselRow>
         </section>
       )}
       <div className="print:hidden"><RecentlyViewed slug={family.slug} /></div>

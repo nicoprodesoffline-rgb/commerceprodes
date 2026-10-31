@@ -32,7 +32,16 @@ test("la coque n'écrit en dur ni téléphone ni adresse e-mail (coordonnées pi
 });
 
 test("pas de loading.tsx à la racine (un vrai 404 exige que la page ne soit pas diffusée avant de savoir)", () => {
-  assert.equal(fs.existsSync(path.join(root, "app/loading.tsx")), false);
+  const forbidden = ["app/loading.tsx"];
+  for (const segment of ["famille", "categorie", "article", "p"]) {
+    const dir = path.join(root, "app", segment);
+    if (fs.existsSync(dir)) {
+      for (const file of fs.readdirSync(dir, { recursive: true })) {
+        if (path.basename(file) === "loading.tsx") forbidden.push(`app/${segment}/${file}`);
+      }
+    }
+  }
+  for (const file of forbidden) assert.equal(fs.existsSync(path.join(root, file)), false, file);
 });
 
 test("les textes validés par le propriétaire sont présents : horaires (C5) et livraison incluse (C1)", () => {

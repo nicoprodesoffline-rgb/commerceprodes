@@ -17,6 +17,7 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
+  icons: { icon: "/logo-prodes.png" },
   title: { default: "Catalogue PRODES", template: "%s | PRODES" },
   // Aucun SEO en W1 (scope verdict : SEO = décision propriétaire) : jamais indexé.
   robots: { index: false, follow: false },

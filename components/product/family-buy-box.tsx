@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { MAX_QUANTITY, useCart } from "@/components/cart/cart-provider";
+import { minimumQuantity } from "@/components/product/minimum-quantity";
 import { PriceGrid, type PriceGridRow } from "@/components/product/price-grid";
 import { VariantSelector, type SelectorAxis } from "@/components/product/variant-selector";
 import { previewCart } from "@/components/site/api";
@@ -60,13 +61,22 @@ export function FamilyBuyBox({
   const { add, lines } = useCart();
   const router = useRouter();
   const [selectedKey, setSelectedKey] = useState(initialKey ?? items[0]?.public_item_key ?? "");
-  const [qtyRaw, setQtyRaw] = useState("1");
+  const [qtyRaw, setQtyRaw] = useState(() => String(minimumQuantity(items.find((i) => i.public_item_key === selectedKey)?.rows ?? [])));
   const [quote, setQuote] = useState<Quote>({ state: "idle" });
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const qtyId = useRef(`qty-${familySlug}`).current;
   const item = items.find((i) => i.public_item_key === selectedKey);
   const quantity = parseQty(qtyRaw);
+  const minimum = minimumQuantity(item?.rows ?? []);
+  const belowMinimum = minimum > 1 && /^\d+$/.test(qtyRaw) && Number(qtyRaw) < minimum;
+
+  function selectVariant(key: string) {
+    setSelectedKey(key);
+    const nextMinimum = minimumQuantity(items.find((i) => i.public_item_key === key)?.rows ?? []);
+    if (nextMinimum > 1) setQtyRaw(String(nextMinimum));
+    setFeedback(null);
+  }
 
   // Adresse partageable de la variante choisie (sans rechargement).
   useEffect(() => {
@@ -158,10 +168,7 @@ export function FamilyBuyBox({
         options={schema}
         items={items}
         selectedKey={selectedKey}
-        onSelect={(k) => {
-          setSelectedKey(k);
-          setFeedback(null);
-        }}
+        onSelect={selectVariant}
       />
 
       <div className="flex items-start gap-3 border-t border-line pt-4" data-testid="selected-variant">
@@ -189,13 +196,14 @@ export function FamilyBuyBox({
               inputMode="numeric"
               autoComplete="off"
               value={qtyRaw}
-              aria-invalid={quantity === null}
-              aria-describedby={`${qtyId}-help`}
+              aria-invalid={quantity === null || belowMinimum}
+              aria-describedby={`${qtyId}-help${minimum > 1 ? ` ${qtyId}-minimum` : ""}`}
               onChange={(e) => setQtyRaw(e.target.value.replace(/[^\d]/g, "").slice(0, 7))}
               className="tabular h-[42px] w-20 border-y border-line-strong bg-white px-2 text-center"
             />
             <button type="button" aria-label="Augmenter la quantité" onClick={() => setQtyRaw(String(Math.min(MAX_QUANTITY, (quantity ?? 0) + 1)))} className="h-[42px] w-[42px] rounded-r-[9px] border border-line-strong bg-white text-lg">+</button>
           </div>
+          {minimum > 1 && <p id={`${qtyId}-minimum`} className="mt-1 text-sm text-ink-2">Quantité minimale : {minimum}</p>}
         </div>
         <button
           type="button"
@@ -219,12 +227,14 @@ export function FamilyBuyBox({
         id={`${qtyId}-help`}
         className="-mt-2 text-sm"
         aria-live="polite"
-        aria-busy={quantity !== null && (current === null || current.state === "loading")}
+        aria-busy={!belowMinimum && quantity !== null && (current === null || current.state === "loading")}
         data-testid="qty-price"
         data-quote-state={quantity === null ? "invalid" : current === null ? "loading" : current.state}
         data-quote-quantity={current && current.state !== "loading" ? current.quantity : undefined}
       >
-        {quantity === null ? (
+        {belowMinimum ? (
+          <span className="text-signal">Quantité minimale : {minimum}</span>
+        ) : quantity === null ? (
           <span className="text-signal">Saisissez une quantité entière entre 1 et 1 000 000.</span>
         ) : current === null || current.state === "loading" ? (
           <span className="text-ink-3">Prix pour {quantity} : vérification auprès du serveur…</span>
@@ -279,7 +289,7 @@ export function FamilyBuyBox({
                       {isSel ? (
                         <span className="text-xs font-medium text-signal">Choisie</span>
                       ) : (
-                        <button type="button" onClick={() => { setSelectedKey(i.public_item_key); setFeedback(null); }} className="min-h-[34px] rounded-[9px] border border-line-strong px-3 text-xs hover:bg-surface">
+                        <button type="button" onClick={() => selectVariant(i.public_item_key)} className="min-h-[34px] rounded-[9px] border border-line-strong px-3 text-xs hover:bg-surface">
                           Choisir<span className="sr-only"> {i.axes.map((a) => axisValue(a.value)).join(" ")}</span>
                         </button>
                       )}

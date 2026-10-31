@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CategoryGrid } from "@/components/home/category-grid";
 import { FamilyCard } from "@/components/home/family-card";
+import { CarouselRow } from "@/components/site/carousel-row";
 import { BasisNotice } from "@/components/site/basis-notice";
 import { familyCard, navigationOf } from "@/components/site/catalog-views";
 import { uniformBasis } from "@/components/site/format";
@@ -53,9 +54,9 @@ export function FamilyCarouselSection({ data, catalog }: { data: Data<"product_c
     <section data-testid="section-product-carousel" className="min-w-0">
       {data.title && <h2 className={heading}>{data.title}</h2>}
       {basis.uniform && <div className="mb-3"><BasisNotice basis={basis.basis} /></div>}
-      <ul aria-label={data.title || "Familles publiées"} tabIndex={0} className="grid w-full min-w-0 snap-x snap-mandatory auto-cols-[min(80vw,300px)] grid-flow-col gap-4 overflow-x-auto pb-3 [overflow-wrap:anywhere] [&>li]:snap-start">
+      <CarouselRow label={data.title || "Familles publiées"}>
         {cards.map(card => <FamilyCard key={card.key} data={card.data} from={card.from} showBasis={!basis.uniform} />)}
-      </ul>
+      </CarouselRow>
     </section>
   );
 }

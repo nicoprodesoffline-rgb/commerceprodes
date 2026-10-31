@@ -342,6 +342,22 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.ok(JSON.parse(long.text).query.length <= 100, "requête bornée à 100 caractères");
     });
 
+    test("limite d'envois : la 121e demande d'une adresse reçoit 429 et un JSON vide", async () => {
+      for (const [endpoint, key, address] of [["search", "results", "192.0.2.120"], ["families", "families", "192.0.2.121"]]) {
+        const headers = { "x-forwarded-for": ` ${address}, 198.51.100.1` };
+        const responses = await Promise.all(Array.from({ length: 121 }, () => http("GET", `/api/site/${endpoint}`, { headers })));
+        assert.equal(responses.filter((r) => r.status === 200).length, 120, `${endpoint} : 120/121 demandes autorisées`);
+        const refusals = responses.filter((r) => r.status === 429);
+        assert.equal(refusals.length, 1, `${endpoint} : 1/121 demande limitée`);
+        const limited = refusals[0];
+        assert.deepEqual(limited.json, { [key]: [], limited: true });
+        assert.match(limited.headers.get("retry-after") ?? "", /^[1-9]\d*$/);
+        assert.match(limited.headers.get("content-type") ?? "", /^application\/json/);
+        assert.match(limited.headers.get("cache-control") ?? "", /no-store/);
+        assert.doesNotMatch(limited.text, /[<>&]/);
+      }
+    });
+
     test("familles par adresse : ordre gardé, inconnu rendu à part, adresses invalides écartées, 20 au plus, JSON échappé", async () => {
       const r = await get("/api/site/families?slugs=zzz-inconnu,chaise-demo,chaise-demo,../etc/passwd,%3Cscript%3E");
       assert.equal(r.status, 200);
@@ -350,7 +366,7 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       const body = JSON.parse(r.text);
       assert.deepEqual(body.families.map((f) => f.slug), ["chaise-demo"]);
       assert.deepEqual(body.missing, ["zzz-inconnu"], "une adresse invalide n'est jamais relue ni renvoyée");
-      assert.deepEqual(Object.keys(body.families[0]).sort(), ["axes", "best", "category", "description", "imageSha", "name", "priceText", "reference", "slug", "variantCount"]);
+      assert.deepEqual(Object.keys(body.families[0]).sort(), ["axes", "best", "category", "description", "imageSha", "name", "priceText", "reference", "single", "slug", "variantCount"]);
       assert.doesNotMatch(r.text, /[<>&]/);
       const many = await get(`/api/site/families?slugs=${Array.from({ length: 60 }, (_, i) => `zz${i}`).join(",")}`);
       assert.equal(JSON.parse(many.text).missing.length, 20, "20 adresses au plus par appel");
