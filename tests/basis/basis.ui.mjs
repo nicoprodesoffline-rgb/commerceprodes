@@ -141,3 +141,21 @@ describe("la base fiscale n'est affirmée que si la génération la déclare (S1
     }, { now: "2026-10-20T07:00:00Z", file: FILE });
   });
 });
+
+describe("pastilles de couleur du sélecteur de variantes (S1-A)", () => {
+  test("l'axe « Couleur » montre une pastille décorative devant chaque nom connu ; le texte reste ; l'axe « Taille » n'en a pas", async () => {
+    await withServer(FIXTURE, async () => {
+      const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" })).newPage();
+      await page.goto(`${BASE}/famille/${FAMILY_SLUG}`);
+      const color = page.locator("fieldset", { hasText: "Couleur" }).first();
+      await color.waitFor();
+      const swatches = color.locator('span[aria-hidden="true"][style*="background-color"]');
+      assert.ok((await swatches.count()) >= 2, "une pastille par couleur connue (rouge, bleu)");
+      assert.match(await color.innerText(), /Rouge/);
+      assert.match(await color.innerText(), /Bleu/);
+      const size = page.locator("fieldset", { hasText: "Taille" }).first();
+      assert.equal(await size.locator('span[aria-hidden="true"][style*="background-color"]').count(), 0, "aucune pastille sur un axe qui n'est pas une couleur");
+      await page.context().close();
+    }, { now: "2026-10-20T07:00:00Z", file: FILE });
+  });
+});

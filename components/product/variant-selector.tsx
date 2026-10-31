@@ -9,6 +9,7 @@
  */
 import { useId } from "react";
 import { axisValue } from "@/components/site/format";
+import { isColorAxis, swatchFor } from "@/lib/site-catalog/color-swatch";
 
 export type SelectorAxis = { axis: string; label: string; values: string[] };
 export type SelectorItem = { public_item_key: string; variant_axes: Record<string, string> };
@@ -35,10 +36,14 @@ export function VariantSelector({
     <div className="space-y-4" data-testid="variant-selector">
       {options.map((option) => {
         const current = selected[option.axis];
+        const colorAxis = isColorAxis(option.axis, option.label);
         if (option.values.length === 1) {
+          const backgroundColor = colorAxis ? swatchFor(option.values[0]!) : null;
           return (
             <p key={option.axis} className="text-sm">
-              <span className="font-medium">{option.label}</span> : {axisValue(option.values[0]!)} <span className="text-ink-3">(seule option)</span>
+              <span className="font-medium">{option.label}</span> : {backgroundColor && (
+                <span aria-hidden="true" className="mr-2 inline-block h-4 w-4 rounded-full border border-line-strong align-middle" style={{ backgroundColor }} />
+              )}{axisValue(option.values[0]!)} <span className="text-ink-3">(seule option)</span>
             </p>
           );
         }
@@ -55,6 +60,7 @@ export function VariantSelector({
               {option.values.map((value) => {
                 const t = target(option.axis, value);
                 const id = `${base}-${option.axis}-${value}`;
+                const backgroundColor = colorAxis ? swatchFor(value) : null;
                 return (
                   <label
                     key={value}
@@ -79,6 +85,9 @@ export function VariantSelector({
                       onChange={() => t && onSelect(t.public_item_key)}
                       className="sr-only"
                     />
+                    {backgroundColor && (
+                      <span aria-hidden="true" className="mr-2 h-4 w-4 shrink-0 rounded-full border border-line-strong" style={{ backgroundColor }} />
+                    )}
                     {axisValue(value)}
                     {!t && <span className="sr-only"> (non proposé avec la sélection actuelle)</span>}
                   </label>
