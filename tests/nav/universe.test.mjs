@@ -1,77 +1,59 @@
-// Interface de lecture des pages publiées : données fictives, aucune base ni aucun serveur.
+// Modèle site_content.v1 : ordre reçu, aucun kind ni order ; données fictives uniquement.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { registerHooks } from "node:module";
 import { universeEntries, SLUG_RE, UNIVERSE_MAX } from "../../lib/site-content/pages.ts";
 
-// Node exige l'extension ; Next et TypeScript résolvent l'import relatif du module source.
 const sourceUrl = new URL("../../lib/site-content/source.ts", import.meta.url).href;
-const hooks = registerHooks({
-  resolve(specifier, context, nextResolve) {
-    return nextResolve(specifier === "./pages" && context.parentURL === sourceUrl ? "./pages.ts" : specifier, context);
-  },
-});
+const stub = 'data:text/javascript,export async function catalogOrNull(){return null}';
+const hooks = registerHooks({ resolve(specifier, context, next) {
+  if (specifier === "@/lib/site-catalog/page" && context.parentURL === sourceUrl) return next(stub, context);
+  if (context.parentURL?.includes("/lib/site-content/") && ["./pages", "./reader", "./validate"].includes(specifier)) return next(specifier + ".ts", context);
+  return next(specifier, context);
+} });
 const { getPagesSource, loadUniverse } = await import(sourceUrl);
 hooks.deregister();
+const page = (slug, title = "Page démo") => ({ slug, title });
 
-const page = (slug, title = "Page de test", order = 0, kind = "business") => ({ slug, title, order, kind });
-
-test("l'accueil est exclu ; les pages métier et saisonnières sont retenues", () => {
-  assert.deepEqual(universeEntries([page("accueil", "Accueil", 0, "home"), page("metier"), page("saison", "Saison", 1, "seasonal")]).map((p) => p.slug), ["metier", "saison"]);
+test("accueil exclu, segments métier et saisonniers conservés", () => {
+  assert.deepEqual(universeEntries([page("/", "Accueil"), page("collectivites"), page("saison/noel_2026")]).map(p => p.slug), ["collectivites", "saison/noel_2026"]);
 });
-
-test("les slugs invalides sont écartés ; la limite est de 80 caractères", () => {
-  const invalid = ["../x", "A", "", "a".repeat(81)];
-  assert.deepEqual(universeEntries(invalid.map((slug) => page(slug))), []);
-  assert.equal(SLUG_RE.source, "^[a-z0-9][a-z0-9-]{0,79}$");
-  assert.equal(universeEntries([page("a".repeat(80))]).length, 1);
+test("slugs invalides écartés, longueur sans / initial au plus 199", () => {
+  const invalid = ["../x", "A", "", "/demo", "a//b", "a/", "a?b", "a#b", "a%2fb", "a\\b", "a\n", "a".repeat(200)];
+  assert.deepEqual(universeEntries(invalid.map(slug => page(slug))), []);
+  assert.ok(SLUG_RE.test("saison/noel_2026"));
+  assert.equal(universeEntries([page("a".repeat(199))]).length, 1);
 });
-
-test("les titres vides ou trop longs sont écartés ; les titres retenus sont nettoyés", () => {
-  assert.deepEqual(universeEntries([page("vide", ""), page("espaces", " \t "), page("long", "a".repeat(61))]), []);
-  assert.equal(universeEntries([page("borne", "a".repeat(60))]).length, 1);
-  assert.equal(universeEntries([page("nettoye", "  Page de test  ")])[0].title, "Page de test");
+test("titres vides, contrôles et borne 200 ; titres retenus nettoyés", () => {
+  assert.deepEqual(universeEntries([page("vide", ""), page("espaces", "   "), page("long", "a".repeat(201)), page("controle", "a\t")]), []);
+  assert.equal(universeEntries([page("borne", "a".repeat(200))]).length, 1);
+  assert.equal(universeEntries([page("unicode", "🟢".repeat(200))]).length, 1);
+  assert.equal(universeEntries([page("nettoye", "  Page démo  ")])[0].title, "Page démo");
 });
-
-test("la première occurrence valide d'un slug gagne avant le tri", () => {
-  const first = page("commun", "Première", 10);
-  assert.deepEqual(universeEntries([first, page("commun", "Autre", -1, "seasonal")]), [first]);
-  assert.deepEqual(universeEntries([page("commun", "", -1), first]), [first]);
+test("première occurrence valide gagne ; liste reçue jamais modifiée ni triée", () => {
+  const first = page("commun", "Première");
+  assert.deepEqual(universeEntries([first, page("commun", "Autre")]), [first]);
+  assert.deepEqual(universeEntries([page("commun", ""), first]), [first]);
+  const pages = Object.freeze([page("z"), page("a"), page("saison/noel")]);
+  assert.deepEqual(universeEntries(pages), pages);
 });
-
-test("le tri suit l'ordre puis le titre français, sans modifier la liste reçue", () => {
-  const pages = Object.freeze([page("z", "Zèbre", 2), page("e", "École", 2), page("a", "Atelier", 2), page("premiere", "Zèbre", 1)]);
-  assert.deepEqual(universeEntries(pages).map((p) => p.slug), ["premiere", "a", "e", "z"]);
-  assert.deepEqual(pages.map((p) => p.slug), ["z", "e", "a", "premiere"]);
-});
-
-test("le plafond est de huit entrées, appliqué après le tri", () => {
-  const pages = Array.from({ length: 12 }, (_, i) => page(`page-${i}`, `Page ${i}`, 11 - i));
+test("plafond huit entrées, appliqué après filtrage et dédoublonnage", () => {
+  const pages = Array.from({ length: 12 }, (_, i) => page(`demo-${i}`));
   assert.equal(UNIVERSE_MAX, 8);
-  assert.deepEqual(universeEntries(pages).map((p) => p.order), [0, 1, 2, 3, 4, 5, 6, 7]);
+  assert.deepEqual(universeEntries([page("/"), pages[0], ...pages]).map(p => p.slug), pages.slice(0, 8).map(p => p.slug));
 });
-
-test("les entrées de mauvais type sont écartées sans exception", () => {
-  const malformed = [null, undefined, 42, "page", [], {}, { slug: "sans-titre", kind: "business", order: 0 },
-    page(42), page("titre", 42), page("ordre", "Page", "1"), page("nan", "Page", NaN),
-    page("infini", "Page", Infinity), page("genre", "Page", 0, "unknown")];
+test("entrées mal formées écartées sans exception", () => {
+  const malformed = [null, undefined, 42, "page", [], {}, { slug: "sans-titre" }, page(42), page("titre", 42)];
   assert.deepEqual(universeEntries([...malformed, page("valide")]), [page("valide")]);
 });
-
-test("une liste vide ou de mauvais type donne une liste vide", () => {
+test("liste vide ou mauvais type : liste vide", () => {
   for (const input of [[], null, undefined, 42, "pages", {}]) assert.deepEqual(universeEntries(input), []);
 });
-
-test("la source par défaut ne publie aucune page", async () => {
+test("sans catalogue, source et univers vides", async () => {
   assert.deepEqual(await getPagesSource().listPublished(), []);
-  assert.deepEqual(await loadUniverse(getPagesSource()), []);
+  assert.deepEqual(await loadUniverse(), []);
 });
-
-test("loadUniverse filtre les pages de la source", async () => {
-  assert.deepEqual(await loadUniverse({ listPublished: async () => [page("accueil", "Accueil", 0, "home"), page("metier")] }), [page("metier")]);
-});
-
-test("une source qui lève une erreur donne une liste vide", async () => {
-  assert.deepEqual(await loadUniverse({ listPublished() { throw new Error("Source indisponible"); } }), []);
-  assert.deepEqual(await loadUniverse({ listPublished: async () => { throw new Error("Source indisponible"); } }), []);
+test("loadUniverse filtre la source et ne lève jamais", async () => {
+  assert.deepEqual(await loadUniverse({ listPublished: async () => [page("/"), page("metier")] }), [page("metier")]);
+  for (const source of [null, {}, { listPublished() { throw new Error("Démo"); } }, { listPublished: async () => { throw new Error("Démo"); } }]) assert.deepEqual(await loadUniverse(source), []);
 });

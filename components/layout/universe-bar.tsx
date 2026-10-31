@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { editorialSlug } from "@/lib/site-content/pages";
 import type { PublishedPage } from "@/lib/site-content/pages";
 
 export function UniverseBar({ entries, currentSlug }: { entries: PublishedPage[]; currentSlug?: string }) {
+  const pathname = usePathname();
+  const activeSlug = currentSlug ?? (pathname?.startsWith("/p/") ? editorialSlug(pathname.slice(3).split("/"))?.slice(1) : undefined);
   if (entries.length === 0) return null;
   return (
     <nav aria-label="Univers" data-testid="universe-bar" className="min-w-0 w-full border-b border-line bg-white">
@@ -9,9 +15,9 @@ export function UniverseBar({ entries, currentSlug }: { entries: PublishedPage[]
         {entries.map(({ slug, title }) => (
           <li key={slug} className="flex-none">
             <Link
-              href={`/p/${slug}`}
-              aria-current={slug === currentSlug ? "page" : undefined}
-              className={`inline-flex min-h-[34px] min-w-[34px] items-center whitespace-nowrap border-b-2 px-3 text-sm text-ink-2 hover:text-ink ${slug === currentSlug ? "border-signal" : "border-transparent"}`}
+              href={`/p/${slug.split("/").map(encodeURIComponent).join("/")}`}
+              aria-current={slug === activeSlug ? "page" : undefined}
+              className={`inline-flex min-h-[34px] min-w-[34px] items-center whitespace-nowrap border-b-2 px-3 text-sm text-ink-2 hover:text-ink ${slug === activeSlug ? "border-signal" : "border-transparent"}`}
             >
               {title}
             </Link>

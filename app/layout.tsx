@@ -10,7 +10,7 @@ import type { NavNode } from "@/lib/site-catalog/navigation";
 import { isForcedNow, serverNowUtc } from "@/lib/site-catalog/clock";
 import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogOrNull } from "@/lib/site-catalog/page";
-import { getPagesSource, loadUniverse } from "@/lib/site-content/source";
+import { loadUniverse } from "@/lib/site-content/source";
 import "./globals.css";
 
 // Toutes les pages sont rendues à la demande : génération servie et instant serveur lus au runtime.
@@ -31,7 +31,7 @@ const toMenu = (nodes: NavNode[]): MenuCategory[] => nodes.map((n) => ({ key: n.
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const catalog = await catalogOrNull();
-  const universe = await loadUniverse(getPagesSource());
+  const universe = await loadUniverse();
   let instant: string | null = null;
   let forced = false;
   try {

@@ -1,4 +1,8 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import { PageSections } from "@/components/content/sections";
+import { getEditorialSet } from "@/lib/site-content/source";
+import { editorialMetadata } from "@/lib/site-content/metadata";
 import { CategoryGrid } from "@/components/home/category-grid";
 import { FamilyGrid } from "@/components/home/family-card";
 import { Hero, ProIntensBlock, QuoteBanner, TrustBar } from "@/components/home/hero";
@@ -11,6 +15,11 @@ import type { NavNode } from "@/lib/site-catalog/navigation";
 
 export const dynamic = "force-dynamic";
 const HOME_FAMILIES = 12;
+
+export async function generateMetadata(): Promise<Metadata> {
+  const page = (await getEditorialSet())?.pages.find(p => p.slug === "/");
+  return page ? editorialMetadata(page, process.env.SITE_PUBLIC_ORIGIN) : {};
+}
 
 function findNode(nodes: NavNode[], match: (n: NavNode) => boolean): NavNode | null {
   for (const n of nodes) {
@@ -27,6 +36,13 @@ function findNode(nodes: NavNode[], match: (n: NavNode) => boolean): NavNode | n
  */
 export default async function HomePage() {
   const catalog = await catalogForPage();
+  const page = (await getEditorialSet())?.pages.find(p => p.slug === "/");
+  if (page) return (
+    <div className="min-w-0">
+      {page.sections[0]?.type !== "hero" && <h1 className="mb-6 whitespace-pre-line text-3xl font-semibold [overflow-wrap:anywhere]">{page.title}</h1>}
+      <PageSections page={page} catalog={catalog} />
+    </div>
+  );
   const nav = navigationOf(catalog);
   const roots = nav.menu.map((n) => ({
     key: n.key,

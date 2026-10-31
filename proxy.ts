@@ -37,7 +37,7 @@ const PAGE_EXACT = new Set(["/", "/panier", "/recherche", "/devis", "/commande",
 const PAGE_PREFIXES = ["/categorie/", "/famille/"];
 
 function isStorePage(pathname: string): boolean {
-  return PAGE_EXACT.has(pathname) || PAGE_PREFIXES.some((p) => pathname.startsWith(p) && pathname.length > p.length && !pathname.slice(p.length).includes("/"));
+  return (pathname.startsWith("/p/") && pathname.length > 3) || PAGE_EXACT.has(pathname) || PAGE_PREFIXES.some((p) => pathname.startsWith(p) && pathname.length > p.length && !pathname.slice(p.length).includes("/"));
 }
 
 function csp(nonce: string): string {
