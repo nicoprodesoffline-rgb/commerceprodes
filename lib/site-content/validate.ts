@@ -6,7 +6,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PATH = /^\/(?:[a-z0-9_-]+(?:\/[a-z0-9_-]+)*)?$/;
 const SHA = /^[0-9a-f]{64}$/;
 const CONTROLS = /[\u0000-\u001f\u007f-\u009f]/;
-const TEXT_CONTROLS = /[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/;
+// Un champ texte accepte le saut de ligne et le retour chariot : un formulaire HTML envoie « \r\n » (réel : constaté sur un export de la Factory) ; tout autre contrôle est refusé.
+const TEXT_CONTROLS = /[\u0000-\u0009\u000b\u000c\u000e-\u001f\u007f-\u009f]/;
+const lf = (v: string) => v.replace(/\r\n?/g, "\n");
 const object = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
 const integer = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v);
 const string = (v: unknown, min: number, max: number, multiline = false): v is string => {
@@ -38,13 +40,13 @@ function section(value: unknown, refs: CatalogRefs): Section | Failure {
   if (type === "hero") {
     if (!string(data.title, 1, 200) || ("text" in data && !string(data.text, 1, 10000, true))) return failure("SECTION_FIELD", "Texte de bandeau invalide");
     if ("link" in data && !isLocalLink(data.link)) return failure("LINK_NOT_LOCAL", "Lien local exigé");
-    return { type, data: { title: data.title, ...(typeof data.text === "string" ? { text: data.text } : {}), ...(typeof data.link === "string" ? { link: data.link } : {}) } };
+    return { type, data: { title: data.title, ...(typeof data.text === "string" ? { text: lf(data.text) } : {}), ...(typeof data.link === "string" ? { link: data.link } : {}) } };
   }
   const title = typeof data.title === "string" ? { title: data.title } : {};
   if (type === "text_image") {
     if (!string(data.text, 1, 10000, true) || !string(data.media_sha, 64, 64) || !SHA.test(data.media_sha)) return failure("SECTION_FIELD", "Texte ou média invalide");
     if (!refs.mediaShas.has(data.media_sha)) return failure("REFERENCE_MISSING", "Média absent du catalogue servi");
-    return { type, data: { ...title, text: data.text, media_sha: data.media_sha } };
+    return { type, data: { ...title, text: lf(data.text), media_sha: data.media_sha } };
   }
   const list: unknown = type === "category_grid" ? data.categories : data.families;
   if (!Array.isArray(list) || list.length < 1 || list.length > 24 || !list.every((k): k is string => string(k, 1, Number.MAX_SAFE_INTEGER)) || new Set(list).size !== list.length) return failure("SECTION_FIELD", "Liste de références invalide");

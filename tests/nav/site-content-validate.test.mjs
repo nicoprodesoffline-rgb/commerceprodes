@@ -65,7 +65,7 @@ test("types, clés et données des sections stricts", () => {
   for (const [i, key] of [[0, "title"], [1, "categories"], [2, "families"], [3, "text"], [3, "media_sha"]]) fail(d => { delete d.pages[0].sections[i].data[key]; }, "SECTION_FIELD");
   for (const [i, key] of [[0, "title"], [0, "text"], [3, "text"]]) {
     fail(d => { d.pages[0].sections[i].data[key] = ""; }, "SECTION_FIELD");
-    for (const text of [42, "a\u0000", "a\t", "a\r", "a\u007f"]) fail(d => { d.pages[0].sections[i].data[key] = text; }, "SECTION_FIELD");
+    for (const text of [42, "a\u0000", "a\t", "a\u007f"] /* « a\r » n'est plus refusé : un formulaire HTML envoie « \r\n », constaté sur un export réel (voir le test dédié plus bas) */) fail(d => { d.pages[0].sections[i].data[key] = text; }, "SECTION_FIELD");
   }
   for (const i of [0, 3]) {
     const d = doc(); d.pages[0].sections[i].data.text = "a".repeat(10000); assert.equal(validateEnvelope(d, refs).ok, true);
@@ -97,4 +97,16 @@ test("bornes en caractères Unicode, y compris hors du plan multilingue de base"
   assert.equal(validateEnvelope(d, refs).ok, true);
   fail(d => { d.pages[0].title = "🟢".repeat(201); }, "PAGE_FIELD");
   fail(d => { d.pages[0].sections[0].data.text = "🟢".repeat(10001); }, "SECTION_FIELD");
+});
+
+// Constat sur un export RÉEL de la Factory : le texte d'un champ saisi dans un formulaire arrive avec « \r\n ».
+test("un retour chariot + saut de ligne est accepté dans un texte et normalisé en saut de ligne ; un autre contrôle reste refusé", async () => {
+  const { validateEnvelope } = await import("../../lib/site-content/validate.ts");
+  const refs = { categoryKeys: new Set(), familyKeys: new Set(), mediaShas: new Set() };
+  const doc = (text) => ({ contract_version: "site_content.v1", generation: 1, publication_id: "11111111-1111-4111-8111-111111111111", catalogue_sequence: null, pages: [{ key: "22222222-2222-4222-8222-222222222222", slug: "/demo", title: "Démo", revision: 1, seo_title: "", seo_description: "", canonical: "", sections: [{ type: "hero", data: { title: "Titre", text } }] }] });
+  const ok = validateEnvelope(doc("Ligne un\r\nLigne deux\rLigne trois"), refs);
+  assert.equal(ok.ok, true);
+  assert.equal(ok.set.pages[0].sections[0].data.text, "Ligne un\nLigne deux\nLigne trois");
+  assert.equal(validateEnvelope(doc("Alerte\u0007"), refs).ok, false);
+  assert.equal(validateEnvelope(doc("Tab\there"), refs).ok, false, "la tabulation n'est pas admise");
 });

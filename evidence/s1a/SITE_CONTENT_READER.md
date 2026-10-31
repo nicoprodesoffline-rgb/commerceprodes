@@ -66,3 +66,16 @@ Les contrôles LF sont autorisés dans les champs `text` des sections ; les iden
 
 Le code ci-dessus a été relu puis rejoué hors du bac à sable de Codex : `npm run test:content` (compilation C0, `next build`, tests `nav`, recette HTTP en source fixture) : **76/76**. Deux assertions de test ont été corrigées (ordre des attributs HTML de `aria-current` ; titre de l'accueil éditorial sans gabarit « | PRODES », car le gabarit du layout ne s'applique pas à sa propre page racine : le titre est exactement celui que l'éditeur a publié). Rejeu des autres suites : typecheck propre, `test:nav:ui` 4/4, `test:storefront` 25/25, `test:basis:ui` 5/5, `test:e2e:flow` 8/8.
 Non vérifié : un export RÉEL de la Factory (le module producteur est sur la branche `codex/d-site-modules`, non fusionnée ; la forme des fichiers, du reçu et de l'empreinte a été lue dans son code, pas exécutée) ; l'affichage à 390 px des quatre sections au navigateur (la recette HTTP contrôle le HTML, pas le rendu) ; la lecture d'un dossier de la Factory depuis un site hébergé ailleurs (suppose un système de fichiers partagé).
+
+## Bout en bout RÉEL sur l'instance de recette p0int (31/10)
+
+Un site (instance dédiée, build de production) lit le dossier d'export de l'instance Factory p0int ; une page est créée et exportée par l'éditeur de la Factory (boutons de l'éditeur, jamais d'écriture directe dans le dossier), lue par le site, puis dépubliée (`e2e-real-export.mjs`, résultat `e2e-real-export.json`).
+
+| Étape | Statut | Preuve | Limite |
+|---|---|---|---|
+| Page créée (hero + grille de catégories + carrousel de familles), exportée | ✅ BROWSER_VERIFIED | un couple document + reçu apparaît (génération 3) | |
+| Page servie sur `/p/<slug>` | ✅ | statut 200 à 1440 et 390 px ; les 3 sections rendues ; texte échappé (`<b>` affiché tel quel, aucun élément `b`) ; la page figure dans la barre d'univers ; 0 px de débordement | PNG hors dépôt |
+| Dépublication, puis 404 | ✅ | nouvelle génération ; `/p/<slug>` répond 404 à 1440 et 390 px ; la page disparaît de la barre | délai de lecture ≤ 5 s (cache) |
+
+**Constat réel qui a corrigé le lecteur** : le premier essai a été REFUSÉ (`SECTION_FIELD`) parce qu'un texte saisi dans le formulaire de la Factory arrive avec `\r\n`, et le lecteur n'acceptait que `\n`. Corrigé : le retour chariot est accepté dans un texte et normalisé en saut de ligne ; tout autre caractère de contrôle reste refusé (un test existant a été ajusté en conséquence, et un test dédié ajouté). Détail du formulaire côté Factory : l'adresse d'une page est saisie avec sa barre oblique initiale (`/collectivites/ete`).
+Rejeu après correction : `npm run test:content` 77/77, `test:nav:ui` 4/4, `test:storefront` 25/25, `test:basis:ui` 5/5, `test:e2e:flow` 8/8.
