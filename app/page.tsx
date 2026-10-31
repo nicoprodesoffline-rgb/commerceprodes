@@ -44,12 +44,16 @@ export default async function HomePage() {
     </div>
   );
   const nav = navigationOf(catalog);
-  const roots = nav.menu.map((n) => ({
-    key: n.key,
-    name: n.name,
-    familyCount: n.ownFamilyCount,
-    children: n.children.map((s) => ({ key: s.key, name: s.name })),
-  }));
+  const roots = nav.menu.map((n) => {
+    const familySlugs = new Set(nav.familySlugs(n.key));
+    return {
+      key: n.key,
+      name: n.name,
+      familyCount: n.ownFamilyCount,
+      imageSha: catalog.families.find((f) => familySlugs.has(f.slug) && f.image_main_sha256)?.image_main_sha256 ?? null,
+      children: n.children.map((s) => ({ key: s.key, name: s.name })),
+    };
+  });
   const references = catalog.families.reduce((n, f) => n + f.items.length, 0);
   const proIntens = findNode(nav.menu, (n) => /pro[\s-]?intens/i.test(n.name));
   const basis = catalogBasis(catalog.families, catalog.meta.payload_sha256);
@@ -60,7 +64,7 @@ export default async function HomePage() {
       <Hero references={references} basis={basis} />
       <TrustBar references={references} basis={basis} />
       <section id="categories" aria-labelledby="cat-h">
-        <h2 id="cat-h" className="mb-3 text-lg font-semibold">Nos catégories</h2>
+        <h2 id="cat-h" className="mb-3 text-lg font-semibold">Nos univers produits</h2>
         <CategoryGrid categories={roots} />
       </section>
       <ProIntensBlock category={proIntens ? { key: proIntens.key, name: proIntens.name } : null} />

@@ -40,7 +40,7 @@ test("source réelle : refs catégories, familles, images principales et médias
     setCatalog(catalog());
     const first = await getEditorialSet(); assert.equal(first.generation, 1);
     assert.strictEqual(await getEditorialSet(), first);
-    assert.deepEqual(await loadUniverse(), [{ slug: "demo", title: "Page démo" }, { slug: "saison/noel", title: "Page démo" }]);
+    assert.deepEqual(await loadUniverse(), [{ slug: "demo", title: "Page démo", order: 100, showInBar: true }, { slug: "saison/noel", title: "Page démo", order: 100, showInBar: true }] /* depuis les champs optionnels du contrat : valeurs par défaut des anciens documents */);
     setCatalog({ ...catalog(), families: [], meta: { payload_sha256: "d".repeat(64) } });
     assert.equal(await getEditorialSet(), null, "aucun ancien jeu servi avec des références devenues absentes");
     assert.deepEqual(await loadUniverse(), []);

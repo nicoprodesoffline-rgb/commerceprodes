@@ -19,9 +19,63 @@ test("jeu vide valide, champs d'enveloppe supplémentaires ignorés, ordre et cl
   const d = doc(); d.extra = "ignoré";
   const r = validateEnvelope(d, refs);
   assert.equal(r.ok, true);
-  assert.deepEqual(r.set, { generation: 1, publicationId: uuid, pages: d.pages });
+  assert.deepEqual(r.set, { generation: 1, publicationId: uuid, pages: d.pages.map(p => ({ ...p, nav: { showInBar: true, order: 100 } })) });
   assert.equal(validateEnvelope({ ...d, pages: [] }, refs).ok, true);
   assert.equal(validateEnvelope({ ...d, catalogue_sequence: -1 }, refs).ok, true);
+});
+
+test("ancien document sans ajouts : navigation par défaut, libellé et alternatif absents", () => {
+  const r = validateEnvelope(doc(), refs);
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.set.pages[0].nav, { showInBar: true, order: 100 });
+  assert.equal(r.set.pages[0].sections[0].data.linkLabel, undefined);
+  assert.equal(r.set.pages[0].sections[3].data.imageAlt, undefined);
+});
+
+test("nav facultatif : défauts, ordre 0 et 1 000 000, types et clés stricts", () => {
+  for (const [nav, expected] of [[{}, { showInBar: true, order: 100 }], [{ order: 0 }, { showInBar: true, order: 0 }], [{ show_in_bar: false }, { showInBar: false, order: 100 }], [{ order: 1000000, show_in_bar: true }, { showInBar: true, order: 1000000 }]]) {
+    const d = doc(); d.pages[0].nav = nav;
+    const r = validateEnvelope(d, refs); assert.equal(r.ok, true); assert.deepEqual(r.set.pages[0].nav, expected);
+  }
+  for (const nav of [null, [], "nav", 3, true, { extra: 1 }]) fail(d => { d.pages[0].nav = nav; }, "PAGE_FIELD");
+  for (const order of [-1, 1.5, "3", null, 1000001, Infinity, NaN]) fail(d => { d.pages[0].nav = { order }; }, "PAGE_FIELD");
+  for (const show_in_bar of ["false", 0, null, [], {}]) fail(d => { d.pages[0].nav = { show_in_bar }; }, "PAGE_FIELD");
+});
+
+test("libellé hero : 40 caractères Unicode admis, 41 refusés, accepté sans lien", () => {
+  for (const linked of [true, false]) {
+    const d = doc(); d.pages[0].sections[0].data.link_label = "🟢".repeat(40);
+    if (!linked) delete d.pages[0].sections[0].data.link;
+    const r = validateEnvelope(d, refs); assert.equal(r.ok, true);
+    assert.equal(r.set.pages[0].sections[0].data.linkLabel, "🟢".repeat(40));
+    assert.equal(r.set.pages[0].sections[0].data.link, linked ? "/demo" : undefined);
+  }
+  for (const link_label of ["a".repeat(41), "🟢".repeat(41), "", null, 42, "a\t", "a\u0085"]) fail(d => { d.pages[0].sections[0].data.link_label = link_label; }, "SECTION_FIELD");
+});
+
+test("alternatif text_image : vide décoratif, 150 caractères Unicode admis, 151 refusés", () => {
+  for (const image_alt of ["", "a".repeat(150), "🟢".repeat(150)]) {
+    const d = doc(); d.pages[0].sections[3].data.image_alt = image_alt;
+    const r = validateEnvelope(d, refs); assert.equal(r.ok, true);
+    assert.equal(r.set.pages[0].sections[3].data.imageAlt, image_alt);
+  }
+  for (const image_alt of ["a".repeat(151), "🟢".repeat(151), null, 42, "a\t", "a\u0085"]) fail(d => { d.pages[0].sections[3].data.image_alt = image_alt; }, "SECTION_FIELD");
+});
+
+test("0x0B (tabulation verticale) et 0x0C (saut de page) refusés partout ; LF 0x0A et CR 0x0D admis seulement en multiligne", () => {
+  for (const control of ["\u000b", "\u000c", "\n", "\r"]) {
+    for (const key of ["title", "seo_title", "seo_description"]) fail(d => { d.pages[0][key] = `Démo${control}`; }, "PAGE_FIELD");
+    for (const [i, key] of [[0, "title"], [0, "link_label"], [3, "title"], [3, "image_alt"]]) fail(d => { d.pages[0].sections[i].data[key] = `Démo${control}`; }, "SECTION_FIELD");
+    for (const i of [0, 3]) {
+      if (control === "\u000b" || control === "\u000c") {
+        fail(d => { d.pages[0].sections[i].data.text = `Démo${control}Suite`; }, "SECTION_FIELD");
+      } else {
+        const d = doc(); d.pages[0].sections[i].data.text = `Démo${control}Suite`;
+        const r = validateEnvelope(d, refs); assert.equal(r.ok, true);
+        assert.equal(r.set.pages[0].sections[i].data.text, "Démo\nSuite");
+      }
+    }
+  }
 });
 
 test("version et forme de l'enveloppe", () => {

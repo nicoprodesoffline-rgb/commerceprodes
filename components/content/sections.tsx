@@ -20,7 +20,7 @@ export function HeroSection({ data, first }: { data: Data<"hero">; first: boolea
     <section data-testid="section-hero" className="min-w-0 rounded-[14px] border border-line bg-white p-6 md:p-8">
       <Heading className="max-w-[30ch] whitespace-pre-line text-3xl font-semibold [overflow-wrap:anywhere]">{data.title}</Heading>
       {data.text && <p className="mt-4 max-w-[70ch] whitespace-pre-line text-ink-2 [overflow-wrap:anywhere]">{data.text}</p>}
-      {data.link && isLocalLink(data.link) && <Link href={data.link} className="mt-5 inline-flex min-h-[42px] items-center rounded-[9px] border border-line px-4 font-medium hover:bg-surface">Découvrir</Link>}
+      {data.link && isLocalLink(data.link) && <Link href={data.link} className="mt-5 inline-flex min-h-[42px] items-center rounded-[9px] border border-line px-4 font-medium hover:bg-surface">{data.linkLabel ?? "Découvrir"}</Link>}
     </section>
   );
 }
@@ -67,8 +67,7 @@ export function TextImageSection({ data }: { data: Data<"text_image"> }) {
         {data.title && <h2 className={heading}>{data.title}</h2>}
         <p className="max-w-[70ch] whitespace-pre-line text-ink-2 [overflow-wrap:anywhere]">{data.text}</p>
       </div>
-      {/* Le contrat ne porte aucun texte alternatif : ce média est décoratif. */}
-      <div aria-hidden="true" className="min-w-0"><MediaImage sha256={data.media_sha} alt="" className="aspect-[4/3] w-full rounded-[14px] border border-line" /></div>
+      <div aria-hidden={data.imageAlt ? undefined : true} className="min-w-0"><MediaImage sha256={data.media_sha} alt={data.imageAlt ?? ""} className="aspect-[4/3] w-full rounded-[14px] border border-line" /></div>
     </section>
   );
 }

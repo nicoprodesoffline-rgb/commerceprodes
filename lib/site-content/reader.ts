@@ -51,7 +51,23 @@ async function pair(dir: string, name: string, refs: CatalogRefs): Promise<Edito
 
 function retained(state: State, refs: CatalogRefs): EditorialSet | null {
   if (!state.current) return null;
-  const result = validateEnvelope({ contract_version: "site_content.v1", generation: state.current.generation, publication_id: state.current.publicationId, catalogue_sequence: null, pages: state.current.pages }, refs);
+  // Le modèle normalisé et le document de transport n'ont plus les mêmes clés.
+  const pages = state.current.pages.map(({ nav, sections, ...page }) => ({
+    ...page,
+    nav: { show_in_bar: nav.showInBar, order: nav.order },
+    sections: sections.map(section => {
+      if (section.type === "hero") {
+        const { linkLabel, ...data } = section.data;
+        return { type: section.type, data: { ...data, ...(linkLabel === undefined ? {} : { link_label: linkLabel }) } };
+      }
+      if (section.type === "text_image") {
+        const { imageAlt, ...data } = section.data;
+        return { type: section.type, data: { ...data, ...(imageAlt === undefined ? {} : { image_alt: imageAlt }) } };
+      }
+      return section;
+    }),
+  }));
+  const result = validateEnvelope({ contract_version: "site_content.v1", generation: state.current.generation, publication_id: state.current.publicationId, catalogue_sequence: null, pages }, refs);
   return result.ok ? state.current : null;
 }
 

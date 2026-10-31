@@ -96,10 +96,10 @@ test("pages publiées : 4 sections, échappement, vrais 404, accueil, retrait et
       assert.match(nested.text, /aria-label="Fil d(?:&#x27;|')Ariane"/);
       assert.doesNotMatch(nested.text, /rel="canonical"/);
       for (const route of ["/p/inconnu", "/p/saison/inconnue", "/p/MAJUSCULE", "/p/demo%2fautre"]) assert.equal((await get(route)).status, 404, route);
-      const historical = await get("/"); assert.equal(historical.status, 200); assert.match(historical.text, /Nos catégories/);
+      const historical = await get("/"); assert.equal(historical.status, 200); assert.match(historical.text, /Nos univers produits/);
       await publish(dir, 2, [page("/", [blocks[3]], { title: "Accueil éditorial démo", seo_title: "Accueil SEO démo" }), page("/demo", blocks), page("/saison/noel", [blocks[3]])]);
       const home = await get("/"); assert.equal(home.status, 200);
-      assert.match(home.text, /<h1[^>]*>Accueil éditorial démo<\/h1>/); assert.doesNotMatch(home.text, /Nos catégories/);
+      assert.match(home.text, /<h1[^>]*>Accueil éditorial démo<\/h1>/); assert.doesNotMatch(home.text, /Nos univers produits/);
       assert.match(home.text, /<title>Accueil SEO démo<\/title>/, "accueil : le titre est exactement celui que l'éditeur a publié (le gabarit « | PRODES » du layout ne s'applique pas à sa propre page racine)");
       assert.match(home.text, /rel="canonical" href="https:\/\/demo.invalid\/"/);
       const bar = universe(home.text); assert.match(bar, /href="\/p\/demo"/); assert.match(bar, /href="\/p\/saison\/noel"/); assert.doesNotMatch(bar, /href="\/p\/"/);
@@ -107,14 +107,61 @@ test("pages publiées : 4 sections, échappement, vrais 404, accueil, retrait et
       assert.match((await get("/")).text, /Accueil éditorial démo/);
       assert.equal((await get("/p/demo")).status, 200); assert.equal((await get("/p/invalide")).status, 404);
       await publish(dir, 4, []);
-      const withdrawn = await get("/"); assert.match(withdrawn.text, /Nos catégories/); assert.equal(universe(withdrawn.text), ""); assert.equal((await get("/p/demo")).status, 404);
+      const withdrawn = await get("/"); assert.match(withdrawn.text, /Nos univers produits/); assert.equal(universe(withdrawn.text), ""); assert.equal((await get("/p/demo")).status, 404);
+    });
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test("champs facultatifs : libellé, alternatif accessible, page masquée servie et tri de la barre", async () => {
+  const catalog = JSON.parse(await readFile(path.join(ROOT, "c0/fixtures/documents", FIXTURE), "utf8"));
+  const media = catalog.families[0].image_main_sha256;
+  const blocks = [
+    { type: "hero", data: { title: "Lien personnalisé démo", link: "/recherche", link_label: "Explorer <démo>" } },
+    { type: "hero", data: { title: "Lien par défaut démo", link: "/recherche" } },
+    { type: "hero", data: { title: "Sans lien démo", link_label: "Libellé sans lien démo" } },
+    { type: "text_image", data: { title: "Image informative démo", text: "Texte démo", media_sha: media, image_alt: 'Vue <démo> & "profil"' } },
+    { type: "text_image", data: { title: "Image décorative démo", text: "Texte démo", media_sha: media, image_alt: "" } },
+    { type: "text_image", data: { title: "Image sans alternatif démo", text: "Texte démo", media_sha: media } },
+  ];
+  const dir = await mkdtemp(path.join(tmpdir(), "site-content-http-options-demo-"));
+  try {
+    // L'export reste trié par adresse ; seule la barre doit changer d'ordre.
+    await publish(dir, 1, [
+      page("/", [blocks[0]], { nav: { show_in_bar: false, order: 0 } }),
+      page("/a-b", [blocks[0]], { nav: { order: 1 } }),
+      page("/a_b", [blocks[0]], { nav: { order: 1 } }),
+      page("/cachee", blocks, { nav: { show_in_bar: false, order: 0 } }),
+      page("/demo", blocks, { nav: { order: 0 } }),
+      page("/z", [blocks[0]]),
+    ]);
+    await withServer(dir, async () => {
+      const response = await get("/p/demo"); assert.equal(response.status, 200);
+      const bar = universe(response.text);
+      assert.deepEqual([...bar.matchAll(/href="(\/p\/[^\"]+)"/g)].map(m => m[1]), ["/p/demo", "/p/a-b", "/p/a_b", "/p/z"]);
+      assert.doesNotMatch(bar, /href="\/p\/(?:cachee)?"/);
+      const heroes = [...response.text.matchAll(/<section[^>]*data-testid="section-hero"[^>]*>([\s\S]*?)<\/section>/g)].map(m => m[1]);
+      assert.equal(heroes.length, 3);
+      assert.match(heroes[0], /href="\/recherche"[^>]*>Explorer &lt;démo&gt;<\/a>/);
+      assert.match(heroes[1], /href="\/recherche"[^>]*>Découvrir<\/a>/);
+      assert.doesNotMatch(heroes[2], /<a\b|Libellé sans lien démo/);
+      const images = [...response.text.matchAll(/<section[^>]*data-testid="section-text-image"[^>]*>([\s\S]*?)<\/section>/g)].map(m => m[1]);
+      assert.equal(images.length, 3);
+      assert.match(images[0], /alt="Vue &lt;démo&gt; &amp; &quot;profil&quot;"/);
+      assert.doesNotMatch(images[0], /aria-hidden="true"/);
+      for (const decorative of images.slice(1)) {
+        assert.match(decorative, /alt=""/);
+        assert.match(decorative, /aria-hidden="true"/);
+      }
+      const hidden = await get("/p/cachee"); assert.equal(hidden.status, 200);
+      assert.match(hidden.text, /Lien personnalisé démo/);
+      assert.doesNotMatch(universe(hidden.text), /href="\/p\/cachee"/);
     });
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
 test("sans dossier éditorial : accueil historique, aucune barre, vrai 404", async () => {
   await withServer(undefined, async () => {
-    const home = await get("/"); assert.equal(home.status, 200); assert.match(home.text, /Nos catégories/); assert.equal(universe(home.text), "");
+    const home = await get("/"); assert.equal(home.status, 200); assert.match(home.text, /Nos univers produits/); assert.equal(universe(home.text), "");
     assert.equal((await get("/p/demo")).status, 404);
   });
 });

@@ -30,7 +30,7 @@ export const getEditorialSet = cache(async (): Promise<EditorialSet | null> => {
 });
 
 export function getPagesSource(): PagesSource {
-  return { listPublished: async () => (await getEditorialSet())?.pages.map(p => ({ slug: p.slug === "/" ? "/" : p.slug.slice(1), title: p.title })) ?? [] };
+  return { listPublished: async () => (await getEditorialSet())?.pages.map(p => ({ slug: p.slug === "/" ? "/" : p.slug.slice(1), title: p.title, order: p.nav.order, showInBar: p.nav.showInBar })) ?? [] };
 }
 
 export async function loadUniverse(source: PagesSource = getPagesSource()): Promise<PublishedPage[]> {

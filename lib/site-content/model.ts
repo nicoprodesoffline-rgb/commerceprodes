@@ -1,13 +1,14 @@
 export type Section =
-  | { type: "hero"; data: { title: string; text?: string; link?: string } }
+  | { type: "hero"; data: { title: string; text?: string; link?: string; linkLabel?: string } }
   | { type: "category_grid"; data: { categories: string[]; title?: string } }
   | { type: "product_carousel"; data: { families: string[]; title?: string } }
-  | { type: "text_image"; data: { text: string; media_sha: string; title?: string } };
+  | { type: "text_image"; data: { text: string; media_sha: string; title?: string; imageAlt?: string } };
 
 export type EditorialPage = {
   key: string;
   slug: string;
   title: string;
+  nav: { showInBar: boolean; order: number };
   revision: number;
   seo_title: string;
   seo_description: string;

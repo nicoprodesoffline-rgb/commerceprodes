@@ -1,4 +1,4 @@
-export type PublishedPage = { slug: string; title: string };
+export type PublishedPage = { slug: string; title: string; order: number; showInBar: boolean };
 
 export interface PagesSource {
   listPublished(): Promise<PublishedPage[]>;
@@ -17,13 +17,15 @@ export function universeEntries(pages: unknown): PublishedPage[] {
       typeof page.slug !== "string" || page.slug.length > 199 || !SLUG_RE.test(page.slug) || /[\u0000-\u001f\u007f-\u009f]/.test(page.slug) ||
       typeof page.title !== "string" || /[\u0000-\u001f\u007f-\u009f]/.test(page.title)
     ) continue;
+    const order = page.order === undefined ? 100 : page.order;
+    const showInBar = page.showInBar === undefined ? true : page.showInBar;
+    if (typeof order !== "number" || !Number.isSafeInteger(order) || order < 0 || order > 1000000 || typeof showInBar !== "boolean" || !showInBar) continue;
     const title = page.title.trim();
     if (!title || Array.from(page.title).length > 200 || seen.has(page.slug)) continue;
     seen.add(page.slug);
-    entries.push({ slug: page.slug, title });
-    if (entries.length === UNIVERSE_MAX) break;
+    entries.push({ slug: page.slug, title, order, showInBar });
   }
-  return entries;
+  return entries.sort((a, b) => a.order - b.order || (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0)).slice(0, UNIVERSE_MAX);
 }
 
 /** Next fournit normalement des segments décodés ; une entrée encore encodée est validée après un seul décodage. */

@@ -2,7 +2,27 @@
 
 Travail local du 31 octobre 2026, branche `s1a/vitrine`. Ce document fait foi pour les preuves de cette tâche ; il ne prouve ni déploiement ni réception d'un export réel de la Factory.
 
-## Réconciliation
+## Ajouts facultatifs du contrat — 31/10/2026
+
+Le contrat reste `site_content.v1`. `page.nav` est normalisé en `{ showInBar: true, order: 100 }` par défaut ; l'ordre est un entier entre 0 et 1 000 000. La source conserve toutes les pages et leur ordre publié. Seule la barre filtre les pages visibles, exclut `/`, dédoublonne par première occurrence valide, trie par `(order, slug)` avec comparaison binaire des slugs, puis plafonne à huit entrées.
+
+`hero.data.link_label` devient `linkLabel` (1 à 40 caractères Unicode, aucun contrôle) ; sans lien, aucun bouton. `text_image.data.image_alt` devient `imageAlt` (0 à 150 caractères Unicode, aucun contrôle) : vide ou absent, le média reste décoratif ; non vide, son texte alternatif est exposé aux lecteurs d'écran. Le repli du lecteur reconvertit ces clés normalisées vers la forme de transport avant revalidation ; les références catalogue restent contrôlées.
+
+| Item prévu | Statut | Preuve (commande ou fichier) | Caveat |
+|---|---|---|---|
+| Modèle, validation, navigation et conservation des champs lors du repli | ✅ vérifié | `node --test tests/nav/universe.test.mjs tests/nav/site-content-validate.test.mjs` ; `lib/site-content/{model,validate,pages,source,reader}.ts` | Données fictives ; aucun export réel lu |
+| Cas explicite 0x0B / 0x0C refusés, LF / CR limités aux textes multilignes | ✅ vérifié | Test nommé dans `tests/nav/site-content-validate.test.mjs` | Garde existante conservée |
+| TypeScript | ✅ vérifié | `npx tsc --noEmit` : code 0 | Aucun build |
+| Suite nav complète | ⚠️ partiel | `node --test tests/nav/*.test.mjs` : 80/81 réussis, 1 échec, aucun saut | Assertion exacte de `tests/nav/site-content-source.test.mjs:43` attend encore `{ slug, title }` sans les deux nouveaux défauts ; adaptation soumise à autorisation, car ce test est exclu des modifications permises |
+| Rendu et recette HTTP des champs facultatifs | ⚠️ partiel | `components/content/sections.tsx`, `tests/http/site-content.test.mjs` ; `node --check tests/http/site-content.test.mjs` | Syntaxe seule contrôlée ; HTTP, navigateur et `next build` non exécutés sur consigne |
+| Rapport et périmètre | ✅ vérifié | Ce rapport ; `git diff --check` et `git status --short` | Modifications antérieures de `app/page.tsx`, `components/home/category-grid.tsx` et `.serena/` préservées ; aucune dépendance ajoutée |
+| CI et journal global | ⏸️ différé | `CLAUDE.md` ; restrictions de sandbox | Pas de workflow dans ce dépôt public ; journal hors des racines inscriptibles ; aucun commit, push ou déploiement |
+
+Fichiers de cette extension : `lib/site-content/{model,validate,pages,source,reader}.ts`, `components/content/sections.tsx`, `tests/nav/{universe,site-content-validate}.test.mjs`, `tests/http/site-content.test.mjs` et ce rapport. `UniverseBar` utilise les entrées déjà filtrées et triées ; son composant n'exige aucune modification.
+
+Recette HTTP à exécuter dans le mandat de qualification : **`npm run test:content`**. Les vérifications historiques ci-dessous concernent la version antérieure aux présents ajouts et ne valent pas qualification de ces nouveaux champs.
+
+## Réconciliation initiale (historique)
 
 | Item | Statut | Preuve | Limite |
 |---|---|---|---|
@@ -50,17 +70,14 @@ Ces deux commandes **n'ont pas été exécutées** ici. Le script complet compil
 
 `SITE_CONTENT_DIR` désigne un répertoire absolu réel, lisible par le processus Next. Aucun réglage ni fichier `.env` n'est créé ou lu par le travail. Sans catalogue, sans configuration éditoriale ou avec un dossier illisible, la source ne publie rien. Une première lecture sans couple valide rend également `null`. Après une publication valide, une proposition invalide conserve le jeu en mémoire, uniquement si ses références sont encore disponibles dans le catalogue servi ; sinon aucun jeu éditorial n'est exposé. La borne de génération reste conservée même quand ce jeu n'est plus compatible. Un lot valide `pages: []` retire tout.
 
-Les contrôles LF sont autorisés dans les champs `text` des sections ; les identifiants, titres, chemins et métadonnées ne portent aucun caractère de contrôle. Les longueurs de texte comptent les caractères Unicode, comme le producteur Python, y compris les caractères représentés par deux unités UTF-16 en JavaScript. Les champs facultatifs vides des sections sont refusés conformément à leur omission prévue au contrat. Les entiers sont bornés à la représentation exacte des entiers JavaScript. L'origine de canonique doit être une origine HTTP(S) sans identifiants, chemin métier, requête ni fragment ; aucune origine n'est déduite d'une requête entrante.
+Les contrôles LF et CR sont autorisés dans les seuls champs `text` des sections, CR et CRLF étant normalisés en LF ; les identifiants, titres, chemins, métadonnées, libellés et textes alternatifs ne portent aucun caractère de contrôle. Les caractères 0x0B et 0x0C sont refusés également dans les textes multilignes. Les longueurs de texte comptent les caractères Unicode, comme le producteur Python, y compris les caractères représentés par deux unités UTF-16 en JavaScript. Les champs facultatifs vides des sections sont refusés conformément à leur omission prévue au contrat, à l'exception de `image_alt`, dont la chaîne vide signifie décoratif. Les entiers sont bornés à la représentation exacte des entiers JavaScript ; `nav.order` est en outre borné à 1 000 000. L'origine de canonique doit être une origine HTTP(S) sans identifiants, chemin métier, requête ni fragment ; aucune origine n'est déduite d'une requête entrante.
 
 ## Ce que le contrat ne porte pas
 
-- Aucun ordre supplémentaire ni drapeau « dans la barre » pour les pages : ordre reçu, accueil exclu, huit premières entrées valides.
-- Aucun libellé de bouton pour `hero.link` : le lecteur utilise « Découvrir ».
-- Aucun texte alternatif pour `text_image` : `alt=""`, média décoratif, y compris le remplacement d'image masqué aux lecteurs d'écran.
+Les trois manques éditoriaux initiaux sont comblés par les champs facultatifs `page.nav`, `hero.data.link_label` et `text_image.data.image_alt`. Une page masquée dans la barre reste publiée et accessible à son URL `/p/<slug>` ; les anciens documents restent valides.
+
 - Aucun refus de régression persistant entre redémarrages : protection limitée à la durée de vie du processus. Les processus distincts ne partagent pas cette mémoire.
 - Aucun transport distant : lire le dossier local de la Factory suppose un système de fichiers partagé. Un changement d'instance ou de provenance doit être qualifié explicitement ; le lecteur ne fusionne pas les dossiers.
-- Aucun ACK éditorial, activation du SITE, signature de reçu, prévisualisation Factory qualifiée ou synchronisation automatique de dates.
-- Aucun format enrichi exécutable, prix éditorial, base fiscale, média nouveau ou règle de sélection des familles hors du catalogue actif.
 
 ## Vérification après écriture (Claude, 31/10)
 
