@@ -25,13 +25,14 @@ type CartApi = {
   lines: DraftLine[];
   ackSequence: number | null;
   ready: boolean;
-  add: (line: DraftLine, catalogueSequence: number) => void;
+  add: (line: DraftLine, catalogueSequence: number, opts?: { announce?: boolean }) => void;
   setQuantity: (index: number, quantity: number) => void;
   acknowledge: (sequence: number) => void;
   remove: (index: number) => void;
   clear: () => void;
 };
 
+export const CART_ADDED_EVENT = "prodes:cart-added";
 const KEY = "prodes_site_cart_draft_v3";
 export const MAX_QUANTITY = 1_000_000; // C0 §6
 const Ctx = createContext<CartApi | null>(null);
@@ -110,7 +111,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const add = useCallback((line: DraftLine, sequence: number) => {
+  const add = useCallback((line: DraftLine, sequence: number, opts?: { announce?: boolean }) => {
     setLines((prev) => {
       const id = lineIdentity(line);
       const i = prev.findIndex((l) => lineIdentity(l) === id);
@@ -120,6 +121,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     // Le premier ajout fixe la génération vue ; un ajout sur une autre génération ne l'écrase pas silencieusement :
     // la page panier signalera l'écart et demandera une vérification explicite.
     setAck((prev) => (prev === null ? sequence : prev));
+    // Le tiroir du panier s'ouvre à chaque ajout (V-E21-02), sauf quand l'appelant enchaîne sur une autre page (`announce: false`).
+    if (opts?.announce !== false && typeof window !== "undefined") window.dispatchEvent(new CustomEvent(CART_ADDED_EVENT));
   }, []);
   const setQuantity = useCallback((index: number, quantity: number) => {
     const q = Math.max(1, Math.min(MAX_QUANTITY, Math.floor(quantity)));

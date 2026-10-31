@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CartCount } from "@/components/cart/cart-provider";
+import { CartDrawerButton } from "@/components/cart/cart-drawer";
 import { CategoryMenu, type MenuCategory } from "@/components/layout/category-menu";
 import { LiveSearch } from "@/components/layout/live-search";
 import { UtilityBar } from "@/components/layout/utility-bar";
@@ -33,9 +33,7 @@ export function SiteHeader({ dataLabel, categories }: { dataLabel: string | null
           <Link href="/devis" className="hidden min-h-[42px] items-center rounded-[9px] px-3 text-sm text-ink-2 hover:bg-surface hover:text-ink lg:inline-flex">
             Demande de devis
           </Link>
-          <Link href="/panier" className="ml-auto inline-flex min-h-[42px] items-center rounded-[9px] px-3 font-medium hover:bg-surface sm:ml-0">
-            Panier <CartCount />
-          </Link>
+          <CartDrawerButton />
         </div>
       </div>
       {categories.length > 0 && (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { QuickOrder } from "@/components/catalog/quick-order";
 import type { NavNode } from "@/lib/site-catalog/navigation";
 
 /**
@@ -42,6 +43,7 @@ export function CategorySidebar({ roots, current }: { roots: NavNode[]; current?
             </li>
           ))}
         </ul>
+        <QuickOrder />
       </nav>
     </>
   );

@@ -12,11 +12,15 @@ export function UtilityBar() {
         <p className="text-white/80">Lun–Sam 8h30–19h</p>
         <p className="hidden font-medium md:block">Livraison incluse sur tout le catalogue</p>
         <nav aria-label="Liens utiles" className="flex items-center gap-3">
-          <Link href="/recherche" className="inline-flex min-h-[24px] items-center hover:underline">Catalogue</Link>
+          <Link href="/faq" className="hidden min-h-[24px] items-center hover:underline sm:inline-flex">FAQ</Link>
+          <span aria-hidden="true" className="hidden text-white/40 sm:inline">|</span>
+          <Link href="/contact" className="inline-flex min-h-[24px] items-center hover:underline">Nous contacter</Link>
           <span aria-hidden="true" className="text-white/40">|</span>
+          <Link href="/recherche" className="hidden min-h-[24px] items-center hover:underline sm:inline-flex">Catalogue</Link>
+          <span aria-hidden="true" className="hidden text-white/40 sm:inline">|</span>
           <Link href="/favoris" className="inline-flex min-h-[24px] items-center hover:underline">Ma sélection</Link>
-          <span aria-hidden="true" className="text-white/40">|</span>
-          <Link href="/devis" className="inline-flex min-h-[24px] items-center hover:underline">Demande de devis</Link>
+          <span aria-hidden="true" className="hidden text-white/40 sm:inline">|</span>
+          <Link href="/devis" className="hidden min-h-[24px] items-center hover:underline sm:inline-flex">Demande de devis</Link>
         </nav>
       </div>
     </div>

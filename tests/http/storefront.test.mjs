@@ -165,7 +165,7 @@ function quoteFrom(pv, overrides = {}) {
   };
 }
 
-const PAGES_STORE = ["/", "/panier", "/recherche?q=chaise", "/devis", "/commande", "/favoris", "/comparer"];
+const PAGES_STORE = ["/", "/panier", "/recherche?q=chaise", "/devis", "/commande", "/favoris", "/comparer", "/gamme-pro-intens"];
 const LEGACY = [
   "/admin", "/admin/login", "/admin/devis", "/admin/devis/1", "/admin/produits", "/admin/catalogue", "/admin/import",
   "/api/admin/auth", "/api/admin/export-products", "/api/admin/products-list", "/api/admin/ia/categories-list",
@@ -296,6 +296,21 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.match(home.text, /data-testid="footer-basis">Prix de vente PRODES hors taxes/);
       assert.match(home.text, /Prix HT/);
       assert.doesNotMatch(home.text, /Les prix et la base fiscale sont précisés sur le devis/);
+      const faq = await get("/faq");
+      assert.equal(faq.status, 200);
+      assert.match(faq.text, /Les prix publiés sont hors taxes ; la TVA apparaît sur le devis et la facture/);
+    });
+
+    test("pages fixes provisoires : FAQ, contact, mentions légales, gamme PRO-INTENS sans catégorie — dites telles quelles, sans coordonnée ni garantie inventée", async () => {
+      for (const p of ["/faq", "/contact", "/mentions-legales", "/gamme-pro-intens"]) {
+        const r = await get(p);
+        assert.equal(r.status, 200, p);
+        assert.doesNotMatch(r.text, /tel:|mailto:|\b0\d(?:[ .]?\d{2}){4}\b/, `${p} : aucune coordonnée écrite en dur`);
+        assert.doesNotMatch(r.text, /10 ans|garantie structure/i, `${p} : aucune garantie générale (C7)`);
+      }
+      assert.match((await get("/mentions-legales")).text, /data-testid="legal-provisional"/);
+      assert.match((await get("/mentions-legales")).text, /noindex/);
+      assert.match((await get("/gamme-pro-intens")).text, /Gamme en cours de référencement/);
     });
 
     test("recherche instantanée : requête vide ou trop courte, trop longue, JSON échappé, au plus 8 familles publiées", async () => {

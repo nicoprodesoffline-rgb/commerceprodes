@@ -69,7 +69,7 @@ export function ProIntensBlock({ category }: { category: { key: string; name: st
     <section aria-labelledby="pro-intens" className="rounded-[14px] bg-ink px-6 py-6 text-white" data-testid="pro-intens-block">
       <p className="mb-2 inline-block rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide">★ Gamme exclusive</p>
       <h2 id="pro-intens" className="text-xl font-semibold">{category.name}</h2>
-      <Link href={`/categorie/${category.key}`} className="mt-3 inline-flex h-[42px] items-center rounded-[9px] bg-white px-5 font-medium text-ink">Voir la gamme →</Link>
+      <Link href="/gamme-pro-intens" className="mt-3 inline-flex h-[42px] items-center rounded-[9px] bg-white px-5 font-medium text-ink">Voir la gamme →</Link>
     </section>
   );
 }

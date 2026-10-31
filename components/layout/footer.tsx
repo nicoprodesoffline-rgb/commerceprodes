@@ -29,6 +29,10 @@ export function SiteFooter({ meta, instantUtc, forcedNow, basis }: { meta: Catal
             <li><Link href="/favoris" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Ma sélection</Link></li>
             <li><Link href="/comparer" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Comparateur</Link></li>
             <li><Link href="/devis" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Demande de devis</Link></li>
+            <li><Link href="/gamme-pro-intens" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Gamme PRO-INTENS</Link></li>
+            <li><Link href="/faq" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">FAQ</Link></li>
+            <li><Link href="/contact" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Contact</Link></li>
+            <li><Link href="/mentions-legales" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Mentions légales</Link></li>
             <li><Link href="/recu" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Consulter un reçu</Link></li>
           </ul>
         </nav>

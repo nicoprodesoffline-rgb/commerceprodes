@@ -133,6 +133,10 @@ describe("la base fiscale n'est affirmée que si la génération la déclare (S1
         assert.doesNotMatch(chrome, /Prix HT|hors taxes/i, `${path} : aucune base affirmée hors de la donnée`);
         assert.match(await page.getByTestId("footer-basis").innerText(), /Les prix et la base fiscale sont précisés sur le devis\./, path);
       }
+      await page.goto(`${BASE}/faq`);
+      const faq = await page.locator("main").textContent(); // les réponses sont repliées : lire le texte, pas le rendu
+      assert.doesNotMatch(faq, /hors taxes|Prix HT/i, "FAQ : aucune base affirmée hors de la donnée");
+      assert.match(faq, /Les prix et la base fiscale sont précisés sur le devis\./);
       await page.context().close();
     }, { now: "2026-10-20T07:00:00Z", file: FILE });
   });

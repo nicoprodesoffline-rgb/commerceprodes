@@ -33,7 +33,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { catalogAvailability } from "@/lib/site-catalog/page";
 
 const CSRF_ROUTES = new Set(["/api/site/cart/preview", "/api/site/quote", "/api/site/order"]);
-const PAGE_EXACT = new Set(["/", "/panier", "/recherche", "/devis", "/commande", "/favoris", "/comparer"]);
+const PAGE_EXACT = new Set(["/", "/panier", "/recherche", "/devis", "/commande", "/favoris", "/comparer", "/gamme-pro-intens"]);
 const PAGE_PREFIXES = ["/categorie/", "/famille/"];
 
 function isStorePage(pathname: string): boolean {

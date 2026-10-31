@@ -1,0 +1,131 @@
+{
+ "screens": [
+  {
+   "screen": "faq",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "contact",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "mentions",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "gamme",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "panier-vide",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "tiroir",
+   "width": 1440,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "faq",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "contact",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "mentions",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "gamme",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "panier-vide",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "tiroir",
+   "width": 1024,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "faq",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "contact",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "mentions",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "gamme",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "panier-vide",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "tiroir",
+   "width": 390,
+   "global_overflow_px": 0
+  }
+ ],
+ "checks": {
+  "families_available": 4,
+  "drawer_opens_on_add": true,
+  "drawer_lines_alphabetical": true,
+  "drawer_plus_changes_quantity": true,
+  "drawer_total_from_server": true,
+  "drawer_has_next_step_and_full_cart": true,
+  "drawer_escape_closes": true,
+  "drawer_focus_returns_to_cart_button": true,
+  "drawer_click_outside_closes": true,
+  "drawer_cross_closes": true,
+  "drawer_empty_state_after_removals": true,
+  "faq_one_open_at_a_time": true,
+  "quick_order_refuses_bad_reference": true,
+  "quick_order_opens_the_variant": true,
+  "legal_page_is_provisional_and_noindex": true,
+  "contact_has_no_hardcoded_phone_or_email": true,
+  "gamme_no_warranty_claim": true,
+  "gamme_arguments_kept_C8": true,
+  "gamme_empty_or_listed": true,
+  "without_script_cart_button_goes_to_cart_page": true
+ }
+}
