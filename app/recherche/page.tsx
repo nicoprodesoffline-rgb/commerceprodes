@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { CategorySidebar } from "@/components/catalog/category-sidebar";
 import { ListingControls } from "@/components/catalog/listing-controls";
+import { ListingSort } from "@/components/catalog/listing-sort";
 import { Pager } from "@/components/catalog/pager";
+import { QuickOrder } from "@/components/catalog/quick-order";
 import { FamilyGrid } from "@/components/home/family-card";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { SEARCH_MAX, familyCard, navigationOf, searchFamilies } from "@/components/site/catalog-views";
@@ -34,17 +36,10 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   return (
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: "Accueil", href: "/" }, { label: q.trim() === "" ? "Catalogue" : "Recherche" }]} />
-      <h1 className="text-2xl font-semibold">{q.trim() === "" ? "Tout le catalogue" : <>Résultats pour « <span data-testid="search-term">{q}</span> »</>}</h1>
-      <form role="search" action="/recherche" method="get" className="flex max-w-xl gap-2">
-        <label htmlFor="q-page" className="sr-only">Rechercher une famille de produits</label>
-        <input id="q-page" name="q" type="search" defaultValue={q} maxLength={SEARCH_MAX} placeholder="Nom de famille ou référence PI-…" className="h-[42px] min-w-0 flex-1 rounded-[9px] border border-line-strong bg-white px-3" />
-        <button type="submit" className="h-[42px] rounded-[9px] bg-ink px-4 font-medium text-white">Rechercher</button>
-      </form>
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <CategorySidebar roots={nav.menu} />
-        <div className="min-w-0 flex-1 space-y-4">
-          <ListingControls action="/recherche" query={query} hidden={q.trim() === "" ? undefined : { q }} />
-          <p role="status" className="text-ink-2" data-testid="search-count">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold">{q.trim() === "" ? "Tout le catalogue" : <>Résultats pour « <span data-testid="search-term">{q}</span> »</>}</h1>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <p role="status" className="min-w-0 text-ink-2" data-testid="search-count">
             {listing.total === 0
               ? q.trim() === ""
                 ? "Aucune famille ne correspond à ces filtres."
@@ -53,6 +48,21 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                 ? <>{listing.total} famille{listing.total > 1 ? "s" : ""}.</>
                 : <>{listing.total} famille{listing.total > 1 ? "s" : ""} pour « <span className="font-medium text-ink">{q}</span> ».</>}
           </p>
+          <ListingSort formId="search-filters" sort={query.sort} />
+        </div>
+      </div>
+      <form role="search" action="/recherche" method="get" className="flex max-w-xl gap-2">
+        <label htmlFor="q-page" className="sr-only">Rechercher une famille de produits</label>
+        <input id="q-page" name="q" type="search" defaultValue={q} maxLength={SEARCH_MAX} placeholder="Nom de famille ou référence PI-…" className="h-[42px] min-w-0 flex-1 rounded-[9px] border border-line-strong bg-white px-3" />
+        <button type="submit" className="h-[42px] rounded-[9px] bg-ink px-4 font-medium text-white">Rechercher</button>
+      </form>
+      <div className="flex flex-col gap-6 lg:flex-row">
+        <div className="min-w-0 space-y-4 lg:w-60 lg:shrink-0">
+          <CategorySidebar roots={nav.menu} />
+          <ListingControls formId="search-filters" action="/recherche" query={query} hidden={q.trim() === "" ? undefined : { q }} />
+          <QuickOrder />
+        </div>
+        <div className="min-w-0 flex-1 space-y-4">
           {listing.rows.length > 0 && (
             <FamilyGrid prices label="Familles du catalogue" families={listing.rows.map((r) => ({ ...familyCard(r.family), from: r.price, ...(categoryOf(r.family.primary_category_key) ? { category: categoryOf(r.family.primary_category_key) as string } : {}) }))} />
           )}

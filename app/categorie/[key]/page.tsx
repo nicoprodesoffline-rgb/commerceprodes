@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CategorySidebar } from "@/components/catalog/category-sidebar";
 import { ListingControls } from "@/components/catalog/listing-controls";
+import { ListingSort } from "@/components/catalog/listing-sort";
 import { Pager } from "@/components/catalog/pager";
+import { QuickOrder } from "@/components/catalog/quick-order";
 import { FamilyGrid } from "@/components/home/family-card";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { categoryCrumbs, familyCard, navigationOf } from "@/components/site/catalog-views";
@@ -46,7 +48,13 @@ export default async function CategoryPage({ params, searchParams }: { params: P
   return (
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: "Accueil", href: "/" }, ...categoryCrumbs(catalog, key)]} />
-      <h1 className="text-2xl font-semibold">{cat.name}</h1>
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold">{cat.name}</h1>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <p role="status" className="min-w-0 text-sm text-ink-2" data-testid="category-count">{listing.total} famille{listing.total > 1 ? "s" : ""} dans cette catégorie.</p>
+          {families.length > 0 && <ListingSort formId="category-filters" sort={query.sort} />}
+        </div>
+      </div>
       {children.length > 0 && (
         <nav aria-label="Sous-catégories">
           <ul className="flex flex-wrap gap-2">
@@ -60,11 +68,13 @@ export default async function CategoryPage({ params, searchParams }: { params: P
           </ul>
         </nav>
       )}
-      <p className="text-sm text-ink-2" data-testid="category-count">{listing.total} famille{listing.total > 1 ? "s" : ""} dans cette catégorie.</p>
       <div className="flex flex-col gap-6 lg:flex-row">
-        <CategorySidebar roots={nav.menu} current={key} />
+        <div className="min-w-0 space-y-4 lg:w-60 lg:shrink-0">
+          <CategorySidebar roots={nav.menu} current={key} />
+          {families.length > 0 && <ListingControls formId="category-filters" action={`/categorie/${key}`} query={query} />}
+          <QuickOrder />
+        </div>
         <div className="min-w-0 flex-1 space-y-4">
-          {families.length > 0 && <ListingControls action={`/categorie/${key}`} query={query} />}
           {families.length === 0 ? (
             <p className="rounded-[14px] border border-line bg-white p-4 text-ink-2">
               Aucune famille n&apos;est classée directement dans cette catégorie{children.length > 0 ? " : consultez ses sous-catégories." : "."}
