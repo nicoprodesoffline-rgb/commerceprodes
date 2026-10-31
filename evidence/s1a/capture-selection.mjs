@@ -30,6 +30,16 @@ for (const [w, h] of [[1440, 900], [1024, 768], [390, 844]]) {
     await p.screenshot({ path: `${OUT}/${name}-${w}.png`, fullPage: true });
     report.screens.push({ screen: name, width: w, global_overflow_px: await overflow(p) });
   }
+  // Validité des prix de la fiche : la phrase entière est lisible à chaque largeur (colonne dès 640 px, sous le prix en dessous), sans défilement caché
+  await p.goto(`${SITE}/famille/${slugs[0]}`);
+  report.checks[`validity_fully_readable_${w}`] = await p.evaluate((wide) => {
+    const sel = wide ? '[data-testid="validity-cell"]' : '[data-testid="validity-inline"]';
+    const cells = [...document.querySelectorAll(sel)].filter((e) => getComputedStyle(e).display !== "none" && e.getBoundingClientRect().width > 0);
+    if (cells.length === 0) return false;
+    const box = document.querySelector("table")?.parentElement;
+    const noInnerScroll = !box || box.scrollWidth <= box.clientWidth + 1;
+    return noInnerScroll && cells.every((e) => /exclu$/.test(e.textContent.trim()) && e.scrollWidth <= e.clientWidth + 1);
+  }, w >= 640);
   if (w === 1440) {
     await p.goto(`${SITE}/recherche`);
     report.checks.compare_stored_2 = (await stored(p, "prodes_compare")).length === 2;

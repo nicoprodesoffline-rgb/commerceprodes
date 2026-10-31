@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { BASE, withServer } from "../nav/nav-server.mjs";
-import { FILE, FIXTURE, HT_ITEM, removeBasisFixture, writeBasisFixture } from "./basis-fixtures.mjs";
+import { FAMILY_SLUG, FILE, FIXTURE, HT_ITEM, removeBasisFixture, writeBasisFixture } from "./basis-fixtures.mjs";
 
 const require = createRequire(path.join(process.env.PLAYWRIGHT_DIR ?? "", "/"));
 const { chromium } = require("playwright");
@@ -41,7 +41,7 @@ describe("friction 14 — un montant n'apparaît jamais sans sa base fiscale (fa
   test("fiche : variante HT puis variante « non précisée » — chaque prix, chaque palier et le total de ligne portent leur base", async () => {
     await withServer(FIXTURE, async () => {
       const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" })).newPage();
-      await page.goto(`${BASE}/famille/gmce-demo?article=${HT_ITEM}`);
+      await page.goto(`${BASE}/famille/${FAMILY_SLUG}?article=${HT_ITEM}`);
       await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
       assert.match(await page.getByTestId("qty-price").innerText(), /13,00\s€\sHT l'unité, soit 13,00\s€\sHT pour la ligne/);
       assert.match(await page.locator("main table").first().innerText(), /13,00\s€\sHT/);
@@ -50,7 +50,7 @@ describe("friction 14 — un montant n'apparaît jamais sans sa base fiscale (fa
       assert.match(variants, /12,00\s€\s\(base fiscale non précisée\)/, "la variante « non précisée » garde sa mention dans la liste");
       assert.match(variants, /13,00\s€\sHT/, "la variante HT garde son HT dans la liste");
       await assertEveryAmountHasItsBasis(page, "fiche HT");
-      await page.goto(`${BASE}/famille/gmce-demo?article=${UNQ_ITEM}`);
+      await page.goto(`${BASE}/famille/${FAMILY_SLUG}?article=${UNQ_ITEM}`);
       await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
       assert.match(await page.getByTestId("qty-price").innerText(), /12,00\s€\s\(base fiscale non précisée\) l'unité, soit 12,00\s€\s\(base fiscale non précisée\) pour la ligne/);
       assert.doesNotMatch(await page.locator("main table").first().innerText(), /\bHT\b/);
@@ -63,7 +63,7 @@ describe("friction 14 — un montant n'apparaît jamais sans sa base fiscale (fa
     await withServer(FIXTURE, async () => {
       const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" })).newPage();
       for (const [key, qty] of [[UNQ_ITEM, 2], [HT_ITEM, 3]]) {
-        await page.goto(`${BASE}/famille/gmce-demo?article=${key}`);
+        await page.goto(`${BASE}/famille/${FAMILY_SLUG}?article=${key}`);
         await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
         await page.locator("input[type=text]").first().fill(String(qty));
         await page.getByTestId("qty-price").getByText(new RegExp(`^Pour ${qty} : .*pour la ligne`)).waitFor();
@@ -89,7 +89,7 @@ describe("friction 14 — un montant n'apparaît jamais sans sa base fiscale (fa
       const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" });
       const page = await ctx.newPage();
       for (const key of [UNQ_ITEM, HT_ITEM]) {
-        await page.goto(`${BASE}/famille/gmce-demo?article=${key}`);
+        await page.goto(`${BASE}/famille/${FAMILY_SLUG}?article=${key}`);
         await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
         await page.getByRole("button", { name: "Ajouter au panier" }).click();
         await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
@@ -126,7 +126,7 @@ describe("la base fiscale n'est affirmée que si la génération la déclare (S1
   test("génération mixte : ni « Prix HT » ni « hors taxes » sur l'accueil, la fiche et le pied de page ; la formule neutre est dite", async () => {
     await withServer(FIXTURE, async () => {
       const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" })).newPage();
-      for (const path of ["/", `/famille/gmce-demo?article=${HT_ITEM}`]) {
+      for (const path of ["/", `/famille/${FAMILY_SLUG}?article=${HT_ITEM}`]) {
         await page.goto(`${BASE}${path}`);
         await page.getByTestId("footer-basis").waitFor();
         const chrome = [await page.locator("footer").innerText(), ...(path === "/" ? [await page.getByTestId("hero").innerText(), await page.getByTestId("trust-bar").innerText()] : [])].join("\n");

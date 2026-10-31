@@ -112,6 +112,8 @@ export function FamilyBuyBox({
   /** Ajoute la variante au panier (prix vérifié par le serveur) ; `toQuote` ouvre ensuite la demande de devis : même parcours que depuis le panier, aucun second formulaire. */
   async function onAdd(toQuote = false) {
     if (!item || quantity === null) return;
+    // Le bouton qui a lancé l'ajout : le tiroir lui rend le focus à sa fermeture (il est désactivé pendant la vérification, donc le lire plus tard ne donnerait rien).
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setBusy(true);
     setFeedback(null);
     try {
@@ -120,11 +122,11 @@ export function FamilyBuyBox({
       const draft = { public_item_key: item.public_item_key, variant_axes: item.variant_axes, quantity, family_name: familyName, family_slug: familySlug, axes: item.axes };
       if (r.network) setFeedback({ kind: "error", text: `${codeMessage("NETWORK")} Rien n'a été ajouté.` });
       else if (r.status === 200 && l?.accepted && l.selection && r.json) {
-        add(draft, r.json.catalogue_sequence, { announce: !toQuote });
+        add(draft, r.json.catalogue_sequence, { announce: !toQuote, opener });
         if (toQuote) { router.push("/devis"); return; }
         setFeedback({ kind: "ok", text: `Ajouté au panier — ${quantity} × ${axesText(item.axes)}, ${unit(l.selection.unit_amount, l.selection.tax_basis_or_status)} l'unité.` });
       } else if (r.status === 200 && l && r.json && l.error_codes.length === 1 && l.error_codes[0] === "PRICE_WINDOW_UNAVAILABLE") {
-        add(draft, r.json.catalogue_sequence, { announce: !toQuote });
+        add(draft, r.json.catalogue_sequence, { announce: !toQuote, opener });
         if (toQuote) { router.push("/devis"); return; }
         setFeedback({ kind: "ok", text: `Ajouté au panier sans prix — ${quantity} × ${axesText(item.axes)}. Seule une demande de devis sera possible pour cette ligne.` });
       } else {

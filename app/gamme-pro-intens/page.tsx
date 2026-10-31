@@ -21,7 +21,7 @@ function findNode(nodes: NavNode[]): NavNode | null {
 }
 
 /**
- * Gamme PRO-INTENS (V-E14, C11) : une catégorie tenue dans la Factory. La page liste les familles de cette catégorie ; sans catégorie publiée, état vide dit simplement.
+ * Gamme PRO-INTENS (V-E14, C11) : une catégorie tenue dans la Factory. La page liste les familles de cette catégorie ; sans catégorie publiée, état vide dit simplement, sans promettre de date (aucune date validée par le propriétaire).
  * Arguments : « NF certifié » et « Chorus Pro compatible » gardés tels quels (C8) ; la garantie de 10 ans de l'ancien site n'est pas reprise (C7 : aucune garantie générale).
  */
 export default async function ProIntensPage() {
@@ -49,8 +49,8 @@ export default async function ProIntensPage() {
         </>
       ) : (
         <div className="rounded-[14px] border border-line bg-white p-6" data-testid="gamme-empty">
-          <h2 className="text-lg font-semibold">Gamme en cours de référencement</h2>
-          <p className="mt-1 text-ink-2">Les produits PRO-INTENS seront disponibles très prochainement.</p>
+          <h2 className="text-lg font-semibold">Aucun produit publié</h2>
+          <p className="mt-1 text-ink-2">Aucun produit de la gamme n&apos;est publié pour le moment.</p>
           <Link href="/devis" className="mt-3 inline-flex h-[42px] items-center rounded-[9px] bg-ink px-5 font-medium text-white">Demander un devis sur mesure</Link>
         </div>
       )}

@@ -63,6 +63,7 @@
  ],
  "checks": {
   "families_available": 4,
+  "validity_fully_readable_1440": true,
   "compare_stored_2": true,
   "wishlist_stored_2": true,
   "compare_bar_visible": true,
@@ -78,6 +79,8 @@
   "quote_from_family_goes_to_quote_page": true,
   "quote_page_has_the_line": true,
   "print_hides_chrome": true,
+  "validity_fully_readable_1024": true,
+  "validity_fully_readable_390": true,
   "mobile_compare_table_scrolls_inside_its_frame": true,
   "storage_denied_no_page_error": true
  }

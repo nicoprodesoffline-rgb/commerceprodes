@@ -67,6 +67,13 @@ for (const [w, h] of [[1440, 900], [1024, 768], [390, 844]]) {
     report.checks.drawer_empty_state_after_removals = await p.getByTestId("drawer-empty").isVisible();
     await p.keyboard.press("Escape");
     // sans panier, l'ouverture ne demande aucun aperçu serveur
+    // Échap sur un tiroir ouvert par « Ajouter au panier » : le focus revient à CE bouton
+    await p.goto(`${SITE}/famille/${slugs[2]}`);
+    await p.getByRole("button", { name: /^Ajouter au panier/ }).first().click();
+    await p.waitForSelector('[data-testid="cart-drawer"][open]');
+    await p.keyboard.press("Escape");
+    await p.waitForTimeout(200);
+    report.checks.drawer_focus_returns_to_add_button = await p.evaluate(() => /^Ajouter au panier/.test(document.activeElement?.textContent?.trim() ?? ""));
     // FAQ : accordéon exclusif
     await p.goto(`${SITE}/faq`);
     const details = p.locator("details[name=faq]");

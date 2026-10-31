@@ -118,6 +118,7 @@
   "drawer_click_outside_closes": true,
   "drawer_cross_closes": true,
   "drawer_empty_state_after_removals": true,
+  "drawer_focus_returns_to_add_button": true,
   "faq_one_open_at_a_time": true,
   "quick_order_refuses_bad_reference": true,
   "quick_order_opens_the_variant": true,

@@ -17,10 +17,15 @@ import { axesText, price } from "@/components/site/format";
 export function CartDrawerButton() {
   const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
+  const cartLink = useRef<HTMLAnchorElement>(null);
+  const opener = useRef<HTMLElement | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
-    const onAdded = () => setOpen(true);
+    const onAdded = (e: Event) => {
+      opener.current = (e as CustomEvent<{ opener?: HTMLElement | null }>).detail?.opener ?? null;
+      setOpen(true);
+    };
     window.addEventListener(CART_ADDED_EVENT, onAdded);
     return () => window.removeEventListener(CART_ADDED_EVENT, onAdded);
   }, []);
@@ -35,10 +40,12 @@ export function CartDrawerButton() {
   return (
     <>
       <Link
+        ref={cartLink}
         href="/panier"
         onClick={(e) => {
           if (e.metaKey || e.ctrlKey || e.shiftKey || typeof HTMLDialogElement === "undefined") return;
           e.preventDefault();
+          opener.current = cartLink.current;
           setOpen(true);
         }}
         aria-haspopup="dialog"
@@ -50,7 +57,13 @@ export function CartDrawerButton() {
       <dialog
         ref={dialog}
         aria-labelledby="tiroir-titre"
-        onClose={() => setOpen(false)}
+        onClose={() => {
+          setOpen(false);
+          // Le focus revient à l'élément qui a ouvert le tiroir (« Ajouter au panier », ou le bouton Panier) ; s'il a disparu, au bouton Panier.
+          const back = opener.current?.isConnected ? opener.current : cartLink.current;
+          opener.current = null;
+          setTimeout(() => back?.focus(), 0);
+        }}
         onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
         className="m-0 ml-auto h-full max-h-none w-full max-w-md border-l border-line bg-white p-0 backdrop:bg-ink/40"
         data-testid="cart-drawer"

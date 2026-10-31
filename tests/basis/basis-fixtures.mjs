@@ -12,6 +12,8 @@ const DIR = path.join(ROOT, "c0/fixtures/documents/F_BASIS_MIXED");
 export const FIXTURE = "F_BASIS_MIXED";
 export const FILE = "snapshot_mixed.json";
 export const HT_ITEM = "PI-000000363";
+/** Adresse de la famille de la fixture C0 de départ, lue dans la fixture : aucun nom écrit en dur dans les tests. */
+export const FAMILY_SLUG = JSON.parse(readFileSync(SOURCE, "utf8")).families[0].slug;
 
 export function writeBasisFixture() {
   const { canonicalBytes } = require(path.join(ROOT, "c0/ts/dist/src/jsonc.js"));

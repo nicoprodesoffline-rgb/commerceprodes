@@ -310,7 +310,9 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       }
       assert.match((await get("/mentions-legales")).text, /data-testid="legal-provisional"/);
       assert.match((await get("/mentions-legales")).text, /noindex/);
-      assert.match((await get("/gamme-pro-intens")).text, /Gamme en cours de référencement/);
+      const gamme = (await get("/gamme-pro-intens")).text;
+      assert.match(gamme, /Aucun produit de la gamme n&#x27;est publié pour le moment\.|Aucun produit de la gamme n'est publié pour le moment\./);
+      assert.doesNotMatch(gamme, /prochainement|bientôt|très vite/i, "aucune promesse de date");
     });
 
     test("recherche instantanée : requête vide ou trop courte, trop longue, JSON échappé, au plus 8 familles publiées", async () => {

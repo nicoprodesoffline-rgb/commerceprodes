@@ -57,10 +57,12 @@ export function PriceGrid({ rows, selectedRateId, caption, showBasis = true }: {
                   {quantityRange(r.quantity_min, r.quantity_max)}
                   {current && <span className="ml-2 text-xs font-medium text-signal">quantité choisie</span>}
                 </td>
-                <td className="py-1.5 pr-3 text-right font-semibold whitespace-nowrap">
-                  {money(r.unit_amount ?? "")}{showBasis && <> <span className="font-normal">{basisLabel(r.tax_basis_or_status)}</span></>}
+                <td className="py-1.5 pr-3 text-right font-semibold sm:whitespace-nowrap">
+                  <span className="whitespace-nowrap">{money(r.unit_amount ?? "")}{showBasis && <> <span className="font-normal">{basisLabel(r.tax_basis_or_status)}</span></>}</span>
+                  {/* Sous 640 px la colonne « Validité » n'a pas la place : la même phrase, entière, passe sous le prix. */}
+                  <span className="mt-0.5 block text-left text-xs font-normal text-ink-3 sm:hidden" data-testid="validity-inline">{r.validity_label}</span>
                 </td>
-                <td className={`hidden py-1.5 text-xs sm:table-cell ${current ? "text-ink-2" : "text-ink-3"}`}>{r.validity_label}</td>
+                <td className={`hidden py-1.5 text-xs [overflow-wrap:anywhere] sm:table-cell ${current ? "text-ink-2" : "text-ink-3"}`} data-testid="validity-cell">{r.validity_label}</td>
               </tr>
             ) : (
               <tr key={`t${r.tier_quantity}`} data-tier={r.tier_quantity} data-unavailable={r.error_codes.join(",")} className="h-[34px] border-b border-line">

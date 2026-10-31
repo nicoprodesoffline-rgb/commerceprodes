@@ -25,7 +25,7 @@ type CartApi = {
   lines: DraftLine[];
   ackSequence: number | null;
   ready: boolean;
-  add: (line: DraftLine, catalogueSequence: number, opts?: { announce?: boolean }) => void;
+  add: (line: DraftLine, catalogueSequence: number, opts?: { announce?: boolean; opener?: HTMLElement | null }) => void;
   setQuantity: (index: number, quantity: number) => void;
   acknowledge: (sequence: number) => void;
   remove: (index: number) => void;
@@ -111,7 +111,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const add = useCallback((line: DraftLine, sequence: number, opts?: { announce?: boolean }) => {
+  const add = useCallback((line: DraftLine, sequence: number, opts?: { announce?: boolean; opener?: HTMLElement | null }) => {
     setLines((prev) => {
       const id = lineIdentity(line);
       const i = prev.findIndex((l) => lineIdentity(l) === id);
@@ -122,7 +122,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     // la page panier signalera l'écart et demandera une vérification explicite.
     setAck((prev) => (prev === null ? sequence : prev));
     // Le tiroir du panier s'ouvre à chaque ajout (V-E21-02), sauf quand l'appelant enchaîne sur une autre page (`announce: false`).
-    if (opts?.announce !== false && typeof window !== "undefined") window.dispatchEvent(new CustomEvent(CART_ADDED_EVENT));
+    if (opts?.announce !== false && typeof window !== "undefined") window.dispatchEvent(new CustomEvent(CART_ADDED_EVENT, { detail: { opener: opts?.opener ?? null } }));
   }, []);
   const setQuantity = useCallback((index: number, quantity: number) => {
     const q = Math.max(1, Math.min(MAX_QUANTITY, Math.floor(quantity)));

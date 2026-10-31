@@ -41,3 +41,14 @@ Contrôles au navigateur rejoués sur le BUILD DE PRODUCTION (`next start`) : co
 
 - Le bandeau « Boutique de démonstration… STAGING_FIXTURE » est correct en staging et **ne doit pas partir en ligne**.
 - La route `GET /api/site/search` n'a pas de limite de débit (relevé par 8f) : à surveiller quand le catalogue sera réel.
+
+## Retouches après la revue de conformité d'8f (gate UX : PARTIAL, aucun écran bloqué)
+
+| Retouche | Statut | Preuve | Limite |
+|---|---|---|---|
+| Gamme PRO-INTENS : plus de promesse de date | ✅ | le texte vide est « Aucun produit de la gamme n'est publié pour le moment. » ; test HTTP : aucun « prochainement / bientôt » | L'Owner n'a validé aucune date |
+| Fiche : colonne « Validité » du tableau de prix | ✅ BROWSER_VERIFIED | à 1440 et 1024 px la phrase entière tient dans la colonne (cellule non tronquée, aucun défilement caché) ; sous 640 px, où la colonne n'a pas la place (elle était masquée), la même phrase passe sous le prix, entière ; `capture-selection.json` : `validity_fully_readable_1440 / 1024 / 390` | À 1440 px la phrase n'était déjà pas tronquée : c'est sous 640 px qu'elle manquait |
+| Tiroir du panier : Échap rend le focus au bouton qui l'a ouvert | ✅ BROWSER_VERIFIED | ouvert par « Ajouter au panier » : le focus revient à ce bouton ; ouvert par « Panier » : au bouton Panier (`drawer_focus_returns_to_add_button`, `drawer_focus_returns_to_cart_button`) | Le bouton d'ajout est désactivé pendant la vérification : il est donc mémorisé au clic, avant la vérification |
+| Aucun nom de fournisseur dans les tests que je modifie | ✅ | `tests/basis/basis.ui.mjs` lit l'adresse de la famille de test dans la fixture C0 de départ (`FAMILY_SLUG`) au lieu de l'écrire en dur | Le nom reste dans les fixtures C0 gelées (`c0/fixtures/…/F_GMCE_VARIANTS`, déjà publiques) et dans `tests/http/site.test.mjs`, `tests/basis/escape.ui.mjs`, `tests/basis/basis-fixtures.mjs` (en commentaire), que je ne touche pas : C0 est gelé |
+
+Suites locales après retouches : typecheck propre ; `test:nav:unit` 38/38 ; `test:nav` 41/41 ; `test:nav:ui` 4/4 ; `test:storefront` 25/25 ; `test:basis:ui` 5/5.
