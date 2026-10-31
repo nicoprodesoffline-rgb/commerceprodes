@@ -45,11 +45,13 @@ export default async function HomePage() {
   );
   const nav = navigationOf(catalog);
   const roots = nav.menu.map((n) => {
-    const familySlugs = new Set(nav.familySlugs(n.key));
+    // Une catégorie racine peut ne porter ses familles que dans ses sous-catégories : le compte et l'image tiennent compte de tout son sous-arbre.
+    const subtree = (node: NavNode): string[] => [...nav.familySlugs(node.key), ...node.children.flatMap(subtree)];
+    const familySlugs = new Set(subtree(n));
     return {
       key: n.key,
       name: n.name,
-      familyCount: n.ownFamilyCount,
+      familyCount: n.subtreeFamilyCount,
       imageSha: catalog.families.find((f) => familySlugs.has(f.slug) && f.image_main_sha256)?.image_main_sha256 ?? null,
       children: n.children.map((s) => ({ key: s.key, name: s.name })),
     };
