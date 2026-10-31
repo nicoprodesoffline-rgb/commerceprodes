@@ -137,7 +137,7 @@ export function CartLines({
           <span className="font-medium">
             {pls && priced < lines.length ? `Total des lignes chiffrées (${priced} sur ${lines.length})` : "Total des lignes"}
           </span>
-          <span className="tabular text-lg font-semibold" data-testid="cart-total">
+          <span className="tabular text-lg font-semibold" data-testid="cart-total" aria-live="polite" aria-atomic="true">
             {loading || !preview ? "…" : preview.total_amount ? totalWithBasis(preview) : "—"}
           </span>
         </div>
@@ -152,9 +152,9 @@ export function CartLines({
 export function StaleBanner({ from, to, onAck }: { from: number; to: number; onAck: () => void }) {
   return (
     <div role="alert" className="rounded-[14px] border-2 border-caution bg-white p-4" data-testid="cart-generation-changed">
-      <p className="font-semibold">Le catalogue a été mis à jour</p>
+      <p className="font-semibold">{from === to ? "Les prix doivent être vérifiés de nouveau" : "Le catalogue a été mis à jour"}</p>
       <p className="mt-1 text-sm text-ink-2">
-        Les prix et articles ci-dessous sont ceux de la nouvelle version du catalogue (version {from} → {to}). Vérifiez-les : l&apos;envoi d&apos;une
+        Les prix et articles ci-dessous ont été vérifiés par le serveur (version {from === to ? to : `${from} → ${to}`}). Vérifiez-les : l&apos;envoi d&apos;une
         demande de devis ou d&apos;une commande est bloqué tant que vous ne les avez pas vérifiés.
       </p>
       <button type="button" onClick={onAck} className="mt-3 h-[42px] rounded-[9px] border border-ink bg-white px-4 font-medium hover:bg-surface">

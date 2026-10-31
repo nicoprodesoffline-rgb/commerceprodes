@@ -8,31 +8,28 @@
  * (`history.replaceState` vers `/recu`), le champ du code est vidé, et un retour arrière (y compris depuis le cache
  * de navigation du navigateur) n'affiche plus le reçu sans nouvelle saisie.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { codeMessage } from "@/components/site/codes";
-import { BasisNotice } from "@/components/site/basis-notice";
-import { axisValue, money, parisDate, price, totalBasisLabel, uniformBasis } from "@/components/site/format";
+import { ReceiptDetails, type ReceiptData } from "@/components/checkout/receipt-details";
 
-/** Base fiscale du total (même règle que le panier) : une seule base → affichée ; aucune → « non précisée » ; plusieurs → nommées. Jamais un total nu. */
-function totalBasis(lines: { unit_amount?: string | null; tax_basis_or_status?: string | null }[]): string {
-  return totalBasisLabel(lines.filter((l) => l.unit_amount).map((l) => l.tax_basis_or_status));
-}
-
-function axesOf(axes: Record<string, string>): string {
-  const e = Object.entries(axes);
-  return e.length === 0 ? "Modèle unique" : e.map(([k, v]) => `${axisValue(k.replace(/_/g, " "))} : ${axisValue(v)}`).join(" · ");
-}
-
-type Line = { public_item_key: string; variant_axes: Record<string, string>; quantity: number; priced?: boolean; rate_id?: string | null; unit_amount?: string | null; tax_basis_or_status?: string | null; line_total?: string };
-type Found = { kind: string; status: string; receipt_ref: string; receipt: { lines?: Line[]; total_amount?: string; created_at_utc?: string; catalogue_sequence?: number } };
+type Found = { kind: string; status: string; receipt_ref: string; receipt: ReceiptData };
 type State = { kind: "idle" } | { kind: "loading" } | { kind: "found"; data: Found } | { kind: "refused"; code: string };
 
 export function ReceiptLookup() {
   const [ref, setRef] = useState("");
   const [code, setCode] = useState("");
+  const result = useRef<HTMLHeadingElement>(null);
+  const error = useRef<HTMLParagraphElement>(null);
+  const [missing, setMissing] = useState({ ref: false, code: false });
   const [state, setState] = useState<State>({ kind: "idle" });
 
   async function lookup(r: string, c: string) {
+    const empty = { ref: !r.trim(), code: !c.trim() };
+    setMissing(empty);
+    if (empty.ref || empty.code) {
+      setState({ kind: "refused", code: "MISSING_FIELDS" });
+      return;
+    }
     setState({ kind: "loading" });
     // Le code ne doit persister ni dans l'adresse, ni dans l'historique, ni dans le champ.
     // État d'historique de Next conservé (sinon le routeur ne sait plus restaurer la page au retour).
@@ -75,74 +72,46 @@ export function ReceiptLookup() {
     };
   }, []);
 
+  useEffect(() => {
+    if (state.kind === "found") result.current?.focus();
+    if (state.kind === "refused") error.current?.focus();
+  }, [state]);
+
   const d = state.kind === "found" ? state.data : null;
-  const lines = d?.receipt.lines ?? [];
-  // Base commune des lignes chiffrées : dite une fois (bandeau) et sur le total ; sinon chaque ligne porte la sienne (friction 14).
-  const receiptBasis = uniformBasis(lines.filter((l) => l.unit_amount).map((l) => l.tax_basis_or_status ?? ""));
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <form
         onSubmit={(e) => {
           e.preventDefault();
           void lookup(ref, code);
         }}
+        noValidate
         className="grid max-w-2xl gap-4 rounded-[14px] border border-line bg-white p-4 sm:grid-cols-2"
       >
-        <div>
+        <div className="min-w-0">
           <label htmlFor="r-ref" className="block text-sm font-medium">Référence</label>
-          <input id="r-ref" value={ref} maxLength={64} autoComplete="off" onChange={(e) => setRef(e.target.value)} className="mt-1 block h-[42px] w-full rounded-[9px] border border-line-strong px-3 font-mono text-sm" />
+          <input required aria-invalid={missing.ref || undefined} aria-describedby={state.kind === "refused" ? "receipt-error" : undefined} id="r-ref" value={ref} maxLength={64} autoComplete="off" onChange={(e) => setRef(e.target.value)} className="mt-1 block h-[42px] w-full rounded-[9px] border border-line-strong px-3 font-mono text-sm" />
         </div>
-        <div>
+        <div className="min-w-0">
           <label htmlFor="r-code" className="block text-sm font-medium">Code d&apos;accès</label>
-          <input id="r-code" type="password" value={code} maxLength={128} autoComplete="off" onChange={(e) => setCode(e.target.value)} className="mt-1 block h-[42px] w-full rounded-[9px] border border-line-strong px-3 font-mono text-sm" />
+          <input required aria-invalid={missing.code || undefined} aria-describedby={state.kind === "refused" ? "receipt-error" : undefined} id="r-code" type="password" value={code} maxLength={128} autoComplete="off" onChange={(e) => setCode(e.target.value)} className="mt-1 block h-[42px] w-full rounded-[9px] border border-line-strong px-3 font-mono text-sm" />
         </div>
-        <button type="submit" className="h-[42px] rounded-[9px] bg-ink px-5 font-semibold text-white sm:col-span-2 sm:justify-self-start">Consulter</button>
+        <button type="submit" disabled={state.kind === "loading"} className="h-[42px] rounded-[9px] bg-ink px-5 font-semibold text-white sm:col-span-2 sm:justify-self-start">Consulter</button>
       </form>
       <div aria-live="polite">
         {state.kind === "loading" && <p className="text-ink-3">Recherche du reçu…</p>}
         {state.kind === "refused" && (
-          <p role="alert" className="rounded-[9px] border-2 border-signal bg-white p-3" data-testid="receipt-refused">{codeMessage(state.code)}</p>
+          <p id="receipt-error" ref={error} tabIndex={-1} role="alert" className="rounded-[9px] border-2 border-signal bg-white p-3" data-testid="receipt-refused">{state.code === "MISSING_FIELDS" ? "Saisissez la référence et le code d’accès pour consulter un reçu." : codeMessage(state.code)}</p>
         )}
         {d && (
-          <section aria-labelledby="rc-h" className="rounded-[14px] border border-line bg-white p-4" data-testid="receipt-found">
-            <h2 id="rc-h" className="text-lg font-semibold">
-              {d.kind === "order" ? "Commande" : "Demande de devis"} <span className="font-mono">{d.receipt_ref}</span>
+          <section aria-labelledby="rc-h" className="min-w-0 rounded-[14px] border border-line bg-white p-4" data-testid="receipt-found">
+            <h2 id="rc-h" ref={result} tabIndex={-1} className="break-all text-lg font-semibold">
+              {d.kind === "order" ? "Commande de test" : "Demande de devis"} <span className="font-mono">{d.receipt_ref}</span>
             </h2>
             <p className="text-sm text-ink-2">
-              État : {d.status === "RECEIVED" ? (d.kind === "order" ? "reçue — en attente de traitement" : "reçue") : d.status}
-              {d.receipt.created_at_utc ? ` · reçue le ${parisDate(d.receipt.created_at_utc)}` : ""}
+              État : {d.status === "RECEIVED" ? "reçue" : d.status}
             </p>
-            {receiptBasis.uniform && <div className="mt-3"><BasisNotice basis={receiptBasis.basis} /></div>}
-            <div className="relative overflow-x-auto">
-            <table className="tabular mt-3 w-full text-sm">
-              <caption className="sr-only">Lignes enregistrées</caption>
-              <thead>
-                <tr className="border-b border-line-strong text-left text-xs text-ink-3">
-                  <th scope="col" className="py-2 pr-2 font-medium">Référence</th>
-                  <th scope="col" className="py-2 pr-2 font-medium">Variante</th>
-                  <th scope="col" className="py-2 pr-2 text-right font-medium">Quantité</th>
-                  <th scope="col" className="py-2 pr-2 text-right font-medium">Prix unitaire</th>
-                  {d.kind === "order" && <th scope="col" className="py-2 text-right font-medium">Total ligne</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {lines.map((l) => (
-                  <tr key={`${l.public_item_key}${JSON.stringify(l.variant_axes)}`} className="h-[34px] border-b border-line">
-                    <td className="py-1 pr-2 font-mono text-xs">{l.public_item_key}</td>
-                    <td className="py-1 pr-2">{axesOf(l.variant_axes)}</td>
-                    <td className="py-1 pr-2 text-right">{l.quantity}</td>
-                    <td className="py-1 pr-2 text-right">{l.unit_amount ? (receiptBasis.uniform ? money(l.unit_amount) : price(l.unit_amount, l.tax_basis_or_status)) : "sans prix (à chiffrer)"}</td>
-                    {d.kind === "order" && <td className="py-1 text-right">{l.line_total ? (receiptBasis.uniform ? money(l.line_total) : price(l.line_total, l.tax_basis_or_status)) : "—"}</td>}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
-            {d.receipt.total_amount && (
-              <p className="mt-2 text-right font-semibold" data-testid="receipt-total">
-                Total {money(d.receipt.total_amount)} {totalBasis(lines)} <span className="font-normal text-ink-2">— taxes et port non calculés</span>
-              </p>
-            )}
+            <div className="mt-3"><ReceiptDetails receipt={d.receipt} isOrder={d.kind === "order"} /></div>
           </section>
         )}
       </div>

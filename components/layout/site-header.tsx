@@ -4,13 +4,15 @@ import { CartDrawerButton } from "@/components/cart/cart-drawer";
 import { CategoryMenu, type MenuCategory } from "@/components/layout/category-menu";
 import { LiveSearch } from "@/components/layout/live-search";
 import { UtilityBar } from "@/components/layout/utility-bar";
+import { UniverseBar } from "@/components/layout/universe-bar";
+import type { PublishedPage } from "@/lib/site-content/pages";
 
 /**
  * En-tête en trois niveaux, comme l'historique (a985aca2) : barre utile, bandeau principal (logo, recherche, devis, panier),
  * navigation par catégories. Le menu « Catégories » (WAI-ARIA disclosure, tous niveaux) reste le menu de tous les écrans, mobile compris :
  * il remplace le tiroir de l'ancien menu mobile. Le détail technique de la publication reste au pied de page (DA §1.2).
  */
-export function SiteHeader({ dataLabel, categories }: { dataLabel: string | null; categories: MenuCategory[] }) {
+export function SiteHeader({ dataLabel, categories, universe = [] }: { dataLabel: string | null; categories: MenuCategory[]; universe?: PublishedPage[] }) {
   return (
     <header className="sticky top-0 z-40 w-full bg-white">
       <UtilityBar />
@@ -36,6 +38,7 @@ export function SiteHeader({ dataLabel, categories }: { dataLabel: string | null
           <CartDrawerButton />
         </div>
       </div>
+      <UniverseBar entries={universe} />
       {categories.length > 0 && (
         <nav aria-label="Catégories principales" className="hidden border-b border-line bg-white md:block" data-testid="top-categories">
           <ul className="mx-auto flex max-w-[1280px] items-center gap-1 overflow-x-auto px-4 lg:px-8">

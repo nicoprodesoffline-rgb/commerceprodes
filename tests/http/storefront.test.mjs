@@ -296,6 +296,7 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.match(home.text, /data-testid="footer-basis">Prix de vente PRODES hors taxes/);
       assert.match(home.text, /Prix HT/);
       assert.doesNotMatch(home.text, /Les prix et la base fiscale sont précisés sur le devis/);
+      assert.doesNotMatch(home.text, /data-testid="universe-bar"/, "aucune page publiée : la barre d'univers n'affiche rien (pas même un cadre vide)");
       const faq = await get("/faq");
       assert.equal(faq.status, 200);
       assert.match(faq.text, /Les prix publiés sont hors taxes ; la TVA apparaît sur le devis et la facture/);

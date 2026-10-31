@@ -10,6 +10,7 @@ import type { NavNode } from "@/lib/site-catalog/navigation";
 import { isForcedNow, serverNowUtc } from "@/lib/site-catalog/clock";
 import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogOrNull } from "@/lib/site-catalog/page";
+import { getPagesSource, loadUniverse } from "@/lib/site-content/source";
 import "./globals.css";
 
 // Toutes les pages sont rendues à la demande : génération servie et instant serveur lus au runtime.
@@ -30,6 +31,7 @@ const toMenu = (nodes: NavNode[]): MenuCategory[] => nodes.map((n) => ({ key: n.
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const catalog = await catalogOrNull();
+  const universe = await loadUniverse(getPagesSource());
   let instant: string | null = null;
   let forced = false;
   try {
@@ -46,7 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           Aller au contenu
         </a>
         <CartProvider>
-          <SiteHeader dataLabel={catalog?.meta.data_label ?? null} categories={roots} />
+          <SiteHeader dataLabel={catalog?.meta.data_label ?? null} categories={roots} universe={universe} />
           <main id="contenu" tabIndex={-1} className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 lg:px-8 lg:py-8">
             {children}
           </main>

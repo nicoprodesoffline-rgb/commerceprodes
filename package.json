@@ -28,6 +28,7 @@
     "db:create-local": "scripts/db/create-local.sh",
     "db:migrate": "node scripts/db/migrate.mjs",
     "test:basis:unit": "node --test tests/basis/*.test.mjs",
+    "test:e2e:flow": "npm run c0:build && npm run bc2:build && node --test --test-concurrency=1 tests/e2e/order-flow.ui.mjs",
     "test:basis:ui": "npm run c0:build && node --test --test-concurrency=1 tests/basis/basis.ui.mjs tests/basis/escape.ui.mjs"
   },
   "engines": {

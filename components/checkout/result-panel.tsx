@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { codeMessage } from "@/components/site/codes";
+import { ReceiptDetails } from "@/components/checkout/receipt-details";
 import type { Outcome } from "@/components/checkout/submit";
 
 /**
@@ -19,22 +20,25 @@ export function ResultPanel({ outcome, onRetry, cartKept = false }: { outcome: O
     const quote = outcome.objectKind === "quote_request";
     const link = outcome.token ? `${window.location.origin}/recu#ref=${encodeURIComponent(outcome.ref)}&code=${encodeURIComponent(outcome.token)}` : null;
     return (
-      <section aria-labelledby="res-h" className="rounded-[14px] border-2 border-positive bg-white p-5" data-testid="result-received">
+      <section aria-labelledby="res-h" className="min-w-0 rounded-[14px] border-2 border-positive bg-white p-5" data-testid="result-received">
         <h2 id="res-h" ref={heading} tabIndex={-1} className="text-xl font-semibold">
-          {quote ? "Demande de devis reçue" : "Commande reçue — en attente de traitement"}
+          {quote ? "Demande de devis reçue" : "Commande de test reçue"}
         </h2>
         <p className="mt-2">
-          Référence : <span className="font-mono font-semibold" data-testid="receipt-ref">{outcome.ref}</span>
+          Référence : <span className="break-all font-mono font-semibold" data-testid="receipt-ref">{outcome.ref}</span>
         </p>
         <p className="mt-1 text-sm text-ink-2">
           {quote
-            ? "Votre demande est enregistrée. Elle n'engage aucun prix tant qu'un devis ne vous a pas été adressé."
-            : "Votre commande est enregistrée au prix affiché. Elle n'est ni facturée ni payée en ligne ; taxes et port ne sont pas calculés ici."}
+            ? "Votre demande est enregistrée. Ce reçu ne constitue pas un devis définitif."
+            : "Votre commande de test est enregistrée avec les lignes et les montants ci-dessous."}
           {outcome.replay ? " (Demande déjà reçue : même référence, rien n'a été enregistré deux fois.)" : ""}
         </p>
+        {outcome.receipt && <div className="mt-4"><ReceiptDetails receipt={outcome.receipt} isOrder={!quote} /></div>}
+        <p className="mt-3 text-sm text-ink-2">Pour retrouver ce reçu, ouvrez la page <Link href="/recu" className="underline">Consulter un reçu</Link> et saisissez sa référence et son code d’accès. Conservez-les maintenant.</p>
         {link ? (
           <div className="mt-4 rounded-[9px] border border-caution p-3">
-            <p className="text-sm font-semibold">Lien de consultation — conservez-le maintenant, il ne sera plus affiché</p>
+            <p className="text-sm">Code d’accès : <span className="break-all font-mono font-semibold" data-testid="receipt-code">{outcome.token}</span></p>
+            <p className="mt-2 text-sm font-semibold">Lien de consultation — conservez-le maintenant, il ne sera plus affiché</p>
             <p className="mt-1 break-all font-mono text-xs" data-testid="receipt-link">{link}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button
@@ -56,17 +60,17 @@ export function ResultPanel({ outcome, onRetry, cartKept = false }: { outcome: O
             <p aria-live="polite" className="mt-1 text-xs text-positive">{copied ? "Lien copié." : ""}</p>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-ink-2">Le code d&apos;accès n&apos;est remis qu&apos;au premier envoi : utilisez le lien reçu à ce moment-là.</p>
+          <p className="mt-3 text-sm text-ink-2">Le code d&apos;accès n&apos;est remis qu&apos;au premier envoi : utilisez le code ou le lien conservé à ce moment-là. Si la première réponse a été perdue, ce code ne peut pas être récupéré ici.</p>
         )}
         {quote && cartKept && (
           <div className="mt-4 rounded-[9px] border border-line p-3" data-testid="cart-kept">
             <p className="text-sm font-semibold">Votre panier est conservé</p>
             <p className="mt-1 text-sm text-ink-2">
-              Ce devis n&apos;est pas une commande. Si vous souhaitez commander ces mêmes articles, passez commande avec ce panier : les prix seront vérifiés de nouveau par le serveur au moment de l&apos;envoi.
-              Une commande est un envoi distinct : elle ne remplace pas votre demande de devis.
+              Ce devis n&apos;est pas une commande. Si vous souhaitez commander ces mêmes articles, passez une commande de test avec ce panier : les prix seront vérifiés de nouveau par le serveur au moment de l&apos;envoi.
+              Une commande de test est un envoi distinct : elle ne remplace pas votre demande de devis.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Link href="/commande" className="inline-flex h-[42px] items-center rounded-[9px] bg-ink px-4 font-medium text-white" data-testid="order-with-this-cart">Passer commande avec ce panier</Link>
+              <Link href="/commande" className="inline-flex min-h-[42px] items-center rounded-[9px] bg-ink px-4 py-2 font-medium text-white" data-testid="order-with-this-cart">Tester la commande avec ce panier</Link>
               <Link href="/panier" className="inline-flex h-[42px] items-center rounded-[9px] border border-line-strong px-4 font-medium hover:bg-surface">Revoir le panier</Link>
             </div>
           </div>

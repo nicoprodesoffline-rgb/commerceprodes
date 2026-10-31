@@ -15,6 +15,7 @@ import { CartLines, PreviewProblem, StaleBanner, totalWithBasis, totalsNote } fr
 import { quoteAllowed, useCartPreview } from "@/components/cart/use-cart-preview";
 import { ContactFields, EMPTY_CONTACT, ErrorSummary, contactBody, validateContact, type Contact } from "@/components/checkout/contact-fields";
 import { ResultPanel } from "@/components/checkout/result-panel";
+import { TEST_ORDER_NOTICE } from "@/components/checkout/receipt-details";
 import { RECONFIRM, Submitter, type Outcome } from "@/components/checkout/submit";
 
 export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
@@ -25,6 +26,8 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
   const [confirmedFor, setConfirmedFor] = useState<string | null>(null);
   const [tried, setTried] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [requiresReview, setRequiresReview] = useState(false);
+  const sendLock = useRef(false);
   const [sending, setSending] = useState(false);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const submitter = useRef(new Submitter()).current;
@@ -32,6 +35,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
   const preview = state.kind === "ready" ? state.preview : null;
   // Empreinte de ce qui est confirmé : toute variation de l'aperçu (prix, lignes, génération) annule la confirmation.
   const fingerprint = useMemo(() => (preview ? JSON.stringify([preview.catalogue_sequence, preview.total_amount, preview.lines.map((l) => [l.public_item_key, l.quantity, l.selection?.rate_id, l.selection?.unit_amount])]) : null), [preview]);
+  const needsReview = stale || requiresReview;
   const confirmed = confirmedFor !== null && confirmedFor === fingerprint;
   // Envoi refusé par le contrôle de saisie : le résumé des erreurs reçoit le focus APRÈS son rendu.
   useEffect(() => {
@@ -58,12 +62,14 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (sendLock.current) return;
     setTried(true);
     if (Object.keys(errors).length > 0) {
       setAttempt((n) => n + 1);
       return;
     }
-    if (!preview || stale || !allowed || (mode === "order" && !confirmed)) return;
+    if (!preview || needsReview || !allowed || (mode === "order" && !confirmed)) return;
+    sendLock.current = true;
     setSending(true);
     try {
       const common = { contract_version: "site_business.v1" as const, catalogue_sequence: ackSequence ?? preview.catalogue_sequence, contact: contactBody(contact) };
@@ -92,9 +98,11 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
       if (result.kind === "received" && mode === "order") clear();
       else if (result.kind === "refused" && result.codes.some((c) => RECONFIRM.has(c))) {
         setConfirmedFor(null);
+        setRequiresReview(true);
         refresh();
       }
     } finally {
+      sendLock.current = false;
       setSending(false);
     }
   }
@@ -103,11 +111,12 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
     <form onSubmit={submit} noValidate className="space-y-8" aria-describedby="flow-intro">
       <p id="flow-intro" className="text-ink-2">
         {mode === "order"
-          ? "Vérifiez le récapitulatif, indiquez vos coordonnées puis confirmez. La commande est enregistrée au prix affiché, revalidé par le serveur au moment de l'envoi."
-          : "Indiquez vos coordonnées : votre demande de devis est enregistrée avec les prix affichés (ou sans prix pour les lignes qui n'en ont pas)."}
+          ? "Vérifiez le récapitulatif, indiquez des coordonnées fictives puis confirmez. Les prix sont revalidés par le serveur au moment de l’envoi."
+          : "Indiquez des coordonnées fictives : votre demande de devis est enregistrée avec les prix affichés (ou sans prix pour les lignes qui n'en ont pas)."}
       </p>
+      {mode === "order" && <p className="font-medium">{TEST_ORDER_NOTICE}</p>}
       {outcome && <ResultPanel outcome={outcome} onRetry={outcome.kind === "network" ? undefined : () => setOutcome(null)} />}
-      {stale && ackSequence !== null && <StaleBanner from={ackSequence} to={preview.catalogue_sequence} onAck={() => acknowledge(preview.catalogue_sequence)} />}
+      {needsReview && <StaleBanner from={ackSequence ?? preview.catalogue_sequence} to={preview.catalogue_sequence} onAck={() => { acknowledge(preview.catalogue_sequence); setRequiresReview(false); setOutcome(null); }} />}
 
       <section aria-labelledby="recap-h" className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -130,7 +139,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
       {mode === "quote" && (
         <div>
           <label htmlFor="f-message" className="block text-sm font-medium">Message (facultatif)</label>
-          <p id="f-message-hint" className="text-xs text-ink-3">Précisions utiles : délais, conditions de livraison… 2 000 caractères au maximum.</p>
+          <p id="f-message-hint" className="text-xs text-ink-3">Précisions fictives utiles pour cette demande de test. 2 000 caractères au maximum.</p>
           <textarea
             id="f-message"
             rows={4}
@@ -151,14 +160,14 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
             <input
               type="checkbox"
               checked={confirmed}
-              disabled={!allowed || stale}
+              disabled={!allowed || needsReview}
               onChange={(e) => setConfirmedFor(e.target.checked ? fingerprint : null)}
               className="mt-1 h-5 w-5 shrink-0 accent-[#1a1a18]"
               data-testid="order-confirm"
             />
             <span>
-              Je confirme la commande de {lines.length} ligne{lines.length > 1 ? "s" : ""} pour un total de <strong className="tabular">{total ?? "—"}</strong>.
-              <span className="block text-sm text-ink-2">{totalsNote(preview)} La commande n&apos;est ni facturée ni payée en ligne.</span>
+              Je confirme la commande de test de {lines.length} ligne{lines.length > 1 ? "s" : ""} pour un total de <strong className="tabular">{total ?? "—"}</strong>.
+              <span className="block text-sm text-ink-2">{totalsNote(preview)}</span>
             </span>
           </label>
         </div>
@@ -167,14 +176,14 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
-          disabled={sending || stale || !allowed || (mode === "order" && !confirmed)}
+          disabled={sending || needsReview || !allowed || (mode === "order" && !confirmed)}
           className="h-[42px] rounded-[9px] bg-ink px-6 font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
           data-testid="submit"
         >
-          {sending ? "Envoi en cours…" : mode === "order" ? "Confirmer la commande" : "Envoyer la demande de devis"}
+          {sending ? "Envoi en cours…" : mode === "order" ? "Confirmer la commande de test" : "Envoyer la demande de devis"}
         </button>
-        <p className="text-sm text-ink-2" aria-live="polite">
-          {stale ? "Envoi bloqué : vérifiez d'abord les nouveaux prix." : mode === "order" && allowed && !confirmed ? "Cochez la confirmation pour activer l'envoi." : ""}
+        <p role="status" className="text-sm text-ink-2" aria-live="polite" data-testid="submit-status">
+          {sending ? "Envoi en cours…" : needsReview ? "Envoi bloqué : vérifiez d'abord les nouveaux prix." : mode === "order" && allowed && !confirmed ? "Cochez la confirmation pour activer l'envoi." : ""}
         </p>
       </div>
     </form>
