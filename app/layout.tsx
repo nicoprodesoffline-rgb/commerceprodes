@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { CartProvider } from "@/components/cart/cart-provider";
 import { SiteFooter } from "@/components/layout/footer";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { SiteHeader } from "@/components/layout/site-header";
 import { navigationOf } from "@/components/site/catalog-views";
 import type { MenuCategory } from "@/components/layout/category-menu";
@@ -16,6 +17,9 @@ export const metadata: Metadata = {
   title: { default: "Catalogue PRODES", template: "%s | PRODES" },
   // Aucun SEO en W1 (scope verdict : SEO = décision propriétaire) : jamais indexé.
   robots: { index: false, follow: false },
+  // Partage social (T-T15) : titre et description sobres, jamais une marque déclarée à un moteur (C22) ni une image inventée.
+  description: "Catalogue PRODES : mobilier, signalisation et équipements pour les collectivités. Prix HT, livraison incluse.",
+  openGraph: { type: "website", locale: "fr_FR", siteName: "PRODES", title: "Catalogue PRODES", description: "Mobilier, signalisation et équipements pour les collectivités. Prix HT, livraison incluse." },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
@@ -35,7 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const roots = catalog ? toMenu(navigationOf(catalog).menu) : [];
   return (
     <html lang="fr">
-      <body className="flex min-h-screen flex-col">
+      <body className="flex min-h-screen flex-col pb-14 md:pb-0">
         <a href="#contenu" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-[9px] focus:bg-white focus:px-4 focus:py-2">
           Aller au contenu
         </a>
@@ -45,6 +49,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {children}
           </main>
           <SiteFooter meta={catalog?.meta ?? null} instantUtc={instant} forcedNow={forced} />
+          <MobileBottomNav />
         </CartProvider>
       </body>
     </html>

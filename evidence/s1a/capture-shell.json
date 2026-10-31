@@ -1,0 +1,137 @@
+{
+ "screens": [
+  {
+   "screen": "accueil",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "categorie",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "recherche",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "panier",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "introuvable",
+   "width": 1440,
+   "status": 404,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "accueil",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "categorie",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "recherche",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "panier",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "introuvable",
+   "width": 1024,
+   "status": 404,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "accueil",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "categorie",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "recherche",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "panier",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "introuvable",
+   "width": 390,
+   "status": 404,
+   "global_overflow_px": 0
+  }
+ ],
+ "checks": {
+  "shell_1440": {
+   "utility_bar": true,
+   "top_categories_row": true,
+   "bottom_nav": false,
+   "categories_button": true,
+   "search_field": true,
+   "footer": true,
+   "header_is_sticky": true
+  },
+  "sticky_header_top_1440": 0,
+  "keyboard_first_stop": "Aller au contenu",
+  "keyboard_reaches_categories_menu": true,
+  "keyboard_reaches_search_field": true,
+  "menu_opens_with_enter": true,
+  "menu_escape_returns_focus": true,
+  "shell_1024": {
+   "utility_bar": true,
+   "top_categories_row": true,
+   "bottom_nav": false,
+   "categories_button": true,
+   "search_field": true,
+   "footer": true,
+   "header_is_sticky": true
+  },
+  "sticky_header_top_1024": 0,
+  "shell_390": {
+   "utility_bar": true,
+   "top_categories_row": false,
+   "bottom_nav": true,
+   "categories_button": true,
+   "search_field": true,
+   "footer": true,
+   "header_is_sticky": true
+  },
+  "sticky_header_top_390": 0,
+  "zoom200": {
+   "overflow_px": 0,
+   "categories_button": true,
+   "search": true,
+   "cart_link": true
+  }
+ }
+}
