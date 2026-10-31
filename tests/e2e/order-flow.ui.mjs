@@ -9,7 +9,12 @@ import { createRequire } from "node:module";
 import path from "node:path";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
-const dbUrl = new URL(process.env.SITE_TEST_DATABASE_URL ?? "postgres://prodes_site:local-dev-only@127.0.0.1:54318/prodes_site_order_flow_test");
+// Aucune valeur par défaut : l'adresse (et ses identifiants) vient de l'environnement ; sans elle, arrêt clair (jamais un identifiant écrit dans le dépôt public).
+if (!process.env.SITE_TEST_DATABASE_URL) {
+  console.error("SITE_TEST_DATABASE_URL est obligatoire : adresse d'une base PostgreSQL LOCALE jetable dédiée à ce test (elle est remise à zéro).");
+  process.exit(2);
+}
+const dbUrl = new URL(process.env.SITE_TEST_DATABASE_URL);
 assert.ok(["localhost", "127.0.0.1", "[::1]"].includes(dbUrl.hostname), "PostgreSQL doit être local");
 assert.equal(dbUrl.pathname, "/prodes_site_order_flow_test", "base dédiée exigée : prodes_site_order_flow_test (schéma public effacé)");
 process.env.SITE_TEST_DATABASE_URL = dbUrl.toString();
