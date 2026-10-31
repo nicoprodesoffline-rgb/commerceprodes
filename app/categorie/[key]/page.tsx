@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CategorySidebar } from "@/components/catalog/category-sidebar";
+import { ListingControls } from "@/components/catalog/listing-controls";
+import { Pager } from "@/components/catalog/pager";
 import { FamilyGrid } from "@/components/home/family-card";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { categoryCrumbs, familyCard, navigationOf } from "@/components/site/catalog-views";
+import { serverNowUtc } from "@/lib/site-catalog/clock";
+import { listFamilies, parseListingQuery } from "@/lib/site-catalog/listing";
+import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
 
 export const dynamic = "force-dynamic";
@@ -19,8 +25,9 @@ export async function generateMetadata({ params }: { params: Promise<{ key: stri
 }
 
 /** Catégorie : sous-catégories, familles classées ici en principal puis via `secondary_category_keys` (DTO). */
-export default async function CategoryPage({ params }: { params: Promise<{ key: string }> }) {
+export default async function CategoryPage({ params, searchParams }: { params: Promise<{ key: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { key } = await params;
+  const query = parseListingQuery(await searchParams);
   const catalog = await catalogForPage();
   const nav = navigationOf(catalog);
   const cat = nav.node(key);
@@ -28,6 +35,12 @@ export default async function CategoryPage({ params }: { params: Promise<{ key: 
   const children = nav.visibleChildren(cat.key);
   const slugs = new Set(nav.familySlugs(cat.key));
   const families = catalog.families.filter((f) => slugs.has(f.slug));
+  const now = serverNowUtc();
+  const listing = listFamilies(families, query, (f) => familyPrice(catalog, f, now));
+  const pageParams: Record<string, string> = {};
+  if (query.minRaw.trim() !== "") pageParams["prix_min"] = query.minRaw;
+  if (query.maxRaw.trim() !== "") pageParams["prix_max"] = query.maxRaw;
+  if (query.sort !== "pertinence") pageParams["tri"] = query.sort;
   const notes: Record<string, string> = {};
   for (const f of families) if (nav.anchor(f.primary_category_key) !== key) notes[f.slug] = "classée aussi ici";
   return (
@@ -47,13 +60,23 @@ export default async function CategoryPage({ params }: { params: Promise<{ key: 
           </ul>
         </nav>
       )}
-      {families.length === 0 ? (
-        <p className="rounded-[14px] border border-line bg-white p-4 text-ink-2">
-          Aucune famille n&apos;est classée directement dans cette catégorie{children.length > 0 ? " : consultez ses sous-catégories." : "."}
-        </p>
-      ) : (
-        <FamilyGrid families={families.map(familyCard)} label={`Familles de la catégorie ${cat.name}`} notes={notes} />
-      )}
+      <p className="text-sm text-ink-2" data-testid="category-count">{listing.total} famille{listing.total > 1 ? "s" : ""} dans cette catégorie.</p>
+      <div className="flex flex-col gap-6 lg:flex-row">
+        <CategorySidebar roots={nav.menu} current={key} />
+        <div className="min-w-0 flex-1 space-y-4">
+          {families.length > 0 && <ListingControls action={`/categorie/${key}`} query={query} />}
+          {families.length === 0 ? (
+            <p className="rounded-[14px] border border-line bg-white p-4 text-ink-2">
+              Aucune famille n&apos;est classée directement dans cette catégorie{children.length > 0 ? " : consultez ses sous-catégories." : "."}
+            </p>
+          ) : listing.rows.length === 0 ? (
+            <p role="status" className="rounded-[14px] border border-line bg-white p-4 text-ink-2">Aucune famille ne correspond à ces filtres.</p>
+          ) : (
+            <FamilyGrid prices families={listing.rows.map((r) => ({ ...familyCard(r.family), from: r.price }))} label={`Familles de la catégorie ${cat.name}`} notes={notes} />
+          )}
+          <Pager action={`/categorie/${key}`} params={pageParams} page={listing.page} pages={listing.pages} />
+        </div>
+      </div>
     </div>
   );
 }
