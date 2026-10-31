@@ -1,6 +1,6 @@
 // S1-A I1 — la coque restituée (barre utile, en-tête, menus, barre mobile, pied de page, 404) en 1440 / 1024 / 390, clavier et zoom 200 %.
 // Les PNG montrent le catalogue publié de l'instance locale (désignations réelles possibles) : ils restent HORS dépôt (OUT). Le JSON versionné ne garde que pixels, compteurs et booléens.
-// Variables : SITE (ex. http://127.0.0.1:3171), OUT (dossier des PNG, hors dépôt), REPORT (JSON de sortie), PLAYWRIGHT_DIR, CHROMIUM.
+// Variables : SITE (adresse du site local, jamais écrite dans le dépôt), OUT (dossier des PNG, hors dépôt), REPORT (JSON de sortie), PLAYWRIGHT_DIR, CHROMIUM.
 import { createRequire } from "node:module";
 import fs from "node:fs";
 const { SITE, OUT, REPORT, PLAYWRIGHT_DIR, CHROMIUM } = process.env;

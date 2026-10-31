@@ -13,7 +13,10 @@ export function FamilyCard({ data, note, from, category, showBasis = true }: { d
   return (
     <li className="list-none">
       <Link href={`/famille/${data.slug}`} className="group flex h-full flex-col overflow-hidden rounded-[14px] border border-line bg-white hover:border-ink-3">
-        <MediaImage sha256={data.imageSha} alt="" className="aspect-[4/3] w-full [image-rendering:pixelated]" />
+        <div className="relative">
+          <MediaImage sha256={data.imageSha} alt="" className="aspect-[4/3] w-full [image-rendering:pixelated]" />
+          <span className="absolute bottom-2 left-2 rounded-full bg-positive px-2.5 py-0.5 text-[11px] font-semibold text-white" data-testid="free-delivery">Livraison incluse</span>
+        </div>
         <span className="flex flex-1 flex-col p-4">
           {category && <span className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ink-3">{category}</span>}
           <span className="font-semibold text-ink group-hover:underline">{data.name}</span>

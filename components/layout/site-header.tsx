@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CartCount } from "@/components/cart/cart-provider";
 import { CategoryMenu, type MenuCategory } from "@/components/layout/category-menu";
+import { LiveSearch } from "@/components/layout/live-search";
 import { UtilityBar } from "@/components/layout/utility-bar";
 
 /**
@@ -28,22 +29,7 @@ export function SiteHeader({ dataLabel, categories }: { dataLabel: string | null
           <nav aria-label="Navigation principale" className="order-3 flex items-center gap-2 sm:order-none">
             <CategoryMenu categories={categories} />
           </nav>
-          <form role="search" action="/recherche" method="get" className="order-4 flex w-full min-w-0 gap-2 sm:order-none sm:w-auto sm:flex-1 sm:justify-end">
-            <label htmlFor="q-header" className="sr-only">
-              Rechercher une famille de produits
-            </label>
-            <input
-              id="q-header"
-              name="q"
-              type="search"
-              maxLength={100}
-              placeholder="Rechercher (nom de famille)"
-              className="h-[42px] min-w-0 flex-1 rounded-[9px] border border-line-strong bg-white px-3 sm:max-w-96"
-            />
-            <button type="submit" className="h-[42px] shrink-0 rounded-[9px] border border-line-strong bg-white px-4 font-medium hover:bg-surface">
-              Rechercher
-            </button>
-          </form>
+          <LiveSearch />
           <Link href="/devis" className="hidden min-h-[42px] items-center rounded-[9px] px-3 text-sm text-ink-2 hover:bg-surface hover:text-ink lg:inline-flex">
             Demande de devis
           </Link>
