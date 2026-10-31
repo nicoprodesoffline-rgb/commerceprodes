@@ -3,6 +3,7 @@ import { MediaImage } from "@/components/site/media-image";
 import type { FamilyCardData } from "@/components/site/catalog-views";
 import { money, price, uniformBasis } from "@/components/site/format";
 import { BasisNotice } from "@/components/site/basis-notice";
+import { CompareButton, WishlistButton } from "@/components/site/list-buttons";
 import type { FamilyPrice } from "@/lib/site-catalog/listing";
 
 /**
@@ -11,8 +12,8 @@ import type { FamilyPrice } from "@/lib/site-catalog/listing";
  */
 export function FamilyCard({ data, note, from, category, showBasis = true }: { data: FamilyCardData; note?: string; from?: FamilyPrice | undefined; category?: string; showBasis?: boolean }) {
   return (
-    <li className="list-none">
-      <Link href={`/famille/${data.slug}`} className="group flex h-full flex-col overflow-hidden rounded-[14px] border border-line bg-white hover:border-ink-3">
+    <li className="flex list-none flex-col overflow-hidden rounded-[14px] border border-line bg-white hover:border-ink-3">
+      <Link href={`/famille/${data.slug}`} className="group flex flex-1 flex-col">
         <div className="relative">
           <MediaImage sha256={data.imageSha} alt="" className="aspect-[4/3] w-full [image-rendering:pixelated]" />
           <span className="absolute bottom-2 left-2 rounded-full bg-positive px-2.5 py-0.5 text-[11px] font-semibold text-white" data-testid="free-delivery">Livraison incluse</span>
@@ -35,6 +36,10 @@ export function FamilyCard({ data, note, from, category, showBasis = true }: { d
           </span>
         </span>
       </Link>
+      <div className="flex flex-wrap items-start gap-2 px-4 pb-4" data-testid="card-actions">
+        <CompareButton slug={data.slug} name={data.name} />
+        <WishlistButton slug={data.slug} name={data.name} />
+      </div>
     </li>
   );
 }

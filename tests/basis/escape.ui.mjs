@@ -26,8 +26,9 @@ async function assertNothingInjected(page, label) {
   const injected = await page.evaluate(() => ({
     img: document.querySelectorAll("img[src='x'], img[onerror]").length,
     // Le texte hostile figure légitimement DANS les données de rendu de Next (`self.__next_f.push([...])`, une chaîne JSON dont les « < » sont échappés en \u003c) : ce n'est pas du code.
+    // Même règle pour le bloc de données structurées « Fil d'Ariane » (S1-A I3, type application/ld+json) : du JSON dont les « < » sont échappés.
     // Est « injecté » tout autre <script> qui porte le texte, ou tout script de données où un « < » n'est pas échappé.
-    script: [...document.querySelectorAll("script")].filter((s) => s.textContent.includes("__pwned") && (!s.textContent.startsWith("self.__next_f") || /<script|<img|<svg/i.test(s.textContent))).length,
+    script: [...document.querySelectorAll("script")].filter((s) => s.textContent.includes("__pwned") && (!(s.textContent.startsWith("self.__next_f") || s.type === "application/ld+json") || /<script|<img|<svg/i.test(s.textContent))).length,
     svg: document.querySelectorAll("svg[onload]").length,
     inlineHandlers: [...document.querySelectorAll("*")].filter((e) => [...e.attributes].some((a) => /^on/i.test(a.name) && String(a.value).includes("__pwned"))).length,
     jsLinks: [...document.querySelectorAll("a[href]")].filter((a) => a.getAttribute("href").trim().toLowerCase().startsWith("javascript:")).length,

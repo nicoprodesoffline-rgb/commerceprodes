@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { FamilyGrid } from "@/components/home/family-card";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { FamilyBuyBox } from "@/components/product/family-buy-box";
 import { Gallery, type GalleryImage } from "@/components/product/gallery";
-import { categoryCrumbs, navigationOf } from "@/components/site/catalog-views";
+import { categoryCrumbs, familyCard, navigationOf } from "@/components/site/catalog-views";
+import { CompareButton, WishlistButton } from "@/components/site/list-buttons";
+import { RecentlyViewed } from "@/components/site/selection-views";
 import { axesText } from "@/components/site/format";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
+import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
 import { priceRows, selectorAxes } from "@/lib/site-catalog/view";
 
@@ -26,6 +31,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function FamilyPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ article?: string | string[] }> }) {
   const { slug } = await params;
   const { article } = await searchParams;
+  // Le script de données structurées porte le nonce de la requête (CSP : aucun script en ligne sans nonce).
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   const catalog = await catalogForPage();
   const family = catalog.familyBySlug(slug);
   if (!family) notFound();
@@ -64,9 +71,18 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
     .map((k) => nav.node(k))
     .filter((c): c is NonNullable<typeof c> => c !== null);
 
+  // « Produits similaires » : les autres familles de la même catégorie principale (ordre du DTO), 8 au plus.
+  const similar = catalog.families.filter((f) => f.slug !== family.slug && f.primary_category_key === family.primary_category_key).slice(0, 8);
+  const crumbs = [{ label: "Accueil", href: "/" }, ...categoryCrumbs(catalog, family.primary_category_key), { label: family.name }];
+  // Données structurées « Fil d'Ariane » : chevrons échappés pour qu'aucune valeur ne puisse fermer la balise.
+  const breadcrumbLd = JSON.stringify({
+    "@context": "https://schema.org", "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.label, ...("href" in c && c.href ? { item: c.href } : {}) })),
+  }).replace(/</g, "\\u003c");
   return (
     <div>
-      <Breadcrumbs items={[{ label: "Accueil", href: "/" }, ...categoryCrumbs(catalog, family.primary_category_key), { label: family.name }]} />
+      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: breadcrumbLd }} />
+      <Breadcrumbs items={crumbs} />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
         <Gallery familyName={family.name} images={images} />
         <div className="min-w-0 space-y-5">
@@ -74,6 +90,10 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
             <p className="text-xs text-ink-3">Famille de produits · {family.items.length === 1 ? "1 modèle" : `${family.items.length} variantes`}</p>
             <h1 className="mt-1 text-2xl font-semibold">{family.name}</h1>
             <p className="mt-2 text-ink-2">{family.description_short}</p>
+            <div className="mt-3 flex flex-wrap gap-2 print:hidden" data-testid="family-lists">
+              <WishlistButton slug={family.slug} name={family.name} />
+              <CompareButton slug={family.slug} name={family.name} />
+            </div>
           </header>
           {notice && (
             <div role="status" className="rounded-[14px] border-2 border-caution bg-white p-4 text-sm" data-testid="article-notice">
@@ -110,6 +130,13 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
           </details>
         </div>
       </div>
+      {similar.length > 0 && (
+        <section aria-labelledby="similar-h" className="mt-10 print:hidden" data-testid="similar-families">
+          <h2 id="similar-h" className="mb-3 text-lg font-semibold">Produits similaires</h2>
+          <FamilyGrid prices families={similar.map((f) => ({ ...familyCard(f), from: familyPrice(catalog, f, instant) }))} label="Familles de la même catégorie" />
+        </section>
+      )}
+      <div className="print:hidden"><RecentlyViewed slug={family.slug} /></div>
     </div>
   );
 }

@@ -1,0 +1,84 @@
+{
+ "screens": [
+  {
+   "screen": "recherche-boutons",
+   "width": 1440,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "favoris",
+   "width": 1440,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "comparateur",
+   "width": 1440,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "fiche",
+   "width": 1440,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "recherche-boutons",
+   "width": 1024,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "favoris",
+   "width": 1024,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "comparateur",
+   "width": 1024,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "fiche",
+   "width": 1024,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "recherche-boutons",
+   "width": 390,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "favoris",
+   "width": 390,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "comparateur",
+   "width": 390,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "fiche",
+   "width": 390,
+   "global_overflow_px": 0
+  }
+ ],
+ "checks": {
+  "families_available": 4,
+  "compare_stored_2": true,
+  "wishlist_stored_2": true,
+  "compare_bar_visible": true,
+  "compare_columns": 2,
+  "compare_best_price_flag_server_side": true,
+  "compare_remove_works": true,
+  "wishlist_remove_works": true,
+  "keyboard_toggle_updates_aria_pressed": true,
+  "recently_viewed_shown": true,
+  "recent_stored_max_12": true,
+  "similar_families_shown": true,
+  "breadcrumb_json_ld_valid": true,
+  "quote_from_family_goes_to_quote_page": true,
+  "quote_page_has_the_line": true,
+  "print_hides_chrome": true,
+  "mobile_compare_table_scrolls_inside_its_frame": true,
+  "storage_denied_no_page_error": true
+ }
+}

@@ -14,6 +14,8 @@ export function UtilityBar() {
         <nav aria-label="Liens utiles" className="flex items-center gap-3">
           <Link href="/recherche" className="inline-flex min-h-[24px] items-center hover:underline">Catalogue</Link>
           <span aria-hidden="true" className="text-white/40">|</span>
+          <Link href="/favoris" className="inline-flex min-h-[24px] items-center hover:underline">Ma sélection</Link>
+          <span aria-hidden="true" className="text-white/40">|</span>
           <Link href="/devis" className="inline-flex min-h-[24px] items-center hover:underline">Demande de devis</Link>
         </nav>
       </div>

@@ -6,6 +6,7 @@
  * à l'instant serveur) ; le navigateur ne calcule ni ne choisit aucun prix.
  */
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { MAX_QUANTITY, useCart } from "@/components/cart/cart-provider";
 import { PriceGrid, type PriceGridRow } from "@/components/product/price-grid";
@@ -57,6 +58,7 @@ export function FamilyBuyBox({
   initialKey?: string | undefined;
 }) {
   const { add, lines } = useCart();
+  const router = useRouter();
   const [selectedKey, setSelectedKey] = useState(initialKey ?? items[0]?.public_item_key ?? "");
   const [qtyRaw, setQtyRaw] = useState("1");
   const [quote, setQuote] = useState<Quote>({ state: "idle" });
@@ -107,7 +109,8 @@ export function FamilyBuyBox({
   if (!item) return <p>Aucune variante publiée.</p>;
   const inCart = lines.find((l) => l.public_item_key === item.public_item_key);
 
-  async function onAdd() {
+  /** Ajoute la variante au panier (prix vérifié par le serveur) ; `toQuote` ouvre ensuite la demande de devis : même parcours que depuis le panier, aucun second formulaire. */
+  async function onAdd(toQuote = false) {
     if (!item || quantity === null) return;
     setBusy(true);
     setFeedback(null);
@@ -118,9 +121,11 @@ export function FamilyBuyBox({
       if (r.network) setFeedback({ kind: "error", text: `${codeMessage("NETWORK")} Rien n'a été ajouté.` });
       else if (r.status === 200 && l?.accepted && l.selection && r.json) {
         add(draft, r.json.catalogue_sequence);
+        if (toQuote) { router.push("/devis"); return; }
         setFeedback({ kind: "ok", text: `Ajouté au panier — ${quantity} × ${axesText(item.axes)}, ${unit(l.selection.unit_amount, l.selection.tax_basis_or_status)} l'unité.` });
       } else if (r.status === 200 && l && r.json && l.error_codes.length === 1 && l.error_codes[0] === "PRICE_WINDOW_UNAVAILABLE") {
         add(draft, r.json.catalogue_sequence);
+        if (toQuote) { router.push("/devis"); return; }
         setFeedback({ kind: "ok", text: `Ajouté au panier sans prix — ${quantity} × ${axesText(item.axes)}. Seule une demande de devis sera possible pour cette ligne.` });
       } else {
         const codes = l?.error_codes?.length ? l.error_codes : r.json?.error_codes?.length ? r.json.error_codes : [r.json?.site_status ?? "TRANSPORT_ERROR"];
@@ -192,11 +197,20 @@ export function FamilyBuyBox({
         </div>
         <button
           type="button"
-          onClick={onAdd}
+          onClick={() => onAdd()}
           disabled={busy || quantity === null}
           className="h-[42px] rounded-[9px] bg-ink px-5 font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy ? "Vérification…" : anyPrice ? "Ajouter au panier" : "Ajouter au panier (devis sans prix)"}
+        </button>
+        <button
+          type="button"
+          onClick={() => onAdd(true)}
+          disabled={busy || quantity === null}
+          className="h-[42px] rounded-[9px] border border-ink bg-white px-5 font-semibold text-ink hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50"
+          data-testid="quote-from-family"
+        >
+          Demander un devis
         </button>
       </div>
       <p

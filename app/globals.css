@@ -54,3 +54,10 @@ body {
     animation: none !important;
   }
 }
+
+/* Version imprimable de la fiche (V-E05-27) : ni menus, ni pied de page, ni barres fixes, ni boutons de liste ; le contenu de la fiche seul, en noir sur blanc. */
+@media print {
+  header, footer, [data-testid="compare-bar"], [data-testid="bottom-nav"], [data-testid="card-actions"] { display: none !important; }
+  body { background: #fff; color: #000; font-size: 12pt; padding-bottom: 0; }
+  a { text-decoration: none; color: inherit; }
+}

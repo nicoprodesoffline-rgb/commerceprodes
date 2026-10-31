@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { CartProvider } from "@/components/cart/cart-provider";
 import { SiteFooter } from "@/components/layout/footer";
+import { CompareBar } from "@/components/site/compare-bar";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { SiteHeader } from "@/components/layout/site-header";
 import { navigationOf } from "@/components/site/catalog-views";
@@ -49,6 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {children}
           </main>
           <SiteFooter meta={catalog?.meta ?? null} instantUtc={instant} forcedNow={forced} />
+          <CompareBar />
           <MobileBottomNav />
         </CartProvider>
       </body>

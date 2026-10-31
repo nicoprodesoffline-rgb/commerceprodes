@@ -165,7 +165,7 @@ function quoteFrom(pv, overrides = {}) {
   };
 }
 
-const PAGES_STORE = ["/", "/panier", "/recherche?q=chaise", "/devis", "/commande"];
+const PAGES_STORE = ["/", "/panier", "/recherche?q=chaise", "/devis", "/commande", "/favoris", "/comparer"];
 const LEGACY = [
   "/admin", "/admin/login", "/admin/devis", "/admin/devis/1", "/admin/produits", "/admin/catalogue", "/admin/import",
   "/api/admin/auth", "/api/admin/export-products", "/api/admin/products-list", "/api/admin/ia/categories-list",
@@ -213,6 +213,10 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
     assert.equal(pv.json.site_status, "CATALOG_UNAVAILABLE");
     assert.equal(pv.json.reason, "NO_ACTIVE_GENERATION");
     assert.equal((await get("/media/ed9aaaaa1debb1f00870b9b41636dc75b64eb0437ed9c58dcbb18047b73b41ec")).status, 503);
+    // Familles par adresse (S1-A I3) : même règle que la recherche instantanée, catalogue indisponible = 503 explicite.
+    const lookup = await get("/api/site/families?slugs=chaise-demo");
+    assert.equal(lookup.status, 503);
+    assert.equal(JSON.parse(lookup.text).unavailable, true);
     // Recherche instantanée (S1-A I2) : catalogue indisponible = 503 explicite, jamais une liste vide qui laisserait croire à « aucun résultat ».
     const suggest = await get("/api/site/search?q=chaise");
     assert.equal(suggest.status, 503);
@@ -311,6 +315,22 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       const long = await get(`/api/site/search?q=${"a".repeat(5000)}`);
       assert.equal(long.status, 200);
       assert.ok(JSON.parse(long.text).query.length <= 100, "requête bornée à 100 caractères");
+    });
+
+    test("familles par adresse : ordre gardé, inconnu rendu à part, adresses invalides écartées, 20 au plus, JSON échappé", async () => {
+      const r = await get("/api/site/families?slugs=zzz-inconnu,chaise-demo,chaise-demo,../etc/passwd,%3Cscript%3E");
+      assert.equal(r.status, 200);
+      assert.match(r.headers.get("content-type") ?? "", /^application\/json/);
+      assert.match(r.headers.get("cache-control") ?? "", /no-store/);
+      const body = JSON.parse(r.text);
+      assert.deepEqual(body.families.map((f) => f.slug), ["chaise-demo"]);
+      assert.deepEqual(body.missing, ["zzz-inconnu"], "une adresse invalide n'est jamais relue ni renvoyée");
+      assert.deepEqual(Object.keys(body.families[0]).sort(), ["axes", "best", "category", "description", "imageSha", "name", "priceText", "reference", "slug", "variantCount"]);
+      assert.doesNotMatch(r.text, /[<>&]/);
+      const many = await get(`/api/site/families?slugs=${Array.from({ length: 60 }, (_, i) => `zz${i}`).join(",")}`);
+      assert.equal(JSON.parse(many.text).missing.length, 20, "20 adresses au plus par appel");
+      const none = await get("/api/site/families");
+      assert.deepEqual(JSON.parse(none.text).families, []);
     });
 
     test("recherche serveur : nom, référence PI, requête HTML échappée, longueur bornée", async () => {

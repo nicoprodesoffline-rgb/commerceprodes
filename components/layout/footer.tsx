@@ -25,6 +25,8 @@ export function SiteFooter({ meta, instantUtc, forcedNow }: { meta: CatalogMeta 
           <ul className="space-y-1">
             <li><Link href="/recherche" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Catalogue</Link></li>
             <li><Link href="/panier" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Panier</Link></li>
+            <li><Link href="/favoris" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Ma sélection</Link></li>
+            <li><Link href="/comparer" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Comparateur</Link></li>
             <li><Link href="/devis" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Demande de devis</Link></li>
             <li><Link href="/recu" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Consulter un reçu</Link></li>
           </ul>
