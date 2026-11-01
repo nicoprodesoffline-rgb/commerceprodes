@@ -1,7 +1,7 @@
 /**
  * Formatage d'affichage pur (client et serveur), sans arithmétique : les montants restent les chaînes Money
- * C0 (`^\d+\.\d{2}$`) reformatées en français. Base fiscale toujours explicite (DA §3 : « jamais mélange HT/TTC
- * implicite ») : `HT` → « € HT », `UNQUALIFIED` → « € (base fiscale non précisée) ».
+ * C0 (`^\d+\.\d{2}$`) reformatées en français. Le public ne voit jamais de jargon : « HT » n'est écrit que lorsque la génération
+ * le DÉCLARE ; une base non déclarée n'est ni affirmée ni commentée (aucun suffixe), jamais un faux HT ni un faux TTC.
  */
 export function money(amount: string): string {
   const m = /^(\d+)\.(\d{2})$/.exec(amount);
@@ -11,8 +11,7 @@ export function money(amount: string): string {
 
 export function basisLabel(basis: string | null | undefined): string {
   if (basis === "HT") return "HT";
-  if (basis === "UNQUALIFIED") return "(base fiscale non précisée)";
-  return "(base inconnue)";
+  return "";
 }
 
 /**
@@ -31,7 +30,7 @@ export function uniformBasis(bases: Iterable<string | null | undefined>): Unifor
 
 /** Le texte du bandeau d'écran. */
 export function basisNoticeText(): string {
-  return "Base fiscale non précisée pour tous les montants de cette page : ni HT ni TTC. Taxes, port et remises : non calculés.";
+  return "";
 }
 
 /**
@@ -39,16 +38,17 @@ export function basisNoticeText(): string {
  * sinon les bases RÉELLEMENT présentes, nommées (« HT et non précisée », « HT et inconnue »…). Aucune arithmétique, aucune interprétation.
  */
 export function totalBasisLabel(bases: Iterable<string | null | undefined>): string {
-  const kinds = new Set<"HT" | "UNQUALIFIED" | "NONE" | "OTHER">();
-  for (const b of bases) kinds.add(b === "HT" ? "HT" : b === "UNQUALIFIED" ? "UNQUALIFIED" : b === null || b === undefined || b === "" ? "NONE" : "OTHER");
-  if (kinds.size === 0 || (kinds.size === 1 && kinds.has("NONE"))) return "(base fiscale non précisée)";
-  if (kinds.size === 1) return kinds.has("HT") ? "HT" : kinds.has("UNQUALIFIED") ? "(base fiscale non précisée)" : "(base inconnue)";
-  const names = [kinds.has("HT") ? "HT" : null, kinds.has("UNQUALIFIED") ? "non précisée" : null, kinds.has("NONE") || kinds.has("OTHER") ? "inconnue" : null].filter((n): n is string => n !== null);
-  return `(bases fiscales différentes : ${names.length > 2 ? `${names.slice(0, -1).join(", ")} et ${names[names.length - 1]}` : names.join(" et ")})`;
+  let all = 0;
+  let ht = 0;
+  for (const b of bases) {
+    all += 1;
+    if (b === "HT") ht += 1;
+  }
+  return all > 0 && ht === all ? "HT" : "";
 }
 
 export function price(amount: string, basis: string | null | undefined): string {
-  return `${money(amount)} ${basisLabel(basis)}`;
+  return `${money(amount)} ${basisLabel(basis)}`.trimEnd();
 }
 
 export function quantityRange(min: number, max: number | null): string {

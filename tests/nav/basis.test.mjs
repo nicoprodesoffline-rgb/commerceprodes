@@ -23,8 +23,8 @@ test("aucun prix publié : on ne déclare rien", () => {
   assert.equal(catalogBasis([{ items: [{ windows: [] }] }]), "NOT_DECLARED");
 });
 
-test("la formule neutre ne nomme aucune base", () => {
-  assert.equal(NEUTRAL_BASIS_TEXT, "Les prix et la base fiscale sont précisés sur le devis.");
+test("la formule neutre ne nomme aucune base (et ne dit rien : une base non déclarée n'est ni affirmée ni commentée)", () => {
+  assert.equal(NEUTRAL_BASIS_TEXT, "");
   assert.doesNotMatch(NEUTRAL_BASIS_TEXT, /\bHT\b|hors taxes|TTC/);
 });
 

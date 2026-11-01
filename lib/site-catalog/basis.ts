@@ -6,7 +6,7 @@
 import type { Family } from "./catalog";
 
 export type CatalogBasis = "HT" | "NOT_DECLARED";
-export const NEUTRAL_BASIS_TEXT = "Les prix et la base fiscale sont précisés sur le devis.";
+export const NEUTRAL_BASIS_TEXT = "";
 
 const memo = new Map<string, CatalogBasis>();
 
