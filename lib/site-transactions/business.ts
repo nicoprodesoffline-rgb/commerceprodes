@@ -185,6 +185,22 @@ export function buildEvent(kind: BusinessKind, ref: string, receipt: JsonObject,
   return { event, bytes };
 }
 
+/**
+ * « Prix sur devis » dans une DEMANDE DE DEVIS : une ligne chiffrée par une fenêtre `rq-` (montant de convention 0.01, ex. `displayed` forgé) est enregistrée
+ * NON chiffrée (`priced: false`, aucun montant ni rate_id), comme une ligne sans prix : le devis reste possible, aucun prix de convention n'est mémorisé.
+ * Sans ligne chiffrée, la séquence de catalogue du reçu est nulle (convention C0 des devis non chiffrés). Sans fenêtre `rq-`, le reçu C0 est rendu tel quel.
+ */
+function neutralizeQuoteOnlyLines(receipt: JsonObject): JsonObject {
+  const lines = receipt["lines"] as JsonObject[];
+  if (!lines.some((l) => l["priced"] === true && isQuoteOnlyRate(l["rate_id"]))) return receipt;
+  const out = lines.map((l): JsonObject =>
+    l["priced"] === true && isQuoteOnlyRate(l["rate_id"])
+      ? { ...l, priced: false, rate_id: null, unit_amount: null, currency: null, tax_basis_or_status: null }
+      : l);
+  const anyPriced = out.some((l) => l["priced"] === true);
+  return { ...receipt, lines: out, catalogue_sequence: anyPriced ? (receipt["catalogue_sequence"] as Json) : null };
+}
+
 function cents(value: Json | undefined): bigint {
   const c = moneyCents(value);
   if (c === null) throw Object.assign(new Error("montant hors format C0"), { code: "MONEY_FORMAT" });
@@ -325,7 +341,7 @@ export async function submitBusiness(deps: BusinessDeps, kind: BusinessKind, byt
     if (verdict.accepted && verdict.outcome === "RECEIVED") {
       if (deps.hooks?.afterValidate) await deps.hooks.afterValidate(client);
       const request = parseBytes(bytes, MAX_BYTES) as JsonObject; // déjà accepté par C0 : relecture NFC du même document
-      const receiptC0 = verdict.receipt as JsonObject;
+      const receiptC0 = kind === "quote_request" ? neutralizeQuoteOnlyLines(verdict.receipt as JsonObject) : (verdict.receipt as JsonObject);
       // « Prix sur devis » (fenêtre `rq-`, montant de convention 0.01) : jamais commandable en ligne. C0 valide ce montant (une commande forgée à 0,01 € passerait), donc le refus est ICI,
       // sur les lignes retenues par le serveur ; seule la demande de devis reste. Aucune écriture, rien d'enregistré.
       if (kind === "order" && (receiptC0["lines"] as JsonObject[]).some((l) => isQuoteOnlyRate(l["rate_id"]))) {
