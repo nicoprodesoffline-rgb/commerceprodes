@@ -11,11 +11,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
-import { CartLines, PreviewProblem, StaleBanner, totalWithBasis, totalsNote } from "@/components/cart/cart-summary";
+import { CartLines, PreviewProblem, StaleBanner, totalWithBasis } from "@/components/cart/cart-summary";
 import { quoteAllowed, useCartPreview } from "@/components/cart/use-cart-preview";
 import { ContactFields, EMPTY_CONTACT, ErrorSummary, contactBody, validateContact, type Contact } from "@/components/checkout/contact-fields";
 import { ResultPanel } from "@/components/checkout/result-panel";
-import { TEST_ORDER_NOTICE } from "@/components/checkout/receipt-details";
 import { RECONFIRM, Submitter, type Outcome } from "@/components/checkout/submit";
 
 export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
@@ -48,7 +47,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
     return (
       <div className="rounded-[14px] border border-line bg-white p-6" data-testid="cart-empty">
         <p>Votre panier est vide : ajoutez d&apos;abord des articles depuis le catalogue.</p>
-        <Link href="/" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Parcourir le catalogue</Link>
+        <Link href="/" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-brand hover:bg-brand-dark px-4 font-medium text-white">Parcourir le catalogue</Link>
       </div>
     );
   }
@@ -111,10 +110,9 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
     <form onSubmit={submit} noValidate className="space-y-8" aria-describedby="flow-intro">
       <p id="flow-intro" className="text-ink-2">
         {mode === "order"
-          ? "Vérifiez le récapitulatif, indiquez des coordonnées fictives puis confirmez. Les prix sont vérifiés au moment de l’envoi."
-          : "Indiquez des coordonnées fictives : votre demande de devis est enregistrée avec les prix affichés (ou sans prix pour les lignes qui n'en ont pas)."}
+          ? "Vérifiez le récapitulatif, indiquez vos coordonnées puis confirmez. Les prix sont vérifiés au moment de l’envoi."
+          : "Indiquez vos coordonnées et les précisions utiles à votre demande de devis."}
       </p>
-      {mode === "order" && <p className="font-medium">{TEST_ORDER_NOTICE}</p>}
       {outcome && <ResultPanel outcome={outcome} onRetry={outcome.kind === "network" ? undefined : () => setOutcome(null)} />}
       {needsReview && <StaleBanner from={ackSequence ?? preview.catalogue_sequence} to={preview.catalogue_sequence} onAck={() => { acknowledge(preview.catalogue_sequence); setRequiresReview(false); setOutcome(null); }} />}
 
@@ -139,7 +137,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
       {mode === "quote" && (
         <div>
           <label htmlFor="f-message" className="block text-sm font-medium">Message (facultatif)</label>
-          <p id="f-message-hint" className="text-xs text-ink-3">Précisions fictives utiles pour cette demande de test. 2 000 caractères au maximum.</p>
+          <p id="f-message-hint" className="text-xs text-ink-3">Précisez votre besoin. 2 000 caractères au maximum.</p>
           <textarea
             id="f-message"
             rows={4}
@@ -166,8 +164,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
               data-testid="order-confirm"
             />
             <span>
-              Je confirme la commande de test de {lines.length} ligne{lines.length > 1 ? "s" : ""} pour un total de <strong className="tabular">{total ?? "—"}</strong>.
-              <span className="block text-sm text-ink-2">{totalsNote(preview)}</span>
+              Je confirme la commande de {lines.length} ligne{lines.length > 1 ? "s" : ""} pour un total de <strong className="tabular">{total ?? "—"}</strong>.
             </span>
           </label>
         </div>
@@ -177,10 +174,10 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
         <button
           type="submit"
           disabled={sending || needsReview || !allowed || (mode === "order" && !confirmed)}
-          className="h-[44px] rounded-[9px] bg-ink px-6 font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+          className="min-h-[44px] rounded-[9px] bg-brand hover:bg-brand-dark px-6 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           data-testid="submit"
         >
-          {sending ? "Envoi en cours…" : mode === "order" ? "Confirmer la commande de test" : "Envoyer la demande de devis"}
+          {sending ? "Envoi en cours…" : mode === "order" ? "Confirmer la commande" : "Envoyer la demande de devis"}
         </button>
         <p role="status" className="text-sm text-ink-2" aria-live="polite" data-testid="submit-status">
           {sending ? "Envoi en cours…" : needsReview ? "Envoi bloqué : vérifiez d'abord les nouveaux prix." : mode === "order" && allowed && !confirmed ? "Cochez la confirmation pour activer l'envoi." : ""}

@@ -7,7 +7,7 @@ export function UtilityBar() {
         <p className="shrink-0 font-medium">Lun–Sam 8h30–19h</p>
         <p className="hidden font-medium xl:block">Livraison incluse sur tout le catalogue</p>
         <nav aria-label="Liens utiles" className="flex items-center gap-1 sm:gap-3">
-          <Link href="/faq" className="hidden min-h-11 min-w-11 items-center justify-center hover:underline sm:inline-flex">FAQ</Link>
+          <Link href="/faq" className="hidden min-h-11 items-center px-1 hover:underline sm:inline-flex">FAQ</Link>
           <Link href="/contact" className="inline-flex min-h-11 items-center px-1 hover:underline">Nous contacter</Link>
           <Link href="/recherche" className="hidden min-h-11 items-center px-1 hover:underline sm:inline-flex">Catalogue</Link>
           <Link href="/favoris" className="hidden min-h-11 items-center px-1 hover:underline md:inline-flex">Ma sélection</Link>

@@ -9,7 +9,7 @@
  * de navigation du navigateur) n'affiche plus le reçu sans nouvelle saisie.
  */
 import { useEffect, useRef, useState } from "react";
-import { codeMessage } from "@/components/site/codes";
+import { codeMessage, reportCodes } from "@/components/site/codes";
 import { ReceiptDetails, type ReceiptData } from "@/components/checkout/receipt-details";
 
 type Found = { kind: string; status: string; receipt_ref: string; receipt: ReceiptData };
@@ -74,7 +74,10 @@ export function ReceiptLookup() {
 
   useEffect(() => {
     if (state.kind === "found") result.current?.focus();
-    if (state.kind === "refused") error.current?.focus();
+    if (state.kind === "refused") {
+      error.current?.focus();
+      reportCodes("receipt-lookup", [state.code]);
+    }
   }, [state]);
 
   const d = state.kind === "found" ? state.data : null;
@@ -96,17 +99,17 @@ export function ReceiptLookup() {
           <label htmlFor="r-code" className="block text-sm font-medium">Code d&apos;accès</label>
           <input required aria-invalid={missing.code || undefined} aria-describedby={state.kind === "refused" ? "receipt-error" : undefined} id="r-code" type="password" value={code} maxLength={128} autoComplete="off" onChange={(e) => setCode(e.target.value)} className="mt-1 block h-[44px] w-full rounded-[9px] border border-line-strong px-3 font-mono text-sm" />
         </div>
-        <button type="submit" disabled={state.kind === "loading"} className="h-[44px] rounded-[9px] bg-ink px-5 font-semibold text-white sm:col-span-2 sm:justify-self-start">Consulter</button>
+        <button type="submit" disabled={state.kind === "loading"} className="h-[44px] rounded-[9px] bg-brand hover:bg-brand-dark px-5 font-semibold text-white sm:col-span-2 sm:justify-self-start">Consulter</button>
       </form>
       <div aria-live="polite">
         {state.kind === "loading" && <p className="text-ink-3">Recherche du reçu…</p>}
         {state.kind === "refused" && (
-          <p id="receipt-error" ref={error} tabIndex={-1} role="alert" className="rounded-[9px] border-2 border-signal bg-white p-3" data-testid="receipt-refused">{state.code === "MISSING_FIELDS" ? "Saisissez la référence et le code d’accès pour consulter un reçu." : codeMessage(state.code)}</p>
+          <p id="receipt-error" ref={error} tabIndex={-1} role="alert" className="rounded-[9px] border-2 border-signal bg-white p-3" data-testid="receipt-refused" data-code={state.code}>{state.code === "MISSING_FIELDS" ? "Saisissez la référence et le code d’accès pour consulter un reçu." : codeMessage(state.code)}</p>
         )}
         {d && (
           <section aria-labelledby="rc-h" className="min-w-0 rounded-[14px] border border-line bg-white p-4" data-testid="receipt-found">
             <h2 id="rc-h" ref={result} tabIndex={-1} className="break-all text-lg font-semibold">
-              {d.kind === "order" ? "Commande de test" : "Demande de devis"} <span className="font-mono">{d.receipt_ref}</span>
+              {d.kind === "order" ? "Commande" : "Demande de devis"} <span className="font-mono">{d.receipt_ref}</span>
             </h2>
             <p className="text-sm text-ink-2">
               État : {d.status === "RECEIVED" ? "reçue" : d.status}

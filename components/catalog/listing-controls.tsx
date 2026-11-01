@@ -21,16 +21,16 @@ export function ListingControls({ formId, action, query, hidden }: { formId: str
           <div className="flex items-center gap-2">
             <label className="min-w-0 flex-1">
               <span className="sr-only">Prix minimum (€)</span>
-              <input name="prix_min" inputMode="decimal" placeholder="Min" defaultValue={query.minRaw} maxLength={12} className="h-[34px] w-full min-w-0 rounded-[9px] border border-line-strong bg-white px-2 text-sm text-ink" />
+              <input name="prix_min" inputMode="decimal" placeholder="Min" defaultValue={query.minRaw} maxLength={12} className="h-[44px] w-full min-w-0 rounded-[9px] border border-line-strong bg-white px-2 text-sm text-ink" />
             </label>
             <span aria-hidden="true" className="text-ink-3">–</span>
             <label className="min-w-0 flex-1">
               <span className="sr-only">Prix maximum (€)</span>
-              <input name="prix_max" inputMode="decimal" placeholder="Max" defaultValue={query.maxRaw} maxLength={12} className="h-[34px] w-full min-w-0 rounded-[9px] border border-line-strong bg-white px-2 text-sm text-ink" />
+              <input name="prix_max" inputMode="decimal" placeholder="Max" defaultValue={query.maxRaw} maxLength={12} className="h-[44px] w-full min-w-0 rounded-[9px] border border-line-strong bg-white px-2 text-sm text-ink" />
             </label>
           </div>
         </fieldset>
-        <button type="submit" className="h-[44px] w-full rounded-[9px] bg-ink px-4 text-sm font-medium text-white">Appliquer</button>
+        <button type="submit" className="h-[44px] w-full rounded-[9px] bg-brand hover:bg-brand-dark px-4 text-sm font-medium text-white">Appliquer</button>
         <Link href={cleared ? `${action}?${cleared}` : action} className="flex min-h-[44px] items-center justify-center text-sm text-ink-2 underline-offset-2 hover:underline">Effacer</Link>
       </form>
       {query.ignored.map((m) => <p key={m} role="note" className="text-sm text-caution">{m}</p>)}

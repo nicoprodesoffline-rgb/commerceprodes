@@ -27,7 +27,7 @@ export default function ContactPage() {
         <h2 id="devis-contact" className="text-lg font-semibold">Une question, un prix, un produit ?</h2>
         <p className="text-ink-2">Ajoutez les produits qui vous intéressent à votre panier, puis demandez votre devis : vous indiquez vos coordonnées et votre message, nous vous répondons rapidement.</p>
         <div className="flex flex-wrap gap-3">
-          <Link href="/recherche" className="inline-flex h-[44px] items-center rounded-[9px] bg-ink px-5 font-medium text-white">Voir le catalogue</Link>
+          <Link href="/recherche" className="inline-flex h-[44px] items-center rounded-[9px] bg-brand hover:bg-brand-dark px-5 font-medium text-white">Voir le catalogue</Link>
           <Link href="/devis" className="inline-flex h-[44px] items-center rounded-[9px] border border-line-strong bg-white px-5 font-medium hover:bg-surface">Demander un devis</Link>
         </div>
       </section>

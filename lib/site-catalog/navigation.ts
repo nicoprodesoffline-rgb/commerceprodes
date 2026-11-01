@@ -42,7 +42,7 @@ export type Navigation = {
   chain(key: string): NavNode[];
   /** Nœud navigable qui porte `key` : lui-même (niveau <= 3) ou son ancêtre de niveau 3 ; `null` si non placé. */
   anchor(key: string): string | null;
-  /** Slugs de familles affichés sur la page de `key` (ordre du DTO), rattachements inclus. */
+  /** Slugs distincts de tout le sous-arbre de `key` (ordre du DTO), rattachements inclus. */
   familySlugs(key: string): string[];
 };
 
@@ -87,16 +87,14 @@ export function buildNavigation(categories: readonly NavCategory[], families: re
 
   // Familles distinctes par nœud navigable (une famille classée en principal ET en secondaire compte une fois).
   const own = new Map<string, Set<string>>();
-  const slugsOrdered = new Map<string, string[]>();
+  const subtree = new Map<string, Set<string>>();
+  const familyOrder = [...new Set(families.map((f) => f.slug))];
   for (const f of families) {
     for (const k of new Set([f.primary_category_key, ...f.secondary_category_keys])) {
       const a = anchorOf.get(k);
       if (a === undefined) continue;
       const set = own.get(a) ?? own.set(a, new Set()).get(a)!;
-      if (!set.has(f.slug)) {
-        set.add(f.slug);
-        (slugsOrdered.get(a) ?? slugsOrdered.set(a, []).get(a)!).push(f.slug);
-      }
+      set.add(f.slug);
     }
   }
   const fill = (n: Mutable): Set<string> => {
@@ -104,6 +102,7 @@ export function buildNavigation(categories: readonly NavCategory[], families: re
     n.ownFamilyCount = all.size;
     for (const child of n.children) for (const s of fill(child)) all.add(s);
     n.subtreeFamilyCount = all.size;
+    subtree.set(n.key, all);
     return all;
   };
   for (const r of roots) fill(r);
@@ -120,6 +119,6 @@ export function buildNavigation(categories: readonly NavCategory[], families: re
       return chain === null ? [] : chain.map((c) => nodes.get(c.category_key)!);
     },
     anchor: (key) => anchorOf.get(key) ?? null,
-    familySlugs: (key) => (nodes.has(key) ? [...(slugsOrdered.get(key) ?? [])] : []),
+    familySlugs: (key) => familyOrder.filter((slug) => subtree.get(key)?.has(slug)),
   };
 }

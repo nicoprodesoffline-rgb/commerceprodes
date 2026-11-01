@@ -19,7 +19,7 @@ export function CartView() {
     return (
       <div className="rounded-[14px] border border-line bg-white p-6" data-testid="cart-empty">
         <p>Votre panier est vide.</p>
-        <Link href="/" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Parcourir le catalogue</Link>
+        <Link href="/" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-brand hover:bg-brand-dark px-4 font-medium text-white">Parcourir le catalogue</Link>
       </div>
     );
   }
@@ -43,11 +43,11 @@ export function CartView() {
       <div className="flex flex-wrap gap-3">
         {canOrder ? (
           <>
-            <Link href="/commande" className="inline-flex h-[44px] items-center rounded-[9px] bg-ink px-5 font-semibold text-white" data-testid="go-order">Passer commande</Link>
+            <Link href="/commande" className="inline-flex h-[44px] items-center rounded-[9px] bg-brand hover:bg-brand-dark px-5 font-semibold text-white" data-testid="go-order">Passer commande</Link>
             <Link href="/devis" className="inline-flex h-[44px] items-center rounded-[9px] border border-line-strong bg-white px-5 font-medium hover:bg-surface" data-testid="go-quote">Demander un devis</Link>
           </>
         ) : canQuote ? (
-          <Link href="/devis" className="inline-flex h-[44px] items-center rounded-[9px] bg-ink px-5 font-semibold text-white" data-testid="go-quote">Demander un devis</Link>
+          <Link href="/devis" className="inline-flex h-[44px] items-center rounded-[9px] bg-brand hover:bg-brand-dark px-5 font-semibold text-white" data-testid="go-quote">Demander un devis</Link>
         ) : (
           <span className="inline-flex h-[44px] items-center rounded-[9px] border border-dashed border-line-strong px-5 text-ink-3" aria-disabled="true">Suite indisponible</span>
         )}

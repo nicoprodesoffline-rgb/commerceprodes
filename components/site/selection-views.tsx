@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CART_ADDED_EVENT, useCart } from "@/components/cart/cart-provider";
 import { previewCart } from "@/components/site/api";
-import { codeMessage, codesMessage } from "@/components/site/codes";
+import { codeMessage, codesMessage, reportCodes } from "@/components/site/codes";
 import { addWishlistToCart, type WishlistCartResult } from "@/components/site/wishlist-cart";
 import { CarouselRow } from "@/components/site/carousel-row";
 import { MediaImage } from "@/components/site/media-image";
@@ -32,6 +32,13 @@ export function WishlistView() {
   const [busy, setBusy] = useState(false);
   const adding = useRef(false);
   const [result, setResult] = useState<WishlistCartResult | null>(null);
+  useEffect(() => {
+    if (!result) return;
+    reportCodes("wishlist", [...new Set([
+      ...result.refused.flatMap(({ codes }) => codes),
+      ...(result.failed.length > 0 ? ["NETWORK"] : []),
+    ])]);
+  }, [result]);
 
   async function onAddAll() {
     if (state.status !== "ready" || adding.current) return;
@@ -53,7 +60,7 @@ export function WishlistView() {
     <div className="space-y-4" data-testid="wishlist-view">
       <h1 className="text-2xl font-semibold">Ma sélection ({list.length})</h1>
       {state.status === "ready" && state.families.length >= 2 && (
-        <button type="button" onClick={onAddAll} disabled={busy} className="min-h-[44px] rounded-[9px] bg-ink px-4 font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50">
+        <button type="button" onClick={onAddAll} disabled={busy} className="min-h-[44px] rounded-[9px] bg-brand px-4 font-semibold text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50">
           {busy ? "Vérification…" : "Ajouter tout au panier"}
         </button>
       )}
@@ -62,16 +69,16 @@ export function WishlistView() {
           <p>{result.added} ajouté{result.added > 1 ? "s" : ""}, {result.refused.length} non ajouté{result.refused.length > 1 ? "s" : ""}.</p>
           {result.unpriced > 0 && <p>{result.unpriced} ajouté{result.unpriced > 1 ? "s" : ""} sans prix : seule une demande de devis sera possible pour ces produits.</p>}
           {result.refused.length > 0 && <ul className="space-y-1">
-            {result.refused.map(({ family, codes }) => <li key={family.slug}><Link href={`/famille/${family.slug}`} className="underline">{family.name}</Link> : {codesMessage(codes)}</li>)}
+            {result.refused.map(({ family, codes }) => <li key={family.slug} data-codes={codes.join(" ")}><Link href={`/famille/${family.slug}`} className="underline">{family.name}</Link> : {codesMessage(codes)}</li>)}
           </ul>}
-          {result.failed.length > 0 && <p>{result.failed.length} non ajouté{result.failed.length > 1 ? "s" : ""} : {codeMessage("NETWORK")} Produits concernés : {result.failed.map((f, i) => <span key={f.slug}>{i > 0 && ", "}<Link href={`/famille/${f.slug}`} className="underline">{f.name}</Link></span>)}</p>}
+          {result.failed.length > 0 && <p data-code="NETWORK">{result.failed.length} non ajouté{result.failed.length > 1 ? "s" : ""} : {codeMessage("NETWORK")} Produits concernés : {result.failed.map((f, i) => <span key={f.slug}>{i > 0 && ", "}<Link href={`/famille/${f.slug}`} className="underline">{f.name}</Link></span>)}</p>}
           {result.choose.length > 0 && <div>
             <p>{result.choose.length} produit{result.choose.length > 1 ? "s demandent" : " demande"} de choisir une variante : ouvrez {result.choose.length > 1 ? "leur" : "sa"} fiche.</p>
             <ul className="mt-1 space-y-1">{result.choose.map((f) => <li key={f.slug}><Link href={`/famille/${f.slug}`} className="underline">{f.name}</Link></li>)}</ul>
           </div>}
         </>}
       </div>
-      <Status state={state} empty={emptyBox(<><p className="font-medium text-ink">Votre sélection est vide.</p><p className="mt-1">Utilisez « Ma sélection » sur une fiche ou une carte pour garder un produit ici ; elle reste sur cet appareil.</p><Link href="/recherche" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Voir le catalogue</Link></>)} />
+      <Status state={state} empty={emptyBox(<><p className="font-medium text-ink">Votre sélection est vide.</p><p className="mt-1">Utilisez « Ma sélection » sur une fiche ou une carte pour garder un produit ici ; elle reste sur cet appareil.</p><Link href="/recherche" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-brand px-4 font-medium text-white hover:bg-brand-dark">Voir le catalogue</Link></>)} />
       {gone.length > 0 && (
         <p role="note" className="rounded-[9px] border border-line bg-surface px-3 py-2 text-sm text-ink-2">
           {gone.length} produit{gone.length > 1 ? "s" : ""} de votre sélection {gone.length > 1 ? "ne sont" : "n’est"} plus disponible{gone.length > 1 ? "s" : ""}.{" "}
@@ -115,7 +122,7 @@ export function CompareView() {
     <div className="space-y-4" data-testid="compare-view">
       <h1 className="text-2xl font-semibold">Comparer des produits</h1>
       {!enough && state.status !== "unavailable" && state.status !== "error" ? (
-        emptyBox(<><p className="font-medium text-ink">Sélectionnez au moins 2 produits pour les comparer côte à côte.</p><Link href="/recherche" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">← Retour au catalogue</Link></>)
+        emptyBox(<><p className="font-medium text-ink">Sélectionnez au moins 2 produits pour les comparer côte à côte.</p><Link href="/recherche" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-brand px-4 font-medium text-white hover:bg-brand-dark">← Retour au catalogue</Link></>)
       ) : (
         <>
           <Status state={state} empty={null} />

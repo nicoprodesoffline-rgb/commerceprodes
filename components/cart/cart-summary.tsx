@@ -5,10 +5,10 @@
  * commande. Montants à droite, chiffres tabulaires, base fiscale explicite ; total = somme serveur des lignes chiffrées.
  */
 import Link from "next/link";
+import { useEffect } from "react";
 import { MAX_QUANTITY, type DraftLine } from "@/components/cart/cart-provider";
 import { bases } from "@/components/cart/use-cart-preview";
-import { codeMessage } from "@/components/site/codes";
-import { BasisNotice } from "@/components/site/basis-notice";
+import { codeMessage, reportCodes } from "@/components/site/codes";
 import { axesText, money, price, totalBasisLabel, uniformBasis } from "@/components/site/format";
 import type { PreviewJson, PreviewLineJson } from "@/lib/site-business/client-types";
 
@@ -25,10 +25,13 @@ export function totalsNote(preview: PreviewJson): string {
 }
 
 function LineStatus({ pl }: { pl: PreviewLineJson | undefined }) {
+  useEffect(() => {
+    if (pl && !pl.accepted) reportCodes("cart-line", pl.error_codes);
+  }, [pl]);
   if (!pl || pl.accepted) return null;
   const canonical = Object.values(pl.superseded_by ?? {})[0];
   return (
-    <p className="mt-1 text-xs text-signal" data-testid="line-problem">
+    <p className="mt-1 text-xs text-signal" data-testid="line-problem" data-codes={pl.error_codes.join(" ")}>
       {pl.error_codes.map(codeMessage).join(" ")}
       {canonical && (
         <>
@@ -61,7 +64,6 @@ export function CartLines({
   const common = pls ? uniformBasis(pls.filter((l) => l.accepted && l.selection).map((l) => l.selection!.tax_basis_or_status)) : ({ uniform: false } as const);
   return (
     <div className="space-y-2">
-    {common.uniform && <BasisNotice basis={common.basis} />}
     <div className="overflow-hidden rounded-[14px] border border-line bg-white">
       <table className="tabular w-full border-collapse text-sm">
         <caption className="sr-only">Articles et quantités de votre panier</caption>
@@ -163,12 +165,13 @@ export function StaleBanner({ from, to, onAck }: { from: number; to: number; onA
 
 /** Aperçu indisponible / refusé / réseau : message honnête, panier conservé, réessai. */
 export function PreviewProblem({ kind, codes, onRetry }: { kind: "unavailable" | "refused" | "network"; codes: string[]; onRetry: () => void }) {
+  useEffect(() => reportCodes("cart-preview", codes), [codes]);
   return (
     <div role="alert" className="rounded-[14px] border-2 border-signal bg-white p-4" data-testid="preview-problem">
       <p className="font-semibold">
         {kind === "unavailable" ? "Prix momentanément indisponibles" : kind === "network" ? "Connexion indisponible" : "Certains articles doivent être vérifiés"}
       </p>
-      <p className="mt-1 text-sm text-ink-2">
+      <p className="mt-1 text-sm text-ink-2" data-codes={codes.join(" ")}>
         {codes.map(codeMessage).join(" ")} Votre panier est conservé sur cet appareil ; vous pourrez réessayer sans le recomposer.
       </p>
       <button type="button" onClick={onRetry} className="mt-3 h-[44px] rounded-[9px] border border-ink bg-white px-4 font-medium hover:bg-surface">

@@ -87,41 +87,43 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
     <div className="min-w-0 pb-20 lg:pb-0">
       <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: breadcrumbLd }} />
       <Breadcrumbs items={crumbs} />
-      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,58fr)_minmax(0,42fr)] lg:gap-10">
-        <div className="min-w-0 lg:sticky lg:top-56">
-          <Gallery familyName={family.name} images={images} />
-        </div>
-        <div className="min-w-0 border border-line bg-white p-5 sm:p-7">
-          {notice && (
-            <div role="status" className="mb-6 border border-caution bg-white p-4 text-sm" data-testid="article-notice">
-              <p className="font-semibold">{notice.text}</p>
-              <p className="mt-1 text-ink-2">Nous affichons une autre variante de ce produit. Vérifiez la référence avant de l’ajouter au panier.</p>
-              {notice.link && (
-                <Link href={notice.link.href} className="mt-1 inline-flex min-h-[44px] items-center font-medium underline">{notice.link.label}</Link>
-              )}
-            </div>
-          )}
-          <FamilyBuyBox familyName={family.name} familySlug={family.slug} description={family.description_short} schema={selectorAxes(family)} items={items} initialKey={preselected} />
-          <div className="mt-6 flex flex-wrap gap-2 border-t border-line pt-4 print:hidden [&_button]:min-h-[44px]" data-testid="family-lists">
-            <WishlistButton slug={family.slug} name={family.name} />
-            <CompareButton slug={family.slug} name={family.name} />
-          </div>
-          <div className="mt-4 border-t border-line pt-4 text-sm text-ink-2 [&_a]:inline-flex [&_a]:min-h-[44px] [&_a]:items-center">
-            {primaryAnchor && <p>Catégorie : <Link href={`/categorie/${primaryAnchor}`} className="underline">{nav.node(primaryAnchor)?.name}</Link></p>}
-            {secondary.length > 0 && (
-              <p data-testid="secondary-categories">
-                Également dans :{" "}
-                {secondary.map((c, n) => (
-                  <span key={c.key}>
-                    {n > 0 && ", "}
-                    <Link href={`/categorie/${c.key}`} className="underline">{c.name}</Link>
-                  </span>
-                ))}
-              </p>
+      <FamilyBuyBox
+        className="lg:grid-cols-[minmax(0,58fr)_minmax(0,42fr)]"
+        familyName={family.name}
+        familySlug={family.slug}
+        description={family.description_short}
+        schema={selectorAxes(family)}
+        items={items}
+        initialKey={preselected}
+        gallery={<Gallery familyName={family.name} images={images} />}
+        notice={notice && (
+          <div role="status" className="mb-6 border border-caution bg-white p-4 text-sm" data-testid="article-notice">
+            <p className="font-semibold">{notice.text}</p>
+            <p className="mt-1 text-ink-2">Nous affichons une autre variante de ce produit. Vérifiez la référence avant de l’ajouter au panier.</p>
+            {notice.link && (
+              <Link href={notice.link.href} className="mt-1 inline-flex min-h-[44px] items-center font-medium underline">{notice.link.label}</Link>
             )}
           </div>
+        )}
+      >
+        <div className="product-list-links mt-6 flex flex-wrap gap-x-6 border-t border-line pt-4 print:hidden" data-testid="family-lists">
+          <WishlistButton slug={family.slug} name={family.name} />
+          <CompareButton slug={family.slug} name={family.name} />
         </div>
-      </div>
+        <div className="mt-4 border-t border-line pt-4 text-sm text-ink-2 [&_a]:inline-flex [&_a]:min-h-[44px] [&_a]:items-center">
+          {secondary.length > 0 && (
+            <p data-testid="secondary-categories">
+              Également dans :{" "}
+              {secondary.map((c, n) => (
+                <span key={c.key}>
+                  {n > 0 && ", "}
+                  <Link href={`/categorie/${c.key}`} className="underline">{c.name}</Link>
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
+      </FamilyBuyBox>
       {family.description_long && (
         <section aria-labelledby="desc-h" className="mt-12 border-t border-line pb-4">
           <div className="mb-8 flex justify-center border-b border-line">

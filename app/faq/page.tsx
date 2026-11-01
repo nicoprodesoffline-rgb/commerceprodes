@@ -61,7 +61,7 @@ export default async function FaqPage() {
       <section className="rounded-[14px] bg-surface p-5" data-testid="faq-help">
         <h2 className="text-lg font-semibold">Vous ne trouvez pas la réponse ?</h2>
         <p className="mt-1 text-ink-2">Écrivez-nous : nous vous répondons rapidement.</p>
-        <Link href="/contact" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-ink px-5 font-medium text-white">Nous contacter →</Link>
+        <Link href="/contact" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-brand hover:bg-brand-dark px-5 font-medium text-white">Nous contacter →</Link>
       </section>
     </div>
   );

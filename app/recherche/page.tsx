@@ -3,7 +3,6 @@ import { CategorySidebar } from "@/components/catalog/category-sidebar";
 import { ListingControls } from "@/components/catalog/listing-controls";
 import { ListingSort } from "@/components/catalog/listing-sort";
 import { Pager } from "@/components/catalog/pager";
-import { QuickOrder } from "@/components/catalog/quick-order";
 import { FamilyGrid } from "@/components/home/family-card";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { SEARCH_MAX, familyCard, navigationOf, searchFamilies } from "@/components/site/catalog-views";
@@ -51,16 +50,10 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           <ListingSort formId="search-filters" sort={query.sort} />
         </div>
       </div>
-      <form role="search" action="/recherche" method="get" className="flex max-w-xl gap-2">
-        <label htmlFor="q-page" className="sr-only">Rechercher une famille de produits</label>
-        <input id="q-page" name="q" type="search" defaultValue={q} maxLength={SEARCH_MAX} placeholder="Nom de famille ou référence PI-…" className="h-[44px] min-w-0 flex-1 rounded-[9px] border border-line-strong bg-white px-3" />
-        <button type="submit" className="h-[44px] rounded-[9px] bg-ink px-4 font-medium text-white">Rechercher</button>
-      </form>
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="min-w-0 space-y-4 lg:w-60 lg:shrink-0">
           <CategorySidebar roots={nav.menu} />
           <ListingControls formId="search-filters" action="/recherche" query={query} hidden={q.trim() === "" ? undefined : { q }} />
-          <QuickOrder />
         </div>
         <div className="min-w-0 flex-1 space-y-4">
           {listing.rows.length > 0 && (

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { MediaImage } from "@/components/site/media-image";
 import type { FamilyCardData } from "@/components/site/catalog-views";
 import { money, price, uniformBasis } from "@/components/site/format";
-import { BasisNotice } from "@/components/site/basis-notice";
 import { CompareButton, WishlistButton } from "@/components/site/list-buttons";
 import type { FamilyPrice } from "@/lib/site-catalog/listing";
 
@@ -36,7 +35,7 @@ export function FamilyCard({ data, note, from, category, showBasis = true }: { d
           </span>
         </span>
       </Link>
-      <div className="flex flex-wrap items-start gap-2 px-4 pb-4" data-testid="card-actions">
+      <div className="mt-auto flex flex-wrap items-start gap-x-4 px-4 [&_button]:min-h-11 [&_button]:rounded-none [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-0 [&_button]:py-3 [&_button]:text-xs [&_button]:font-normal [&_button]:text-ink-2 [&_button:hover]:bg-transparent [&_button:hover]:text-brand [&_button[aria-pressed=true]]:underline" data-testid="card-actions">
         <CompareButton slug={data.slug} name={data.name} />
         <WishlistButton slug={data.slug} name={data.name} />
       </div>
@@ -52,7 +51,6 @@ export function FamilyGrid({ families, label, notes, prices = false }: { familie
   const basis = prices ? uniformBasis(families.map((f) => (f.from ? f.from.basis : undefined)).filter((b) => b !== undefined)) : ({ uniform: false } as const);
   return (
     <>
-      {basis.uniform && <div className="mb-3"><BasisNotice basis={basis.basis} /></div>}
       <ul aria-label={label} className="commerce-grid">
         {families.map((f) => (
           <FamilyCard key={f.slug} data={f} note={notes?.[f.slug]} from={prices ? (f.from ?? null) : undefined} category={f.category} showBasis={!basis.uniform} />

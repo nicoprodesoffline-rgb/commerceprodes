@@ -1,3 +1,18 @@
+/* Actions secondaires de la fiche, avec les mêmes états accessibles que les boutons partagés. */
+.product-list-links button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-2, #55554f);
+  border-radius: 0;
+  padding-inline: 0;
+}
+
+.product-list-links button:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* Le bouton d'achat reste au-dessus de la sélection du comparateur et de la navigation mobile. */
 @media (width < 1024px) {
   body:has([data-testid="compare-bar"]) .product-add-to-cart {

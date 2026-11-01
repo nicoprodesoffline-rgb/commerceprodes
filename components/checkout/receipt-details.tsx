@@ -1,9 +1,6 @@
 "use client";
 
-import { BasisNotice } from "@/components/site/basis-notice";
 import { axisValue, money, parisDate, price, totalBasisLabel, uniformBasis } from "@/components/site/format";
-
-export const TEST_ORDER_NOTICE = "Commande de test : aucun paiement, aucune livraison, aucune facture, aucun e-mail.";
 
 type ReceiptLine = { public_item_key: string; variant_axes: Record<string, string>; quantity: number; priced?: boolean; unit_amount?: string | null; tax_basis_or_status?: string | null; line_total?: string | null };
 export type ReceiptData = { lines?: ReceiptLine[]; total_amount?: string | null; created_at_utc?: string; catalogue_sequence?: number | null };
@@ -15,11 +12,9 @@ export function ReceiptDetails({ receipt, isOrder }: { receipt: ReceiptData; isO
   const common = uniformBasis(bases);
   return (
     <div className="min-w-0 space-y-3" data-testid="receipt-details">
-      {isOrder && <p className="font-medium">{TEST_ORDER_NOTICE}</p>}
       {receipt.created_at_utc && (
         <p className="text-sm text-ink-2">Reçue le <time dateTime={receipt.created_at_utc}>{parisDate(receipt.created_at_utc)}</time>.</p>
       )}
-      {common.uniform && <BasisNotice basis={common.basis} />}
       <div role="region" aria-label="Lignes enregistrées, tableau défilant" tabIndex={0} className="relative max-w-full overflow-x-auto">
         <table className="tabular w-full text-sm">
           <caption className="sr-only">Articles de votre demande</caption>
@@ -47,7 +42,7 @@ export function ReceiptDetails({ receipt, isOrder }: { receipt: ReceiptData; isO
       </div>
       {receipt.total_amount ? (
         <p className="text-right font-semibold" data-testid="receipt-total">
-          Total {money(receipt.total_amount)} {totalBasisLabel(bases)} <span className="font-normal text-ink-2">— montant indicatif : le devis confirme les conditions.</span>
+          Total {money(receipt.total_amount)} {totalBasisLabel(bases)}
         </p>
       ) : <p className="text-sm text-ink-2">Le montant de cette demande sera précisé sur le devis.</p>}
     </div>

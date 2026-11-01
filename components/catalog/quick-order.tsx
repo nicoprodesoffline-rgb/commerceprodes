@@ -29,8 +29,8 @@ export function QuickOrder() {
     >
       <label htmlFor={id} className="text-xs font-semibold uppercase tracking-wide text-ink-3">Commande rapide</label>
       <div className="mt-1 flex gap-2">
-        <input id={id} name="q" value={value} onChange={(e) => setValue(e.target.value)} placeholder="Référence PI-…" maxLength={20} autoComplete="off" aria-describedby={error ? `${id}-err` : undefined} aria-invalid={error ? true : undefined} className="h-[34px] min-w-0 flex-1 rounded-[9px] border border-line-strong bg-white px-2 font-mono text-sm" />
-        <button type="submit" className="h-[34px] shrink-0 rounded-[9px] bg-ink px-3 text-sm font-medium text-white">Aller →</button>
+        <input id={id} name="q" value={value} onChange={(e) => setValue(e.target.value)} placeholder="Référence PI-…" maxLength={20} autoComplete="off" aria-describedby={error ? `${id}-err` : undefined} aria-invalid={error ? true : undefined} className="h-[44px] min-w-0 flex-1 rounded-[9px] border border-line-strong bg-white px-2 font-mono text-sm" />
+        <button type="submit" className="h-[44px] shrink-0 rounded-[9px] bg-brand hover:bg-brand-dark px-3 text-sm font-medium text-white">Aller →</button>
       </div>
       {error && <p id={`${id}-err`} role="alert" className="mt-1 text-xs text-signal">{error}</p>}
     </form>

@@ -25,8 +25,8 @@ export function validateContact(c: Contact, message: string | null): FieldErrors
   };
   e.organisation_name = text(c.organisation_name, 200, "Organisation");
   e.contact_name = text(c.contact_name, 200, "Nom du contact");
-  if (!EMAIL.test(c.email) || c.email.length > 254) e.email = "E-mail : adresse invalide (exemple : achats@mairie-exemple.fr).";
-  if (c.phone.trim() !== "" && !PHONE.test(c.phone)) e.phone = "Téléphone : 6 à 20 chiffres, espaces, points ou tirets (exemple : 04 00 00 00 00).";
+  if (!EMAIL.test(c.email) || c.email.length > 254) e.email = "E-mail : saisissez une adresse valide avec un nom, le signe @ et un domaine.";
+  if (c.phone.trim() !== "" && !PHONE.test(c.phone)) e.phone = "Téléphone : saisissez 6 à 20 chiffres, avec éventuellement des espaces, points ou tirets.";
   if (message !== null && message.trim() !== "") e.message = len(message) > 2000 ? `Message : 2 000 caractères au maximum (actuellement ${len(message)}).` : CONTROL.test(message) ? "Message : caractères non admis." : undefined;
   for (const k of Object.keys(e) as (keyof FieldErrors)[]) if (e[k] === undefined) delete e[k];
   return e;

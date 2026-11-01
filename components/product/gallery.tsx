@@ -34,7 +34,7 @@ export function Gallery({ familyName, images }: { familyName: string; images: Ga
         <MediaImage
           sha256={current?.sha256 ?? null}
           alt={familyName}
-          className="aspect-square w-full bg-white object-contain"
+          className="aspect-[4/3] max-h-[50vh] w-full bg-white object-contain lg:aspect-square lg:max-h-none"
           testId="family-image"
         />
         {visible.length > 1 && <figcaption className="sr-only" aria-live="polite">Photo {active + 1} sur {visible.length} : {current?.caption}</figcaption>}

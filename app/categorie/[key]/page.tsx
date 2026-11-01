@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ key: stri
   return { title: cat?.name ?? "Catégorie introuvable", ...(empty ? { robots: { index: false, follow: true } } : {}) };
 }
 
-/** Catégorie : sous-catégories, familles classées ici en principal puis via `secondary_category_keys` (DTO). */
+/** Catégorie : familles de tout le sous-arbre, classées en principal ou en secondaire (ordre du DTO). */
 export default async function CategoryPage({ params, searchParams }: { params: Promise<{ key: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { key } = await params;
   const query = parseListingQuery(await searchParams);
@@ -44,7 +44,10 @@ export default async function CategoryPage({ params, searchParams }: { params: P
   if (query.maxRaw.trim() !== "") pageParams["prix_max"] = query.maxRaw;
   if (query.sort !== "pertinence") pageParams["tri"] = query.sort;
   const notes: Record<string, string> = {};
-  for (const f of families) if (nav.anchor(f.primary_category_key) !== key) notes[f.slug] = "classée aussi ici";
+  for (const f of families) {
+    const anchor = nav.anchor(f.primary_category_key);
+    if (anchor === null || !nav.chain(anchor).some((n) => n.key === key)) notes[f.slug] = "classée aussi ici";
+  }
   return (
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: "Accueil", href: "/" }, ...categoryCrumbs(catalog, key)]} />
@@ -77,7 +80,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
         <div className="min-w-0 flex-1 space-y-4">
           {families.length === 0 ? (
             <p className="rounded-[14px] border border-line bg-white p-4 text-ink-2">
-              Aucune famille n&apos;est classée directement dans cette catégorie{children.length > 0 ? " : consultez ses sous-catégories." : "."}
+              Aucune famille dans cette catégorie pour le moment.
             </p>
           ) : listing.rows.length === 0 ? (
             <p role="status" className="rounded-[14px] border border-line bg-white p-4 text-ink-2">Aucune famille ne correspond à ces filtres.</p>

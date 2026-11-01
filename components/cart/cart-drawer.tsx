@@ -90,7 +90,7 @@ function DrawerBody({ onClose }: { onClose: () => void }) {
       {lines.length === 0 ? (
         <div className="flex-1 p-4" data-testid="drawer-empty">
           <p className="font-medium">Votre panier est vide.</p>
-          <Link href="/recherche" onClick={onClose} className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Voir le catalogue →</Link>
+          <Link href="/recherche" onClick={onClose} className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-brand hover:bg-brand-dark px-4 font-medium text-white">Voir le catalogue →</Link>
         </div>
       ) : (
         <>
@@ -129,11 +129,11 @@ function DrawerBody({ onClose }: { onClose: () => void }) {
             {(state.kind === "unavailable" || state.kind === "refused" || state.kind === "network") && <p role="alert" className="text-xs text-caution">Les prix ne peuvent pas être vérifiés pour le moment. Votre panier est conservé sur cet appareil.</p>}
             <div className="flex flex-wrap gap-2">
               {canOrder ? (
-                <Link href="/commande" onClick={onClose} className="inline-flex h-[44px] flex-1 items-center justify-center whitespace-nowrap rounded-[9px] bg-ink px-3 text-sm font-semibold text-white" data-testid="drawer-order">Finaliser la commande →</Link>
+                <Link href="/commande" onClick={onClose} className="inline-flex min-h-[44px] flex-1 items-center justify-center text-center rounded-[9px] bg-brand hover:bg-brand-dark px-3 py-2 text-sm font-semibold text-white" data-testid="drawer-order">Finaliser la commande →</Link>
               ) : canQuote ? (
-                <Link href="/devis" onClick={onClose} className="inline-flex h-[44px] flex-1 items-center justify-center whitespace-nowrap rounded-[9px] bg-ink px-3 text-sm font-semibold text-white" data-testid="drawer-quote">Demander un devis →</Link>
+                <Link href="/devis" onClick={onClose} className="inline-flex min-h-[44px] flex-1 items-center justify-center text-center rounded-[9px] bg-brand hover:bg-brand-dark px-3 py-2 text-sm font-semibold text-white" data-testid="drawer-quote">Demander un devis →</Link>
               ) : null}
-              <Link href="/panier" onClick={onClose} className="inline-flex h-[44px] flex-1 items-center justify-center rounded-[9px] border border-line-strong bg-white px-4 font-medium hover:bg-surface">Voir le panier complet</Link>
+              <Link href="/panier" onClick={onClose} className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-[9px] border border-line-strong bg-white px-4 font-medium hover:bg-surface">Voir le panier complet</Link>
             </div>
           </div>
         </>

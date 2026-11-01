@@ -43,8 +43,7 @@ export default async function HomePage() {
   const rootNodes = categorySection ? categorySection.data.categories.flatMap(key => { const node = nav.node(key); return node ? [node] : []; }) : nav.menu;
   const roots = rootNodes.filter(n => n.subtreeFamilyCount > 0).map((n) => {
     // Une catégorie racine peut ne porter ses familles que dans ses sous-catégories : le compte et l'image tiennent compte de tout son sous-arbre.
-    const subtree = (node: NavNode): string[] => [...nav.familySlugs(node.key), ...node.children.flatMap(subtree)];
-    const familySlugs = new Set(subtree(n));
+    const familySlugs = new Set(nav.familySlugs(n.key));
     return {
       key: n.key,
       name: n.name,

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { CartDrawerButton } from "@/components/cart/cart-drawer";
 import { CategoryMenu, type MenuCategory } from "@/components/layout/category-menu";
 import { LiveSearch } from "@/components/layout/live-search";
@@ -17,7 +18,7 @@ export function SiteHeader({ categories, universe = [] }: { categories: MenuCate
             <Image src="/logo-prodes.png" alt="" width={48} height={48} className="h-12 w-12 object-contain" priority />
             <span>PRODES</span>
           </Link>
-          <LiveSearch />
+          <Suspense fallback={null}><LiveSearch /></Suspense>
           <Link href="/devis" className="hidden min-h-12 shrink-0 items-center px-2 text-sm font-semibold text-ink hover:text-brand lg:inline-flex">
             Demande de devis
           </Link>

@@ -60,7 +60,7 @@ export function PriceGrid({ rows, selectedRateId, caption = "Prix selon la quant
               </tr>
             ) : (
               <tr key={`t${r.tier_quantity}`} data-tier={r.tier_quantity} data-unavailable={r.error_codes.join(",")} className="border-b border-line">
-                <td className="py-3 pr-3">À partir de {r.tier_quantity}</td>
+                <td className="py-3 pr-3">{quantityRange(r.quantity_min, r.quantity_max)}</td>
                 <td className="py-3 text-right text-ink-2">Prix sur demande</td>
               </tr>
             );

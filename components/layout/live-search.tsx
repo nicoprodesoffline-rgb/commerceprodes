@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { MediaImage } from "@/components/site/media-image";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Suggestion } from "@/lib/site-catalog/suggest";
@@ -13,7 +14,8 @@ type Answer = { results: Suggestion[]; total: number };
  * (combobox WAI-ARIA, `aria-activedescendant`). Le navigateur n'affiche que ce que le serveur renvoie ; il ne calcule aucun prix.
  */
 export function LiveSearch() {
-  const [value, setValue] = useState("");
+  const query = (useSearchParams().get("q") ?? "").slice(0, 100);
+  const [value, setValue] = useState(query);
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -22,6 +24,11 @@ export function LiveSearch() {
   const root = useRef<HTMLFormElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const listId = useId();
+
+  useEffect(() => {
+    setValue(query);
+    setOpen(false);
+  }, [query]);
 
   useEffect(() => {
     if (value.trim().length < 2) {
@@ -35,9 +42,9 @@ export function LiveSearch() {
         const r = await fetch(`/api/site/search?q=${encodeURIComponent(value.trim())}`, { signal: controller.signal, credentials: "same-origin" });
         if (!r.ok) throw new Error(String(r.status));
         setAnswer((await r.json()) as Answer);
-        setFailed(false); setActive(-1); setOpen(true);
+        setFailed(false); setActive(-1); setOpen(document.activeElement === input.current);
       } catch (e) {
-        if ((e as Error).name !== "AbortError") { setFailed(true); setAnswer(null); setOpen(true); }
+        if ((e as Error).name !== "AbortError") { setFailed(true); setAnswer(null); setOpen(document.activeElement === input.current); }
       } finally {
         setBusy(false);
       }
