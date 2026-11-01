@@ -50,5 +50,5 @@ test("les textes validés par le propriétaire sont présents : horaires (C5) et
   assert.match(bar, /Livraison incluse sur tout le catalogue/);
   const footer = fs.readFileSync(path.join(root, "components/layout/footer.tsx"), "utf8");
   assert.match(footer, /Lun–Sam 8h30–19h/);
-  assert.match(footer, /Prix HT/);
+  assert.doesNotMatch(footer, /Montant indicatif|base fiscale/, "plus de mention fiscale répétée dans le pied de page (une seule sous le total du panier)");
 });

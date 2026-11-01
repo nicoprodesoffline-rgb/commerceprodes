@@ -1,9 +1,10 @@
 // Recette navigateur BC3 (Playwright, Chromium) sur la génération ACTIVE réelle posée par le receiver BC2.
 //   PLAYWRIGHT_DIR=<dossier node_modules contenant playwright> CHROMIUM=<exécutable> \
-//   UI_OUT=evidence/W1/BC3/raw/ui/<sha> AXE=<axe.min.js> node --test --test-concurrency=1 tests/ui/storefront.ui.mjs
+//   UI_OUT=evidence/W1/BC3/raw/ui/<sha> AXE=<axe.min.js> npm run test:ui
+// Prérequis : build Next déjà disponible ; test:ui compile C0 et BC2 avant de lancer la suite.
 // Aucun téléchargement : Playwright et Chromium déjà présents localement sont réutilisés (chemins en paramètres).
 // Serveur `next start` lancé/tué par CE script sur $SITE_TEST_PORT (défaut 3361), base $SITE_TEST_DATABASE_URL
-// (défaut prodes_site_bc3_test ; toute base locale `prodes_site_*`, revue BC3 F-13).
+// (test:ui utilise prodes_site_order_flow_test par défaut ; appel direct : prodes_site_bc3_test ; base locale `prodes_site_*`).
 import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -213,8 +214,10 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     const page = await newPage();
     await page.goto(BASE + "/famille/gmce-demo");
     await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
-    // Famille-first : la première image de la galerie est l'image principale de la Famille.
-    assert.equal(await page.getByTestId("family-image").getAttribute("src"), "/media/bdc052e346fa8f7813cf76228e472d5e0e91ac3901ddc71069214f1d99cdaec5");
+    // Génération de test : la galerie présente un état neutre, aucun média synthétique n'est affiché.
+    const gallery = page.getByRole("group", { name: /^Photos de / });
+    await gallery.getByTestId("media-missing").getByText("Visuel non disponible", { exact: true }).waitFor();
+    assert.equal(await page.locator('img[src^="/media/"]').count(), 0, "aucune image de la génération de test");
     // Clavier : de « Aller au contenu » jusqu'au groupe « Taille », puis flèche → M.
     const seq = await tabTo(page, (i) => i.tag === "input" && i.type === "radio" && /^S$/.test(i.label));
     assertFocusVisible(seq, "radio taille");
@@ -233,15 +236,18 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.getByRole("button", { name: "Ajouter au panier" }).focus();
     await page.keyboard.press("Enter");
     await page.getByRole("status").getByText(/Ajouté au panier — 3 × Couleur : Rouge · Taille : M/).waitFor();
+    // Le tiroir du panier s'ouvre après un ajout : on le referme (Échap) avant de réutiliser le bouton d'ajout.
+    await page.keyboard.press("Escape");
+    await page.getByTestId("cart-drawer").waitFor({ state: "hidden" }).catch(() => {});
     // Même variante ajoutée de nouveau : incrément de la ligne, pas de seconde ligne (C0 R-01).
-    await page.getByLabel("Quantité", { exact: true }).fill("2");
-    await page.getByTestId("qty-price").getByText(/^Pour 2 : /).waitFor();
+    // La quantité minimale de cette variante est 3 (plus petit palier publié) : on rajoute 3, jamais moins.
+    await page.getByLabel("Quantité", { exact: true }).fill("3");
+    await page.getByTestId("qty-price").getByText(/^Pour 3 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier — 2 ×/).waitFor();
+    await page.getByRole("status").getByText(/Ajouté au panier — 3 ×/).waitFor();
     await page.goto(BASE + "/panier");
-    await page.getByTestId("cart-total").getByText(/65,00/).waitFor(); // 5 × 13,00 (sélection serveur R-GMCE-102)
+    await page.getByTestId("cart-total").getByText(/78,00/).waitFor(); // 6 × 13,00 (sélection serveur R-GMCE-102)
     assert.equal(await page.getByTestId("cart-line").count(), 1);
-    await page.getByText("Base fiscale non précisée par la publication").waitFor();
     for (const [vp, size] of Object.entries(VIEWPORTS)) {
       await page.setViewportSize(size);
       await assertNoHScroll(page, `panier ${vp}`);
@@ -289,7 +295,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     const row = (await db.query("SELECT status, (SELECT count(*)::int FROM site_quote_line l WHERE l.quote_id = q.id) AS n, message FROM site_quote_request q WHERE quote_ref = $1", [ref])).rows[0];
     assert.deepEqual(row, { status: "RECEIVED", n: 1, message: "Délai souhaité : fin novembre." });
     note(`devis ${ref} persisté (1 ligne, message conservé)`);
-    // Panier vidé après réception ; le jeton n'est stocké nulle part dans le navigateur.
+    // Le devis conserve le panier ; le jeton n'est stocké nulle part dans le navigateur.
     const storage = await page.evaluate(() => JSON.stringify(window.localStorage));
     assert.ok(!storage.includes(link.split("code=")[1]), "jeton absent du stockage local");
     // Consultation par le lien (fragment, jamais envoyé au serveur dans l'adresse de la page).
@@ -315,7 +321,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     assert.ok(!(await page.evaluate(() => window.location.href)).includes("code="), "aucun code dans l'adresse après retour");
     note("reçu : fragment retiré, champ vidé, « Retour » n'affiche plus le reçu (F-04)");
     await page.goto(BASE + "/recu#ref=" + ref + "&code=faux");
-    await page.getByTestId("receipt-refused").getByText(/code NOT_FOUND/).waitFor();
+    await page.locator('[data-testid="receipt-refused"][data-code="NOT_FOUND"]').waitFor();
     await page.context().close();
   });
 
@@ -339,7 +345,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await shot(page, "U4-commande-avant-confirmation-mobile");
     await page.getByTestId("order-confirm").check();
     await page.getByTestId("submit").click();
-    await page.getByTestId("result-received").getByText("Commande reçue — en attente de traitement").waitFor();
+    await page.getByTestId("result-received").getByRole("heading", { name: "Commande reçue", exact: true }).waitFor();
     const ref = await page.getByTestId("receipt-ref").textContent();
     const row = (await db.query("SELECT status, total_amount FROM site_order WHERE order_ref = $1", [ref])).rows[0];
     assert.deepEqual(row, { status: "RECEIVED", total_amount: "77.00" });
@@ -366,7 +372,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     const before = Number((await db.query("SELECT count(*) FROM site_order")).rows[0].count);
     await page.getByTestId("submit").click();
     await page.getByTestId("result-refused").waitFor();
-    await page.getByTestId("refusal-codes").getByText(/code CART_STALE/).waitFor();
+    await page.getByTestId("refusal-codes").locator('[data-code="CART_STALE"]').waitFor();
     await page.getByTestId("cart-generation-changed").waitFor();
     assert.equal(await page.getByTestId("submit").isDisabled(), true, "envoi bloqué tant que les nouveaux prix ne sont pas vérifiés");
     assert.equal(Number((await db.query("SELECT count(*) FROM site_order")).rows[0].count), before, "aucune commande écrite");
@@ -397,10 +403,10 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
     await activateOverHttp(BASE, "F_IDENTITY.activate_gen_c_tombstones");
     await page.goto(BASE + "/panier");
-    await page.getByTestId("line-problem").getByText(/code ITEM_SUPERSEDED/).waitFor();
+    await page.locator('[data-testid="line-problem"][data-codes~="ITEM_SUPERSEDED"]').waitFor();
     await page.getByRole("link", { name: /Voir la nouvelle référence PI-000000JVF/ }).waitFor();
     await shot(page, "U6-panier-article-supplante");
-    // Média altéré : remplacement neutre « Image indisponible ».
+    // Média altéré : état neutre « Visuel non disponible » (également imposé par la génération de test).
     const sha = "ac403e49";
     await db.query("UPDATE site_media SET bytes = set_byte(bytes, 29, get_byte(bytes, 29) # 255) WHERE sha256 LIKE $1", [`${sha}%`]);
     // Contexte neuf : le navigateur a gardé en cache (immutable, adressage par contenu) les octets vérifiés plus tôt.
@@ -425,7 +431,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await scene("F_GMCE_VARIANTS.activate");
     const page = await newPage();
     await page.goto(BASE + "/");
-    const seq = await tabTo(page, (i) => i.tag === "button" && /Catégories/.test(i.label), 10);
+    const seq = await tabTo(page, (i) => i.tag === "button" && /Catégories/.test(i.label), 16);
     assertFocusVisible(seq, "menu Catégories");
     await page.keyboard.press("Enter");
     await page.getByRole("link", { name: "STAGING_FIXTURE Signalétique" }).first().waitFor({ state: "visible" });
@@ -487,7 +493,10 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     for (const [vp, size] of Object.entries(VIEWPORTS)) {
       const page = await newPage(size);
       await page.goto(BASE + "/recherche?q=chaise");
-      await page.getByTestId("search-count").waitFor();
+      await page.waitForLoadState("networkidle");
+      await page.getByRole("heading", { name: "Résultats pour « chaise »", exact: true }).waitFor();
+      // Ne viser que le résultat visible, pas une copie masquée pendant le rendu de la route.
+      await page.locator('main [data-testid="search-count"]:visible').waitFor();
       await assertNoHScroll(page, `recherche ${vp}`);
       await shot(page, `U9-recherche-${vp}`);
       await page.context().close();
@@ -571,12 +580,14 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     let priced = 0;
     let checking = 0;
     const incoherent = [];
-    const PRICED = /^Pour (\d+) : ([\d\s  ,]+)\s?€.*soit ([\d\s  ,]+)\s?€(?:\sHT|\s\(base fiscale non précisée\))?\spour la ligne/; // friction 14 : la base peut suivre le total de la ligne
+    const PRICED = /^Pour (\d+) : ([\d\s,]+)\s€(?: HT)? l['’]unité, soit ([\d\s,]+)\s€(?: HT)? pour la ligne\.$/;
+    const CHECKING = /^Prix pour (\d+) : vérification…$/;
     // 1. Ce que voit et entend l'utilisateur. Oracle de TEST seulement (aucun calcul de ce genre côté boutique) :
     //    quantité affichée = quantité saisie, et total de ligne = quantité × prix unitaire affiché.
     for (const r of trace) {
       const m = PRICED.exec(r.text);
-      if (/vérification auprès du serveur/.test(r.text)) checking += 1;
+      if (CHECKING.test(r.text)) checking += 1;
+      if (r.text.includes("€")) assert.match(r.text, PRICED, `prix non vérifié : ${JSON.stringify(r)}`);
       if (!m) continue;
       priced += 1;
       const n = Number(m[1]);
@@ -585,64 +596,22 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     assert.deepEqual(incoherent, [], "prix ou total d'une autre quantité affiché dans la région aria-live");
     // 2. Marquage : tout prix affiché provient de la réponse à la quantité courante ; « vérification… » est aria-busy.
     for (const r of trace) {
-      if (PRICED.test(r.text)) assert.equal(r.quote_quantity, r.input, `réponse serveur d'une autre quantité : ${JSON.stringify(r)}`);
-      if (/vérification auprès du serveur/.test(r.text)) assert.equal(r.busy, "true", `aria-busy pendant la vérification : ${JSON.stringify(r)}`);
+      if (PRICED.test(r.text)) {
+        assert.equal(r.state, "line", `prix sans réponse serveur : ${JSON.stringify(r)}`);
+        assert.equal(r.quote_quantity, r.input, `réponse serveur d'une autre quantité : ${JSON.stringify(r)}`);
+      }
+      const pending = CHECKING.exec(r.text);
+      if (pending) {
+        assert.equal(pending[1], r.input, `vérification d'une autre quantité : ${JSON.stringify(r)}`);
+        assert.equal(r.busy, "true", `aria-busy pendant la vérification : ${JSON.stringify(r)}`);
+      }
     }
     note(`U10 : ${trace.length} états de la région aria-live, ${priced} prix affichés tous cohérents, ${checking} états « vérification… », ${calls} aperçus demandés`);
     assert.ok(priced >= 3 && checking >= 3, `trace insuffisante : ${priced} prix, ${checking} vérifications`);
     await page.context().close();
   });
 
-  test("U11 — friction 14 : la base fiscale « non précisée » est dite UNE fois (bandeau) et sur chaque total, jamais masquée ; chaque ligne la garde dès que les bases diffèrent", async () => {
-    await scene("F_GMCE_VARIANTS.activate");
-    const NOTE = /Base fiscale non précisée pour tous les montants de cette page/;
-    const page = await newPage();
-    await page.goto(BASE + "/famille/gmce-demo?article=PI-00000037S");
-    await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
-    assert.equal(await page.getByTestId("basis-notice").count(), 1, "fiche : un seul bandeau");
-    assert.match(await page.getByTestId("basis-notice").innerText(), NOTE);
-    const ficheText = await page.locator("main").innerText();
-    assert.equal((ficheText.match(/\(base fiscale non précisée\)/g) ?? []).length, 1, "fiche : la mention entre parenthèses n'apparaît qu'une fois (total de la ligne), plus à chaque ligne de prix");
-    assert.match(await page.getByTestId("qty-price").innerText(), /soit [\d\s\u00a0\u202f,]+\s€\s\(base fiscale non précisée\)\spour la ligne/, "le total de la ligne porte la mention");
-    assert.equal(await page.locator("table tbody tr [data-testid=basis-notice]").count(), 0);
-    await shot(page, "U11-fiche-bandeau-unique");
-    await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
-    await page.goto(BASE + "/panier");
-    await page.getByTestId("cart-total").getByText(/base fiscale non précisée/).waitFor();
-    assert.equal(await page.getByTestId("basis-notice").count(), 1, "panier : un seul bandeau");
-    for (const row of await page.getByTestId("cart-line").all()) assert.doesNotMatch(await row.innerText(), /base fiscale/, "aucune ligne du panier ne répète la mention");
-    assert.match(await page.getByTestId("cart-total").innerText(), /\(base fiscale non précisée\)/, "le total porte la mention");
-    await shot(page, "U11-panier-bandeau-unique");
-    await page.context().close();
-
-    // Bases DIFFÉRENTES : aucune simplification, chaque ligne garde la sienne (réponse réelle du serveur dont une ligne est réécrite en HT).
-    const mixed = await newPage();
-    await mixed.goto(BASE + "/famille/gmce-demo?article=PI-00000037S");
-    await mixed.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
-    await mixed.getByRole("button", { name: "Ajouter au panier" }).click();
-    await mixed.getByRole("status").getByText(/Ajouté au panier/).waitFor();
-    await mixed.goto(BASE + "/famille/gmce-demo?article=PI-000000358");
-    await mixed.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
-    await mixed.getByRole("button", { name: "Ajouter au panier" }).click();
-    await mixed.getByRole("status").getByText(/Ajouté au panier/).waitFor();
-    await mixed.route("**/api/site/cart/preview", async (route) => {
-      const response = await route.fetch();
-      const body = await response.json();
-      if (body.lines?.[1]?.selection) body.lines[1].selection.tax_basis_or_status = "HT";
-      const { "content-length": _ignored, ...headers } = response.headers();
-      await route.fulfill({ status: response.status(), headers, body: JSON.stringify(body) });
-    });
-    await mixed.goto(BASE + "/panier");
-    await mixed.getByTestId("cart-line").nth(1).getByText(/€/).first().waitFor();
-    await mixed.getByTestId("cart-total").getByText(/€/).waitFor();
-    assert.equal(await mixed.getByTestId("basis-notice").count(), 0, "bases différentes : pas de bandeau unique");
-    const rows = await mixed.getByTestId("cart-line").allInnerTexts();
-    assert.match(rows[0], /\(base fiscale non précisée\)/);
-    assert.match(rows[1], / HT/);
-    assert.match(await mixed.getByTestId("totals-note").innerText(), /bases fiscales différentes/);
-    await mixed.context().close();
-  });
+  // U11 et U13 : les invariants de base fiscale vivent désormais dans tests/basis/basis.ui.mjs.
 
   test("U12 — friction 9 : après un DEVIS le panier est conservé et on peut commander ces mêmes lignes (prix revalidés par le serveur) ; la commande, elle, vide le panier", async () => {
     await scene("F_GMCE_VARIANTS.activate");
@@ -661,8 +630,8 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     const quoteRef = await page.getByTestId("receipt-ref").textContent();
     assert.match(quoteRef, /^QR-[0-9a-f]{32}$/);
     await page.getByTestId("cart-kept").waitFor();
-    assert.match(await page.getByTestId("cart-kept").innerText(), /Ce devis n'est pas une commande/);
-    assert.match(await page.getByTestId("cart-kept").innerText(), /prix seront vérifiés de nouveau par le serveur/);
+    assert.match(await page.getByTestId("cart-kept").innerText(), /Cette demande de devis n'est pas une commande/);
+    assert.match(await page.getByTestId("cart-kept").innerText(), /prix seront vérifiés de nouveau au moment de l'envoi/);
     await shot(page, "U12-devis-recu-panier-conserve");
     const stored = await page.evaluate(() => window.localStorage.length ? JSON.stringify(window.localStorage) : "");
     assert.match(stored, /PI-00000037S/, "la ligne est toujours dans le panier du navigateur");
@@ -676,7 +645,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.locator("#f-email").fill("achats@example.invalid");
     await page.getByTestId("order-confirm").check();
     await page.getByTestId("submit").click();
-    await page.getByTestId("result-received").getByText("Commande reçue — en attente de traitement").waitFor();
+    await page.getByTestId("result-received").getByRole("heading", { name: "Commande reçue", exact: true }).waitFor();
     const orderRef = await page.getByTestId("receipt-ref").textContent();
     assert.match(orderRef, /^ORD-[0-9a-f]{32}$/);
     assert.equal(await page.getByTestId("cart-kept").count(), 0, "une commande ne propose pas de garder le panier");
@@ -688,69 +657,6 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     assert.equal((await db.query("SELECT count(*)::int AS n FROM site_quote_request")).rows[0].n, 1, "un seul devis");
     await page.goto(BASE + "/panier");
     await page.getByText(/panier est vide/i).waitFor();
-    await page.context().close();
-  });
-
-  test("U13 — friction 14 (règle « jamais un montant sans sa base ») : un reçu de commande aux bases mêlées porte, sur chaque ligne, la base du prix unitaire ET du total de ligne, et dit que les bases diffèrent", async () => {
-    await scene("F_GMCE_VARIANTS.activate");
-    const page = await newPage();
-    for (const key of ["PI-00000037S", "PI-000000358"]) {
-      await page.goto(BASE + `/famille/gmce-demo?article=${key}`);
-      await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
-      await page.getByRole("button", { name: "Ajouter au panier" }).click();
-      await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
-    }
-    await page.goto(BASE + "/commande");
-    await page.getByTestId("order-confirm").waitFor();
-    await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie de Test");
-    await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
-    await page.locator("#f-email").fill("achats@example.invalid");
-    await page.getByTestId("order-confirm").check();
-    await page.getByTestId("submit").click();
-    await page.getByTestId("result-received").waitFor();
-    const link = await page.getByTestId("receipt-link").textContent();
-    // Le reçu réel de cette commande (deux lignes « non précisée ») : son affichage uniforme est regroupé en bandeau ; on réécrit UNE ligne en HT dans la réponse du serveur pour
-    // obtenir un reçu aux bases mêlées (le site n'en produit pas aujourd'hui : la règle doit tenir quand même).
-    const reader = await newPage();
-    await reader.goto(link);
-    await reader.getByTestId("receipt-found").waitFor();
-    assert.equal(await reader.getByTestId("basis-notice").count(), 1, "reçu uniforme : un seul bandeau");
-    await reader.context().close();
-    const mixed = await newPage();
-    await mixed.route("**/api/site/receipt**", async (route) => {
-      const response = await route.fetch();
-      const body = await response.json();
-      if (body.receipt?.lines?.[1]) body.receipt.lines[1].tax_basis_or_status = "HT";
-      const { "content-length": _ignored, ...headers } = response.headers();
-      await route.fulfill({ status: response.status(), headers, body: JSON.stringify(body) });
-    });
-    await mixed.goto(link);
-    await mixed.getByTestId("receipt-found").waitFor();
-    assert.equal(await mixed.getByTestId("basis-notice").count(), 0, "bases mêlées : pas de bandeau unique");
-    const rows = (await mixed.getByTestId("receipt-found").locator("tbody tr").allInnerTexts()).map((t) => t.replace(/\s+/g, " "));
-    assert.equal(rows.length, 2);
-    assert.equal((rows[0].match(/\(base fiscale non précisée\)/g) ?? []).length, 2, "ligne « non précisée » : prix unitaire ET total de ligne");
-    assert.equal((rows[1].match(/\bHT\b/g) ?? []).length, 2, "ligne HT : prix unitaire ET total de ligne");
-    assert.match(await mixed.getByTestId("receipt-total").innerText(), /\(bases fiscales différentes : HT et non précisée\)/, "HT + non précisée : les deux bases nommées");
-    await mixed.context().close();
-    // Réserve de revue : le libellé nomme les bases RÉELLEMENT présentes, et un total ne s'affiche jamais sans base.
-    const receiptWith = async (rewrite) => {
-      const reader2 = await newPage();
-      await reader2.route("**/api/site/receipt**", async (route) => {
-        const response = await route.fetch();
-        const body = await response.json();
-        rewrite(body.receipt.lines);
-        const { "content-length": _ignored, ...headers } = response.headers();
-        await route.fulfill({ status: response.status(), headers, body: JSON.stringify(body) });
-      });
-      await reader2.goto(link);
-      await reader2.getByTestId("receipt-found").waitFor();
-      const text = (await reader2.getByTestId("receipt-total").innerText()).replace(/\s+/g, " ");
-      await reader2.context().close();
-      return text;
-    };
-    assert.match(await receiptWith((lines) => lines.forEach((l) => { l.tax_basis_or_status = null; })), /\(base fiscale non précisée\)/, "aucune ligne ne porte de base : « non précisée »");
-    assert.match(await receiptWith((lines) => { lines[0].tax_basis_or_status = "HT"; lines[1].tax_basis_or_status = null; }), /\(bases fiscales différentes : HT et inconnue\)/, "HT + inconnue : nommées, pas « HT et non précisée »");
     await page.context().close();
   });
 

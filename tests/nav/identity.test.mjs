@@ -70,7 +70,8 @@ test("cartes et accueil : grilles adaptatives et absence de faux visuels", () =>
   for (const file of ["components/home/family-card.tsx", "components/home/category-grid.tsx"]) {
     const source = read(file);
     assert.match(source, /commerce-grid/);
-    assert.match(source, /MediaImage/);
+    // Les cartes de familles passent par MediaImage ; la liste des univers n'a plus de cases d'image (liste de liens rouges, D7).
+    if (file.endsWith("family-card.tsx")) assert.match(source, /MediaImage/);
     assert.doesNotMatch(source, /image-rendering:pixelated|bg-gradient|<img\b/);
   }
   const css = read("app/globals.css");
@@ -126,9 +127,15 @@ test("cartes : image interdite remplacée par l’état neutre et accès produit
     ...stubs, "@/components/site/media-policy": { useShowImages: () => false },
   }).CategoryGrid({ categories: [{ key: "exemple", name: "Exemple", familyCount: 1, imageSha: "a".repeat(64), children: [] }] });
   const html = renderToStaticMarkup(tree);
-  assert.match(html, /Visuel non disponible/);
-  assert.doesNotMatch(html, /<img/);
+  assert.doesNotMatch(html, /<img|Visuel non disponible/, "liste des univers : jamais d'image ni de case grise vide");
+  assert.match(html, /href="\/categorie\/exemple"/);
   assert.equal(CategoryGrid({ categories: [] }), null);
+  const refused = load("components/home/family-card.tsx", {
+    ...stubs, "@/components/site/media-policy": { useShowImages: () => false }, "@/components/site/list-buttons": { CompareButton: () => null, WishlistButton: () => null },
+  }).FamilyCard;
+  const refusedCard = renderToStaticMarkup(React.createElement(refused, { data: { slug: "exemple", name: "Exemple", imageSha: "a".repeat(64), description: "", variantCount: 1 }, from: null }));
+  assert.match(refusedCard, /Visuel non disponible/);
+  assert.doesNotMatch(refusedCard, /<img/);
   const card = renderToStaticMarkup(React.createElement(FamilyCard, { data: { slug: "exemple", name: "Exemple", imageSha: null, description: "", variantCount: 1 }, from: null }));
   assert.match(card, /Sur devis/);
   assert.match(card, /Découvrir/);
@@ -139,7 +146,7 @@ test("pied public : aucune métadonnée technique, indisponibilité compréhensi
   const { SiteFooter } = load("components/layout/footer.tsx", stubs);
   const html = renderToStaticMarkup(React.createElement(SiteFooter, { meta: null, basis: "NOT_DECLARED" }));
   assert.match(html, /Catalogue momentanément indisponible/);
-  assert.match(html, /Montant indicatif/);
+  assert.doesNotMatch(html, /Montant indicatif/, "mention déplacée : une seule fois, sous le total du panier");
   assert.doesNotMatch(html, /<details|Détail technique|\bHT\b|\bTTC\b|\bTVA\b/);
   assert.doesNotMatch(html, forbidden);
 });

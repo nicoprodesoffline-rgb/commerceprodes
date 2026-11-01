@@ -26,7 +26,8 @@ const require = createRequire(path.join(process.env.PLAYWRIGHT_DIR, "/"));
 const { chromium } = require("playwright");
 const { fullFlow, loadCase, newPool, resetDb } = await import("../bc2/helpers.mjs");
 const BASE = `http://127.0.0.1:${PORT}`;
-const NOTICE = "Commande de test : aucun paiement, aucune livraison, aucune facture, aucun e-mail.";
+const NOTICE = "Commande enregistrée ; nous vous recontactons pour la confirmer.";
+const NO_TEST_WORDING = /fictiv|de test|aucun paiement/i;
 const CONTACT = { organisation_name: "STAGING_FIXTURE Organisation test", contact_name: "STAGING_FIXTURE Contact test", email: "test@example.invalid" };
 let browser, server, pool, exited = false, fixture;
 const contexts = new Set();
@@ -244,7 +245,7 @@ describe("panier → devis → commande de test, 390 px et clavier seul", { conc
     await cart(page);
     await activateKey(page, page.getByTestId("go-order"));
     await page.getByTestId("submit").waitFor();
-    assert.ok((await page.locator("main").innerText()).includes(NOTICE));
+    assert.doesNotMatch(await page.locator("main").innerText(), NO_TEST_WORDING, "la page de commande ne parle ni de test ni de coordonnées fictives");
     assert.equal(await page.getByTestId("submit").isDisabled(), true);
     await fits(page, "commande");
     await contact(page);
@@ -262,7 +263,7 @@ describe("panier → devis → commande de test, 390 px et clavier seul", { conc
     assert.equal(await count("site_order"), 1);
     assert.ok((await page.getByTestId("result-received").innerText()).includes(NOTICE));
     await lookup(page, created);
-    assert.ok((await page.getByTestId("receipt-found").innerText()).includes(NOTICE));
+    assert.doesNotMatch(await page.getByTestId("receipt-found").innerText(), NO_TEST_WORDING);
     await page.goto(`${BASE}/commande`);
     await page.getByTestId("cart-empty").waitFor();
     await page.reload();

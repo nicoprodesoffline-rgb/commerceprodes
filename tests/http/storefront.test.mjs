@@ -261,7 +261,7 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
     test("langage public : aucune page publique ne rend un terme interne (texte visible, aria-label, title, alt, placeholder) ni une image de test", async () => {
       // Les noms de la fixture contiennent eux-mêmes « STAGING_FIXTURE » (données, pas interface) : seuls les textes de l'interface sont scannés.
       const FORBIDDEN = [
-        /boutique de démonstration/i, /image de démonstration/i, /staging-banner/, /donn[ée]es? de test/i, /enregistr[ée]es? localement/i, /trait[ée]es? par personne/i,
+        /boutique de démonstration/i, /image de démonstration/i, /staging-banner/, /fictiv/i, /\bde test\b/i, /\(code [A-Z_]{4,}\)/, /donn[ée]es? de test/i, /enregistr[ée]es? localement/i, /trait[ée]es? par personne/i,
         /base fiscale/i, /taxes, port et remises/i, /prix de vente PRODES/i, /en vigueur maintenant/i, /provenance/i, /\bhash\b/i,
         /g[ée]n[ée]ration/i, /s[ée]quence/i, /\bcontrat\b/i, /\bC0\b/, /\bFactory\b/i, /calculateur/i, /catalogue servable/i, /instant serveur/i,
       ];
@@ -323,7 +323,7 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
 
     test("base fiscale : la génération déclare HT, le site peut le dire (pied de page, accueil) ; la règle inverse est dans basis.ui", async () => {
       const home = await get("/");
-      assert.match(home.text, /data-testid="footer-basis">Prix HT\. Les conditions sont confirmées sur le devis/);
+      assert.doesNotMatch(home.text, /data-testid="footer-basis"|Montant indicatif/, "le pied de page ne répète plus de mention fiscale");
       assert.match(home.text, /Prix HT/);
       assert.doesNotMatch(home.text, /Les prix et la base fiscale sont précisés sur le devis/);
       assert.doesNotMatch(home.text, /data-testid="universe-bar"/, "aucune page publiée : la barre d'univers n'affiche rien (pas même un cadre vide)");

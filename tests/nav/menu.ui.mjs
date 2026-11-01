@@ -140,7 +140,10 @@ describe("3 niveaux", () => {
           await tp.waitForSelector('[data-testid="category-menu"] ul[data-level="1"]', { state: "visible" });
           const tpanel = await tp.locator('[data-testid="category-menu"] ul[data-level="1"]').first().evaluateHandle((ul) => ul.parentElement);
           const tbox = await tpanel.asElement().boundingBox();
-          for (const [dx, dy] of [[6, tbox.height / 2], [tbox.width - 6, tbox.height / 2], [tbox.width / 2, tbox.height - 6]]) {
+          // Les cibles font 44 px : le panneau peut défiler. La marge basse n'est visible que s'il ne défile pas ; les marges gauche et droite le sont toujours.
+          const scrolls = await tpanel.evaluate((el) => el.scrollHeight > el.clientHeight + 1);
+          const taps = [[6, tbox.height / 2], [tbox.width - 6, tbox.height / 2], ...(scrolls ? [] : [[tbox.width / 2, tbox.height - 6]])];
+          for (const [dx, dy] of taps) {
             await tp.touchscreen.tap(tbox.x + dx, tbox.y + dy);
             await tp.waitForTimeout(150);
             assert.equal(await tbutton.getAttribute("aria-expanded"), "true", `tap sur la marge (${Math.round(dx)},${Math.round(dy)}) : le menu reste ouvert`);

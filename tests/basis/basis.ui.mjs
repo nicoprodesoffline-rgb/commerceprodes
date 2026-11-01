@@ -118,10 +118,10 @@ describe("la base fiscale n'est affirmée que si la génération la déclare (S1
       const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" })).newPage();
       for (const path of ["/", `/famille/${FAMILY_SLUG}?article=${HT_ITEM}`]) {
         await page.goto(`${BASE}${path}`);
-        await page.getByTestId("footer-basis").waitFor();
+        await page.locator("footer").waitFor();
         const chrome = [await page.locator("footer").innerText(), ...(path === "/" ? [await page.getByTestId("hero").innerText(), await page.getByTestId("trust-bar").innerText()] : [])].join("\n");
         assert.doesNotMatch(chrome, /Prix HT|hors taxes/i, `${path} : aucune base affirmée hors de la donnée`);
-        assert.doesNotMatch(await page.getByTestId("footer-basis").innerText(), NO_TAX_JARGON, path);
+        assert.doesNotMatch(await page.locator("footer").innerText(), NO_TAX_JARGON, path);
       }
       await page.goto(`${BASE}/faq`);
       const faq = await page.locator("main").textContent(); // les réponses sont repliées : lire le texte, pas le rendu
