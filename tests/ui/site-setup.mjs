@@ -33,6 +33,41 @@ export async function resetSiteDb(nameOrUrl) {
   await migrate(url, () => undefined);
 }
 
+/**
+ * Base de TEST seulement : réécrit en « rq- » / montant de convention les fenêtres du potelet de F_SELL_WINDOWS (« Prix sur devis »),
+ * dans la génération ACTIVE (document recanonisé, SHA recalculé). Le garde d'immutabilité est suspendu le temps de la transaction, puis réactivé.
+ */
+export async function makePoteletQuoteOnly(nameOrUrl, rateId = "rq-402", amount = "0.01") {
+  const { createRequire } = await import("node:module");
+  const require = createRequire(import.meta.url);
+  const snapshot = require("../../c0/ts/dist/src/snapshot.js");
+  const jsonc = require("../../c0/ts/dist/src/jsonc.js");
+  const client = new pg.Client({ connectionString: dbUrl(nameOrUrl) });
+  await client.connect();
+  try {
+    const row = (await client.query("SELECT id, snapshot_bytes FROM site_generation WHERE status = 'ACTIVE'")).rows[0];
+    const doc = jsonc.parseBytes(new Uint8Array(row.snapshot_bytes), 1 << 24);
+    // Toutes les fenêtres du potelet passent en « rq- » : la variante est « sur devis » à toute quantité, quel que soit l'instant du serveur (R-402-F s'ouvre le 2026-11-01).
+    for (const [index, w] of doc.families[1].items[0].public_sell_price_windows.entries()) {
+      w.rate_id = `${rateId}-${index}`;
+      w.unit_amount = amount;
+    }
+    doc.payload_sha256 = snapshot.payloadSha256(doc);
+    await client.query("BEGIN");
+    await client.query("SET CONSTRAINTS ALL DEFERRED");
+    await client.query("ALTER TABLE site_generation DISABLE TRIGGER site_generation_immutable");
+    await client.query("UPDATE site_generation SET snapshot_bytes = $1, snapshot_json = $2::jsonb, payload_sha256 = $3 WHERE id = $4", [Buffer.from(jsonc.canonicalBytes(doc)), JSON.stringify(doc), doc.payload_sha256, row.id]);
+    await client.query("UPDATE site_active_pointer SET payload_sha256 = $1 WHERE singleton = 1", [doc.payload_sha256]);
+    await client.query("ALTER TABLE site_generation ENABLE TRIGGER site_generation_immutable");
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
 export async function activateOverHttp(base, caseId) {
   process.env.SITE_TEST_DATABASE_URL ??= dbUrl("prodes_site_bc3_test"); // lu par tests/bc2/helpers.mjs à l'import
   const { loadCase, mediaHeaders } = await import("../bc2/helpers.mjs");

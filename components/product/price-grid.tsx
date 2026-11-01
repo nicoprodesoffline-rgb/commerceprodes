@@ -23,6 +23,13 @@ export type PriceGridRow = {
 /** `showBasis` : chaque ligne porte sa base fiscale (défaut) ; faux = la base est dite UNE fois par le bandeau de la fiche (`BasisNotice`, friction 14). */
 export function PriceGrid({ rows, selectedRateId, caption = "Prix selon la quantité", showBasis = true }: { rows: PriceGridRow[]; selectedRateId?: string | null; caption?: string; showBasis?: boolean }) {
   if (!rows.some((r) => r.selected)) {
+    if (rows.length > 0 && rows.every((r) => r.error_codes.includes("QUOTE_ONLY"))) {
+      return (
+        <p className="border border-line bg-surface p-4 text-sm text-ink-2" data-testid="price-quote-only">
+          <strong className="font-semibold text-ink">Prix sur devis :</strong> demandez un devis pour ce produit.
+        </p>
+      );
+    }
     return (
       <p className="border border-line bg-surface p-4 text-sm text-ink-2" data-testid="price-unavailable">
         <strong className="font-semibold text-ink">Prix sur demande :</strong> ajoutez ce produit à votre demande de devis.
@@ -61,7 +68,7 @@ export function PriceGrid({ rows, selectedRateId, caption = "Prix selon la quant
             ) : (
               <tr key={`t${r.tier_quantity}`} data-tier={r.tier_quantity} data-unavailable={r.error_codes.join(",")} className="border-b border-line">
                 <td className="py-3 pr-3">{quantityRange(r.quantity_min, r.quantity_max)}</td>
-                <td className="py-3 text-right text-ink-2">Prix sur demande</td>
+                <td className="py-3 text-right text-ink-2">{r.error_codes.includes("QUOTE_ONLY") ? "Prix sur devis" : "Prix sur demande"}</td>
               </tr>
             );
           })}

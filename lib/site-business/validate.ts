@@ -15,6 +15,7 @@
  */
 import { validateOrderSubmit, validateQuoteRequest, MAX_BYTES } from "@/c0/ts/src/business";
 import { selectPriceOnServed } from "@/lib/site-db/select-price";
+import { QUOTE_ONLY_CODE, isQuoteOnlyRate } from "@/lib/site-catalog/quote-only";
 import { centsToMoney, moneyCents } from "@/c0/ts/src/formats";
 import { MalformedPayload, hasDuplicateLines, isObject, parseBytes, type Json, type JsonObject } from "@/c0/ts/src/jsonc";
 
@@ -168,7 +169,11 @@ export function previewCart(input: Omit<Input, "register">): PreviewResponse {
   const codes = new Set<string>();
   let total = 0n;
   for (const line of lines) {
-    const r = selectPriceOnServed(input.generation, line["public_item_key"]!, line["variant_axes"]!, line["quantity"]!, input.nowUtc);
+    const served = selectPriceOnServed(input.generation, line["public_item_key"]!, line["variant_axes"]!, line["quantity"]!, input.nowUtc);
+    // « Prix sur devis » (fenêtre `rq-`) : ligne non chiffrée, aucun montant renvoyé ; seule la demande de devis reste (le devis et la commande revalident tout).
+    const r = served.accepted && served.selection && isQuoteOnlyRate(served.selection["rate_id"])
+      ? { ...served, accepted: false, error_codes: [QUOTE_ONLY_CODE], selection: null }
+      : served;
     for (const c of r.error_codes) codes.add(c);
     let lineTotal: string | null = null;
     if (r.accepted && r.selection) {

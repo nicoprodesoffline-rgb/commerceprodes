@@ -7,6 +7,7 @@ import type { SelectorAxis } from "@/components/product/variant-selector";
 import { selectPriceOnServed } from "@/lib/site-db/select-price";
 import type { C0Generation } from "@/lib/site-business/validate";
 import type { Family, Item, PriceWindow } from "./catalog";
+import { QUOTE_ONLY_CODE, isQuoteOnlyRate } from "./quote-only";
 
 const PARIS = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", dateStyle: "short", timeStyle: "short" });
 
@@ -38,6 +39,11 @@ export function priceRows(generation: C0Generation, item: Item, nowUtc: string):
       if (seen.has(rateId)) continue;
       seen.add(rateId);
       const w = item.windows.find((x) => x.rate_id === rateId) as PriceWindow;
+      if (isQuoteOnlyRate(w.rate_id)) {
+        // « Prix sur devis » : le montant de convention n'est jamais exposé (ni fiche, ni cartes, ni recherche, ni tri).
+        rows.push({ tier_quantity: tier, selected: false, error_codes: [QUOTE_ONLY_CODE], rate_id: null, unit_amount: null, currency: null, tax_basis_or_status: null, quantity_min: w.quantity_min, quantity_max: w.quantity_max, validity_label: null });
+        continue;
+      }
       rows.push({
         tier_quantity: tier,
         selected: true,

@@ -21,6 +21,7 @@ import { payloadDigest, validateEvent } from "../../c0/ts/src/events";
 import { moneyCents } from "../../c0/ts/src/formats";
 import { canonicalBytes, isObject, parseBytes, type Json, type JsonObject } from "../../c0/ts/src/jsonc";
 import { readActiveForUpdate } from "../site-db/generation";
+import { QUOTE_ONLY_CODE, isQuoteOnlyRate } from "../site-catalog/quote-only";
 import { PERSISTENCE, appendLog, checkout, errorReason, httpStatusFor, json, jsonWithRaw, newAccessToken, opaqueRef, sha256OfBytes, type TxResponse } from "./common";
 
 export type BusinessKind = "quote_request" | "order";
@@ -325,6 +326,16 @@ export async function submitBusiness(deps: BusinessDeps, kind: BusinessKind, byt
       if (deps.hooks?.afterValidate) await deps.hooks.afterValidate(client);
       const request = parseBytes(bytes, MAX_BYTES) as JsonObject; // déjà accepté par C0 : relecture NFC du même document
       const receiptC0 = verdict.receipt as JsonObject;
+      // « Prix sur devis » (fenêtre `rq-`, montant de convention 0.01) : jamais commandable en ligne. C0 valide ce montant (une commande forgée à 0,01 € passerait), donc le refus est ICI,
+      // sur les lignes retenues par le serveur ; seule la demande de devis reste. Aucune écriture, rien d'enregistré.
+      if (kind === "order" && (receiptC0["lines"] as JsonObject[]).some((l) => isQuoteOnlyRate(l["rate_id"]))) {
+        await client.query("ROLLBACK");
+        outcome = {
+          response: json(httpStatusFor([QUOTE_ONLY_CODE]), { ...base, durable: false, catalogue_sequence: active.catalogue_sequence, accepted: false, outcome: "REJECTED", error_codes: [QUOTE_ONLY_CODE], superseded_by: {}, verdict: null }),
+          log: { operation, outcome: "REJECTED", error_codes: [QUOTE_ONLY_CODE] },
+        };
+        return outcome.response;
+      }
       const ref = opaqueRef(kind === "order" ? "ORD" : "QR");
       const access = newAccessToken();
       const receipt: JsonObject = { ...receiptC0, receipt_ref: ref, created_at_utc: nowUtc };

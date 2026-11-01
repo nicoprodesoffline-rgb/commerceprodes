@@ -30,7 +30,8 @@ export async function addWishlistToCart(
     if (response.network) { result.failed.push(family); continue; }
     const line = response.json?.lines?.[0];
     const matches = line?.public_item_key === item.public_item_key && line.quantity === 1;
-    const unpriced = line?.error_codes?.length === 1 && line.error_codes[0] === "PRICE_WINDOW_UNAVAILABLE";
+    // Sans prix publié maintenant, ou « prix sur devis » (QUOTE_ONLY) : la ligne rejoint le panier sans prix, seule la demande de devis restera possible.
+    const unpriced = line?.error_codes?.length === 1 && (line.error_codes[0] === "PRICE_WINDOW_UNAVAILABLE" || line.error_codes[0] === "QUOTE_ONLY");
     if (response.status === 200 && response.json && matches && ((line.accepted && line.selection) || unpriced)) {
       add({ ...item, quantity: 1, family_name: family.name, family_slug: family.slug }, response.json.catalogue_sequence, { announce: false });
       result.added++;

@@ -31,8 +31,9 @@ function LineStatus({ pl }: { pl: PreviewLineJson | undefined }) {
   }, [pl]);
   if (!pl || pl.accepted) return null;
   const canonical = Object.values(pl.superseded_by ?? {})[0];
+  const quoteOnly = pl.error_codes.length === 1 && pl.error_codes[0] === "QUOTE_ONLY";
   return (
-    <p className="mt-1 text-xs text-signal" data-testid="line-problem" data-codes={pl.error_codes.join(" ")}>
+    <p className={`mt-1 text-xs ${quoteOnly ? "text-ink-2" : "text-signal"}`} data-testid="line-problem" data-codes={pl.error_codes.join(" ")}>
       {pl.error_codes.map(codeMessage).join(" ")}
       {canonical && (
         <>
@@ -115,7 +116,7 @@ export function CartLines({
                 </td>
                 <td className="text-right sm:px-3 sm:py-3">
                   <span className="block text-xs text-ink-3 sm:hidden">Prix unitaire</span>
-                  {loading || !pls ? <span className="text-ink-3">…</span> : sel ? (common.uniform ? money(sel.unit_amount) : price(sel.unit_amount, sel.tax_basis_or_status)) : <span className="text-ink-2">sans prix</span>}
+                  {loading || !pls ? <span className="text-ink-3">…</span> : sel ? (common.uniform ? money(sel.unit_amount) : price(sel.unit_amount, sel.tax_basis_or_status)) : <span className="text-ink-2">{pl?.error_codes.includes("QUOTE_ONLY") ? "sur devis" : "sans prix"}</span>}
                 </td>
                 <td className="text-right font-semibold sm:px-3 sm:py-3">
                   <span className="block text-xs font-normal text-ink-3 sm:hidden">Total ligne</span>

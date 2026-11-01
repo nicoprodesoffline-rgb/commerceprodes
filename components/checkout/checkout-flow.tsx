@@ -41,7 +41,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
     if (attempt > 0) document.getElementById("error-summary")?.focus();
   }, [attempt]);
 
-  if (outcome?.kind === "received") return <ResultPanel outcome={outcome} cartKept={mode === "quote"} />;
+  if (outcome?.kind === "received") return <ResultPanel outcome={outcome} cartKept={mode === "quote"} cartOrderable={preview?.accepted === true} />;
   if (!ready || state.kind === "loading") return <p role="status" className="text-ink-3">Vérification du panier…</p>;
   if (state.kind === "empty") {
     return (

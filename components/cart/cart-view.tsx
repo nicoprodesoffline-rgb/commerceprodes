@@ -37,7 +37,7 @@ export function CartView() {
       <div aria-live="polite" className="text-sm text-ink-2" data-testid="cart-next-step">
         {state.kind === "loading" && "Vérification des prix…"}
         {preview && stale && "Envoi bloqué : vérifiez d'abord les nouveaux prix."}
-        {preview && !stale && !preview.accepted && canQuote && "Certaines lignes n'ont pas de prix en ce moment : seule une demande de devis est possible."}
+        {preview && !stale && !preview.accepted && canQuote && "Certaines lignes sont sur devis ou sans prix en ce moment : seule une demande de devis est possible."}
         {preview && !stale && !canQuote && "Retirez ou remplacez les lignes signalées pour continuer."}
       </div>
       <div className="flex flex-wrap gap-3">

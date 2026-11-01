@@ -11,7 +11,7 @@ import type { Outcome } from "@/components/checkout/submit";
  * — le code n'est conservé nulle part par le site, ni dans le panier ni dans le stockage du navigateur. Le lien
  * place le code après `#` : il n'est jamais transmis au serveur dans l'adresse de la page.
  */
-export function ResultPanel({ outcome, onRetry, cartKept = false }: { outcome: Outcome; onRetry?: () => void; cartKept?: boolean }) {
+export function ResultPanel({ outcome, onRetry, cartKept = false, cartOrderable = true }: { outcome: Outcome; onRetry?: () => void; cartKept?: boolean; cartOrderable?: boolean }) {
   const heading = useRef<HTMLHeadingElement>(null);
   const [copied, setCopied] = useState(false);
   useEffect(() => heading.current?.focus(), [outcome]);
@@ -70,11 +70,13 @@ export function ResultPanel({ outcome, onRetry, cartKept = false }: { outcome: O
           <div className="mt-4 rounded-[9px] border border-line p-3" data-testid="cart-kept">
             <p className="text-sm font-semibold">Votre panier est conservé</p>
             <p className="mt-1 text-sm text-ink-2">
-              Cette demande de devis n&apos;est pas une commande. Vous pouvez commander ces mêmes articles avec ce panier : les prix seront vérifiés de nouveau au moment de l&apos;envoi.
-              La commande ne remplace pas votre demande de devis.
+              {cartOrderable
+                ? <>Cette demande de devis n&apos;est pas une commande. Vous pouvez commander ces mêmes articles avec ce panier : les prix seront vérifiés de nouveau au moment de l&apos;envoi.
+              La commande ne remplace pas votre demande de devis.</>
+                : <>Cette demande de devis n&apos;est pas une commande. Certains articles de ce panier se commandent sur devis : ils ne peuvent pas être commandés en ligne.</>}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Link href="/commande" className="inline-flex min-h-[44px] items-center rounded-[9px] bg-brand hover:bg-brand-dark px-4 py-2 font-medium text-white" data-testid="order-with-this-cart">Commander avec ce panier</Link>
+              {cartOrderable && <Link href="/commande" className="inline-flex min-h-[44px] items-center rounded-[9px] bg-brand hover:bg-brand-dark px-4 py-2 font-medium text-white" data-testid="order-with-this-cart">Commander avec ce panier</Link>}
               <Link href="/panier" className="inline-flex h-[44px] items-center rounded-[9px] border border-line-strong px-4 font-medium hover:bg-surface">Revoir le panier</Link>
             </div>
           </div>

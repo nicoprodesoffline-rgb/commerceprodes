@@ -12,7 +12,7 @@ import { createRequire } from "node:module";
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import pg from "pg";
-import { activateOverHttp, dbUrl, resetSiteDb } from "./site-setup.mjs";
+import { activateOverHttp, dbUrl, makePoteletQuoteOnly, resetSiteDb } from "./site-setup.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const PORT = Number(process.env.SITE_TEST_PORT ?? 3361);
@@ -657,6 +657,49 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     assert.equal((await db.query("SELECT count(*)::int AS n FROM site_quote_request")).rows[0].n, 1, "un seul devis");
     await page.goto(BASE + "/panier");
     await page.getByText(/panier est vide/i).waitFor();
+    await page.context().close();
+  });
+
+  test("U13 — Prix sur devis (fenêtre rq-) : aucun montant, pas d'« Ajouter au panier », devis demandé directement depuis la fiche, jamais dans les filtres de prix", async () => {
+    await scene("F_SELL_WINDOWS.activate");
+    await makePoteletQuoteOnly(DB);
+    const page = await newPage();
+    // Fiche : « Prix sur devis », aucune action d'achat, aucun montant de convention.
+    await page.goto(BASE + "/famille/potelet-paliers");
+    await page.getByTestId("product-price-quote").getByText("Prix sur devis", { exact: true }).waitFor();
+    await page.getByTestId("qty-price").getByText(/Prix sur devis/).waitFor();
+    assert.equal(await page.getByRole("button", { name: "Ajouter au panier" }).count(), 0, "pas d'ajout au panier");
+    assert.doesNotMatch(await page.locator("body").innerText(), /0[,.]01\s*€|\b0[,.]01\b/, "le montant de convention n'est jamais affiché");
+    await shot(page, "U13-fiche-prix-sur-devis");
+    // Recherche : la carte dit « Sur devis » ; le filtre 0 → 1 € ne la trouve pas.
+    await page.goto(BASE + "/recherche?q=potelet");
+    await page.getByText("Sur devis", { exact: false }).first().waitFor();
+    assert.doesNotMatch(await page.locator("main").innerText(), /0[,.]01/);
+    await page.goto(BASE + "/recherche?q=potelet&prix_min=0&prix_max=1");
+    await page.getByTestId("search-count").getByText(/^Aucune famille ne correspond/).waitFor();
+    // Devis directement depuis la fiche (sans passer par la page panier) : ligne non chiffrée, envoi, ligne priced=false en base.
+    await page.goto(BASE + "/famille/potelet-paliers");
+    await page.getByTestId("quote-from-family").click();
+    await page.waitForURL(/\/devis$/);
+    await page.getByRole("heading", { name: "Récapitulatif" }).waitFor();
+    await page.getByTestId("cart-line").getByText("sur devis", { exact: true }).waitFor();
+    await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie de Test");
+    await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
+    await page.locator("#f-email").fill("achats@example.invalid");
+    await page.getByTestId("submit").click();
+    await page.getByTestId("result-received").waitFor();
+    const ref = await page.getByTestId("receipt-ref").textContent();
+    await page.getByTestId("cart-kept").waitFor();
+    assert.equal(await page.getByTestId("order-with-this-cart").count(), 0, "pas de « Commander avec ce panier » : une ligne est sur devis");
+    const row = (await db.query("SELECT l.priced, l.rate_id, l.unit_amount FROM site_quote_line l JOIN site_quote_request q ON q.id = l.quote_id WHERE q.quote_ref = $1", [ref])).rows[0];
+    assert.deepEqual(row, { priced: false, rate_id: null, unit_amount: null });
+    // Le panier conservé après le devis : la commande reste impossible (pas de bouton « Passer commande »).
+    await page.goto(BASE + "/panier");
+    await page.getByTestId("go-quote").waitFor();
+    assert.equal(await page.getByTestId("go-order").count(), 0, "commande impossible avec une ligne sur devis");
+    await page.goto(BASE + "/commande");
+    await page.getByTestId("flow-blocked").waitFor();
+    await shot(page, "U13-commande-bloquee");
     await page.context().close();
   });
 

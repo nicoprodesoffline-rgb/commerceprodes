@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MAX_QUANTITY, useCart } from "@/components/cart/cart-provider";
 import { minimumQuantity } from "@/components/product/minimum-quantity";
+import { isUnpricedOnly } from "@/lib/site-catalog/quote-only";
 import { shortRef } from "@/lib/site-catalog/short-ref";
 import { PriceGrid, type PriceGridRow } from "@/components/product/price-grid";
 import { VariantSelector, type SelectorAxis } from "@/components/product/variant-selector";
@@ -147,6 +148,10 @@ export function FamilyBuyBox({
 
   if (!item) return <p>Ce produit est momentanément indisponible.</p>;
   const inCart = lines.find((l) => l.public_item_key === item.public_item_key);
+  // « Prix sur devis » (fenêtre `rq-`) : aucun montant, pas d'« Ajouter au panier » ; la demande de devis part directement de la fiche.
+  const quoteOnly =
+    ((item.rows ?? []).length > 0 && (item.rows ?? []).every((r) => !r.selected && r.error_codes?.length === 1 && r.error_codes[0] === "QUOTE_ONLY")) ||
+    (current?.state === "line" && current.line.error_codes?.length === 1 && current.line.error_codes[0] === "QUOTE_ONLY");
 
   /** Ajoute la variante au panier (prix vérifié par le serveur) ; `toQuote` ouvre ensuite la demande de devis : même parcours que depuis le panier, aucun second formulaire. */
   async function onAdd(toQuote = false) {
@@ -164,7 +169,7 @@ export function FamilyBuyBox({
         add(draft, r.json.catalogue_sequence, { announce: !toQuote, opener });
         if (toQuote) { router.push("/devis"); return; }
         setFeedback({ kind: "ok", text: `Ajouté au panier — ${quantity} × ${axesText(item.axes)}, ${unit(l.selection.unit_amount, l.selection.tax_basis_or_status)} l'unité.` });
-      } else if (r.status === 200 && l && r.json && l.error_codes.length === 1 && l.error_codes[0] === "PRICE_WINDOW_UNAVAILABLE") {
+      } else if (r.status === 200 && l && r.json && isUnpricedOnly(l.error_codes)) {
         add(draft, r.json.catalogue_sequence, { announce: !toQuote, opener });
         if (toQuote) { router.push("/devis"); return; }
         setFeedback({ kind: "ok", text: `Ajouté au panier sans prix — ${quantity} × ${axesText(item.axes)}. Seule une demande de devis sera possible pour cette ligne.` });
@@ -190,6 +195,7 @@ export function FamilyBuyBox({
             <p>Référence <span className="font-medium text-ink" data-testid="item-ref" data-key={item.public_item_key}>{shortRef(item.public_item_key)}</span></p>
             {item.axes.length > 0 && <p className="mt-1">{axesText(item.axes)}</p>}
           </div>
+          {quoteOnly && <p className="text-2xl font-semibold text-[color:var(--color-brand,#a71c19)]" data-testid="product-price-quote">Prix sur devis</p>}
           {priced?.selection && (
             <p className="tabular text-3xl font-semibold text-[color:var(--color-brand,#a71c19)]" data-testid="product-price">
               {price(priced.selection.unit_amount, priced.selection.tax_basis_or_status)}
@@ -220,6 +226,7 @@ export function FamilyBuyBox({
               </div>
               {minimum > 1 && <p id={`${qtyId}-minimum`} className="mt-1 text-sm text-ink-2">Quantité minimale : {minimum}</p>}
             </div>
+            {!quoteOnly && (
             <button
               type="button"
               onClick={() => onAdd()}
@@ -228,11 +235,14 @@ export function FamilyBuyBox({
             >
               {busy ? "Vérification…" : "Ajouter au panier"}
             </button>
+            )}
             <button
               type="button"
               onClick={() => onAdd(true)}
               disabled={busy || quantity === null}
-              className="min-h-[48px] w-full rounded-[3px] border border-[color:var(--color-brand,#a71c19)] bg-white px-5 py-3 font-semibold text-[color:var(--color-brand,#a71c19)] hover:bg-[color:var(--color-brand-subtle,#f6e9e8)] disabled:cursor-not-allowed disabled:opacity-50"
+              className={quoteOnly
+                ? "min-h-[48px] w-full rounded-[3px] bg-[color:var(--color-brand,#a71c19)] px-5 py-3 font-semibold text-white hover:bg-[color:var(--color-brand-dark,#8f1815)] disabled:cursor-not-allowed disabled:opacity-50 lg:flex-1"
+                : "min-h-[48px] w-full rounded-[3px] border border-[color:var(--color-brand,#a71c19)] bg-white px-5 py-3 font-semibold text-[color:var(--color-brand,#a71c19)] hover:bg-[color:var(--color-brand-subtle,#f6e9e8)] disabled:cursor-not-allowed disabled:opacity-50"}
               data-testid="quote-from-family"
             >
               Demander un devis
