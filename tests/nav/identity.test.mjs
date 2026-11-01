@@ -69,7 +69,7 @@ test("aucun jargon interne dans les textes de l’accueil et de la coque", () =>
 test("cartes et accueil : grilles adaptatives et absence de faux visuels", () => {
   for (const file of ["components/home/family-card.tsx", "components/home/category-grid.tsx"]) {
     const source = read(file);
-    assert.match(source, /commerce-grid/);
+    if (file.endsWith("family-card.tsx")) assert.match(source, /commerce-grid/);
     // Les cartes de familles passent par MediaImage ; la liste des univers n'a plus de cases d'image (liste de liens rouges, D7).
     if (file.endsWith("family-card.tsx")) assert.match(source, /MediaImage/);
     assert.doesNotMatch(source, /image-rendering:pixelated|bg-gradient|<img\b/);
