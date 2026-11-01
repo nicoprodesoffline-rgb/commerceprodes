@@ -83,7 +83,9 @@ test("pages publiées : 4 sections, échappement, vrais 404, accueil, retrait et
       assert.ok(first.text.includes(`href="/categorie/${category}"`));
       assert.ok(first.text.indexOf(`href="/famille/${families[0].slug}"`) < first.text.indexOf(`href="/famille/${families[1].slug}"`));
       assert.match(first.text, /data-testid="family-price"/);
-      assert.ok(first.text.includes(`src="/media/${media}" alt=""`));
+      // Génération de test : jamais d'image synthétique, état neutre à la place (rendu réel de l'image : tests/nav/s1-components.test.mjs).
+      assert.ok(!first.text.includes(`/media/${media}`));
+      assert.match(first.text, /data-testid="media-missing"/);
       assert.match(first.text, /<h1[^>]*>Bandeau démo<\/h1>/);
       assert.equal((first.text.match(/<h1\b/g) ?? []).length, 1);
       assert.match(first.text, /<title>SEO démo \| PRODES<\/title>/);
@@ -99,7 +101,7 @@ test("pages publiées : 4 sections, échappement, vrais 404, accueil, retrait et
       const historical = await get("/"); assert.equal(historical.status, 200); assert.match(historical.text, /Nos univers produits/);
       await publish(dir, 2, [page("/", [blocks[3]], { title: "Accueil éditorial démo", seo_title: "Accueil SEO démo" }), page("/demo", blocks), page("/saison/noel", [blocks[3]])]);
       const home = await get("/"); assert.equal(home.status, 200);
-      assert.match(home.text, /<h1[^>]*>Accueil éditorial démo<\/h1>/); assert.doesNotMatch(home.text, /Nos univers produits/);
+      assert.match(home.text, /<h1[^>]*>Accueil éditorial démo<\/h1>/); assert.equal((home.text.match(/<h1\b/g) ?? []).length, 1); assert.match(home.text, /Image démo/, "le bloc éditorial est rendu sous la composition commerciale");
       assert.match(home.text, /<title>Accueil SEO démo<\/title>/, "accueil : le titre est exactement celui que l'éditeur a publié (le gabarit « | PRODES » du layout ne s'applique pas à sa propre page racine)");
       assert.match(home.text, /rel="canonical" href="https:\/\/demo.invalid\/"/);
       const bar = universe(home.text); assert.match(bar, /href="\/p\/demo"/); assert.match(bar, /href="\/p\/saison\/noel"/); assert.doesNotMatch(bar, /href="\/p\/"/);
@@ -146,10 +148,9 @@ test("champs facultatifs : libellé, alternatif accessible, page masquée servie
       assert.doesNotMatch(heroes[2], /<a\b|Libellé sans lien démo/);
       const images = [...response.text.matchAll(/<section[^>]*data-testid="section-text-image"[^>]*>([\s\S]*?)<\/section>/g)].map(m => m[1]);
       assert.equal(images.length, 3);
-      assert.match(images[0], /alt="Vue &lt;démo&gt; &amp; &quot;profil&quot;"/);
-      assert.doesNotMatch(images[0], /aria-hidden="true"/);
+      assert.match(images[0], /aria-label="Vue &lt;démo&gt; &amp; &quot;profil&quot; — visuel non disponible"/);
+      assert.match(images[0], /<div role="img" aria-label="Vue/, "image informative : le conteneur n'est pas masqué aux lecteurs d'écran");
       for (const decorative of images.slice(1)) {
-        assert.match(decorative, /alt=""/);
         assert.match(decorative, /aria-hidden="true"/);
       }
       const hidden = await get("/p/cachee"); assert.equal(hidden.status, 200);

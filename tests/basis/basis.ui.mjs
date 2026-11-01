@@ -1,4 +1,4 @@
-// Friction 14 — REGLE : un montant n'apparaît jamais sans sa base fiscale. Famille RÉELLEMENT mixte (une variante HT, deux « non précisée »), navigateur Chromium sur `next start`
+// RÈGLE : la vitrine n'affirme « HT » que pour un prix dont la génération DÉCLARE la base ; une base non déclarée n'est ni affirmée ni commentée (aucun suffixe, aucun jargon fiscal). Famille RÉELLEMENT mixte (une variante HT, deux sans base déclarée), navigateur Chromium sur `next start`
 // en source fixture. Rien n'est écrit : seulement fiche et panier (aperçu serveur).
 //   PLAYWRIGHT_DIR=<node_modules contenant playwright> CHROMIUM=<exécutable> npm run test:basis:ui   (prérequis : npm run c0:build && next build)
 import { after, before, describe, test } from "node:test";
@@ -11,7 +11,7 @@ import { FAMILY_SLUG, FILE, FIXTURE, HT_ITEM, removeBasisFixture, writeBasisFixt
 const require = createRequire(path.join(process.env.PLAYWRIGHT_DIR ?? "", "/"));
 const { chromium } = require("playwright");
 const UNQ_ITEM = "PI-000000358";
-const UNQ = /\(base fiscale non précisée\)/;
+const NO_TAX_JARGON = /base fiscale|bases? (?:fiscales? )?différentes?|non précisée|inconnue|\bTTC\b|TVA/i;
 
 let browser;
 before(async () => {
@@ -23,43 +23,34 @@ after(async () => {
   removeBasisFixture();
 });
 
-/** Toute ligne de tableau ou phrase qui porte un montant en € porte aussi sa base (aucun bandeau d'écran quand les bases diffèrent). */
-async function assertEveryAmountHasItsBasis(page, label) {
-  assert.equal(await page.getByTestId("basis-notice").count(), 0, `${label} : pas de bandeau unique quand les bases diffèrent`);
-  const carriers = await page.locator("main table tbody tr, [data-testid=qty-price], [data-testid=cart-total]").evaluateAll((els) => els.map((e) => e.innerText.replace(/\s+/g, " ").trim()));
-  const withAmount = carriers.filter((t) => /€/.test(t));
-  assert.ok(withAmount.length >= 2, `${label} : des montants sont affichés`);
-  for (const text of withAmount) {
-    // une ligne peut porter deux montants (unitaire et total de ligne) : CHACUN doit être suivi de sa base.
-    const amounts = text.match(/\d[\d\s  ]*,\d{2}\s€/g) ?? [];
-    const withBasis = text.match(/\d[\d\s  ]*,\d{2}\s€\s(?:HT|\(base fiscale non précisée\)|\(bases fiscales différentes[^)]*\)|\(base inconnue\))/g) ?? [];
-    assert.equal(withBasis.length, amounts.length, `${label} : un montant sans base dans « ${text.slice(0, 200)} »`);
-  }
+/** Aucun libellé fiscal inventé : un montant n'est suivi de « HT » que s'il vient d'une ligne HT ; jamais de jargon quand la base n'est pas déclarée. */
+async function assertNoInventedBasis(page, label) {
+  assert.equal(await page.getByTestId("basis-notice").count(), 0, `${label} : plus de bandeau fiscal`);
+  const text = await page.locator("main").innerText();
+  assert.doesNotMatch(text, NO_TAX_JARGON, `${label} : aucun jargon fiscal`);
 }
 
-describe("friction 14 — un montant n'apparaît jamais sans sa base fiscale (famille réellement mixte)", () => {
-  test("fiche : variante HT puis variante « non précisée » — chaque prix, chaque palier et le total de ligne portent leur base", async () => {
+describe("base fiscale — jamais affirmée sans la donnée, HT déclaré conservé (famille réellement mixte)", () => {
+  test("fiche : la variante HT dit HT, la variante sans base déclarée n'en dit rien", async () => {
     await withServer(FIXTURE, async () => {
       const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" })).newPage();
       await page.goto(`${BASE}/famille/${FAMILY_SLUG}?article=${HT_ITEM}`);
       await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
       assert.match(await page.getByTestId("qty-price").innerText(), /13,00\s€\sHT l'unité, soit 13,00\s€\sHT pour la ligne/);
       assert.match(await page.locator("main table").first().innerText(), /13,00\s€\sHT/);
-      assert.doesNotMatch(await page.locator("main table").first().innerText(), UNQ, "les paliers de la variante HT ne portent pas la base d'une autre variante");
-      const variants = await page.locator("details", { hasText: "Variantes proposées" }).innerText();
-      assert.match(variants, /12,00\s€\s\(base fiscale non précisée\)/, "la variante « non précisée » garde sa mention dans la liste");
-      assert.match(variants, /13,00\s€\sHT/, "la variante HT garde son HT dans la liste");
-      await assertEveryAmountHasItsBasis(page, "fiche HT");
+      assert.equal(await page.getByText("Variantes proposées").count(), 0, "plus de tableau des variantes : les sélecteurs suffisent");
       await page.goto(`${BASE}/famille/${FAMILY_SLUG}?article=${UNQ_ITEM}`);
       await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
-      assert.match(await page.getByTestId("qty-price").innerText(), /12,00\s€\s\(base fiscale non précisée\) l'unité, soit 12,00\s€\s\(base fiscale non précisée\) pour la ligne/);
+      const qty = await page.getByTestId("qty-price").innerText();
+      assert.match(qty, /12,00\s€/);
+      assert.doesNotMatch(qty, /\bHT\b|TTC/, "base non déclarée : aucun HT ni TTC affirmé");
       assert.doesNotMatch(await page.locator("main table").first().innerText(), /\bHT\b/);
-      await assertEveryAmountHasItsBasis(page, "fiche non précisée");
+      await assertNoInventedBasis(page, "fiche sans base déclarée");
       await page.context().close();
     }, { now: "2026-10-20T07:00:00Z", file: FILE });
   });
 
-  test("panier mixte : le total de CHAQUE ligne porte la base de sa ligne, le total du panier dit que les bases diffèrent", async () => {
+  test("panier mixte : chaque ligne dit sa propre base seulement si elle est déclarée ; le total du panier n'affirme aucune base quand elles diffèrent", async () => {
     await withServer(FIXTURE, async () => {
       const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" })).newPage();
       for (const [key, qty] of [[UNQ_ITEM, 2], [HT_ITEM, 3]]) {
@@ -75,16 +66,17 @@ describe("friction 14 — un montant n'apparaît jamais sans sa base fiscale (fa
       const rows = await page.getByTestId("cart-line").allInnerTexts();
       assert.equal(rows.length, 2);
       const text = (t) => t.replace(/\s+/g, " ");
-      assert.equal((text(rows[0]).match(new RegExp(UNQ.source, "g")) ?? []).length, 2, "ligne « non précisée » : prix unitaire ET total de ligne portent la mention");
+      assert.doesNotMatch(text(rows[0]), /\bHT\b|TTC/, "ligne sans base déclarée : aucun HT");
       assert.equal((text(rows[1]).match(/\bHT\b/g) ?? []).length, 2, "ligne HT : prix unitaire ET total de ligne portent HT");
-      assert.match(await page.getByTestId("cart-total").innerText(), /\(bases fiscales différentes : HT et non précisée\)/, "le total nomme les deux bases présentes");
-      assert.match(await page.getByTestId("totals-note").innerText(), /bases fiscales différentes.*HT et non précisée/);
-      await assertEveryAmountHasItsBasis(page, "panier mixte");
+      const total = (await page.getByTestId("cart-total").innerText()).replace(/\s+/g, " ");
+      assert.doesNotMatch(total, /\bHT\b|TTC|différentes|non précisée/, "bases mêlées : le total n'affirme aucune base");
+      assert.doesNotMatch(await page.getByTestId("totals-note").innerText(), NO_TAX_JARGON);
+      await assertNoInventedBasis(page, "panier mixte");
       await page.context().close();
     }, { now: "2026-10-20T07:00:00Z", file: FILE });
   });
 
-  test("total du panier : aucune ligne ne porte de base → « non précisée » ; HT + inconnue → les deux bases nommées (jamais « HT et non précisée » à tort, jamais un total nu)", async () => {
+  test("total du panier : sans base déclarée → aucun suffixe ; HT + base inconnue → aucun HT (jamais un HT affirmé à tort)", async () => {
     await withServer(FIXTURE, async () => {
       const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" });
       const page = await ctx.newPage();
@@ -110,20 +102,18 @@ describe("friction 14 — un montant n'apparaît jamais sans sa base fiscale (fa
       };
       rewrite = (body) => body.lines.forEach((l) => { if (l.selection) l.selection.tax_basis_or_status = null; });
       const none = await total();
-      assert.match(none.total, /\(base fiscale non précisée\)$/, "aucune ligne ne porte de base : le total dit « non précisée »");
-      assert.doesNotMatch(none.total, /inconnue/);
+      assert.doesNotMatch(none.total, /\bHT\b|TTC|non précisée|inconnue/, "aucune ligne ne porte de base : le total n'affirme rien");
       rewrite = (body) => { body.lines[0].selection.tax_basis_or_status = "HT"; body.lines[1].selection.tax_basis_or_status = null; };
       const mixed = await total();
-      assert.match(mixed.total, /\(bases fiscales différentes : HT et inconnue\)$/, "HT + inconnue : les deux bases nommées");
-      assert.doesNotMatch(mixed.total, /non précisée/, "le libellé n'invente pas « non précisée »");
-      assert.match(mixed.note, /HT et inconnue/);
+      assert.doesNotMatch(mixed.total, /\bHT\b|TTC|non précisée|inconnue/, "HT + inconnue : jamais un HT affirmé pour tout le panier");
+      assert.doesNotMatch(mixed.note, NO_TAX_JARGON);
       await ctx.close();
     }, { now: "2026-10-20T07:00:00Z", file: FILE });
   });
 });
 
 describe("la base fiscale n'est affirmée que si la génération la déclare (S1-A I4)", () => {
-  test("génération mixte : ni « Prix HT » ni « hors taxes » sur l'accueil, la fiche et le pied de page ; la formule neutre est dite", async () => {
+  test("génération mixte : ni « Prix HT » ni « hors taxes » sur l'accueil, la fiche et le pied de page, et aucun jargon fiscal à la place", async () => {
     await withServer(FIXTURE, async () => {
       const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" })).newPage();
       for (const path of ["/", `/famille/${FAMILY_SLUG}?article=${HT_ITEM}`]) {
@@ -131,12 +121,12 @@ describe("la base fiscale n'est affirmée que si la génération la déclare (S1
         await page.getByTestId("footer-basis").waitFor();
         const chrome = [await page.locator("footer").innerText(), ...(path === "/" ? [await page.getByTestId("hero").innerText(), await page.getByTestId("trust-bar").innerText()] : [])].join("\n");
         assert.doesNotMatch(chrome, /Prix HT|hors taxes/i, `${path} : aucune base affirmée hors de la donnée`);
-        assert.match(await page.getByTestId("footer-basis").innerText(), /Les prix et la base fiscale sont précisés sur le devis\./, path);
+        assert.doesNotMatch(await page.getByTestId("footer-basis").innerText(), NO_TAX_JARGON, path);
       }
       await page.goto(`${BASE}/faq`);
       const faq = await page.locator("main").textContent(); // les réponses sont repliées : lire le texte, pas le rendu
       assert.doesNotMatch(faq, /hors taxes|Prix HT/i, "FAQ : aucune base affirmée hors de la donnée");
-      assert.match(faq, /Les prix et la base fiscale sont précisés sur le devis\./);
+      assert.doesNotMatch(faq, /base fiscale/i, "FAQ : la question fiscale disparaît tant que la base n'est pas déclarée");
       await page.context().close();
     }, { now: "2026-10-20T07:00:00Z", file: FILE });
   });

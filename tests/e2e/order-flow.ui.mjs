@@ -164,13 +164,13 @@ async function checkStored(page, receipt) {
     if (line.unit_amount) {
       assert.ok(text.includes(amount(line.unit_amount)), "prix enregistré");
       if (line.tax_basis_or_status === "HT") assert.match(text, /€ HT/, "base HT enregistrée");
-      if (line.tax_basis_or_status === "UNQUALIFIED") assert.match(await details.innerText(), /[Bb]ase fiscale non précisée/, "base non précisée enregistrée");
+      if (line.tax_basis_or_status === "UNQUALIFIED") assert.doesNotMatch(text, /€ HT|TTC|hors taxes/i, "base non déclarée : la ligne n'affirme ni HT ni TTC");
     }
     else assert.match(text, /sans prix/);
     if (line.line_total) assert.ok(text.includes(amount(line.line_total)), "total de ligne enregistré");
   }
   if (receipt.total_amount) assert.ok((await details.getByTestId("receipt-total").innerText()).replace(/\s/g, " ").includes(amount(receipt.total_amount)));
-  else assert.match(await details.innerText(), /Aucun total enregistré/);
+  else assert.match(await details.innerText(), /Le montant de cette demande sera précisé sur le devis/);
 }
 async function lookup(page, created) {
   await activateKey(page, page.locator("main").getByRole("link", { name: "Consulter un reçu", exact: true }));
@@ -378,7 +378,7 @@ describe("panier → devis → commande de test, 390 px et clavier seul", { conc
     await page.unroute("**/api/site/cart/preview");
     await page.route("**/api/site/cart/preview", (route) => route.abort("internetdisconnected"));
     await activateKey(page, page.getByRole("button", { name: "Réessayer", exact: true }));
-    await page.getByText("Serveur injoignable", { exact: true }).waitFor();
+    await page.getByText("Connexion indisponible", { exact: true }).waitFor();
     assert.equal(await page.getByTestId("cart-line").count(), 1);
     await fits(page, "réseau coupé");
     await page.unroute("**/api/site/cart/preview");

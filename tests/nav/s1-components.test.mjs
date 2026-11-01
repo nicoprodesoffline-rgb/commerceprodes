@@ -93,7 +93,7 @@ test("carrousel : sans effets aucun bouton, puis flèches selon le débordement 
     assert.deepEqual(buttons.map((b) => b.props["aria-label"]), ["Précédent", "Suivant"]);
     assert.deepEqual(buttons.map((b) => b.props.disabled), [true, false]);
     assert.match(buttons[0].props.className, /hidden md:/);
-    assert.match(buttons[0].props.className, /\[42px\]/);
+    assert.match(buttons[0].props.className, /\[44px\]/);
     buttons[1].props.onClick();
     assert.deepEqual(calls.pop(), { left: 300, behavior: "smooth" });
     reduced = true;
@@ -140,8 +140,7 @@ test("fiche : minimum initial, alerte sous le seuil et réinitialisation par les
   nodes(tree, (n) => n.type === VariantSelector)[0].props.onSelect("b");
   tree = h.render(FamilyBuyBox, props);
   assert.equal(nodes(tree, (n) => n.type === "input")[0].props.value, "12");
-  const choose = nodes(tree, (n) => n.type === "button" && text(n).startsWith("Choisir"));
-  choose.at(-1).props.onClick();
+  nodes(tree, (n) => n.type === VariantSelector)[0].props.onSelect("c");
   tree = h.render(FamilyBuyBox, props);
   assert.equal(nodes(tree, (n) => n.type === "input")[0].props.value, "12", "minimum 1 : la quantité saisie est conservée comme auparavant");
   assert.doesNotMatch(text(tree), /Quantité minimale/);
@@ -174,10 +173,10 @@ test("favoris : bouton dès deux familles, bilan des refus et des choix, tiroir 
     assert.ok(calls.every((args) => args[2].announce === false));
     assert.equal(events.length, 1);
     assert.equal(events[0].type, "prodes:cart-added");
-    assert.match(text(tree), /2 ajoutés, 1 refusé par le serveur/);
+    assert.match(text(tree), /2 ajoutés, 1 non ajouté/);
     assert.match(text(tree), /1 produit.*demand.*choisir une variante/);
     assert.equal(nodes(tree, (n) => n.props?.href === "/famille/choix").length, 2, "fiche dans la grille et dans le bilan");
-    assert.ok(nodes(tree, (n) => n.props?.["aria-live"] === "polite").some((n) => text(n).includes("refusé par le serveur")));
+    assert.ok(nodes(tree, (n) => n.props?.["aria-live"] === "polite").some((n) => text(n).includes("1 non ajouté")));
   } finally { globalThis.window = previousWindow; globalThis.document = previousDocument; }
 });
 
@@ -211,4 +210,19 @@ test("icône déclarée et route favicon existante toujours sans contenu (204)",
   const response = load("app/favicon.ico/route.ts").GET();
   assert.equal(response.status, 204);
   assert.equal(response.body, null);
+});
+
+test("image publiée : montrée avec son texte alternatif échappé quand la politique l'autorise, neutre sinon", () => {
+  const render = (allowed, props) => {
+    const { MediaImage } = load("components/site/media-image.tsx", { "@/components/site/media-policy": { useShowImages: () => allowed } });
+    return renderToStaticMarkup(React.createElement(MediaImage, props));
+  };
+  const sha = "a".repeat(64);
+  const shown = render(true, { sha256: sha, alt: 'Vue <démo> & "profil"' });
+  assert.match(shown, new RegExp(`<img src="/media/${sha}" alt="Vue &lt;démo&gt; &amp; &quot;profil&quot;"`));
+  assert.match(render(true, { sha256: sha, alt: "" }), /alt=""/);
+  const hidden = render(false, { sha256: sha, alt: "Chaise" });
+  assert.doesNotMatch(hidden, /<img|\/media\//);
+  assert.match(hidden, /Visuel non disponible/);
+  assert.match(render(true, { sha256: null, alt: "Chaise" }), /data-testid="media-missing"/);
 });

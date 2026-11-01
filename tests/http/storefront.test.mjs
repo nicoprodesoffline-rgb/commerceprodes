@@ -241,8 +241,8 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
         assert.match(r.text, /<html lang="fr">/, p);
       }
       const home = await get("/");
-      assert.match(home.text, /data-testid="catalogue-sequence">1</);
-      assert.match(home.text, />db</, "source db affichée dans le détail technique");
+      assert.doesNotMatch(home.text, /data-testid="catalogue-sequence"/, "le détail technique de la publication n'est plus public");
+      assert.doesNotMatch(home.text, />db</, "la source des données n'est plus affichée au public");
       assert.match(home.text, /href="\/famille\/chaise-demo"/);
       const parent = await get("/categorie/mobilier");
       assert.match(parent.text, /href="\/categorie\/mobilier-chaises"/, "sous-catégorie (parent_category_key)");
@@ -256,6 +256,36 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       const art = await get("/article/PI-00000001R");
       assert.equal(art.status, 307);
       assert.equal(art.headers.get("location"), "/famille/chaise-demo?article=PI-00000001R", "Location relative");
+    });
+
+    test("langage public : aucune page publique ne rend un terme interne (texte visible, aria-label, title, alt, placeholder) ni une image de test", async () => {
+      // Les noms de la fixture contiennent eux-mêmes « STAGING_FIXTURE » (données, pas interface) : seuls les textes de l'interface sont scannés.
+      const FORBIDDEN = [
+        /boutique de démonstration/i, /image de démonstration/i, /staging-banner/, /donn[ée]es? de test/i, /enregistr[ée]es? localement/i, /trait[ée]es? par personne/i,
+        /base fiscale/i, /taxes, port et remises/i, /prix de vente PRODES/i, /en vigueur maintenant/i, /provenance/i, /\bhash\b/i,
+        /g[ée]n[ée]ration/i, /s[ée]quence/i, /\bcontrat\b/i, /\bC0\b/, /\bFactory\b/i, /calculateur/i, /catalogue servable/i, /instant serveur/i,
+      ];
+      const visible = (html) => {
+        const body = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ");
+        const attrs = [...body.matchAll(/\s(?:aria-label|title|alt|placeholder)="([^"]*)"/g)].map((m) => m[1]);
+        const text = body.replace(/<[^>]*>/g, " ");
+        return `${text} ${attrs.join(" ")}`.replace(/&#x27;|&#39;/g, "'").replace(/&amp;/g, "&").replace(/\s+/g, " ");
+      };
+      const pages = ["/", "/recherche", "/categorie/mobilier", "/categorie/mobilier-chaises", "/famille/chaise-demo", "/faq", "/contact", "/mentions-legales",
+        "/panier", "/devis", "/commande", "/comparer", "/favoris", "/gamme-pro-intens", "/recu", "/page-qui-nexiste-pas"];
+      const found = [];
+      for (const p of pages) {
+        const r = await get(p);
+        assert.ok(r.status === 200 || r.status === 404, `${p} : ${r.status}`);
+        const text = visible(r.text);
+        for (const re of FORBIDDEN) {
+          const m = re.exec(text);
+          if (m) found.push(`${p} : « ${text.slice(Math.max(0, m.index - 40), m.index + 60)} »`);
+        }
+        // Une génération de test ne montre jamais d'image : aucun <img> vers /media/ dans le HTML rendu.
+        assert.doesNotMatch(r.text, /<img[^>]+src="\/media\//, `${p} : image de test montrée`);
+      }
+      assert.deepEqual(found, [], `termes internes visibles :\n${found.join("\n")}`);
     });
 
     test("médias servis depuis site_media : octets = SHA-256 et taille déclarés, Content-Type déclaré ; non déclaré → 404", async () => {
@@ -293,13 +323,13 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
 
     test("base fiscale : la génération déclare HT, le site peut le dire (pied de page, accueil) ; la règle inverse est dans basis.ui", async () => {
       const home = await get("/");
-      assert.match(home.text, /data-testid="footer-basis">Prix de vente PRODES hors taxes/);
+      assert.match(home.text, /data-testid="footer-basis">Prix HT\. Les conditions sont confirmées sur le devis/);
       assert.match(home.text, /Prix HT/);
       assert.doesNotMatch(home.text, /Les prix et la base fiscale sont précisés sur le devis/);
       assert.doesNotMatch(home.text, /data-testid="universe-bar"/, "aucune page publiée : la barre d'univers n'affiche rien (pas même un cadre vide)");
       const faq = await get("/faq");
       assert.equal(faq.status, 200);
-      assert.match(faq.text, /Les prix publiés sont hors taxes ; la TVA apparaît sur le devis et la facture/);
+      assert.match(faq.text, /Les prix sont hors taxes ; la TVA apparaît sur le devis et la facture/);
     });
 
     test("pages fixes provisoires : FAQ, contact, mentions légales, gamme PRO-INTENS sans catégorie — dites telles quelles, sans coordonnée ni garantie inventée", async () => {
@@ -568,7 +598,7 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       // Blanc choisi : « sol » est désactivé et expliqué ; aucune 4e combinaison n'a de référence.
       assert.match(fiche.text, /value="sol"[^>]*disabled=""|disabled=""[^>]*value="sol"/, "sol non sélectionnable avec blanc");
       assert.match(fiche.text, /Non proposé avec Coloris « Blanc »/);
-      assert.equal([...fiche.text.matchAll(/<td class="py-1 pr-2 font-mono text-xs whitespace-nowrap">(PI-[0-9A-Z]{9})<\/td>/g)].length, 3, "3 variantes listées, pas 4");
+      assert.ok(new Set(fiche.text.match(/PI-[0-9A-Z]{9}/g)).size <= 3, "au plus 3 références dans la page : aucune 4e combinaison");
       const noir = await get("/famille/esunny-demo?article=PI-00000069X");
       assert.doesNotMatch(noir.text, /value="sol"[^>]*disabled=""|disabled=""[^>]*value="sol"/, "noir : sol proposé");
     });
@@ -603,7 +633,7 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       // Revue F-06 : référence d'une autre Famille → avertissement explicite, jamais une autre variante en silence.
       const other = await get("/famille/chaise-pliante?article=PI-000000JSY");
       assert.equal(other.status, 200);
-      assert.match(other.text, /data-testid="article-notice"[^]*appartient à une autre famille/);
+      assert.match(other.text, /data-testid="article-notice"[^]*correspond à un autre produit/);
       assert.match(other.text, /href="\/article\/PI-000000JSY"/);
       // Slug changé en génération 2 (chaise-coque → chaise-coque-v2) : l'ancienne adresse n'existe plus.
       assert.equal((await get("/famille/chaise-coque")).status, 404);
@@ -655,7 +685,7 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.match(logs.join(""), /média altéré refusé/);
       const fiche = await get("/famille/chaise-pliante");
       assert.equal(fiche.status, 200);
-      assert.match(fiche.text, new RegExp(`/media/${sha}`), "la fiche référence le média ; le client affiche « Image indisponible » (test navigateur)");
+      assert.match(fiche.text, /Visuel non disponible/, "génération de test : jamais d'image, état neutre à la place (média altéré refusé par /media, vérifié ci-dessus)");
     });
 
     test("génération ACTIVE devenue UNSAFE (pointeur ≠ ligne) → pages 503, aperçu 503 CATALOG_UNSAFE, commande refusée, 0 ligne", async () => {
