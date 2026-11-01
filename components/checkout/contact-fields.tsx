@@ -68,7 +68,7 @@ export function ContactFields({ value, onChange, errors, showErrors }: { value: 
               aria-invalid={err ? true : undefined}
               aria-describedby={[hint ? `f-${f}-hint` : "", err ? `f-${f}-err` : ""].filter(Boolean).join(" ") || undefined}
               onChange={(e) => onChange({ ...value, [f]: e.target.value })}
-              className={`mt-1 block h-[42px] w-full rounded-[9px] border bg-white px-3 ${err ? "border-signal" : "border-line-strong"}`}
+              className={`mt-1 block h-[44px] w-full rounded-[9px] border bg-white px-3 ${err ? "border-signal" : "border-line-strong"}`}
             />
             {err && <p id={`f-${f}-err`} className="mt-1 text-sm text-signal">{err}</p>}
           </div>
@@ -87,7 +87,7 @@ export function ErrorSummary({ errors, id }: { errors: FieldErrors; id: string }
       <p className="font-semibold">Corrigez {list.length === 1 ? "le champ suivant" : `les ${list.length} champs suivants`} :</p>
       <ul className="mt-1 list-disc pl-5 text-sm">
         {list.map(([k, msg]) => (
-          <li key={k}><a href={`#f-${k}`} className="inline-flex min-h-[34px] items-center underline">{msg}</a></li>
+          <li key={k}><a href={`#f-${k}`} className="inline-flex min-h-[44px] items-center underline">{msg}</a></li>
         ))}
       </ul>
     </div>

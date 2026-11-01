@@ -159,7 +159,7 @@ export function CartCount() {
   const { lines, ready } = useCart();
   const n = lines.length;
   return (
-    <span className="tabular ml-1.5 inline-flex min-w-6 justify-center rounded-full bg-ink px-1.5 text-xs font-semibold leading-5 text-white" aria-label={ready ? `${n} ligne${n > 1 ? "s" : ""}` : "chargement"}>
+    <span className="tabular ml-1.5 inline-flex min-w-6 justify-center rounded-full bg-brand px-1.5 text-xs font-semibold leading-5 text-white" aria-label={ready ? `${n} ligne${n > 1 ? "s" : ""}` : "chargement"}>
       {ready ? n : "…"}
     </span>
   );

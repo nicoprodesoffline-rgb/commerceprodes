@@ -20,10 +20,8 @@ export function totalWithBasis(preview: PreviewJson): string {
 
 export function totalsNote(preview: PreviewJson): string {
   const b = bases(preview);
-  if (b.size === 1 && b.has("HT")) return "Montants hors taxes et port, non calculés.";
-  if (b.size === 1 && b.has("UNQUALIFIED")) return "Base fiscale non précisée par la publication ; taxes et port non calculés.";
-  if (b.size > 1) return `Attention : lignes de bases fiscales différentes additionnées telles quelles — ${totalBasisLabel(b).replace(/^\(bases fiscales différentes : /, "").replace(/\)$/, "")} ; taxes et port non calculés.`;
-  return "Base fiscale non précisée ; taxes et port non calculés.";
+  if (b.size === 1 && b.has("HT")) return "Montants hors taxes. Le devis confirme les conditions.";
+  return "Montant indicatif : le devis confirme les conditions.";
 }
 
 function LineStatus({ pl }: { pl: PreviewLineJson | undefined }) {
@@ -66,7 +64,7 @@ export function CartLines({
     {common.uniform && <BasisNotice basis={common.basis} />}
     <div className="overflow-hidden rounded-[14px] border border-line bg-white">
       <table className="tabular w-full border-collapse text-sm">
-        <caption className="sr-only">Lignes du panier, prix sélectionnés par le serveur</caption>
+        <caption className="sr-only">Articles et quantités de votre panier</caption>
         <thead className="hidden bg-surface text-left text-xs text-ink-3 sm:table-header-group">
           <tr>
             <th scope="col" className="px-3 py-2 font-medium">Article</th>
@@ -84,7 +82,7 @@ export function CartLines({
             return (
               <tr key={`${l.public_item_key}-${i}`} data-testid="cart-line" className="grid grid-cols-2 gap-x-3 gap-y-1 border-t border-line px-3 py-3 sm:table-row sm:px-0 sm:py-0">
                 <td className="col-span-2 min-w-0 sm:px-3 sm:py-3">
-                  <Link href={`/famille/${l.family_slug}?article=${l.public_item_key}`} className="inline-flex min-h-[34px] items-center font-medium underline-offset-2 hover:underline">{l.family_name}</Link>
+                  <Link href={`/famille/${l.family_slug}?article=${l.public_item_key}`} className="inline-flex min-h-[44px] items-center font-medium underline-offset-2 hover:underline">{l.family_name}</Link>
                   <span className="block text-xs text-ink-2">{axesText(l.axes)}</span>
                   <span className="block font-mono text-xs text-ink-3">Réf. {l.public_item_key}</span>
                   <LineStatus pl={pl} />
@@ -105,7 +103,7 @@ export function CartLines({
                           const n = Number(e.target.value);
                           if (Number.isInteger(n) && n >= 1) onQuantity(i, n);
                         }}
-                        className="block h-[42px] w-24 rounded-[9px] border border-line-strong bg-white px-2"
+                        className="block h-[44px] w-24 rounded-[9px] border border-line-strong bg-white px-2"
                       />
                     </>
                   ) : (
@@ -122,7 +120,7 @@ export function CartLines({
                 </td>
                 {editable && onRemove && (
                   <td className="col-span-2 text-right sm:px-3 sm:py-3">
-                    <button type="button" onClick={() => onRemove(i)} className="min-h-[34px] rounded-[9px] px-2 text-sm text-ink-2 underline hover:text-ink">
+                    <button type="button" onClick={() => onRemove(i)} className="min-h-[44px] rounded-[9px] px-2 text-sm text-ink-2 underline hover:text-ink">
                       Retirer<span className="sr-only"> {l.family_name}, {axesText(l.axes)}</span>
                     </button>
                   </td>
@@ -141,7 +139,7 @@ export function CartLines({
             {loading || !preview ? "…" : preview.total_amount ? totalWithBasis(preview) : "—"}
           </span>
         </div>
-        <p className="mt-1 text-xs text-ink-2" data-testid="totals-note">{preview ? totalsNote(preview) : "Base fiscale lue au serveur ; taxes et port non calculés."} Total calculé par le serveur.</p>
+        <p className="mt-1 text-xs text-ink-2" data-testid="totals-note">{preview ? totalsNote(preview) : "Montant indicatif : le devis confirme les conditions."}</p>
       </div>
     </div>
     </div>
@@ -154,10 +152,9 @@ export function StaleBanner({ from, to, onAck }: { from: number; to: number; onA
     <div role="alert" className="rounded-[14px] border-2 border-caution bg-white p-4" data-testid="cart-generation-changed">
       <p className="font-semibold">{from === to ? "Les prix doivent être vérifiés de nouveau" : "Le catalogue a été mis à jour"}</p>
       <p className="mt-1 text-sm text-ink-2">
-        Les prix et articles ci-dessous ont été vérifiés par le serveur (version {from === to ? to : `${from} → ${to}`}). Vérifiez-les : l&apos;envoi d&apos;une
-        demande de devis ou d&apos;une commande est bloqué tant que vous ne les avez pas vérifiés.
+        Les prix et les articles de votre panier ont changé. Vérifiez le récapitulatif avant de poursuivre votre demande de devis ou votre commande.
       </p>
-      <button type="button" onClick={onAck} className="mt-3 h-[42px] rounded-[9px] border border-ink bg-white px-4 font-medium hover:bg-surface">
+      <button type="button" onClick={onAck} className="mt-3 h-[44px] rounded-[9px] border border-ink bg-white px-4 font-medium hover:bg-surface">
         J&apos;ai vérifié les nouveaux prix
       </button>
     </div>
@@ -169,12 +166,12 @@ export function PreviewProblem({ kind, codes, onRetry }: { kind: "unavailable" |
   return (
     <div role="alert" className="rounded-[14px] border-2 border-signal bg-white p-4" data-testid="preview-problem">
       <p className="font-semibold">
-        {kind === "unavailable" ? "Prix momentanément indisponibles" : kind === "network" ? "Serveur injoignable" : "Panier refusé par le serveur"}
+        {kind === "unavailable" ? "Prix momentanément indisponibles" : kind === "network" ? "Connexion indisponible" : "Certains articles doivent être vérifiés"}
       </p>
       <p className="mt-1 text-sm text-ink-2">
-        {codes.map(codeMessage).join(" ")} Votre panier est conservé sur cet appareil ; aucun prix n&apos;est affiché sans confirmation du serveur.
+        {codes.map(codeMessage).join(" ")} Votre panier est conservé sur cet appareil ; vous pourrez réessayer sans le recomposer.
       </p>
-      <button type="button" onClick={onRetry} className="mt-3 h-[42px] rounded-[9px] border border-ink bg-white px-4 font-medium hover:bg-surface">
+      <button type="button" onClick={onRetry} className="mt-3 h-[44px] rounded-[9px] border border-ink bg-white px-4 font-medium hover:bg-surface">
         Réessayer
       </button>
     </div>

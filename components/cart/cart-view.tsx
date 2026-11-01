@@ -19,7 +19,7 @@ export function CartView() {
     return (
       <div className="rounded-[14px] border border-line bg-white p-6" data-testid="cart-empty">
         <p>Votre panier est vide.</p>
-        <Link href="/" className="mt-3 inline-flex h-[42px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Parcourir le catalogue</Link>
+        <Link href="/" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Parcourir le catalogue</Link>
       </div>
     );
   }
@@ -35,7 +35,7 @@ export function CartView() {
       )}
       <CartLines lines={lines} preview={preview} loading={state.kind === "loading"} editable onQuantity={setQuantity} onRemove={remove} />
       <div aria-live="polite" className="text-sm text-ink-2" data-testid="cart-next-step">
-        {state.kind === "loading" && "Vérification des prix auprès du serveur…"}
+        {state.kind === "loading" && "Vérification des prix…"}
         {preview && stale && "Envoi bloqué : vérifiez d'abord les nouveaux prix."}
         {preview && !stale && !preview.accepted && canQuote && "Certaines lignes n'ont pas de prix en ce moment : seule une demande de devis est possible."}
         {preview && !stale && !canQuote && "Retirez ou remplacez les lignes signalées pour continuer."}
@@ -43,15 +43,15 @@ export function CartView() {
       <div className="flex flex-wrap gap-3">
         {canOrder ? (
           <>
-            <Link href="/commande" className="inline-flex h-[42px] items-center rounded-[9px] bg-ink px-5 font-semibold text-white" data-testid="go-order">Passer commande</Link>
-            <Link href="/devis" className="inline-flex h-[42px] items-center rounded-[9px] border border-line-strong bg-white px-5 font-medium hover:bg-surface" data-testid="go-quote">Demander un devis</Link>
+            <Link href="/commande" className="inline-flex h-[44px] items-center rounded-[9px] bg-ink px-5 font-semibold text-white" data-testid="go-order">Passer commande</Link>
+            <Link href="/devis" className="inline-flex h-[44px] items-center rounded-[9px] border border-line-strong bg-white px-5 font-medium hover:bg-surface" data-testid="go-quote">Demander un devis</Link>
           </>
         ) : canQuote ? (
-          <Link href="/devis" className="inline-flex h-[42px] items-center rounded-[9px] bg-ink px-5 font-semibold text-white" data-testid="go-quote">Demander un devis</Link>
+          <Link href="/devis" className="inline-flex h-[44px] items-center rounded-[9px] bg-ink px-5 font-semibold text-white" data-testid="go-quote">Demander un devis</Link>
         ) : (
-          <span className="inline-flex h-[42px] items-center rounded-[9px] border border-dashed border-line-strong px-5 text-ink-3" aria-disabled="true">Suite indisponible</span>
+          <span className="inline-flex h-[44px] items-center rounded-[9px] border border-dashed border-line-strong px-5 text-ink-3" aria-disabled="true">Suite indisponible</span>
         )}
-        <Link href="/" className="inline-flex h-[42px] items-center px-2 text-ink-2 underline">Continuer mes achats</Link>
+        <Link href="/" className="inline-flex h-[44px] items-center px-2 text-ink-2 underline">Continuer mes achats</Link>
       </div>
     </div>
   );

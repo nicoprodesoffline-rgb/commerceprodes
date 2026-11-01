@@ -90,13 +90,13 @@ export function ReceiptLookup() {
       >
         <div className="min-w-0">
           <label htmlFor="r-ref" className="block text-sm font-medium">Référence</label>
-          <input required aria-invalid={missing.ref || undefined} aria-describedby={state.kind === "refused" ? "receipt-error" : undefined} id="r-ref" value={ref} maxLength={64} autoComplete="off" onChange={(e) => setRef(e.target.value)} className="mt-1 block h-[42px] w-full rounded-[9px] border border-line-strong px-3 font-mono text-sm" />
+          <input required aria-invalid={missing.ref || undefined} aria-describedby={state.kind === "refused" ? "receipt-error" : undefined} id="r-ref" value={ref} maxLength={64} autoComplete="off" onChange={(e) => setRef(e.target.value)} className="mt-1 block h-[44px] w-full rounded-[9px] border border-line-strong px-3 font-mono text-sm" />
         </div>
         <div className="min-w-0">
           <label htmlFor="r-code" className="block text-sm font-medium">Code d&apos;accès</label>
-          <input required aria-invalid={missing.code || undefined} aria-describedby={state.kind === "refused" ? "receipt-error" : undefined} id="r-code" type="password" value={code} maxLength={128} autoComplete="off" onChange={(e) => setCode(e.target.value)} className="mt-1 block h-[42px] w-full rounded-[9px] border border-line-strong px-3 font-mono text-sm" />
+          <input required aria-invalid={missing.code || undefined} aria-describedby={state.kind === "refused" ? "receipt-error" : undefined} id="r-code" type="password" value={code} maxLength={128} autoComplete="off" onChange={(e) => setCode(e.target.value)} className="mt-1 block h-[44px] w-full rounded-[9px] border border-line-strong px-3 font-mono text-sm" />
         </div>
-        <button type="submit" disabled={state.kind === "loading"} className="h-[42px] rounded-[9px] bg-ink px-5 font-semibold text-white sm:col-span-2 sm:justify-self-start">Consulter</button>
+        <button type="submit" disabled={state.kind === "loading"} className="h-[44px] rounded-[9px] bg-ink px-5 font-semibold text-white sm:col-span-2 sm:justify-self-start">Consulter</button>
       </form>
       <div aria-live="polite">
         {state.kind === "loading" && <p className="text-ink-3">Recherche du reçu…</p>}

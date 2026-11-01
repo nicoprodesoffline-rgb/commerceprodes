@@ -49,7 +49,7 @@ export function CartDrawerButton() {
           setOpen(true);
         }}
         aria-haspopup="dialog"
-        className="ml-auto inline-flex min-h-[42px] items-center rounded-[9px] px-3 font-medium hover:bg-surface sm:ml-0"
+        className="ml-auto inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-[9px] px-3 font-medium hover:bg-surface lg:ml-0"
         data-testid="cart-button"
       >
         Panier <CartCount />
@@ -85,12 +85,12 @@ function DrawerBody({ onClose }: { onClose: () => void }) {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-line px-4 py-3">
         <h2 id="tiroir-titre" className="text-lg font-semibold">Mon panier</h2>
-        <button type="button" onClick={onClose} aria-label="Fermer le panier" className="inline-flex h-[42px] w-[42px] items-center justify-center rounded-[9px] hover:bg-surface">×</button>
+        <button type="button" onClick={onClose} aria-label="Fermer le panier" className="inline-flex h-[44px] w-[44px] items-center justify-center rounded-[9px] hover:bg-surface">×</button>
       </div>
       {lines.length === 0 ? (
         <div className="flex-1 p-4" data-testid="drawer-empty">
           <p className="font-medium">Votre panier est vide.</p>
-          <Link href="/recherche" onClick={onClose} className="mt-3 inline-flex h-[42px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Voir le catalogue →</Link>
+          <Link href="/recherche" onClick={onClose} className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Voir le catalogue →</Link>
         </div>
       ) : (
         <>
@@ -101,16 +101,16 @@ function DrawerBody({ onClose }: { onClose: () => void }) {
                 <li key={`${l.public_item_key}-${i}`} className="space-y-2 px-4 py-3" data-testid="drawer-line">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <Link href={`/famille/${l.family_slug}?article=${encodeURIComponent(l.public_item_key)}`} onClick={onClose} className="font-medium hover:underline">{l.family_name}</Link>
+                      <Link href={`/famille/${l.family_slug}?article=${encodeURIComponent(l.public_item_key)}`} onClick={onClose} className="inline-flex min-h-11 items-center font-medium hover:underline">{l.family_name}</Link>
                       <p className="text-xs text-ink-3">{axesText(l.axes)}</p>
                     </div>
-                    <button type="button" onClick={() => remove(i)} aria-label={`Retirer ${l.family_name} du panier`} className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] text-ink-3 hover:bg-surface">×</button>
+                    <button type="button" onClick={() => remove(i)} aria-label={`Retirer ${l.family_name} du panier`} className="inline-flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[9px] text-ink-3 hover:bg-surface">×</button>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <div className="inline-flex items-center" role="group" aria-label={`Quantité de ${l.family_name}`}>
-                      <button type="button" aria-label="Diminuer la quantité" onClick={() => (l.quantity <= 1 ? remove(i) : setQuantity(i, l.quantity - 1))} className="h-[34px] w-[34px] rounded-l-[9px] border border-line-strong bg-white hover:bg-surface">−</button>
-                      <span className="tabular inline-flex h-[34px] min-w-10 items-center justify-center border-y border-line-strong px-2 text-sm" aria-live="polite">{l.quantity}</span>
-                      <button type="button" aria-label="Augmenter la quantité" onClick={() => setQuantity(i, Math.min(MAX_QUANTITY, l.quantity + 1))} className="h-[34px] w-[34px] rounded-r-[9px] border border-line-strong bg-white hover:bg-surface">+</button>
+                      <button type="button" aria-label="Diminuer la quantité" onClick={() => (l.quantity <= 1 ? remove(i) : setQuantity(i, l.quantity - 1))} className="h-[44px] w-[44px] rounded-l-[9px] border border-line-strong bg-white hover:bg-surface">−</button>
+                      <span className="tabular inline-flex h-[44px] min-w-10 items-center justify-center border-y border-line-strong px-2 text-sm" aria-live="polite">{l.quantity}</span>
+                      <button type="button" aria-label="Augmenter la quantité" onClick={() => setQuantity(i, Math.min(MAX_QUANTITY, l.quantity + 1))} className="h-[44px] w-[44px] rounded-r-[9px] border border-line-strong bg-white hover:bg-surface">+</button>
                     </div>
                     <p className="tabular text-right text-sm font-semibold">
                       {pl?.accepted && pl.selection && pl.line_total ? price(pl.line_total, pl.selection.tax_basis_or_status) : state.kind === "loading" ? "…" : "Sur devis"}
@@ -129,11 +129,11 @@ function DrawerBody({ onClose }: { onClose: () => void }) {
             {(state.kind === "unavailable" || state.kind === "refused" || state.kind === "network") && <p role="alert" className="text-xs text-caution">Les prix ne peuvent pas être vérifiés pour le moment. Votre panier est conservé sur cet appareil.</p>}
             <div className="flex flex-wrap gap-2">
               {canOrder ? (
-                <Link href="/commande" onClick={onClose} className="inline-flex h-[42px] flex-1 items-center justify-center whitespace-nowrap rounded-[9px] bg-ink px-3 text-sm font-semibold text-white" data-testid="drawer-order">Finaliser la commande →</Link>
+                <Link href="/commande" onClick={onClose} className="inline-flex h-[44px] flex-1 items-center justify-center whitespace-nowrap rounded-[9px] bg-ink px-3 text-sm font-semibold text-white" data-testid="drawer-order">Finaliser la commande →</Link>
               ) : canQuote ? (
-                <Link href="/devis" onClick={onClose} className="inline-flex h-[42px] flex-1 items-center justify-center whitespace-nowrap rounded-[9px] bg-ink px-3 text-sm font-semibold text-white" data-testid="drawer-quote">Demander un devis →</Link>
+                <Link href="/devis" onClick={onClose} className="inline-flex h-[44px] flex-1 items-center justify-center whitespace-nowrap rounded-[9px] bg-ink px-3 text-sm font-semibold text-white" data-testid="drawer-quote">Demander un devis →</Link>
               ) : null}
-              <Link href="/panier" onClick={onClose} className="inline-flex h-[42px] flex-1 items-center justify-center rounded-[9px] border border-line-strong bg-white px-4 font-medium hover:bg-surface">Voir le panier complet</Link>
+              <Link href="/panier" onClick={onClose} className="inline-flex h-[44px] flex-1 items-center justify-center rounded-[9px] border border-line-strong bg-white px-4 font-medium hover:bg-surface">Voir le panier complet</Link>
             </div>
           </div>
         </>

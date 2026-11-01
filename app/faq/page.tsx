@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
-import { catalogBasis, NEUTRAL_BASIS_TEXT } from "@/lib/site-catalog/basis";
+import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogOrNull } from "@/lib/site-catalog/page";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ export default async function FaqPage() {
       items: [
         { q: "Comment obtenir un devis ?", a: <>Ajoutez les produits à votre panier, puis choisissez « Demander un devis » : vous indiquez vos coordonnées et, si vous le souhaitez, un message. Nous vous répondons rapidement. Vous pouvez aussi le demander directement depuis la fiche d&apos;un produit.</> },
         { q: "Quels sont vos horaires ?", a: <>Du lundi au samedi, de 8h30 à 19h.</> },
-        { q: "Quelle est la base fiscale des prix ?", a: basis === "HT" ? <>Les prix publiés sont hors taxes ; la TVA apparaît sur le devis et la facture.</> : <>{NEUTRAL_BASIS_TEXT} Transport et remises ne sont pas calculés sur ce site.</> },
+        ...(basis === "HT" ? [{ q: "Les prix sont-ils hors taxes ?", a: <>Les prix sont hors taxes ; la TVA apparaît sur le devis et la facture.</> }] : []),
       ],
     },
     {
@@ -61,7 +61,7 @@ export default async function FaqPage() {
       <section className="rounded-[14px] bg-surface p-5" data-testid="faq-help">
         <h2 className="text-lg font-semibold">Vous ne trouvez pas la réponse ?</h2>
         <p className="mt-1 text-ink-2">Écrivez-nous : nous vous répondons rapidement.</p>
-        <Link href="/contact" className="mt-3 inline-flex h-[42px] items-center rounded-[9px] bg-ink px-5 font-medium text-white">Nous contacter →</Link>
+        <Link href="/contact" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-ink px-5 font-medium text-white">Nous contacter →</Link>
       </section>
     </div>
   );

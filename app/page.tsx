@@ -9,6 +9,7 @@ import { Hero, ProIntensBlock, QuoteBanner, TrustBar } from "@/components/home/h
 import { familyCard, navigationOf } from "@/components/site/catalog-views";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
+import { imagesAllowed } from "@/lib/site-catalog/media-policy";
 import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogForPage } from "@/lib/site-catalog/page";
 import type { NavNode } from "@/lib/site-catalog/navigation";
@@ -37,14 +38,10 @@ function findNode(nodes: NavNode[], match: (n: NavNode) => boolean): NavNode | n
 export default async function HomePage() {
   const catalog = await catalogForPage();
   const page = (await getEditorialSet())?.pages.find(p => p.slug === "/");
-  if (page) return (
-    <div className="min-w-0">
-      {page.sections[0]?.type !== "hero" && <h1 className="mb-6 whitespace-pre-line text-3xl font-semibold [overflow-wrap:anywhere]">{page.title}</h1>}
-      <PageSections page={page} catalog={catalog} />
-    </div>
-  );
   const nav = navigationOf(catalog);
-  const roots = nav.menu.map((n) => {
+  const categorySection = page?.sections.find(section => section.type === "category_grid");
+  const rootNodes = categorySection ? categorySection.data.categories.flatMap(key => { const node = nav.node(key); return node ? [node] : []; }) : nav.menu;
+  const roots = rootNodes.filter(n => n.subtreeFamilyCount > 0).map((n) => {
     // Une catégorie racine peut ne porter ses familles que dans ses sous-catégories : le compte et l'image tiennent compte de tout son sous-arbre.
     const subtree = (node: NavNode): string[] => [...nav.familySlugs(node.key), ...node.children.flatMap(subtree)];
     const familySlugs = new Set(subtree(n));
@@ -60,25 +57,40 @@ export default async function HomePage() {
   const proIntens = findNode(nav.menu, (n) => /pro[\s-]?intens/i.test(n.name));
   const basis = catalogBasis(catalog.families, catalog.meta.payload_sha256);
   const now = serverNowUtc();
-  const shown = catalog.families.slice(0, HOME_FAMILIES);
+  const featuredSection = page?.sections.find(section => section.type === "product_carousel");
+  const featured = featuredSection ? featuredSection.data.families.flatMap(key => { const family = catalog.families.find(f => f.public_family_key === key); return family ? [family] : []; }) : catalog.families;
+  const shown = featured.slice(0, HOME_FAMILIES);
+  const hero = page?.sections.find(section => section.type === "hero");
+  const heroImage = imagesAllowed(catalog.meta.data_label) ? shown.find(f => f.image_main_sha256)?.image_main_sha256 : null;
+  const contentSections = page?.sections.filter(section => section !== hero && section !== categorySection && section !== featuredSection) ?? [];
   return (
-    <div className="space-y-10">
-      <Hero references={references} basis={basis} />
-      <TrustBar references={references} basis={basis} />
-      <section id="categories" aria-labelledby="cat-h">
-        <h2 id="cat-h" className="mb-3 text-lg font-semibold">Nos univers produits</h2>
-        <CategoryGrid categories={roots} />
-      </section>
-      <ProIntensBlock category={proIntens ? { key: proIntens.key, name: proIntens.name } : null} />
-      <section id="familles" aria-labelledby="fam-h">
-        <div className="mb-3 flex items-baseline justify-between gap-3">
-          <h2 id="fam-h" className="text-lg font-semibold">
-            Familles <span className="text-sm font-normal text-ink-3">({catalog.families.length})</span>
-          </h2>
-          {catalog.families.length > shown.length && <Link href="/recherche" className="inline-flex min-h-[34px] items-center text-sm font-medium underline-offset-2 hover:underline">Voir tout le catalogue →</Link>}
+    <div className="min-w-0 space-y-12 lg:space-y-16">
+      <div>
+        <div className={`grid min-w-0 gap-6 ${roots.length > 0 ? "lg:grid-cols-[240px_minmax(0,1fr)]" : ""}`}>
+          {roots.length > 0 && <aside aria-label="Parcourir les catégories" className="hidden self-start border border-line lg:block">
+            <h2 className="bg-brand px-5 py-5 text-base font-extrabold uppercase text-white">Catégories</h2>
+            <ul className="divide-y divide-line">
+              {roots.map(category => <li key={category.key}><Link href={`/categorie/${category.key}`} className="flex min-h-12 items-center justify-between gap-3 px-5 py-3 text-sm font-semibold [overflow-wrap:anywhere] hover:bg-brand-subtle hover:text-brand">{category.name}<span aria-hidden="true">›</span></Link></li>)}
+            </ul>
+            <Link href="/recherche" className="flex min-h-12 items-center border-t border-line px-5 text-sm font-bold text-brand hover:underline">Tout le catalogue →</Link>
+          </aside>}
+          <Hero references={references} imageSha={heroImage} title={hero?.data.title ?? page?.title} text={hero?.data.text} link={hero?.data.link} linkLabel={hero?.data.linkLabel} />
         </div>
-        <FamilyGrid prices families={shown.map((f) => ({ ...familyCard(f), from: familyPrice(catalog, f, now) }))} label="Familles publiées" />
-      </section>
+        <TrustBar references={references} basis={basis} />
+      </div>
+      {roots.length > 0 && <section id="categories" aria-labelledby="cat-h">
+        <h2 id="cat-h" className="commerce-section-title mb-6">{categorySection?.data.title || "Nos univers produits"}</h2>
+        <CategoryGrid categories={roots} />
+      </section>}
+      <ProIntensBlock category={proIntens ? { key: proIntens.key, name: proIntens.name } : null} />
+      {shown.length > 0 && <section id="familles" aria-labelledby="fam-h">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <h2 id="fam-h" className="commerce-section-title">{featuredSection?.data.title || "À découvrir au catalogue"}</h2>
+          <Link href="/recherche" className="inline-flex min-h-11 items-center font-semibold text-brand underline-offset-4 hover:underline">Voir tout le catalogue →</Link>
+        </div>
+        <FamilyGrid prices families={shown.map(f => ({ ...familyCard(f), from: familyPrice(catalog, f, now) }))} label="Produits à découvrir" />
+      </section>}
+      {page && contentSections.length > 0 && <PageSections page={{ ...page, sections: contentSections }} catalog={catalog} />}
       <QuoteBanner />
     </div>
   );

@@ -22,7 +22,7 @@ export function ReceiptDetails({ receipt, isOrder }: { receipt: ReceiptData; isO
       {common.uniform && <BasisNotice basis={common.basis} />}
       <div role="region" aria-label="Lignes enregistrées, tableau défilant" tabIndex={0} className="relative max-w-full overflow-x-auto">
         <table className="tabular w-full text-sm">
-          <caption className="sr-only">Lignes enregistrées par le serveur</caption>
+          <caption className="sr-only">Articles de votre demande</caption>
           <thead>
             <tr className="border-b border-line-strong text-left text-xs text-ink-3">
               <th scope="col" className="py-2 pr-2 font-medium">Référence</th>
@@ -47,9 +47,9 @@ export function ReceiptDetails({ receipt, isOrder }: { receipt: ReceiptData; isO
       </div>
       {receipt.total_amount ? (
         <p className="text-right font-semibold" data-testid="receipt-total">
-          Total {money(receipt.total_amount)} {totalBasisLabel(bases)} <span className="font-normal text-ink-2">— taxes et port non calculés</span>
+          Total {money(receipt.total_amount)} {totalBasisLabel(bases)} <span className="font-normal text-ink-2">— montant indicatif : le devis confirme les conditions.</span>
         </p>
-      ) : <p className="text-sm text-ink-2">Aucun total enregistré par le serveur pour cette demande de devis.</p>}
+      ) : <p className="text-sm text-ink-2">Le montant de cette demande sera précisé sur le devis.</p>}
     </div>
   );
 }

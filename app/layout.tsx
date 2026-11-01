@@ -7,7 +7,8 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { navigationOf } from "@/components/site/catalog-views";
 import type { MenuCategory } from "@/components/layout/category-menu";
 import type { NavNode } from "@/lib/site-catalog/navigation";
-import { isForcedNow, serverNowUtc } from "@/lib/site-catalog/clock";
+import { MediaPolicyProvider } from "@/components/site/media-policy";
+import { imagesAllowed } from "@/lib/site-catalog/media-policy";
 import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogOrNull } from "@/lib/site-catalog/page";
 import { loadUniverse } from "@/lib/site-content/source";
@@ -33,30 +34,24 @@ const toMenu = (nodes: NavNode[]): MenuCategory[] => nodes.map((n) => ({ key: n.
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const catalog = await catalogOrNull();
   const universe = await loadUniverse();
-  let instant: string | null = null;
-  let forced = false;
-  try {
-    instant = serverNowUtc();
-    forced = isForcedNow();
-  } catch {
-    /* ConfigInvalid : les pages boutique sont servies en 503 par proxy.ts ; l'API refuse. */
-  }
   const roots = catalog ? toMenu(navigationOf(catalog).menu) : [];
   return (
     <html lang="fr">
-      <body className="flex min-h-screen flex-col pb-14 md:pb-0">
+      <body className="flex min-h-screen flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
         <a href="#contenu" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-[9px] focus:bg-white focus:px-4 focus:py-2">
           Aller au contenu
         </a>
-        <CartProvider>
-          <SiteHeader dataLabel={catalog?.meta.data_label ?? null} categories={roots} universe={universe} />
-          <main id="contenu" tabIndex={-1} className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 lg:px-8 lg:py-8">
-            {children}
-          </main>
-          <SiteFooter meta={catalog?.meta ?? null} instantUtc={instant} forcedNow={forced} basis={catalog ? catalogBasis(catalog.families, catalog.meta.payload_sha256) : "NOT_DECLARED"} />
-          <CompareBar />
-          <MobileBottomNav />
-        </CartProvider>
+        <MediaPolicyProvider showImages={imagesAllowed(catalog?.meta.data_label)}>
+          <CartProvider>
+            <SiteHeader categories={roots} universe={universe} />
+            <main id="contenu" tabIndex={-1} className="mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">
+              {children}
+            </main>
+            <SiteFooter meta={catalog?.meta ?? null} basis={catalog ? catalogBasis(catalog.families, catalog.meta.payload_sha256) : "NOT_DECLARED"} />
+            <CompareBar />
+            <MobileBottomNav />
+          </CartProvider>
+        </MediaPolicyProvider>
       </body>
     </html>
   );

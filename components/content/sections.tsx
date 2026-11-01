@@ -13,15 +13,15 @@ import type { EditorialPage, Section } from "@/lib/site-content/model";
 import { isLocalLink } from "@/lib/site-content/validate";
 
 type Data<T extends Section["type"]> = Extract<Section, { type: T }>["data"];
-const heading = "mb-3 whitespace-pre-line text-xl font-semibold [overflow-wrap:anywhere]";
+const heading = "commerce-section-title mb-6 whitespace-pre-line";
 
 export function HeroSection({ data, first }: { data: Data<"hero">; first: boolean }) {
   const Heading = first ? "h1" : "h2";
   return (
-    <section data-testid="section-hero" className="min-w-0 rounded-[14px] border border-line bg-white p-6 md:p-8">
-      <Heading className="max-w-[30ch] whitespace-pre-line text-3xl font-semibold [overflow-wrap:anywhere]">{data.title}</Heading>
-      {data.text && <p className="mt-4 max-w-[70ch] whitespace-pre-line text-ink-2 [overflow-wrap:anywhere]">{data.text}</p>}
-      {data.link && isLocalLink(data.link) && <Link href={data.link} className="mt-5 inline-flex min-h-[42px] items-center rounded-[9px] border border-line px-4 font-medium hover:bg-surface">{data.linkLabel ?? "Découvrir"}</Link>}
+    <section data-testid="section-hero" className="min-w-0 bg-brand p-6 text-white md:p-10">
+      <Heading className="max-w-[30ch] whitespace-pre-line text-4xl font-extrabold [overflow-wrap:anywhere]">{data.title}</Heading>
+      {data.text && <p className="mt-4 max-w-[70ch] whitespace-pre-line text-white [overflow-wrap:anywhere]">{data.text}</p>}
+      {data.link && isLocalLink(data.link) && <Link href={data.link} className="mt-5 inline-flex min-h-[48px] items-center rounded-sm bg-white px-5 font-semibold text-brand hover:bg-brand-subtle">{data.linkLabel ?? "Découvrir"}</Link>}
     </section>
   );
 }
@@ -31,7 +31,7 @@ export function CategoryGridSection({ data, catalog }: { data: Data<"category_gr
   const byKey = new Map(catalog.categories.map(c => [c.category_key, c]));
   const categories = data.categories.flatMap(key => {
     const category = byKey.get(key);
-    return category ? [{ key, name: category.name, familyCount: nav.node(key)?.ownFamilyCount ?? catalog.familiesInCategory(key).length, children: [] }] : [];
+    return category ? [{ key, name: category.name, familyCount: nav.node(key)?.ownFamilyCount ?? catalog.familiesInCategory(key).length, imageSha: catalog.families.find(f => catalog.familiesInCategory(key).includes(f) && f.image_main_sha256)?.image_main_sha256 ?? null, children: [] }] : [];
   });
   if (categories.length !== data.categories.length || categories.length === 0) return null;
   return (
@@ -54,7 +54,7 @@ export function FamilyCarouselSection({ data, catalog }: { data: Data<"product_c
     <section data-testid="section-product-carousel" className="min-w-0">
       {data.title && <h2 className={heading}>{data.title}</h2>}
       {basis.uniform && <div className="mb-3"><BasisNotice basis={basis.basis} /></div>}
-      <CarouselRow label={data.title || "Familles publiées"}>
+      <CarouselRow label={data.title || "Produits à découvrir"}>
         {cards.map(card => <FamilyCard key={card.key} data={card.data} from={card.from} showBasis={!basis.uniform} />)}
       </CarouselRow>
     </section>

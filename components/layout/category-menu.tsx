@@ -39,7 +39,7 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
   if (categories.length === 0) return null;
   return (
     <div
-      className="sm:relative"
+      className="shrink-0 sm:relative"
       data-testid="category-menu"
       onBlur={(e) => {
         if (open && !e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
@@ -51,7 +51,7 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex h-[42px] items-center gap-2 rounded-[9px] px-3 font-medium hover:bg-surface"
+        className="inline-flex min-h-12 items-center gap-3 bg-brand px-4 font-bold text-white hover:bg-brand-dark"
       >
         Catégories <span aria-hidden="true">{open ? "▴" : "▾"}</span>
       </button>
@@ -64,7 +64,7 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
         onMouseDown={(e) => {
           if (!(e.target as HTMLElement).closest("a,button")) e.preventDefault();
         }}
-        className="absolute inset-x-4 z-40 mt-1 max-h-[70vh] overflow-y-auto sm:inset-x-auto sm:left-0 sm:w-[22rem] rounded-[14px] border border-line bg-white p-3 shadow-lg"
+        className="absolute inset-x-4 z-40 mt-1 max-h-[70vh] overflow-y-auto sm:inset-x-auto sm:left-0 sm:w-[22rem] sm:max-w-[calc(100vw-2rem)] rounded-[14px] border border-line bg-white p-3 shadow-lg"
       >
         <MenuList items={categories} level={1} onNavigate={() => setOpen(false)} />
       </div>
@@ -80,7 +80,7 @@ function MenuList({ items, level, onNavigate, label }: { items: MenuCategory[]; 
           <Link
             href={`/categorie/${c.key}`}
             onClick={onNavigate}
-            className={`flex min-h-[34px] items-center rounded-[9px] px-2 hover:bg-surface ${level === 1 ? "font-semibold" : level === 2 ? "text-ink-2 hover:text-ink" : "text-sm text-ink-2 hover:text-ink"}`}
+            className={`flex min-h-[44px] items-center rounded-[9px] px-2 hover:bg-surface ${level === 1 ? "font-semibold" : level === 2 ? "text-ink-2 hover:text-ink" : "text-sm text-ink-2 hover:text-ink"}`}
           >
             {c.name}
           </Link>

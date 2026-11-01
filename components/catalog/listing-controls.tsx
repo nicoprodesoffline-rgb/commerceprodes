@@ -30,8 +30,8 @@ export function ListingControls({ formId, action, query, hidden }: { formId: str
             </label>
           </div>
         </fieldset>
-        <button type="submit" className="h-[42px] w-full rounded-[9px] bg-ink px-4 text-sm font-medium text-white">Appliquer</button>
-        <Link href={cleared ? `${action}?${cleared}` : action} className="flex min-h-[34px] items-center justify-center text-sm text-ink-2 underline-offset-2 hover:underline">Effacer</Link>
+        <button type="submit" className="h-[44px] w-full rounded-[9px] bg-ink px-4 text-sm font-medium text-white">Appliquer</button>
+        <Link href={cleared ? `${action}?${cleared}` : action} className="flex min-h-[44px] items-center justify-center text-sm text-ink-2 underline-offset-2 hover:underline">Effacer</Link>
       </form>
       {query.ignored.map((m) => <p key={m} role="note" className="text-sm text-caution">{m}</p>)}
       {active.length > 0 && (

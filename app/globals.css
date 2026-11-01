@@ -1,36 +1,37 @@
 @import "tailwindcss";
 
-/*
- * Tokens du SITE — Design Authority V1 (PRODES_B, §2, approuvée DA-01/02/03 le 16/10/2026).
- * Valeurs OBSERVED_IN_SOURCE de la DA (palette neutre, encre, signal lie-de-vin parcimonieux).
- * Le rouge #CC1818 du prototype n'est PAS une couleur officielle du site (DA-03, §2.2) : non utilisé.
- * Espace de noms commerce : --commerce-* (DA §2.2 « isoler les valeurs du site »).
- */
+/* Identité Commerce PRODES : rouge historique, surfaces blanches, polices système. */
 @theme {
-  --color-canvas: #fbfbfa;
-  --color-surface: #f4f4f2;
-  --color-surface-subtle: #ebebe8;
-  --color-line: #e4e4e0;
-  --color-line-strong: #d6d6d1;
-  --color-ink: #1a1a18;
+  --color-brand: #a71c19;
+  --color-brand-dark: #8f1815;
+  --color-brand-subtle: #f6e9e8;
+  --color-canvas: #fff;
+  --color-surface: #f7f7f5;
+  --color-surface-subtle: #efefec;
+  --color-line: #e3e3df;
+  --color-line-strong: #c9c9c3;
+  --color-ink: #1a1a1a;
   --color-ink-2: #55554f;
-  --color-ink-3: #6b6b64;
-  --color-signal: #7a2e3b;
-  --color-signal-subtle: #f2e9ea;
-  --color-positive: #4a6b4f;
-  --color-caution: #8a6a33;
-  --radius-surface: 14px;
-  --radius-control: 9px;
+  --color-ink-3: #65655f;
+  /* alias historique : conserver les consommateurs des classes signal. */
+  --color-signal: var(--color-brand);
+  --color-signal-subtle: var(--color-brand-subtle);
+  --color-positive: #416746;
+  --color-caution: #806025;
+  --radius-surface: 8px;
+  --radius-control: 4px;
 }
 
 :root {
-  --commerce-control-h: 42px; /* --height-control-large : actions de premier niveau */
-  --commerce-control-h-secondary: 34px; /* DA-02 A : 34 px standard */
-  --focus-outline: 2px solid #1a1a18;
-  --focus-offset: 2px;
+  --commerce-control-h: 48px;
+  --commerce-control-h-secondary: 44px;
+  --focus-outline: 2px solid var(--color-ink);
+  --focus-offset: 3px;
+  scroll-padding-top: 15rem;
 }
 
 body {
+  margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   background: var(--color-canvas);
   color: var(--color-ink);
@@ -38,24 +39,33 @@ body {
   line-height: 1.5;
 }
 
-/* Focus visible (DA §2.3 --focus-outline / --focus-offset) — jamais supprimé sans remplacement. */
-:focus-visible {
-  outline: var(--focus-outline);
-  outline-offset: var(--focus-offset);
+:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-offset); }
+.bg-brand :focus-visible, footer :focus-visible { outline-color: currentColor; }
+h1, h2, h3 { font-weight: 800; }
+.tabular { font-variant-numeric: tabular-nums; }
+.commerce-section-title {
+  color: var(--color-brand);
+  font-size: clamp(1.25rem, 2.3vw, 1.8rem);
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
+.commerce-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+@media (min-width: 640px) { .commerce-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .commerce-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .commerce-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
-.tabular {
-  font-variant-numeric: tabular-nums;
-}
+/* État des médias absents : une surface calme, jamais un substitut photographique. */
+[data-testid="media-missing"] { background: var(--color-surface); color: var(--color-ink-2); font-weight: 400; }
+[data-testid="media-missing"] > span { max-width: 20ch; }
 
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-    animation: none !important;
+@media (pointer: coarse) {
+  a:not(.sr-only), button, input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]), select, summary {
+    min-height: 44px;
   }
 }
-
-/* Version imprimable de la fiche (V-E05-27) : ni menus, ni pied de page, ni barres fixes, ni boutons de liste ; le contenu de la fiche seul, en noir sur blanc. */
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 @media print {
   header, footer, [data-testid="compare-bar"], [data-testid="bottom-nav"], [data-testid="card-actions"] { display: none !important; }
   body { background: #fff; color: #000; font-size: 12pt; padding-bottom: 0; }

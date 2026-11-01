@@ -60,7 +60,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
           <ul className="flex flex-wrap gap-2">
             {children.map((c) => (
               <li key={c.key}>
-                <Link href={`/categorie/${c.key}`} className="inline-flex min-h-[34px] items-center rounded-full border border-line-strong bg-white px-3 text-sm hover:bg-surface">
+                <Link href={`/categorie/${c.key}`} className="inline-flex min-h-[44px] items-center rounded-full border border-line-strong bg-white px-3 text-sm hover:bg-surface">
                   {c.name}
                 </Link>
               </li>

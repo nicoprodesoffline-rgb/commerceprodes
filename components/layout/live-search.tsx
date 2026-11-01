@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { MediaImage } from "@/components/site/media-image";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Suggestion } from "@/lib/site-catalog/suggest";
 
@@ -64,9 +65,9 @@ export function LiveSearch() {
   }
 
   return (
-    <form ref={root} role="search" action="/recherche" method="get" onKeyDown={onKeyDown} className="relative order-4 flex w-full min-w-0 gap-2 sm:order-none sm:w-auto sm:flex-1 sm:justify-end" data-testid="live-search">
-      <label htmlFor="q-header" className="sr-only">Rechercher une famille de produits</label>
-      <div className="relative min-w-0 flex-1 sm:max-w-96">
+    <form ref={root} role="search" action="/recherche" method="get" onKeyDown={onKeyDown} className="relative order-last flex w-full min-w-0 lg:order-none lg:w-auto lg:flex-1" data-testid="live-search">
+      <label htmlFor="q-header" className="sr-only">Rechercher un produit</label>
+      <div className="relative min-w-0 flex-1">
         <input
           ref={input}
           id="q-header"
@@ -74,7 +75,7 @@ export function LiveSearch() {
           type="search"
           maxLength={100}
           autoComplete="off"
-          placeholder="Rechercher (nom de famille)"
+          placeholder="Rechercher un produit…"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onFocus={() => answer && setOpen(true)}
@@ -83,10 +84,10 @@ export function LiveSearch() {
           aria-controls={listId}
           aria-autocomplete="list"
           aria-activedescendant={active >= 0 ? optionId(active) : undefined}
-          className="h-[42px] w-full rounded-[9px] border border-line-strong bg-white px-3 pr-9"
+          className="h-12 w-full rounded-l-sm border border-r-0 border-brand bg-white px-3 pr-12 placeholder:text-ink-2"
         />
         {value !== "" && (
-          <button type="button" aria-label="Effacer la recherche" onClick={() => { setValue(""); input.current?.focus(); }} className="absolute right-1 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[9px] text-ink-3 hover:bg-surface">×</button>
+          <button type="button" aria-label="Effacer la recherche" onClick={() => { setValue(""); input.current?.focus(); }} className="absolute right-1 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[9px] text-ink-3 hover:bg-surface">×</button>
         )}
         <div id={listId} hidden={!open} className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[70vh] overflow-y-auto rounded-[14px] border border-line bg-white p-2 shadow-lg" data-testid="live-search-panel">
           <p role="status" className="px-2 py-1 text-xs text-ink-3">
@@ -96,7 +97,7 @@ export function LiveSearch() {
             {results.map((s, i) => (
               <li key={s.slug} id={optionId(i)} role="option" aria-selected={i === active}>
                 <Link href={`/famille/${s.slug}`} onClick={() => setOpen(false)} className={`flex items-center gap-3 rounded-[9px] px-2 py-2 hover:bg-surface ${i === active ? "bg-surface" : ""}`}>
-                  {s.imageSha ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={`/media/${s.imageSha}`} alt="" className="h-12 w-12 shrink-0 rounded-[9px] bg-white object-contain" /> : <span className="h-12 w-12 shrink-0 rounded-[9px] bg-surface" aria-hidden="true" />}
+                  <MediaImage sha256={s.imageSha ?? null} alt="" className="h-16 w-16 shrink-0 text-[10px]!" />
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{s.name}</span>
                     {s.category && <span className="block truncate text-xs text-ink-3">{s.category}</span>}
@@ -106,10 +107,12 @@ export function LiveSearch() {
               </li>
             ))}
           </ul>
-          {answer && answer.total > 0 && <Link href={moreHref} className="mt-1 flex min-h-[34px] items-center justify-center rounded-[9px] border-t border-line px-2 text-sm font-medium hover:bg-surface">Voir tous les résultats →</Link>}
+          {answer && answer.total > 0 && <Link href={moreHref} className="mt-1 flex min-h-[44px] items-center justify-center rounded-[9px] border-t border-line px-2 text-sm font-medium hover:bg-surface">Voir tous les résultats →</Link>}
         </div>
       </div>
-      <button type="submit" className="h-[42px] shrink-0 rounded-[9px] border border-line-strong bg-white px-4 font-medium hover:bg-surface">Rechercher</button>
+      <button type="submit" aria-label="Rechercher" className="inline-flex h-12 w-14 shrink-0 items-center justify-center rounded-r-sm bg-brand text-white hover:bg-brand-dark">
+        <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg>
+      </button>
     </form>
   );
 }

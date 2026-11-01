@@ -18,7 +18,7 @@ const TABS = [
 export function MobileBottomNav() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Navigation du bas" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white md:hidden print:hidden" data-testid="bottom-nav">
+    <nav aria-label="Navigation du bas" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white pb-[env(safe-area-inset-bottom)] md:hidden print:hidden" data-testid="bottom-nav">
       <ul className="flex">
         {TABS.map((t) => {
           const current = t.href === "/" ? pathname === "/" : pathname.startsWith(t.href);

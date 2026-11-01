@@ -53,8 +53,8 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       </div>
       <form role="search" action="/recherche" method="get" className="flex max-w-xl gap-2">
         <label htmlFor="q-page" className="sr-only">Rechercher une famille de produits</label>
-        <input id="q-page" name="q" type="search" defaultValue={q} maxLength={SEARCH_MAX} placeholder="Nom de famille ou référence PI-…" className="h-[42px] min-w-0 flex-1 rounded-[9px] border border-line-strong bg-white px-3" />
-        <button type="submit" className="h-[42px] rounded-[9px] bg-ink px-4 font-medium text-white">Rechercher</button>
+        <input id="q-page" name="q" type="search" defaultValue={q} maxLength={SEARCH_MAX} placeholder="Nom de famille ou référence PI-…" className="h-[44px] min-w-0 flex-1 rounded-[9px] border border-line-strong bg-white px-3" />
+        <button type="submit" className="h-[44px] rounded-[9px] bg-ink px-4 font-medium text-white">Rechercher</button>
       </form>
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="min-w-0 space-y-4 lg:w-60 lg:shrink-0">

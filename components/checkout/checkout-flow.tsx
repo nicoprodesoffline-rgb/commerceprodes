@@ -43,12 +43,12 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
   }, [attempt]);
 
   if (outcome?.kind === "received") return <ResultPanel outcome={outcome} cartKept={mode === "quote"} />;
-  if (!ready || state.kind === "loading") return <p role="status" className="text-ink-3">Vérification du panier auprès du serveur…</p>;
+  if (!ready || state.kind === "loading") return <p role="status" className="text-ink-3">Vérification du panier…</p>;
   if (state.kind === "empty") {
     return (
       <div className="rounded-[14px] border border-line bg-white p-6" data-testid="cart-empty">
         <p>Votre panier est vide : ajoutez d&apos;abord des articles depuis le catalogue.</p>
-        <Link href="/" className="mt-3 inline-flex h-[42px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Parcourir le catalogue</Link>
+        <Link href="/" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Parcourir le catalogue</Link>
       </div>
     );
   }
@@ -111,7 +111,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
     <form onSubmit={submit} noValidate className="space-y-8" aria-describedby="flow-intro">
       <p id="flow-intro" className="text-ink-2">
         {mode === "order"
-          ? "Vérifiez le récapitulatif, indiquez des coordonnées fictives puis confirmez. Les prix sont revalidés par le serveur au moment de l’envoi."
+          ? "Vérifiez le récapitulatif, indiquez des coordonnées fictives puis confirmez. Les prix sont vérifiés au moment de l’envoi."
           : "Indiquez des coordonnées fictives : votre demande de devis est enregistrée avec les prix affichés (ou sans prix pour les lignes qui n'en ont pas)."}
       </p>
       {mode === "order" && <p className="font-medium">{TEST_ORDER_NOTICE}</p>}
@@ -121,7 +121,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
       <section aria-labelledby="recap-h" className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="recap-h" className="text-lg font-semibold">Récapitulatif</h2>
-          <Link href="/panier" className="inline-flex min-h-[34px] items-center text-sm underline">Modifier le panier</Link>
+          <Link href="/panier" className="inline-flex min-h-[44px] items-center text-sm underline">Modifier le panier</Link>
         </div>
         <CartLines lines={lines} preview={preview} loading={false} editable={false} />
         {!allowed && (
@@ -156,7 +156,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
 
       {mode === "order" && (
         <div className="rounded-[14px] border border-line bg-white p-4">
-          <label className="flex min-h-[42px] cursor-pointer items-start gap-3">
+          <label className="flex min-h-[44px] cursor-pointer items-start gap-3">
             <input
               type="checkbox"
               checked={confirmed}
@@ -177,7 +177,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
         <button
           type="submit"
           disabled={sending || needsReview || !allowed || (mode === "order" && !confirmed)}
-          className="h-[42px] rounded-[9px] bg-ink px-6 font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-[44px] rounded-[9px] bg-ink px-6 font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
           data-testid="submit"
         >
           {sending ? "Envoi en cours…" : mode === "order" ? "Confirmer la commande de test" : "Envoyer la demande de devis"}
