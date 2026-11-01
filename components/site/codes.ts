@@ -1,6 +1,6 @@
 /**
- * Traduction française des codes C0 §13 et des statuts SITE affichés au client. Le code n'est JAMAIS masqué :
- * `codeMessage()` rend « texte (code CODE) ». Aucune logique : la décision est celle du serveur.
+ * Traduction française des codes C0 §13 et des statuts SITE affichés au client. Le code n'est plus affiché ;
+ * il reste dans `data-code`, la console et les journaux serveur. Aucune logique : la décision est celle du serveur.
  */
 const TEXT: Record<string, string> = {
   PAYLOAD_MALFORMED: "La demande envoyée est illisible.",
@@ -35,7 +35,11 @@ export function codeText(code: string): string {
 }
 
 export function codeMessage(code: string): string {
-  return `${codeText(code)} (code ${code})`;
+  return codeText(code);
+}
+
+export function reportCodes(source: string, codes: readonly string[]): void {
+  if (typeof window !== "undefined" && codes.length > 0) console.warn("[prodes-site] codes", source, codes.join(","));
 }
 
 export function codesMessage(codes: readonly string[]): string {

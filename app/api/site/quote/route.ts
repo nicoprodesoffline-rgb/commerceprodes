@@ -15,12 +15,13 @@ export async function POST(req: Request) {
   try {
     bc4 = useBc4Persistence();
   } catch (error) {
-    const r = businessConfigError(error);
+    const r = businessConfigError(error, "/api/site/quote");
     if (r) return r;
     throw error;
   }
   if (bc4) return submitHttp("quote_request", req);
   return withCatalog(req, ({ catalog, nowUtc, bytes }) =>
     validateQuote({ bytes, generation: catalog.c0Generation, catalogueSequence: catalog.meta.catalogue_sequence, nowUtc }),
+    "/api/site/quote",
   );
 }

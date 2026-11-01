@@ -7,6 +7,7 @@ import { loadCatalog, type Catalog } from "@/lib/site-catalog/catalog";
 import { ConfigInvalid, serverNowUtc } from "@/lib/site-catalog/clock";
 import { CatalogUnavailable } from "@/lib/site-catalog/source";
 import { BUSINESS_MAX_BYTES, PERSISTENCE } from "./validate";
+import { logRefusal, type BusinessRoute } from "./refusal-log";
 
 /** Lit au plus `max + 1` octets : au-delà, C0 `parseBytes` refuse (`PAYLOAD_MALFORMED`, taille). */
 export async function readBoundedBytes(req: Request, max = BUSINESS_MAX_BYTES): Promise<Uint8Array> {
@@ -41,6 +42,7 @@ export type BusinessContext = { catalog: Catalog; nowUtc: string; bytes: Uint8Ar
 export async function withCatalog(
   req: Request,
   fn: (ctx: BusinessContext) => { status: number; body: unknown },
+  route: BusinessRoute,
 ): Promise<Response> {
   let catalog: Catalog;
   let nowUtc: string;
@@ -49,6 +51,7 @@ export async function withCatalog(
   } catch (error) {
     if (error instanceof ConfigInvalid) {
       console.error(`[site-clock] configuration invalide : ${error.reason} — ${error.message}`);
+      logRefusal(route, 503, { site_status: "CONFIG_INVALID" });
       return NextResponse.json(
         { site_status: "CONFIG_INVALID", reason: error.reason, persistence: PERSISTENCE, durable: false, verdict: null },
         { status: 503 },
@@ -61,6 +64,7 @@ export async function withCatalog(
   } catch (error) {
     if (error instanceof CatalogUnavailable) {
       console.error(`[site-catalog] indisponible : ${error.reason} — ${error.message}`);
+      logRefusal(route, 503, { site_status: "CATALOG_UNAVAILABLE" });
       return NextResponse.json(
         { site_status: "CATALOG_UNAVAILABLE", reason: error.reason, persistence: PERSISTENCE, durable: false, verdict: null },
         { status: 503 },
@@ -70,5 +74,6 @@ export async function withCatalog(
   }
   const bytes = await readBoundedBytes(req);
   const r = fn({ catalog, nowUtc, bytes });
+  logRefusal(route, r.status, r.body);
   return NextResponse.json(r.body, { status: r.status, headers: { "cache-control": "no-store" } });
 }

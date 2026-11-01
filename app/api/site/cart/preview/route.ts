@@ -10,5 +10,6 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   return withCatalog(req, ({ catalog, nowUtc, bytes }) =>
     previewCart({ bytes, generation: catalog.c0Generation, catalogueSequence: catalog.meta.catalogue_sequence, nowUtc }),
+    "/api/site/cart/preview",
   );
 }
