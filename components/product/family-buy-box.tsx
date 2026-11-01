@@ -14,9 +14,7 @@ import { PriceGrid, type PriceGridRow } from "@/components/product/price-grid";
 import { VariantSelector, type SelectorAxis } from "@/components/product/variant-selector";
 import { previewCart } from "@/components/site/api";
 import { codeMessage, codesMessage } from "@/components/site/codes";
-import { BasisNotice } from "@/components/site/basis-notice";
-import { axesText, axisValue, basisLabel, money, price, uniformBasis, type AxisDisplay } from "@/components/site/format";
-import { MediaImage } from "@/components/site/media-image";
+import { axesText, basisLabel, money, price, type AxisDisplay } from "@/components/site/format";
 import type { PreviewLineJson } from "@/lib/site-business/client-types";
 
 export type BuyBoxItem = {
@@ -48,12 +46,14 @@ function parseQty(raw: string): number | null {
 export function FamilyBuyBox({
   familyName,
   familySlug,
+  description,
   schema,
   items,
   initialKey,
 }: {
   familyName: string;
   familySlug: string;
+  description?: string;
   schema: SelectorAxis[];
   items: BuyBoxItem[];
   initialKey?: string | undefined;
@@ -116,7 +116,7 @@ export function FamilyBuyBox({
     };
   }, [item, quantity]);
 
-  if (!item) return <p>Aucune variante publiée.</p>;
+  if (!item) return <p>Ce produit est momentanément indisponible.</p>;
   const inCart = lines.find((l) => l.public_item_key === item.public_item_key);
 
   /** Ajoute la variante au panier (prix vérifié par le serveur) ; `toQuote` ouvre ensuite la demande de devis : même parcours que depuis le panier, aucun second formulaire. */
@@ -156,40 +156,35 @@ export function FamilyBuyBox({
         : null
       : null;
   const priced = current?.state === "line" && current.line.accepted && current.line.selection ? current.line : null;
-  const anyPrice = item.rows.some((r) => r.selected);
-  // Base fiscale de TOUTE la fiche : commune → dite une fois par le bandeau et sur le total de la ligne ; sinon chaque montant porte la sienne (friction 14).
-  const fiche = uniformBasis(items.flatMap((i) => i.rows.filter((r) => r.selected).map((r) => r.tax_basis_or_status)));
-  const unit = (amount: string, basis: string | null | undefined) => (fiche.uniform && basis === fiche.basis ? money(amount) : price(amount, basis));
+  // Les montants des paliers sont déjà retenus par le serveur ; on présente le plus bas, sans recalculer un prix.
+  const availableRows = item.rows.filter((row) => row.selected && row.unit_amount !== null);
+  const lowest = availableRows.reduce<PriceGridRow | null>((best, row) =>
+    best === null || row.unit_amount!.localeCompare(best.unit_amount!, "fr", { numeric: true }) < 0 ? row : best, null);
+  const unit = price;
 
   return (
-    <section aria-labelledby="buy-h" className="space-y-5 rounded-[14px] border border-line bg-white p-4 sm:p-5">
-      <h2 id="buy-h" className="sr-only">Choisir une variante et une quantité</h2>
-      <VariantSelector
-        options={schema}
-        items={items}
-        selectedKey={selectedKey}
-        onSelect={selectVariant}
-      />
-
-      <div className="flex items-start gap-3 border-t border-line pt-4" data-testid="selected-variant">
-        {item.image_sha256 && <MediaImage sha256={item.image_sha256} alt={`Image de la variante ${axesText(item.axes)}`} className="h-16 w-16 shrink-0 rounded-[9px] border border-line [image-rendering:pixelated]" />}
-        <div className="min-w-0 text-sm">
-          <p className="font-medium">Variante choisie</p>
-          <p>{axesText(item.axes)}</p>
-          <p className="text-ink-2">
-            Référence <span className="font-mono text-ink" data-testid="item-ref">{item.public_item_key}</span>
-          </p>
-        </div>
+    <section aria-labelledby="buy-h" className="min-w-0 space-y-6 [overflow-wrap:anywhere]">
+      <h1 id="buy-h" className="scroll-mt-40 text-2xl font-semibold leading-tight text-ink sm:text-3xl">{familyName}</h1>
+      <div className="text-sm text-ink-2" data-testid="selected-variant">
+        <p>Référence <span className="font-medium text-ink" data-testid="item-ref">{item.public_item_key}</span></p>
+        {item.axes.length > 0 && <p className="mt-1">{axesText(item.axes)}</p>}
       </div>
-
-      {fiche.uniform && <BasisNotice basis={fiche.basis} />}
-      <PriceGrid rows={item.rows} selectedRateId={priced?.selection?.rate_id ?? null} caption="Prix de vente PRODES par quantité, en vigueur maintenant" showBasis={!fiche.uniform} />
+      {lowest?.unit_amount && (
+        <p className="tabular text-3xl font-semibold text-[color:var(--color-brand,#a71c19)]" data-testid="product-price">
+          {availableRows.length > 1 && <span className="mb-1 block text-sm font-normal text-ink-2">À partir de</span>}
+          {price(lowest.unit_amount, lowest.tax_basis_or_status)}
+          <span className="mt-1 block text-sm font-normal text-ink-2">l’unité</span>
+        </p>
+      )}
+      {description && <p className="whitespace-pre-line leading-relaxed text-ink-2">{description}</p>}
+      <VariantSelector options={schema} items={items} selectedKey={selectedKey} onSelect={selectVariant} />
+      <PriceGrid rows={item.rows} selectedRateId={priced?.selection?.rate_id ?? null} />
 
       <div className="flex flex-wrap items-end gap-3">
         <div>
           <label htmlFor={qtyId} className="mb-1 block text-sm font-medium">Quantité</label>
           <div className="flex">
-            <button type="button" aria-label="Diminuer la quantité" onClick={() => setQtyRaw(String(Math.max(1, (quantity ?? 2) - 1)))} className="h-[42px] w-[42px] rounded-l-[9px] border border-line-strong bg-white text-lg">−</button>
+            <button type="button" aria-label="Diminuer la quantité" onClick={() => setQtyRaw(String(Math.max(1, (quantity ?? 2) - 1)))} className="h-[44px] w-[44px] rounded-l-[9px] border border-line-strong bg-white text-lg">−</button>
             <input
               id={qtyId}
               type="text"
@@ -199,9 +194,9 @@ export function FamilyBuyBox({
               aria-invalid={quantity === null || belowMinimum}
               aria-describedby={`${qtyId}-help${minimum > 1 ? ` ${qtyId}-minimum` : ""}`}
               onChange={(e) => setQtyRaw(e.target.value.replace(/[^\d]/g, "").slice(0, 7))}
-              className="tabular h-[42px] w-20 border-y border-line-strong bg-white px-2 text-center"
+              className="tabular h-[44px] w-20 border-y border-line-strong bg-white px-2 text-center"
             />
-            <button type="button" aria-label="Augmenter la quantité" onClick={() => setQtyRaw(String(Math.min(MAX_QUANTITY, (quantity ?? 0) + 1)))} className="h-[42px] w-[42px] rounded-r-[9px] border border-line-strong bg-white text-lg">+</button>
+            <button type="button" aria-label="Augmenter la quantité" onClick={() => setQtyRaw(String(Math.min(MAX_QUANTITY, (quantity ?? 0) + 1)))} className="h-[44px] w-[44px] rounded-r-[9px] border border-line-strong bg-white text-lg">+</button>
           </div>
           {minimum > 1 && <p id={`${qtyId}-minimum`} className="mt-1 text-sm text-ink-2">Quantité minimale : {minimum}</p>}
         </div>
@@ -209,15 +204,15 @@ export function FamilyBuyBox({
           type="button"
           onClick={() => onAdd()}
           disabled={busy || quantity === null}
-          className="h-[42px] rounded-[9px] bg-ink px-5 font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+          className="product-add-to-cart fixed inset-x-4 bottom-[72px] z-30 min-h-[48px] rounded-[3px] bg-[color:var(--color-brand,#a71c19)] md:bottom-4 lg:static lg:z-auto lg:flex-1 px-5 py-3 font-semibold text-white hover:bg-[color:var(--color-brand-dark,#8f1815)] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {busy ? "Vérification…" : anyPrice ? "Ajouter au panier" : "Ajouter au panier (devis sans prix)"}
+          {busy ? "Vérification…" : "Ajouter au panier"}
         </button>
         <button
           type="button"
           onClick={() => onAdd(true)}
           disabled={busy || quantity === null}
-          className="h-[42px] rounded-[9px] border border-ink bg-white px-5 font-semibold text-ink hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50"
+          className="min-h-[48px] w-full rounded-[3px] border border-[color:var(--color-brand,#a71c19)] bg-white px-5 py-3 font-semibold text-[color:var(--color-brand,#a71c19)] hover:bg-[color:var(--color-brand-subtle,#f6e9e8)] disabled:cursor-not-allowed disabled:opacity-50"
           data-testid="quote-from-family"
         >
           Demander un devis
@@ -237,7 +232,7 @@ export function FamilyBuyBox({
         ) : quantity === null ? (
           <span className="text-signal">Saisissez une quantité entière entre 1 et 1 000 000.</span>
         ) : current === null || current.state === "loading" ? (
-          <span className="text-ink-3">Prix pour {quantity} : vérification auprès du serveur…</span>
+          <span className="text-ink-3">Prix pour {quantity} : vérification…</span>
         ) : current.state === "error" ? (
           <span className="text-signal">{current.text}</span>
         ) : priced?.selection ? (
@@ -263,45 +258,6 @@ export function FamilyBuyBox({
         {!feedback && inCart && <p className="text-ink-2">Déjà dans le panier : {inCart.quantity} (un nouvel ajout s&apos;additionne à cette ligne).</p>}
       </div>
 
-      {items.length > 1 && (
-        <details open={items.length <= 8} className="border-t border-line pt-4">
-          <summary className="inline-flex min-h-[34px] cursor-pointer items-center text-sm font-semibold">Variantes proposées ({items.length})</summary>
-          <div className="relative overflow-x-auto">
-          <table className="tabular mt-2 w-full text-sm">
-            <thead>
-              <tr className="border-b border-line-strong text-left text-xs text-ink-3">
-                <th scope="col" className="py-2 pr-2 font-medium">Variante</th>
-                <th scope="col" className="py-2 pr-2 font-medium">Référence</th>
-                <th scope="col" className="py-2 pr-2 text-right font-medium">Prix pour 1</th>
-                <th scope="col" className="py-2"><span className="sr-only">Action</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((i) => {
-                const first = i.rows.find((r) => r.selected && r.tier_quantity === 1);
-                const isSel = i.public_item_key === selectedKey;
-                return (
-                  <tr key={i.public_item_key} className={`h-[42px] border-b border-line ${isSel ? "bg-signal-subtle" : ""}`}>
-                    <td className="py-1 pr-2">{i.axes.map((a) => axisValue(a.value)).join(" · ")}</td>
-                    <td className="py-1 pr-2 font-mono text-xs whitespace-nowrap">{i.public_item_key}</td>
-                    <td className="py-1 pr-2 text-right whitespace-nowrap">{first?.unit_amount ? unit(first.unit_amount, first.tax_basis_or_status) : "indisponible"}</td>
-                    <td className="py-1 text-right">
-                      {isSel ? (
-                        <span className="text-xs font-medium text-signal">Choisie</span>
-                      ) : (
-                        <button type="button" onClick={() => selectVariant(i.public_item_key)} className="min-h-[34px] rounded-[9px] border border-line-strong px-3 text-xs hover:bg-surface">
-                          Choisir<span className="sr-only"> {i.axes.map((a) => axisValue(a.value)).join(" ")}</span>
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          </div>
-        </details>
-      )}
     </section>
   );
 }

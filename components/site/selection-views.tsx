@@ -53,13 +53,13 @@ export function WishlistView() {
     <div className="space-y-4" data-testid="wishlist-view">
       <h1 className="text-2xl font-semibold">Ma sélection ({list.length})</h1>
       {state.status === "ready" && state.families.length >= 2 && (
-        <button type="button" onClick={onAddAll} disabled={busy} className="min-h-[42px] rounded-[9px] bg-ink px-4 font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50">
+        <button type="button" onClick={onAddAll} disabled={busy} className="min-h-[44px] rounded-[9px] bg-ink px-4 font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50">
           {busy ? "Vérification…" : "Ajouter tout au panier"}
         </button>
       )}
       <div aria-live="polite" aria-busy={busy} className="space-y-2 text-sm">
         {result && <>
-          <p>{result.added} ajouté{result.added > 1 ? "s" : ""}, {result.refused.length} refusé{result.refused.length > 1 ? "s" : ""} par le serveur.</p>
+          <p>{result.added} ajouté{result.added > 1 ? "s" : ""}, {result.refused.length} non ajouté{result.refused.length > 1 ? "s" : ""}.</p>
           {result.unpriced > 0 && <p>{result.unpriced} ajouté{result.unpriced > 1 ? "s" : ""} sans prix : seule une demande de devis sera possible pour ces produits.</p>}
           {result.refused.length > 0 && <ul className="space-y-1">
             {result.refused.map(({ family, codes }) => <li key={family.slug}><Link href={`/famille/${family.slug}`} className="underline">{family.name}</Link> : {codesMessage(codes)}</li>)}
@@ -71,10 +71,10 @@ export function WishlistView() {
           </div>}
         </>}
       </div>
-      <Status state={state} empty={emptyBox(<><p className="font-medium text-ink">Votre sélection est vide.</p><p className="mt-1">Utilisez « Ma sélection » sur une fiche ou une carte pour garder un produit ici ; elle reste sur cet appareil.</p><Link href="/recherche" className="mt-3 inline-flex h-[42px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Voir le catalogue</Link></>)} />
+      <Status state={state} empty={emptyBox(<><p className="font-medium text-ink">Votre sélection est vide.</p><p className="mt-1">Utilisez « Ma sélection » sur une fiche ou une carte pour garder un produit ici ; elle reste sur cet appareil.</p><Link href="/recherche" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Voir le catalogue</Link></>)} />
       {gone.length > 0 && (
         <p role="note" className="rounded-[9px] border border-line bg-surface px-3 py-2 text-sm text-ink-2">
-          {gone.length} produit{gone.length > 1 ? "s" : ""} de votre sélection n&apos;est plus publié{gone.length > 1 ? "s" : ""} au catalogue.{" "}
+          {gone.length} produit{gone.length > 1 ? "s" : ""} de votre sélection {gone.length > 1 ? "ne sont" : "n’est"} plus disponible{gone.length > 1 ? "s" : ""}.{" "}
           <button type="button" className="font-medium underline" onClick={() => gone.forEach((s) => removeFromList(KEYS.wishlist, s))}>Les retirer</button>
         </p>
       )}
@@ -83,7 +83,7 @@ export function WishlistView() {
           {state.families.map((f) => (
             <li key={f.slug} className="flex flex-col overflow-hidden rounded-[14px] border border-line bg-white">
               <Link href={`/famille/${f.slug}`} className="group block">
-                <MediaImage sha256={f.imageSha} alt="" className="aspect-[4/3] w-full" />
+                <MediaImage sha256={f.imageSha} alt="" className="aspect-square w-full" />
                 <span className="block p-4">
                   {f.category && <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-3">{f.category}</span>}
                   <span className="block font-semibold group-hover:underline">{f.name}</span>
@@ -93,7 +93,7 @@ export function WishlistView() {
               </Link>
               <div className="mt-auto flex flex-wrap gap-2 px-4 pb-4">
                 <CompareButton slug={f.slug} name={f.name} />
-                <button type="button" onClick={() => removeFromList(KEYS.wishlist, f.slug)} className="inline-flex min-h-[34px] items-center rounded-[9px] border border-line-strong bg-white px-2.5 text-xs font-medium hover:bg-surface">
+                <button type="button" onClick={() => removeFromList(KEYS.wishlist, f.slug)} className="inline-flex min-h-[44px] items-center rounded-[9px] border border-line-strong bg-white px-2.5 text-xs font-medium hover:bg-surface">
                   Retirer<span className="sr-only"> {f.name} de ma sélection</span>
                 </button>
               </div>
@@ -115,20 +115,20 @@ export function CompareView() {
     <div className="space-y-4" data-testid="compare-view">
       <h1 className="text-2xl font-semibold">Comparer des produits</h1>
       {!enough && state.status !== "unavailable" && state.status !== "error" ? (
-        emptyBox(<><p className="font-medium text-ink">Sélectionnez au moins 2 produits pour les comparer côte à côte.</p><Link href="/recherche" className="mt-3 inline-flex h-[42px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">← Retour au catalogue</Link></>)
+        emptyBox(<><p className="font-medium text-ink">Sélectionnez au moins 2 produits pour les comparer côte à côte.</p><Link href="/recherche" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">← Retour au catalogue</Link></>)
       ) : (
         <>
           <Status state={state} empty={null} />
           {state.status === "ready" && state.families.length > 0 && (
             <div className="overflow-x-auto rounded-[14px] border border-line bg-white" data-testid="compare-table-scroll">
               <table className="w-full min-w-[34rem] border-collapse text-sm">
-                <caption className="sr-only">Comparaison de {state.families.length} familles de produits</caption>
+                <caption className="sr-only">Comparaison de {state.families.length} produits</caption>
                 <thead>
                   <tr className="border-b border-line">
                     <th scope="col" className="w-32 p-3 text-left text-xs font-medium text-ink-3">&nbsp;</th>
                     {state.families.map((f) => (
                       <th key={f.slug} scope="col" className="min-w-40 p-3 text-left align-top">
-                        <MediaImage sha256={f.imageSha} alt="" className="mb-2 aspect-[4/3] w-full rounded-[9px]" />
+                        <MediaImage sha256={f.imageSha} alt="" className="mb-2 aspect-square w-full rounded-[9px]" />
                         <Link href={`/famille/${f.slug}`} className="font-semibold hover:underline">{f.name}</Link>
                       </th>
                     ))}
@@ -159,8 +159,8 @@ export function CompareView() {
                     <th scope="row" className="p-3 text-left text-xs font-medium text-ink-3">Actions</th>
                     {state.families.map((f) => (
                       <td key={f.slug} className="space-y-2 p-3">
-                        <Link href={`/famille/${f.slug}`} className="inline-flex min-h-[34px] items-center text-sm font-medium underline">Voir la fiche →</Link>
-                        <div><button type="button" onClick={() => removeFromList(KEYS.compare, f.slug)} className="inline-flex min-h-[34px] items-center rounded-[9px] border border-line-strong bg-white px-2.5 text-xs font-medium hover:bg-surface">Retirer<span className="sr-only"> {f.name} du comparateur</span></button></div>
+                        <Link href={`/famille/${f.slug}`} className="inline-flex min-h-[44px] items-center text-sm font-medium underline">Voir la fiche →</Link>
+                        <div><button type="button" onClick={() => removeFromList(KEYS.compare, f.slug)} className="inline-flex min-h-[44px] items-center rounded-[9px] border border-line-strong bg-white px-2.5 text-xs font-medium hover:bg-surface">Retirer<span className="sr-only"> {f.name} du comparateur</span></button></div>
                       </td>
                     ))}
                   </tr>
@@ -169,10 +169,10 @@ export function CompareView() {
             </div>
           )}
           {state.status === "ready" && state.missing.length > 0 && (
-            <p role="note" className="text-sm text-ink-2">{state.missing.length} produit{state.missing.length > 1 ? "s" : ""} n&apos;est plus publié{state.missing.length > 1 ? "s" : ""} au catalogue.{" "}
+            <p role="note" className="text-sm text-ink-2">{state.missing.length} produit{state.missing.length > 1 ? "s" : ""} {state.missing.length > 1 ? "ne sont" : "n’est"} plus disponible{state.missing.length > 1 ? "s" : ""}.{" "}
               <button type="button" className="underline" onClick={() => state.missing.forEach((s) => removeFromList(KEYS.compare, s))}>Les retirer</button></p>
           )}
-          <p className="text-xs text-ink-3">Comparaison au niveau de la famille : le prix est le plus bas prix unitaire publié. Choisissez la variante sur la fiche.</p>
+          <p className="text-xs text-ink-3">Comparez les produits, puis choisissez votre variante sur la fiche pour connaître son prix.</p>
         </>
       )}
     </div>
@@ -188,12 +188,12 @@ export function RecentlyViewed({ slug }: { slug: string }) {
   if (others.length < 2 || state.status !== "ready" || state.families.length < 2) return null;
   return (
     <section aria-labelledby="recent-h" className="mt-10" data-testid="recently-viewed">
-      <h2 id="recent-h" className="mb-3 text-lg font-semibold">Récemment consultés</h2>
+      <h2 id="recent-h" className="mb-6 text-xl font-semibold sm:text-2xl">Récemment consultés</h2>
       <CarouselRow label="Récemment consultés">
         {state.families.map((f) => (
-          <li key={f.slug} className="w-44 shrink-0 snap-start">
+          <li key={f.slug} className="shrink-0 snap-start">
             <Link href={`/famille/${f.slug}`} className="block overflow-hidden rounded-[14px] border border-line bg-white hover:border-ink-3">
-              <MediaImage sha256={f.imageSha} alt="" className="aspect-[4/3] w-full" />
+              <MediaImage sha256={f.imageSha} alt="" className="aspect-square w-full" />
               <span className="block p-3"><span className="block text-sm font-semibold">{f.name}</span><span className="mt-1 block text-xs text-ink-2">{f.priceText}</span></span>
             </Link>
           </li>

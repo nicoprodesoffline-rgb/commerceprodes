@@ -1,0 +1,12 @@
+/* Le bouton d'achat reste au-dessus de la sélection du comparateur et de la navigation mobile. */
+@media (width < 1024px) {
+  body:has([data-testid="compare-bar"]) .product-add-to-cart {
+    bottom: calc(10.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (768px <= width < 1024px) {
+  body:has([data-testid="compare-bar"]) .product-add-to-cart {
+    bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}

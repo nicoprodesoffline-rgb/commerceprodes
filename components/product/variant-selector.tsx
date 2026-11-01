@@ -4,8 +4,7 @@
  * Sélecteur de variante : un groupe de boutons radio par axe (`axes[]` du DTO, libellés du DTO). Une valeur n'est
  * sélectionnable que si un Item PUBLIÉ porte cette valeur ET les valeurs déjà choisies des autres axes : aucune
  * combinaison n'est construite (aucun produit cartésien, C0 §8.3). Une valeur non proposée avec la sélection
- * courante est désactivée ET expliquée sous le groupe ; la liste « Variantes proposées » permet d'atteindre
- * directement toute variante publiée. Clavier : flèches dans un groupe (radio natif), Tab entre groupes.
+ * courante est désactivée ET expliquée sous le groupe. Clavier : flèches dans un groupe (radio natif), Tab entre groupes.
  */
 import { useId } from "react";
 import { axisValue } from "@/components/site/format";
@@ -66,7 +65,7 @@ export function VariantSelector({
                     key={value}
                     htmlFor={id}
                     className={[
-                      "relative inline-flex min-h-[42px] min-w-[42px] items-center justify-center rounded-[9px] border px-3 text-sm",
+                      "relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[9px] border px-3 text-sm",
                       "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink",
                       !t
                         ? "cursor-not-allowed border-dashed border-line-strong bg-surface text-ink-3 line-through"
@@ -97,7 +96,7 @@ export function VariantSelector({
             {unavailable.length > 0 && (
               <p id={hintId} className="mt-1.5 text-xs text-ink-2">
                 Non proposé{others.length > 0 ? <> avec {others.map((o) => `${o.label} « ${axisValue(selected[o.axis]!)} »`).join(" et ")}</> : null} :{" "}
-                {unavailable.map(axisValue).join(", ")}. Changez d&apos;abord une autre option ou choisissez dans la liste des variantes proposées.
+                {unavailable.map(axisValue).join(", ")}. Changez d&apos;abord une autre option pour voir les combinaisons disponibles.
               </p>
             )}
           </fieldset>

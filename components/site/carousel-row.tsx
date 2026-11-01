@@ -34,7 +34,7 @@ export function CarouselRow({ label, children }: { label: string; children: Reac
     element.scrollBy({ left: direction * element.clientWidth, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }
 
-  const button = "hidden md:inline-flex h-[42px] w-[42px] items-center justify-center rounded-[9px] border border-line-strong bg-white text-lg hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40";
+  const button = "hidden md:inline-flex h-[44px] w-[44px] items-center justify-center rounded-[9px] border border-line-strong bg-white text-lg hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40";
   return (
     <div className="min-w-0">
       {position.overflow && (
@@ -44,7 +44,7 @@ export function CarouselRow({ label, children }: { label: string; children: Reac
         </div>
       )}
       <div id={id} ref={row} tabIndex={0} role="region" aria-label={label} className="w-full min-w-0 snap-x snap-mandatory overflow-x-auto pb-3">
-        <ul className="flex gap-4 [overflow-wrap:anywhere] [&>li]:w-[min(80vw,300px)] [&>li]:shrink-0 [&>li]:snap-start">{children}</ul>
+        <ul className="flex gap-4 [overflow-wrap:anywhere] [&>li]:w-[min(82vw,340px)] [&>li]:shrink-0 [&>li]:snap-start [&_img]:aspect-square [&_img]:object-contain [&_[data-testid=media-missing]]:aspect-square">{children}</ul>
       </div>
     </div>
   );

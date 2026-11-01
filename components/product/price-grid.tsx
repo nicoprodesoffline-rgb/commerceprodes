@@ -5,7 +5,6 @@
  * quantité saisie (aperçu), jamais déduite localement. Attributs `data-rate-id` / `data-tier` / `data-unavailable`
  * conservés (tests A2).
  */
-import { codeMessage } from "@/components/site/codes";
 import { basisLabel, money, quantityRange } from "@/components/site/format";
 
 export type PriceGridRow = {
@@ -22,24 +21,22 @@ export type PriceGridRow = {
 };
 
 /** `showBasis` : chaque ligne porte sa base fiscale (défaut) ; faux = la base est dite UNE fois par le bandeau de la fiche (`BasisNotice`, friction 14). */
-export function PriceGrid({ rows, selectedRateId, caption, showBasis = true }: { rows: PriceGridRow[]; selectedRateId?: string | null; caption: string; showBasis?: boolean }) {
+export function PriceGrid({ rows, selectedRateId, caption = "Prix selon la quantité", showBasis = true }: { rows: PriceGridRow[]; selectedRateId?: string | null; caption?: string; showBasis?: boolean }) {
   if (!rows.some((r) => r.selected)) {
     return (
-      <p className="rounded-[9px] border border-caution bg-white p-3 text-sm" data-testid="price-unavailable">
-        <strong className="font-semibold">Prix indisponible</strong> : aucun prix de vente publié ne s&apos;applique à cette variante en ce moment.
-        Vous pouvez l&apos;ajouter au panier pour une demande de devis sans prix ; la commande n&apos;est pas possible.
+      <p className="border border-line bg-surface p-4 text-sm text-ink-2" data-testid="price-unavailable">
+        <strong className="font-semibold text-ink">Prix sur demande :</strong> ajoutez ce produit à votre demande de devis.
       </p>
     );
   }
   return (
-    <div className="relative overflow-x-auto">
+    <div className="min-w-0">
       <table className="tabular w-full border-collapse text-sm">
-        <caption className="mb-2 text-left text-sm font-semibold">{caption}</caption>
+        <caption className="mb-3 text-left text-sm font-semibold">{caption}</caption>
         <thead>
-          <tr className="border-b border-line-strong text-left text-xs text-ink-3">
-            <th scope="col" className="py-2 pr-3 font-medium">Quantité</th>
-            <th scope="col" className="py-2 pr-3 text-right font-medium">Prix unitaire</th>
-            <th scope="col" className="hidden py-2 font-medium sm:table-cell">Validité</th>
+          <tr className="border-b border-line-strong text-left text-xs text-ink-2">
+            <th scope="col" className="py-3 pr-3 font-medium">Quantité</th>
+            <th scope="col" className="py-3 text-right font-medium">Prix unitaire</th>
           </tr>
         </thead>
         <tbody>
@@ -51,32 +48,25 @@ export function PriceGrid({ rows, selectedRateId, caption, showBasis = true }: {
                 data-rate-id={r.rate_id ?? undefined}
                 data-tier={r.tier_quantity}
                 aria-current={current ? "true" : undefined}
-                className={`h-[34px] border-b border-line ${current ? "bg-signal-subtle" : ""}`}
+                className={`border-b border-line ${current ? "bg-signal-subtle" : ""}`}
               >
-                <td className={`py-1.5 pr-3 ${current ? "border-l-2 border-signal pl-2" : ""}`}>
+                <td className="py-3 pr-3">
                   {quantityRange(r.quantity_min, r.quantity_max)}
-                  {current && <span className="ml-2 text-xs font-medium text-signal">quantité choisie</span>}
+                  {current && <span className="mt-1 block text-xs font-medium text-signal">Quantité choisie</span>}
                 </td>
-                <td className="py-1.5 pr-3 text-right font-semibold sm:whitespace-nowrap">
-                  <span className="whitespace-nowrap">{money(r.unit_amount ?? "")}{showBasis && <> <span className="font-normal">{basisLabel(r.tax_basis_or_status)}</span></>}</span>
-                  {/* Sous 640 px la colonne « Validité » n'a pas la place : la même phrase, entière, passe sous le prix. */}
-                  <span className="mt-0.5 block text-left text-xs font-normal text-ink-3 sm:hidden" data-testid="validity-inline">{r.validity_label}</span>
+                <td className="py-3 text-right font-semibold">
+                  {money(r.unit_amount ?? "")}{showBasis && <> <span className="font-normal">{basisLabel(r.tax_basis_or_status)}</span></>}
                 </td>
-                <td className={`hidden py-1.5 text-xs [overflow-wrap:anywhere] sm:table-cell ${current ? "text-ink-2" : "text-ink-3"}`} data-testid="validity-cell">{r.validity_label}</td>
               </tr>
             ) : (
-              <tr key={`t${r.tier_quantity}`} data-tier={r.tier_quantity} data-unavailable={r.error_codes.join(",")} className="h-[34px] border-b border-line">
-                <td className="py-1.5 pr-3">À partir de {r.tier_quantity}</td>
-                <td className="py-1.5 text-ink-2" colSpan={2}>
-                  Prix indisponible pour cette quantité en ce moment
-                  <span className="sr-only"> — {r.error_codes.map(codeMessage).join(" ")}</span>
-                </td>
+              <tr key={`t${r.tier_quantity}`} data-tier={r.tier_quantity} data-unavailable={r.error_codes.join(",")} className="border-b border-line">
+                <td className="py-3 pr-3">À partir de {r.tier_quantity}</td>
+                <td className="py-3 text-right text-ink-2">Prix sur demande</td>
               </tr>
             );
           })}
         </tbody>
       </table>
-      {showBasis && <p className="mt-2 text-xs text-ink-3">Prix de vente PRODES publiés, base indiquée sur chaque ligne. Taxes, port et remises : non calculés.</p>}
     </div>
   );
 }
