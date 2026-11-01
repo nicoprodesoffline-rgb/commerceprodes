@@ -6,6 +6,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { normalizeColorName, swatchFor, SWATCH_KEYWORDS, RAL_SWATCHES, isColorAxis } from "../../lib/site-catalog/color-swatch.ts";
+import * as variantChoice from "../../lib/site-catalog/variant-choice.ts";
 
 // Noms génériques fournis dans la consigne, sans lecture du catalogue.
 const base = [
@@ -94,7 +95,8 @@ const code = ts.transpileModule(readFileSync(new URL("../../components/product/v
   compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 new Function("require", "module", "exports", code)((name) => {
-  if (name === "react") return { ...React, useId: () => "test-color" };
+  if (name === "react") return { ...React, useId: () => "test-color", useState: (initial) => [initial, () => {}] };
+  if (name === "@/lib/site-catalog/variant-choice") return variantChoice;
   if (name === "@/components/site/format") return { axisValue: (value) => value };
   if (name === "@/lib/site-catalog/color-swatch") return { isColorAxis, swatchFor };
   return require(name);
@@ -126,7 +128,8 @@ test("sélecteur : pastille décorative avant le texte, radios et indisponibilit
   const radios = nodes(tree, (n) => n.type === "input");
   assert.deepEqual(radios.map((n) => n.props.type), ["radio", "radio", "radio"]);
   assert.deepEqual(radios.map((n) => n.props.checked), [true, false, false]);
-  assert.deepEqual(radios.map((n) => n.props.disabled), [false, false, true]);
+  assert.deepEqual(radios.map((n) => n.props.disabled), [undefined, undefined, undefined], "aucune valeur n'est désactivée : une valeur grisée reste cliquable");
+  assert.deepEqual(radios.map((n) => n.props["data-compatible"]), ["true", "true", "false"], "« Inconnu » n'est portée par aucune variante publiée : grisée");
   for (const [index, color] of [[0, "#7bb8d4"], [1, "#cc0000"]]) {
     const swatch = nodes(labels[index], (n) => n.props?.style?.backgroundColor)[0];
     assert.equal(swatch.props.style.backgroundColor, color);
@@ -147,9 +150,22 @@ test("sélecteur : pastille décorative avant le texte, radios et indisponibilit
   const hint = nodes(tree, (n) => n.props?.id === fieldset.props["aria-describedby"])[0];
   assert.ok(hint);
   const html = renderToStaticMarkup(tree);
-  assert.match(html, /Changez d&#x27;abord une autre option/);
-  assert.match(html, /non proposé avec la sélection actuelle/);
+  assert.match(html, /Grisé : aucune variante publiée : Inconnu\. Un clic ajuste les autres choix\./);
+  assert.match(html, /aucune variante avec vos choix : un clic ajuste les autres choix/);
   assert.match(html, /Inconnu/);
+});
+
+test("sélecteur : un axe « Type » déclaré EN DERNIER par la Factory s'affiche en premier ; les autres gardent leur ordre", () => {
+  const tree = VariantSelector({
+    options: [
+      { axis: "couleur", label: "Couleur", values: ["Rouge", "Bleu"] },
+      { axis: "taille", label: "Taille", values: ["S", "M"] },
+      { axis: "type_assise", label: "Type de siège", values: ["Fixe", "Pivotant"] },
+    ],
+    items: [], selectedKey: "", onSelect() {},
+  });
+  const axes = nodes(tree, (n) => n.type === "fieldset").map((n) => n.props["data-axis"]);
+  assert.deepEqual(axes, ["type_assise", "couleur", "taille"]);
 });
 
 test("sélecteur : valeur unique colorée ; autre axe et inconnus sans pastille", () => {

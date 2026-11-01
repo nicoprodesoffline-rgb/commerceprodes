@@ -231,9 +231,10 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.keyboard.press("ArrowRight");
     await page.getByTestId("item-ref").getByText("PI-000102").waitFor();
     assert.match(page.url(), /\?article=PI-000000363$/, "adresse de la variante mise à jour");
-    // Bleu + M n'existe pas : « Bleu » est désactivé et expliqué.
-    assert.equal(await page.locator('input[type=radio][value="bleu"]').isDisabled(), true);
-    await page.getByText(/Non proposé avec Taille « M » : Bleu/).waitFor();
+    // Taille M choisie (flèche) : « Bleu + M » n'existe pas → « Bleu » est grisé et expliqué, mais reste cliquable (il ajusterait la taille).
+    assert.equal(await page.locator('input[type=radio][value="bleu"]').isDisabled(), false);
+    assert.equal(await page.locator('input[type=radio][value="bleu"]').getAttribute("data-compatible"), "false");
+    await page.getByText(/Grisé : aucune variante publiée avec Taille « M » : Bleu/).waitFor();
     await shot(page, "U2-fiche-gmce-rouge-M-bleu-desactive");
     // Quantité au clavier puis Entrée sur « Ajouter au panier ».
     await page.getByLabel("Quantité", { exact: true }).fill("3");
@@ -672,7 +673,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     // Fiche : « Prix sur devis », aucune action d'achat, aucun montant de convention.
     await page.goto(BASE + "/famille/potelet-paliers");
     await page.getByTestId("product-price-quote").getByText("Prix sur devis", { exact: true }).waitFor();
-    await page.getByTestId("qty-price").getByText(/Vendu sur devis/).waitFor();
+    await page.getByTestId("qty-price").getByText(/Indiquez la quantité et demandez un devis/).waitFor();
     assert.equal(await page.getByTestId("price-quote-only").count(), 0, "une seule formulation : l'étiquette et une phrase");
     assert.equal(await page.getByRole("button", { name: "Ajouter au panier" }).count(), 0, "pas d'ajout au panier");
     assert.doesNotMatch(await page.locator("body").innerText(), /0[,.]01\s*€|\b0[,.]01\b/, "le montant de convention n'est jamais affiché");
@@ -740,6 +741,33 @@ describe("BC3 — recette navigateur (Chromium)", () => {
       await shot(page, `U14-fiche-8-cartes-${vp}`);
       await page.context().close();
     }
+  });
+
+  test("U15 — sélecteur de variantes à choix épinglés : valeur grisée mais cliquable, recalage dit à voix haute, re-clic qui retire le choix", async () => {
+    await scene("F_GMCE_VARIANTS.activate");
+    const page = await newPage();
+    await page.goto(BASE + "/famille/gmce-demo?article=PI-000000363"); // rouge · M, présélectionnée = pas un choix
+    const compat = async (value) => page.locator(`input[type=radio][value="${value}"]`).getAttribute("data-compatible");
+    await page.getByTestId("variant-selector").waitFor();
+    for (const value of ["rouge", "bleu", "S", "M"]) assert.equal(await compat(value), "true", `${value} disponible tant qu'aucun choix n'est épinglé`);
+    // Choix explicite : Taille M. Bleu (qui n'existe pas en M) est grisé.
+    await page.locator('label:has(input[value="M"])').click();
+    assert.equal(await compat("bleu"), "false");
+    assert.equal(await page.locator('input[type=radio][value="bleu"]').isDisabled(), false, "grisé mais cliquable");
+    // Clic sur Bleu : recalage sur la variante publiée réelle (bleu · S), dit à voix haute, adresse mise à jour.
+    await page.locator('label:has(input[value="bleu"])').click();
+    await page.getByTestId("variant-adjusted").getByText(/Autres choix ajustés.*Taille « M » → « S »/).waitFor();
+    assert.match(page.url(), /\?article=PI-00000037S$/);
+    await page.getByTestId("item-ref").getByText("PI-000103").waitFor();
+    assert.equal(await page.locator('input[type=radio][value="bleu"]').isChecked(), true);
+    assert.equal(await compat("M"), "false", "Bleu est maintenant le choix : M (absent en bleu) est grisé");
+    await shot(page, "U15-selecteur-recale");
+    // Re-clic sur le choix : il est retiré, la variante ne bouge pas, tout ce qui existe redevient disponible.
+    await page.locator('label:has(input[value="bleu"])').click();
+    assert.equal(await compat("M"), "true");
+    assert.match(page.url(), /\?article=PI-00000037S$/);
+    assert.equal(await page.getByTestId("variant-adjusted").innerText(), "" , "aucune phrase quand rien n'est ajusté");
+    await page.context().close();
   });
 
   test("U8 — aucune erreur console (dont violations CSP) sur l'ensemble du parcours", async () => {

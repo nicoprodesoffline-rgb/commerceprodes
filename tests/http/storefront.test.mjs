@@ -602,12 +602,14 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       const fiche = await get("/famille/esunny-demo?article=PI-0000006BC");
       assert.equal(fiche.status, 200);
       assert.match(fiche.text, /data-testid="item-ref" data-key="PI-0000006BC">PI-000203</, "variante présélectionnée");
-      // Blanc choisi : « sol » est désactivé et expliqué ; aucune 4e combinaison n'a de référence.
-      assert.match(fiche.text, /value="sol"[^>]*disabled=""|disabled=""[^>]*value="sol"/, "sol non sélectionnable avec blanc");
-      assert.match(fiche.text, /Non proposé avec Coloris « Blanc »/);
+      // La variante présélectionnée n'est PAS un choix : tant que l'acheteur n'a rien choisi, toute valeur qui existe est disponible, aucune n'est désactivée.
+      assert.doesNotMatch(fiche.text, /value="sol"[^>]*disabled=""|disabled=""[^>]*value="sol"/, "sol reste cliquable (recalage au clic)");
+      assert.match(fiche.text, /value="sol"[^>]*data-compatible="true"|data-compatible="true"[^>]*value="sol"/, "sol disponible tant qu'aucun choix n'est épinglé");
+      assert.doesNotMatch(fiche.text, /Grisé :|Non proposé avec/);
       assert.ok(new Set(fiche.text.match(/PI-[0-9A-Z]{9}/g)).size <= 3, "au plus 3 références dans la page : aucune 4e combinaison");
       const noir = await get("/famille/esunny-demo?article=PI-00000069X");
       assert.doesNotMatch(noir.text, /value="sol"[^>]*disabled=""|disabled=""[^>]*value="sol"/, "noir : sol proposé");
+      assert.doesNotMatch(noir.text, /data-compatible="false"/, "noir : aucune valeur grisée sans choix");
     });
   });
 
