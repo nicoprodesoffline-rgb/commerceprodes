@@ -156,10 +156,13 @@ async function checkStored(page, receipt) {
   const date = details.locator("time");
   assert.equal(await date.getAttribute("datetime"), receipt.created_at_utc);
   assert.ok((await date.innerText()).length > 0);
+  const shortOf = (key) => `PI-${String([...key.slice(3, 11)].reduce((n, c) => n * 32 + "0123456789ABCDEFGHJKMNPQRSTVWXYZ".indexOf(c), 0)).padStart(6, "0")}`;
   for (const [i, line] of receipt.lines.entries()) {
     const row = details.getByTestId("receipt-line").nth(i);
     const text = (await row.innerText()).replace(/\s/g, " ");
-    assert.ok(text.includes(line.public_item_key));
+    assert.ok(text.includes(shortOf(line.public_item_key)), "référence courte affichée (D6)");
+    assert.ok(!text.includes(line.public_item_key), "la clé longue n'est pas affichée");
+    assert.equal(await row.locator("td").first().getAttribute("data-key"), line.public_item_key, "la clé longue reste en donnée");
     assert.equal(await row.locator("td").nth(2).innerText(), String(line.quantity));
     for (const value of Object.values(line.variant_axes)) assert.ok(text.toLowerCase().includes(value.toLowerCase()));
     if (line.unit_amount) {

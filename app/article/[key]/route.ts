@@ -1,4 +1,5 @@
 import { loadCatalog } from "@/lib/site-catalog/catalog";
+import { itemKeyFromInput } from "@/lib/site-catalog/short-ref";
 import { CatalogUnavailable } from "@/lib/site-catalog/source";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,8 @@ function redirect(location: string, status: 307 | 308): Response {
 }
 
 export async function GET(_req: Request, ctx: { params: Promise<{ key: string }> }) {
-  const { key } = await ctx.params;
+  const { key: asked } = await ctx.params;
+  const key = itemKeyFromInput(asked) ?? asked; // forme courte `PI-000401` acceptée : la clé longue reste celle des adresses et des données
   let catalog;
   try {
     catalog = await loadCatalog();

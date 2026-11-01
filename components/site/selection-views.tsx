@@ -8,6 +8,7 @@ import { codeMessage, codesMessage, reportCodes } from "@/components/site/codes"
 import { addWishlistToCart, type WishlistCartResult } from "@/components/site/wishlist-cart";
 import { CarouselRow } from "@/components/site/carousel-row";
 import { MediaImage } from "@/components/site/media-image";
+import { shortRef } from "@/lib/site-catalog/short-ref";
 import { CompareButton, WishlistButton } from "@/components/site/list-buttons";
 import { KEYS, clearList, removeFromList, rememberRecent, useLocalList } from "@/components/site/local-list";
 import { useFamilies } from "@/components/site/use-families";
@@ -94,7 +95,7 @@ export function WishlistView() {
                 <span className="block p-4">
                   {f.category && <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-3">{f.category}</span>}
                   <span className="block font-semibold group-hover:underline">{f.name}</span>
-                  {f.reference && <span className="mt-0.5 block font-mono text-xs text-ink-3">Réf : {f.reference}</span>}
+                  {f.reference && <span className="mt-0.5 block font-mono text-xs text-ink-3">Réf : {shortRef(f.reference)}</span>}
                   <span className="mt-2 block text-sm text-ink-2">{f.priceText}</span>
                 </span>
               </Link>
@@ -144,7 +145,7 @@ export function CompareView() {
                 <tbody>
                   {([
                     ["Catégorie", (f) => f.category ?? "—"],
-                    ["Référence", (f) => f.reference ?? `${f.variantCount} variantes`],
+                    ["Référence", (f) => (f.reference ? shortRef(f.reference) : `${f.variantCount} variantes`)],
                     ["Choix", (f) => (f.axes.length ? f.axes.join(", ") : "Modèle unique")],
                     ["Description", (f) => f.description || "—"],
                   ] as [string, (f: LookedUp) => string][]).map(([label, cell]) => (

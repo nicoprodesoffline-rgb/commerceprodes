@@ -4,6 +4,7 @@
  */
 import type { Catalog, Family } from "@/lib/site-catalog/catalog";
 import { buildNavigation, type Navigation } from "@/lib/site-catalog/navigation";
+import { itemKeyFromInput } from "@/lib/site-catalog/short-ref";
 import type { Crumb } from "@/components/layout/breadcrumbs";
 
 const navigations = new WeakMap<Catalog, Navigation>();
@@ -39,14 +40,14 @@ export const SEARCH_MAX = 100;
 
 /**
  * Recherche simple côté serveur (aucun index externe) : chaque mot de la requête doit figurer dans le nom ou le
- * slug de la Famille (insensible à la casse et aux accents) ; une référence `PI-…` publiée trouve sa Famille.
+ * slug de la Famille (insensible à la casse et aux accents) ; une référence `PI-…` publiée, en clé longue ou en forme courte (`PI-000401`), trouve sa Famille.
  * Ordre du DTO.
  */
 export function searchFamilies(catalog: Catalog, raw: string): Family[] {
   const q = fold(raw.slice(0, SEARCH_MAX));
   if (q === "") return [];
-  const ref = raw.trim().toUpperCase();
-  if (/^PI-[0-9A-Z]{9}$/.test(ref)) {
+  const ref = itemKeyFromInput(raw);
+  if (ref !== null) {
     const r = catalog.resolveItem(ref);
     return r.kind === "PUBLISHED" ? [r.family] : [];
   }

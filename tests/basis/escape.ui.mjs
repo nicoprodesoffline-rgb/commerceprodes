@@ -56,7 +56,7 @@ describe("textes de famille hostiles — affichés en texte sur toutes les pages
       assert.ok((await page.title()).includes("<b>gras</b>"), "le titre de l'onglet porte le nom en texte");
       assert.equal((await page.evaluate(() => document.querySelector("h1").innerHTML)).includes("<img"), false, "h1 : pas de balise <img> dans le DOM (le texte est échappé)");
       await page.getByRole("button", { name: "Ajouter au panier" }).click();
-      await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+      await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
       for (const [url, label] of [["/", "accueil"], ["/categorie/signaletique", "rubrique"], ["/recherche?q=Chaise", "recherche"], ["/panier", "panier"], ["/commande", "commande"]]) {
         await page.goto(BASE + url);
         await page.waitForLoadState("networkidle");

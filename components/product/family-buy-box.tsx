@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MAX_QUANTITY, useCart } from "@/components/cart/cart-provider";
 import { minimumQuantity } from "@/components/product/minimum-quantity";
+import { shortRef } from "@/lib/site-catalog/short-ref";
 import { PriceGrid, type PriceGridRow } from "@/components/product/price-grid";
 import { VariantSelector, type SelectorAxis } from "@/components/product/variant-selector";
 import { previewCart } from "@/components/site/api";
@@ -186,7 +187,7 @@ export function FamilyBuyBox({
           {notice}
           <h1 id="buy-h" className="scroll-mt-40 text-2xl font-semibold leading-tight text-ink sm:text-3xl">{familyName}</h1>
           <div className="text-sm text-ink-2" data-testid="selected-variant">
-            <p>Référence <span className="font-medium text-ink" data-testid="item-ref">{item.public_item_key}</span></p>
+            <p>Référence <span className="font-medium text-ink" data-testid="item-ref" data-key={item.public_item_key}>{shortRef(item.public_item_key)}</span></p>
             {item.axes.length > 0 && <p className="mt-1">{axesText(item.axes)}</p>}
           </div>
           {priced?.selection && (

@@ -224,7 +224,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     writeFileSync(path.join(OUT, "U2-ordre-tab-fiche.json"), JSON.stringify(seq, null, 1));
     note(`fiche : ${seq.length} Tab jusqu'au radio « Taille S » ; focus visible (${seq.at(-1).outline} ${seq.at(-1).outlineWidth})`);
     await page.keyboard.press("ArrowRight");
-    await page.getByTestId("item-ref").getByText("PI-000000363").waitFor();
+    await page.getByTestId("item-ref").getByText("PI-000102").waitFor();
     assert.match(page.url(), /\?article=PI-000000363$/, "adresse de la variante mise à jour");
     // Bleu + M n'existe pas : « Bleu » est désactivé et expliqué.
     assert.equal(await page.locator('input[type=radio][value="bleu"]').isDisabled(), true);
@@ -235,7 +235,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.getByTestId("qty-price").getByText(/^Pour 3 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).focus();
     await page.keyboard.press("Enter");
-    await page.getByRole("status").getByText(/Ajouté au panier — 3 × Couleur : Rouge · Taille : M/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier — 3 × Couleur : Rouge · Taille : M/).waitFor();
     // Le tiroir du panier s'ouvre après un ajout : on le referme (Échap) avant de réutiliser le bouton d'ajout.
     await page.keyboard.press("Escape");
     await page.getByTestId("cart-drawer").waitFor({ state: "hidden" }).catch(() => {});
@@ -244,7 +244,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.getByLabel("Quantité", { exact: true }).fill("3");
     await page.getByTestId("qty-price").getByText(/^Pour 3 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier — 3 ×/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier — 3 ×/).waitFor();
     await page.goto(BASE + "/panier");
     await page.getByTestId("cart-total").getByText(/78,00/).waitFor(); // 6 × 13,00 (sélection serveur R-GMCE-102)
     assert.equal(await page.getByTestId("cart-line").count(), 1);
@@ -261,7 +261,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.goto(BASE + "/famille/gmce-demo?article=PI-00000037S");
     await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
     await page.goto(BASE + "/panier");
     await page.getByTestId("go-order").waitFor();
     await page.getByTestId("go-quote").click();
@@ -333,7 +333,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.getByRole("button", { name: "Augmenter la quantité" }).click();
     await page.getByTestId("qty-price").getByText(/Pour 2 : 38,50 € HT l’unité|Pour 2 : 38,50\s€ HT/).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
     await page.goto(BASE + "/commande");
     await page.getByTestId("order-confirm").waitFor();
     await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Collège Exemple");
@@ -360,7 +360,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.goto(BASE + "/famille/chaise-pliante?article=PI-000000JVF");
     await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
     await page.goto(BASE + "/commande");
     await page.getByTestId("order-confirm").waitFor();
     await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie");
@@ -400,11 +400,11 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.goto(BASE + "/famille/chaise-pliante?article=PI-000000JW3");
     await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
     await activateOverHttp(BASE, "F_IDENTITY.activate_gen_c_tombstones");
     await page.goto(BASE + "/panier");
     await page.locator('[data-testid="line-problem"][data-codes~="ITEM_SUPERSEDED"]').waitFor();
-    await page.getByRole("link", { name: /Voir la nouvelle référence PI-000000JVF/ }).waitFor();
+    await page.getByRole("link", { name: /Voir la nouvelle référence PI-000603/ }).waitFor();
     await shot(page, "U6-panier-article-supplante");
     // Média altéré : état neutre « Visuel non disponible » (également imposé par la génération de test).
     const sha = "ac403e49";
@@ -466,7 +466,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     results.fiche = await runAxe(audit, "fiche");
     sizes.fiche = await targetSizes(audit);
     await audit.getByRole("button", { name: "Ajouter au panier" }).click();
-    await audit.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await audit.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
     await audit.goto(BASE + "/panier");
     await audit.getByTestId("cart-total").getByText(/12,00/).waitFor();
     results.panier = await runAxe(audit, "panier");
@@ -512,7 +512,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.goto(BASE + "/famille/chaise-pliante?article=PI-000000JVF");
     await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
     await page.goto(BASE + "/devis");
     await page.getByRole("heading", { name: "Récapitulatif" }).waitFor();
     await assertNoHScroll(page, "devis 1024");
@@ -619,7 +619,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.goto(BASE + "/famille/gmce-demo?article=PI-00000037S");
     await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
     await page.goto(BASE + "/devis");
     await page.getByRole("heading", { name: "Récapitulatif" }).waitFor();
     await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie de Test");

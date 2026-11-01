@@ -1,8 +1,8 @@
 "use client";
 
 import { useId, useState } from "react";
+import { itemKeyFromInput } from "@/lib/site-catalog/short-ref";
 
-const REF = /^PI-[0-9A-HJKMNP-TV-Z]{9}$/;
 
 /**
  * Commande rapide par référence (T-T10) : on saisit une référence `PI-…` et on arrive sur la fiche de sa famille, variante choisie, où la quantité se fixe et où le prix est
@@ -17,9 +17,9 @@ export function QuickOrder() {
       action="/recherche"
       method="get"
       onSubmit={(e) => {
-        const ref = value.trim().toUpperCase();
+        const ref = itemKeyFromInput(value);
         e.preventDefault();
-        if (!REF.test(ref)) return setError("Référence invalide : elle commence par PI- suivi de 9 caractères.");
+        if (ref === null) return setError("Référence invalide : elle commence par PI- suivie de 6 chiffres.");
         setError(null);
         window.location.assign(`/article/${ref}`); // route de redirection (hors rendu de page) : navigation complète
       }}

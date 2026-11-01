@@ -171,7 +171,7 @@ test("D6 : en-tête puis galerie puis contrôles sur mobile, galerie à gauche s
   assert.match(button.props.className, /fixed.*lg:static/);
 });
 
-test("D9 / D11 / D4 : actions rouges, liens de liste discrets et référence publique conservée", () => {
+test("D9 / D11 / D4 : actions rouges, liens de liste discrets et référence publique courte (D6)", () => {
   const source = read("components/site/selection-views.tsx");
   assert.doesNotMatch(source, /bg-ink/);
   assert.match(source, /bg-brand.*hover:bg-brand-dark/);
@@ -180,5 +180,5 @@ test("D9 / D11 / D4 : actions rouges, liens de liste discrets et référence pub
   for (const name of ["WishlistButton", "CompareButton"]) assert.match(page, new RegExp(`<${name} slug=\\{family\\.slug\\}`));
   const css = read("components/product/product-sheet.css");
   assert.match(css, /\.product-list-links button\s*\{[^}]*min-height:\s*44px;[^}]*border:\s*0;[^}]*background:\s*transparent;[^}]*color:\s*var\(--color-ink-2, #55554f\);/);
-  assert.match(read("components/product/family-buy-box.tsx"), /Référence <span[^>]*data-testid="item-ref">\{item\.public_item_key\}/);
+  assert.match(read("components/product/family-buy-box.tsx"), /Référence <span[^>]*data-testid="item-ref"[^>]*>\{shortRef\(item\.public_item_key\)\}/);
 });

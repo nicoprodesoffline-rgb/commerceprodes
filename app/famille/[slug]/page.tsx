@@ -16,6 +16,7 @@ import { axesText } from "@/components/site/format";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
+import { shortRef } from "@/lib/site-catalog/short-ref";
 import { priceRows, selectorAxes } from "@/lib/site-catalog/view";
 import { getEditorialSet } from "@/lib/site-content/source";
 import { relatedFamilies } from "@/lib/site-content/merchandising";
@@ -54,9 +55,9 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
   // Revue BC3 F-06 : une référence demandée mais non portée par cette Famille n'est jamais remplacée en silence.
   let notice: { text: string; link?: { href: string; label: string } } | null = null;
   if (typeof article === "string" && preselected === undefined) {
-    const shown = article.slice(0, 40);
+    const shown = shortRef(article.slice(0, 40));
     const r = /^PI-[0-9A-HJKMNP-TV-Z]{9}$/.test(article) ? catalog.resolveItem(article) : ({ kind: "ABSENT" } as const);
-    if (r.kind === "SUPERSEDED") notice = { text: `La référence ${shown} a été remplacée.`, link: { href: `/article/${r.superseded_by}`, label: `Voir la nouvelle référence ${r.superseded_by}` } };
+    if (r.kind === "SUPERSEDED") notice = { text: `La référence ${shown} a été remplacée.`, link: { href: `/article/${r.superseded_by}`, label: `Voir la nouvelle référence ${shortRef(r.superseded_by)}` } };
     else if (r.kind === "RETIRED") notice = { text: `La référence ${shown} a été retirée du catalogue et n'est plus proposée.` };
     else if (r.kind === "PUBLISHED") notice = { text: `La référence ${shown} correspond à un autre produit (${r.family.name}).`, link: { href: `/article/${article}`, label: "Voir cette référence" } };
     else notice = { text: `La référence ${shown} est inconnue du catalogue actuel.` };

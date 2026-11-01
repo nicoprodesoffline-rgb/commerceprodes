@@ -10,6 +10,7 @@ import { MAX_QUANTITY, type DraftLine } from "@/components/cart/cart-provider";
 import { bases } from "@/components/cart/use-cart-preview";
 import { codeMessage, reportCodes } from "@/components/site/codes";
 import { axesText, money, price, totalBasisLabel, uniformBasis } from "@/components/site/format";
+import { shortRef } from "@/lib/site-catalog/short-ref";
 import type { PreviewJson, PreviewLineJson } from "@/lib/site-business/client-types";
 
 /** Le total toujours accompagné de sa base : celle des lignes si elle est unique, « non précisée » si aucune ligne chiffrée n'en porte, sinon les bases présentes, nommées (jamais un total nu). */
@@ -36,7 +37,7 @@ function LineStatus({ pl }: { pl: PreviewLineJson | undefined }) {
       {canonical && (
         <>
           {" "}
-          <Link href={`/article/${canonical}`} className="font-medium text-ink underline">Voir la nouvelle référence {canonical}</Link>
+          <Link href={`/article/${canonical}`} className="font-medium text-ink underline">Voir la nouvelle référence {shortRef(canonical)}</Link>
         </>
       )}
     </p>
@@ -86,7 +87,7 @@ export function CartLines({
                 <td className="col-span-2 min-w-0 sm:px-3 sm:py-3">
                   <Link href={`/famille/${l.family_slug}?article=${l.public_item_key}`} className="inline-flex min-h-[44px] items-center font-medium underline-offset-2 hover:underline">{l.family_name}</Link>
                   <span className="block text-xs text-ink-2">{axesText(l.axes)}</span>
-                  <span className="block font-mono text-xs text-ink-3">Réf. {l.public_item_key}</span>
+                  <span className="block font-mono text-xs text-ink-3" data-key={l.public_item_key}>Réf. {shortRef(l.public_item_key)}</span>
                   <LineStatus pl={pl} />
                 </td>
                 <td className="sm:px-3 sm:py-3">

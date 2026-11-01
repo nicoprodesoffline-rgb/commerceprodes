@@ -1,6 +1,7 @@
 "use client";
 
 import { axisValue, money, parisDate, price, totalBasisLabel, uniformBasis } from "@/components/site/format";
+import { shortRef } from "@/lib/site-catalog/short-ref";
 
 type ReceiptLine = { public_item_key: string; variant_axes: Record<string, string>; quantity: number; priced?: boolean; unit_amount?: string | null; tax_basis_or_status?: string | null; line_total?: string | null };
 export type ReceiptData = { lines?: ReceiptLine[]; total_amount?: string | null; created_at_utc?: string; catalogue_sequence?: number | null };
@@ -30,7 +31,7 @@ export function ReceiptDetails({ receipt, isOrder }: { receipt: ReceiptData; isO
           <tbody>
             {lines.map((l) => (
               <tr key={`${l.public_item_key}${JSON.stringify(l.variant_axes)}`} className="h-[34px] border-b border-line" data-testid="receipt-line">
-                <td className="py-1 pr-2 font-mono text-xs">{l.public_item_key}</td>
+                <td className="py-1 pr-2 font-mono text-xs" data-key={l.public_item_key}>{shortRef(l.public_item_key)}</td>
                 <td className="py-1 pr-2">{Object.entries(l.variant_axes).map(([k, v]) => `${axisValue(k.replace(/_/g, " "))} : ${axisValue(v)}`).join(" · ") || "Modèle unique"}</td>
                 <td className="py-1 pr-2 text-right">{l.quantity}</td>
                 <td className="py-1 pr-2 text-right">{l.unit_amount ? (common.uniform ? money(l.unit_amount) : price(l.unit_amount, l.tax_basis_or_status)) : "sans prix (à chiffrer)"}</td>

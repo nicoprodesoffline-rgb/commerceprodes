@@ -59,7 +59,7 @@ describe("base fiscale — jamais affirmée sans la donnée, HT déclaré conser
         await page.locator("input[type=text]").first().fill(String(qty));
         await page.getByTestId("qty-price").getByText(new RegExp(`^Pour ${qty} : .*pour la ligne`)).waitFor();
         await page.getByRole("button", { name: "Ajouter au panier" }).click();
-        await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+        await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
       }
       await page.goto(`${BASE}/panier`);
       await page.getByTestId("cart-total").getByText(/€/).waitFor();
@@ -84,7 +84,7 @@ describe("base fiscale — jamais affirmée sans la donnée, HT déclaré conser
         await page.goto(`${BASE}/famille/${FAMILY_SLUG}?article=${key}`);
         await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
         await page.getByRole("button", { name: "Ajouter au panier" }).click();
-        await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+        await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
       }
       let rewrite = () => {};
       await page.route("**/api/site/cart/preview", async (route) => {

@@ -249,13 +249,17 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       const fiche = await get("/famille/chaise-demo");
       assert.match(fiche.text, /aria-label="Fil d&#x27;Ariane"|aria-label="Fil d'Ariane"/);
       assert.match(fiche.text, /href="\/categorie\/mobilier"[^>]*>[^<]*</, "fil d'Ariane : catégorie racine");
-      assert.match(fiche.text, /data-testid="item-ref">PI-00000001R</, "référence PI affichée telle quelle (C0 §16.3)");
+      assert.match(fiche.text, /data-testid="item-ref" data-key="PI-00000001R">PI-000001</, "référence courte affichée (D6), clé longue en donnée");
+      assert.doesNotMatch(fiche.text, />PI-00000001R</, "la clé longue n'est plus un texte affiché");
       assert.match(fiche.text, /data-rate-id="R-SIMPLE-1" data-tier="1"/, "palier publié sélectionné par selectPrice");
       assert.match(fiche.text, /38,50/);
       for (const p of ["/famille/inconnue", "/categorie/inconnue", "/article/PI-000000JW3", "/article/n-importe-quoi"]) assert.equal((await get(p)).status, 404, p);
       const art = await get("/article/PI-00000001R");
       assert.equal(art.status, 307);
       assert.equal(art.headers.get("location"), "/famille/chaise-demo?article=PI-00000001R", "Location relative");
+      const artShort = await get("/article/PI-000001");
+      assert.equal(artShort.status, 307, "forme courte acceptée");
+      assert.equal(artShort.headers.get("location"), "/famille/chaise-demo?article=PI-00000001R", "l'adresse garde la clé longue");
     });
 
     test("langage public : aucune page publique ne rend un terme interne (texte visible, aria-label, title, alt, placeholder) ni une image de test", async () => {
@@ -362,6 +366,8 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.deepEqual(Object.keys(body.results[0]).sort(), ["category", "imageSha", "name", "priceText", "slug"], "rien d'autre que ce qui est publié et affiché");
       const ref = await get("/api/site/search?q=PI-00000001R");
       assert.equal(JSON.parse(ref.text).results[0].slug, "chaise-demo");
+      for (const q of ["PI-000001", "pi-000001", "PI-1"]) assert.equal(JSON.parse((await get(`/api/site/search?q=${q}`)).text).results[0]?.slug, "chaise-demo", `forme courte ${q}`);
+      assert.equal(JSON.parse((await get("/api/site/search?q=PI-999999")).text).results.length, 0, "forme courte inconnue : aucun résultat");
       const evil = await get(`/api/site/search?q=${encodeURIComponent('<script>alert(1)</script>"><img src=x onerror=alert(2)>')}`);
       assert.equal(evil.status, 200);
       assert.match(evil.headers.get("content-type") ?? "", /^application\/json/, "jamais interprété comme du HTML");
@@ -410,6 +416,7 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.match(ok.text, /href="\/famille\/chaise-demo"/);
       const ref = await get("/recherche?q=PI-00000001R");
       assert.match(ref.text, /href="\/famille\/chaise-demo"/);
+      assert.match((await get("/recherche?q=PI-000001")).text, /href="\/famille\/chaise-demo"/, "recherche par la référence courte");
       const evil = await get(`/recherche?q=${encodeURIComponent('<script>alert(1)</script>"><img src=x onerror=alert(2)>')}`);
       assert.equal(evil.status, 200);
       assert.doesNotMatch(evil.text, /<script>alert\(1\)/);
@@ -594,7 +601,7 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.equal(Number(await scalar("SELECT count(*) FROM site_order")), 0);
       const fiche = await get("/famille/esunny-demo?article=PI-0000006BC");
       assert.equal(fiche.status, 200);
-      assert.match(fiche.text, /data-testid="item-ref">PI-0000006BC</, "variante présélectionnée");
+      assert.match(fiche.text, /data-testid="item-ref" data-key="PI-0000006BC">PI-000203</, "variante présélectionnée");
       // Blanc choisi : « sol » est désactivé et expliqué ; aucune 4e combinaison n'a de référence.
       assert.match(fiche.text, /value="sol"[^>]*disabled=""|disabled=""[^>]*value="sol"/, "sol non sélectionnable avec blanc");
       assert.match(fiche.text, /Non proposé avec Coloris « Blanc »/);
@@ -659,9 +666,9 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.deepEqual(pv.json.lines.map((l) => l.error_codes), [["ITEM_SUPERSEDED"], ["ITEM_RETIRED"]]);
       // Revue F-06 : ?article= retirée / remplacée / inconnue / mal formée → message explicite, jamais silencieux.
       const cases = [
-        ["PI-000000JSY", /La référence PI-000000JSY a été retirée du catalogue/],
-        ["PI-000000JW3", /La référence PI-000000JW3 a été remplacée\.[^]*href="\/article\/PI-000000JVF"/],
-        ["PI-00000001R", /La référence PI-00000001R est inconnue du catalogue actuel/],
+        ["PI-000000JSY", /La référence PI-000601 a été retirée du catalogue/],
+        ["PI-000000JW3", /La référence PI-000604 a été remplacée\.[^]*href="\/article\/PI-000000JVF"/],
+        ["PI-00000001R", /La référence PI-000001 est inconnue du catalogue actuel/],
         ["<script>alert(1)</script>", /La référence &lt;script&gt;alert\(1\)&lt;\/script&gt; est inconnue/],
       ];
       for (const [ref, re] of cases) {
