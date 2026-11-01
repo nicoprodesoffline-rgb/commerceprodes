@@ -1,21 +1,22 @@
-// Outil de préparation (tests navigateur BC3, recette manuelle) : remet une base SITE `prodes_site_bc3*` à zéro et
+// Outil de préparation (tests navigateur BC3, recette manuelle) : remet une base SITE de TEST `prodes_site_*_test` à zéro et
 // pose des générations par le VRAI receiver BC2, en HTTP, sur un serveur déjà lancé.
 //   node tests/ui/site-setup.mjs <port> <base prodes_site_… | URL postgres locale> <cas C0> [<cas C0>…]
-//   ex. node tests/ui/site-setup.mjs 3361 prodes_site_bc3 F_GMCE_VARIANTS.activate
-// Garde (revue BC3 F-13, paramétrable sans copie) : base `prodes_site_*` sur hôte local seulement, jamais JARVIS.
+//   ex. node tests/ui/site-setup.mjs 3361 prodes_site_bc3_test F_GMCE_VARIANTS.activate
+// Garde (revue BC3 F-13, durcie) : base dont le nom se termine par `_test`, hôte local seulement, jamais JARVIS ni une base de démo (`prodes_site_demo*`) : ces préparatifs
+// font `DROP SCHEMA`, suspendent le déclencheur d'immutabilité et réécrivent la génération ACTIVE.
 // Prérequis : `npm run bc2:build` (signature des PUT média avec le trousseau de TEST des fixtures C0).
 import pg from "pg";
 import { migrate } from "../../scripts/db/migrate.mjs";
 
-const DB_RE = /^prodes_site_[a-z0-9_]+$/;
+const DB_RE = /^prodes_site_[a-z0-9_]*_test$/;
 const LOCAL = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
-/** Nom de base ou URL postgres locale → URL vérifiée (base `prodes_site_*`, hôte local). */
+/** Nom de base ou URL postgres locale → URL vérifiée (base `prodes_site_*_test`, hôte local). */
 export function dbUrl(nameOrUrl) {
   const url = nameOrUrl.includes("://") ? nameOrUrl : `postgres://prodes_site:local-dev-only@localhost:54318/${nameOrUrl}`;
   const u = new URL(url);
   const name = u.pathname.slice(1);
-  if (!DB_RE.test(name)) throw new Error(`base refusée : ${name} (prodes_site_* seulement)`);
+  if (!DB_RE.test(name)) throw new Error(`base refusée : ${name} (prodes_site_*_test seulement)`);
   if (!LOCAL.has(u.hostname)) throw new Error(`hôte refusé : ${u.hostname} (local seulement)`);
   return url;
 }
@@ -202,5 +203,17 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   for (const id of cases) {
     await activateOverHttp(`http://127.0.0.1:${port}`, id);
     console.log(`ACTIVATED ${id} sur ${name}`);
+  }
+}
+
+/** Le garde d'immutabilité des générations doit être actif (`O`) : à vérifier après tout préparatif qui l'a suspendu le temps d'une transaction. */
+export async function assertImmutabilityGuardEnabled(nameOrUrl) {
+  const client = new pg.Client({ connectionString: dbUrl(nameOrUrl) });
+  await client.connect();
+  try {
+    const rows = (await client.query("SELECT tgenabled FROM pg_trigger WHERE tgname = 'site_generation_immutable' AND tgrelid = 'site_generation'::regclass")).rows;
+    if (rows.length !== 1 || rows[0].tgenabled !== "O") throw new Error(`déclencheur site_generation_immutable non réactivé : ${JSON.stringify(rows)}`);
+  } finally {
+    await client.end();
   }
 }

@@ -14,7 +14,7 @@ import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import pg from "pg";
-import { activateOverHttp, addCloneFamilies, addRootCategories, dbUrl, makeGmceMixed, makePoteletQuoteOnly, resetSiteDb } from "./site-setup.mjs";
+import { activateOverHttp, addCloneFamilies, assertImmutabilityGuardEnabled, addRootCategories, dbUrl, makeGmceMixed, makePoteletQuoteOnly, resetSiteDb } from "./site-setup.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const PORT = Number(process.env.SITE_TEST_PORT ?? 3361);
@@ -860,5 +860,9 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     writeFileSync(path.join(OUT, "console_errors_filtered.txt"), filtered.join("\n") + "\n");
     note(`console : ${consoleErrors.length} erreur(s) brute(s), ${filtered.length} hors ressources 404/503 attendues`);
     assert.deepEqual(filtered, []);
+  });
+
+  test("U18 — tous les préparatifs de base ont réactivé le garde d'immutabilité des générations (tgenabled = 'O')", async () => {
+    await assertImmutabilityGuardEnabled(DB);
   });
 });
