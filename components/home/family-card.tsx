@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MediaImage } from "@/components/site/media-image";
 import type { FamilyCardData } from "@/components/site/catalog-views";
-import { money, price, uniformBasis } from "@/components/site/format";
+import { count, money, price, uniformBasis } from "@/components/site/format";
 import { CompareButton, WishlistButton } from "@/components/site/list-buttons";
 import type { FamilyPrice } from "@/lib/site-catalog/listing";
 
@@ -28,7 +28,7 @@ export function FamilyCard({ data, note, from, category, showBasis = true }: { d
           )}
           <span className="mt-auto flex items-center justify-between pt-3 text-xs text-ink-3">
             <span>
-              {data.variantCount === 1 ? "1 modèle" : `${data.variantCount} variantes`}
+              {data.variantCount === 1 ? "1 modèle" : `${count(data.variantCount)} variantes`}
               {note ? ` · ${note}` : ""}
             </span>
             <span className="inline-flex min-h-11 items-center rounded-sm bg-brand px-3 font-semibold text-white group-hover:bg-brand-dark" aria-hidden="true">Découvrir →</span>

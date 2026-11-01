@@ -8,6 +8,7 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { SEARCH_MAX, familyCard, navigationOf, searchFamilies } from "@/components/site/catalog-views";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { listFamilies, parseListingQuery } from "@/lib/site-catalog/listing";
+import { count } from "@/components/site/format";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
 
@@ -44,8 +45,8 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                 ? "Aucune famille ne correspond à ces filtres."
                 : <>Aucune famille ne correspond à « <span className="font-medium text-ink">{q}</span> »{listing.filtered ? " avec ces filtres" : ""}.</>
               : q.trim() === ""
-                ? <>{listing.total} famille{listing.total > 1 ? "s" : ""}.</>
-                : <>{listing.total} famille{listing.total > 1 ? "s" : ""} pour « <span className="font-medium text-ink">{q}</span> ».</>}
+                ? <>{count(listing.total)} famille{listing.total > 1 ? "s" : ""}.</>
+                : <>{count(listing.total)} famille{listing.total > 1 ? "s" : ""} pour « <span className="font-medium text-ink">{q}</span> ».</>}
           </p>
           <ListingSort formId="search-filters" sort={query.sort} />
         </div>

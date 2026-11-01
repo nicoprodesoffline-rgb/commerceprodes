@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { MediaImage } from "@/components/site/media-image";
+import { count } from "@/components/site/format";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Suggestion } from "@/lib/site-catalog/suggest";
 
@@ -98,7 +99,7 @@ export function LiveSearch() {
         )}
         <div id={listId} hidden={!open} className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[70vh] overflow-y-auto rounded-[14px] border border-line bg-white p-2 shadow-lg" data-testid="live-search-panel">
           <p role="status" className="px-2 py-1 text-xs text-ink-3">
-            {busy ? "Recherche…" : failed ? "Suggestions indisponibles : lancez la recherche avec Entrée." : answer && answer.total === 0 ? `Aucun résultat pour « ${value.trim()} ».` : answer ? `${answer.total} famille${answer.total > 1 ? "s" : ""}` : ""}
+            {busy ? "Recherche…" : failed ? "Suggestions indisponibles : lancez la recherche avec Entrée." : answer && answer.total === 0 ? `Aucun résultat pour « ${value.trim()} ».` : answer ? `${count(answer.total)} famille${answer.total > 1 ? "s" : ""}` : ""}
           </p>
           <ul role="listbox" aria-label="Suggestions">
             {results.map((s, i) => (

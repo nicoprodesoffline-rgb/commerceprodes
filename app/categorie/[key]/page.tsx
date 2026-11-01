@@ -11,6 +11,7 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { categoryCrumbs, familyCard, navigationOf } from "@/components/site/catalog-views";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { listFamilies, parseListingQuery } from "@/lib/site-catalog/listing";
+import { count } from "@/components/site/format";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
 
@@ -54,12 +55,12 @@ export default async function CategoryPage({ params, searchParams }: { params: P
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">{cat.name}</h1>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <p role="status" className="min-w-0 text-sm text-ink-2" data-testid="category-count">{listing.total} famille{listing.total > 1 ? "s" : ""} dans cette catégorie.</p>
+          <p role="status" className="min-w-0 text-sm text-ink-2" data-testid="category-count">{count(listing.total)} famille{listing.total > 1 ? "s" : ""} dans cette catégorie.</p>
           {families.length > 0 && <ListingSort formId="category-filters" sort={query.sort} />}
         </div>
       </div>
       {children.length > 0 && (
-        <nav aria-label="Sous-catégories">
+        <nav aria-label="Sous-catégories" className="hidden lg:block">
           <ul className="flex flex-wrap gap-2">
             {children.map((c) => (
               <li key={c.key}>
@@ -73,7 +74,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
       )}
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="min-w-0 space-y-4 lg:w-60 lg:shrink-0">
-          <CategorySidebar roots={nav.menu} current={key} />
+          <CategorySidebar roots={nav.menu} current={key} subcategories={children.map((c) => ({ key: c.key, name: c.name }))} />
           {families.length > 0 && <ListingControls formId="category-filters" action={`/categorie/${key}`} query={query} />}
           <div className="hidden lg:block"><QuickOrder /></div>
         </div>

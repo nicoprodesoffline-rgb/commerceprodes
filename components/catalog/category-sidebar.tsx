@@ -1,20 +1,30 @@
 import Link from "next/link";
+import { Fragment } from "react";
+import { count } from "@/components/site/format";
 import type { NavNode } from "@/lib/site-catalog/navigation";
 
 /**
  * Colonne des catégories (V-E03-04/05/06) : « Tout le catalogue », chaque racine avec son nombre de familles, sous-catégories en accordéon natif
  * (`<details>`, sans script) ; sur mobile, une rangée de pastilles défilantes. Catégories et ordre = ceux du DTO.
  */
-export function CategorySidebar({ roots, current }: { roots: NavNode[]; current?: string | undefined }) {
+export function CategorySidebar({ roots, current, subcategories = [] }: { roots: NavNode[]; current?: string | undefined; subcategories?: { key: string; name: string }[] }) {
   if (roots.length === 0) return null;
   const inside = (n: NavNode, key: string): boolean => n.key === key || n.children.some((c) => inside(c, key));
+  // Mobile : UNE seule rangée — « Tout », la catégorie courante, ses sous-catégories, puis les autres catégories (la courante est toujours visible, jamais repoussée hors de l'écran).
+  const active = current === undefined ? undefined : roots.find((r) => inside(r, current));
+  const pillsRoots = active ? [active, ...roots.filter((r) => r !== active)] : roots;
   return (
     <>
       <nav aria-label="Catégories (pastilles)" className="-mx-4 overflow-x-auto px-4 lg:hidden" data-testid="category-pills">
         <ul className="flex gap-2 whitespace-nowrap pb-1">
           <li><Link href="/recherche" className={`inline-flex min-h-[44px] items-center rounded-full border px-3 text-sm ${current === undefined ? "border-ink bg-ink text-white" : "border-line-strong bg-white hover:bg-surface"}`}>Tout</Link></li>
-          {roots.map((r) => (
-            <li key={r.key}><Link href={`/categorie/${r.key}`} aria-current={current !== undefined && inside(r, current) ? "true" : undefined} className={`inline-flex min-h-[44px] items-center rounded-full border px-3 text-sm ${current !== undefined && inside(r, current) ? "border-ink bg-ink text-white" : "border-line-strong bg-white hover:bg-surface"}`}>{r.name}</Link></li>
+          {pillsRoots.map((r) => (
+            <Fragment key={r.key}>
+              <li><Link href={`/categorie/${r.key}`} aria-current={current !== undefined && inside(r, current) ? "true" : undefined} className={`inline-flex min-h-[44px] items-center rounded-full border px-3 text-sm ${current !== undefined && inside(r, current) ? "border-ink bg-ink text-white" : "border-line-strong bg-white hover:bg-surface"}`}>{r.name}</Link></li>
+              {r === active && subcategories.map((c) => (
+                <li key={c.key}><Link href={`/categorie/${c.key}`} data-testid="subcategory-pill" className="inline-flex min-h-[44px] items-center rounded-full border border-line-strong bg-brand-subtle px-3 text-sm text-brand hover:bg-white">{c.name}</Link></li>
+              ))}
+            </Fragment>
           ))}
         </ul>
       </nav>
@@ -26,15 +36,15 @@ export function CategorySidebar({ roots, current }: { roots: NavNode[]; current?
             <li key={r.key}>
               {r.children.length === 0 ? (
                 <Link href={`/categorie/${r.key}`} className="flex min-h-[44px] items-center justify-between rounded-[9px] px-2 text-sm hover:bg-surface">
-                  <span className={current === r.key ? "font-semibold" : ""}>{r.name}</span><span className="tabular text-xs text-ink-3">{r.subtreeFamilyCount}</span>
+                  <span className={current === r.key ? "font-semibold" : ""}>{r.name}</span><span className="tabular text-xs text-ink-3">{count(r.subtreeFamilyCount)}</span>
                 </Link>
               ) : (
                 <details open={current !== undefined && inside(r, current)}>
-                  <summary className="flex min-h-[44px] cursor-pointer items-center justify-between rounded-[9px] px-2 text-sm hover:bg-surface"><span>{r.name}</span><span className="tabular text-xs text-ink-3">{r.subtreeFamilyCount}</span></summary>
+                  <summary className="flex min-h-[44px] cursor-pointer items-center justify-between rounded-[9px] px-2 text-sm hover:bg-surface"><span>{r.name}</span><span className="tabular text-xs text-ink-3">{count(r.subtreeFamilyCount)}</span></summary>
                   <ul className="ml-2 border-l border-line pl-2">
                     <li><Link href={`/categorie/${r.key}`} className={`flex min-h-[44px] items-center rounded-[9px] px-2 text-sm hover:bg-surface ${current === r.key ? "font-semibold" : ""}`}>Tout — {r.name}</Link></li>
                     {r.children.map((c) => (
-                      <li key={c.key}><Link href={`/categorie/${c.key}`} className="flex min-h-[44px] items-center justify-between rounded-[9px] px-2 text-sm hover:bg-surface"><span className={current === c.key ? "font-semibold" : ""}>{c.name}</span><span className="tabular text-xs text-ink-3">{c.subtreeFamilyCount}</span></Link></li>
+                      <li key={c.key}><Link href={`/categorie/${c.key}`} className="flex min-h-[44px] items-center justify-between rounded-[9px] px-2 text-sm hover:bg-surface"><span className={current === c.key ? "font-semibold" : ""}>{c.name}</span><span className="tabular text-xs text-ink-3">{count(c.subtreeFamilyCount)}</span></Link></li>
                     ))}
                   </ul>
                 </details>

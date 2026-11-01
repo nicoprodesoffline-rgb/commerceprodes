@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MediaImage } from "@/components/site/media-image";
+import { count } from "@/components/site/format";
 import { isLocalLink } from "@/lib/site-content/validate";
 import type { CatalogBasis } from "@/lib/site-catalog/basis";
 
@@ -9,7 +10,7 @@ export function Hero({ references, imageSha, title, text, link, linkLabel }: { r
       <div className={`flex min-w-0 flex-col justify-center px-6 py-10 sm:p-10 ${imageSha ? "" : "lg:col-span-2 lg:px-12"}`}>
         <h1 id="hero-titre" className="max-w-[18ch] whitespace-pre-line text-[clamp(2rem,4vw,3.75rem)] font-extrabold leading-[1.08] tracking-tight text-brand [overflow-wrap:anywhere]">{title || "Équipements pour collectivités"}</h1>
         <p className="mt-6 max-w-[48ch] whitespace-pre-line text-base leading-relaxed [overflow-wrap:anywhere] sm:text-lg">{text || "Mobilier, signalisation et équipements pour accompagner vos projets."}</p>
-        {references > 0 && <p className="mt-3 text-sm"><span className="tabular font-bold" data-testid="reference-count">{references}</span> référence{references > 1 ? "s" : ""} au catalogue</p>}
+        {references > 0 && <p className="mt-3 text-sm"><span className="tabular font-bold" data-testid="reference-count">{count(references)}</span> référence{references > 1 ? "s" : ""} au catalogue</p>}
         <div className="mt-8 flex flex-wrap gap-3">
           <Link href="/recherche" className="inline-flex min-h-12 items-center justify-center rounded-sm bg-brand px-5 py-3 font-bold text-white hover:bg-brand-dark">Voir le catalogue</Link>
           <Link href="/devis" className="inline-flex min-h-12 items-center justify-center rounded-sm border border-brand px-5 py-3 font-semibold text-brand hover:bg-white">Demander un devis</Link>

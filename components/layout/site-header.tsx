@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { CartDrawerButton } from "@/components/cart/cart-drawer";
 import { CategoryMenu, type MenuCategory } from "@/components/layout/category-menu";
 import { LiveSearch } from "@/components/layout/live-search";
+import { TopCategories } from "@/components/layout/top-categories";
 import { UtilityBar } from "@/components/layout/utility-bar";
 import { UniverseBar } from "@/components/layout/universe-bar";
 import type { PublishedPage } from "@/lib/site-content/pages";
@@ -28,17 +29,7 @@ export function SiteHeader({ categories, universe = [] }: { categories: MenuCate
       <nav aria-label="Navigation principale" className="relative border-b border-line bg-white">
         <div className="mx-auto flex max-w-[1440px] items-center gap-4 px-4 lg:px-8">
           <CategoryMenu categories={categories} />
-          {categories.length > 0 && (
-            <nav aria-label="Catégories principales" className="hidden min-w-0 flex-1 md:block" data-testid="top-categories">
-              <ul className="flex min-w-0 items-center overflow-x-auto">
-                {categories.map((c) => (
-                  <li key={c.key} className="flex-none">
-                    <Link href={`/categorie/${c.key}`} className="inline-flex min-h-12 items-center whitespace-nowrap border-b-2 border-transparent px-3 text-sm font-medium text-ink-2 hover:border-brand hover:text-brand">{c.name}</Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          )}
+          {categories.length > 0 && <TopCategories categories={categories.map(({ key, name }) => ({ key, name }))} />}
           <Link href="/devis" className="ml-auto inline-flex min-h-12 items-center text-sm font-semibold text-brand lg:hidden">Demande de devis</Link>
         </div>
       </nav>

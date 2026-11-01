@@ -69,11 +69,23 @@ export async function makePoteletQuoteOnly(nameOrUrl, rateId = "rq-402", amount 
 }
 
 /**
+ * Base de TEST seulement : ajoute `count` catégories racines de nom long, chacune avec une famille clonée (1 article), pour faire déborder la barre des catégories du haut.
+ * Même mécanique que `addCloneFamilies` (clés valides, document recanonisé, SHA recalculé, garde d'immutabilité suspendu le temps de la transaction).
+ */
+export async function addRootCategories(nameOrUrl, count) {
+  return addClones(nameOrUrl, count, true);
+}
+
+/**
  * Base de TEST seulement : ajoute `count` familles clonées (1 article chacune, même catégorie que « panneau-paliers ») à la génération ACTIVE, pour qu'une fiche porte
  * 8 produits similaires et plus. Clés publiques valides (contrôle C0), document recanonisé, SHA recalculé ; garde d'immutabilité suspendu le temps de la transaction.
  * Renvoie `[{ slug, key }]` (clé de famille).
  */
 export async function addCloneFamilies(nameOrUrl, count) {
+  return addClones(nameOrUrl, count, false);
+}
+
+async function addClones(nameOrUrl, count, ownCategory) {
   const { createRequire } = await import("node:module");
   const require = createRequire(import.meta.url);
   const snapshot = require("../../c0/ts/dist/src/snapshot.js");
@@ -92,6 +104,11 @@ export async function addCloneFamilies(nameOrUrl, count) {
       clone.public_family_key = key;
       clone.slug = `clone-${i}`;
       clone.name = `STAGING_FIXTURE Clone ${i}`;
+      if (ownCategory) {
+        doc.categories.push({ category_key: `cat-clone-${i}`, name: `STAGING_FIXTURE Catégorie numéro ${i} à nom long`, parent_category_key: null });
+        clone.primary_category_key = `cat-clone-${i}`;
+        clone.secondary_category_keys = [];
+      }
       clone.items = clone.items.map((item, n) => ({ ...item, public_item_key: identity.makeKey("item", 6000 + i * 10 + n) }));
       doc.families.push(clone);
       made.push({ slug: clone.slug, key });

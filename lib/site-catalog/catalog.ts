@@ -5,6 +5,7 @@
  */
 import type { JsonObject } from "@/c0/ts/src/jsonc";
 import { deepFreeze } from "@/lib/site-db/generation";
+import { displayName } from "./display-name";
 import { CatalogUnavailable, getCatalogSource, type CatalogSource, type ServedGeneration } from "./source";
 
 export type VariantAxes = Record<string, string>;
@@ -83,7 +84,7 @@ function build(served: ServedGeneration, source: CatalogSource["kind"]): Catalog
     (f) => ({
       public_family_key: f.public_family_key,
       slug: f.slug,
-      name: f.name,
+      name: displayName(f.name), // affichage seulement : la donnée du DTO (c0Generation) reste intacte
       description_short: f.description_short,
       description_long: f.description_long,
       primary_category_key: f.primary_category_key,

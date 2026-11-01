@@ -14,7 +14,7 @@ import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import pg from "pg";
-import { activateOverHttp, addCloneFamilies, dbUrl, makePoteletQuoteOnly, resetSiteDb } from "./site-setup.mjs";
+import { activateOverHttp, addCloneFamilies, addRootCategories, dbUrl, makePoteletQuoteOnly, resetSiteDb } from "./site-setup.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const PORT = Number(process.env.SITE_TEST_PORT ?? 3361);
@@ -768,6 +768,53 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     assert.match(page.url(), /\?article=PI-00000037S$/);
     assert.equal(await page.getByTestId("variant-adjusted").innerText(), "" , "aucune phrase quand rien n'est ajusté");
     await page.context().close();
+  });
+
+  test("U16 — barre des catégories du haut défilable avec indicateurs (1440 px) ; mobile : UNE seule rangée de navigation avant les produits d'une catégorie", async () => {
+    await scene("F_SELL_WINDOWS.activate");
+    await addRootCategories(DB, 14);
+    const page = await newPage(VIEWPORTS.desktop);
+    await page.goto(BASE + "/");
+    const bar = page.getByTestId("top-categories");
+    await bar.waitFor();
+    await page.waitForFunction(() => document.querySelector("[data-testid=top-categories]")?.getAttribute("data-more-right") === "true");
+    assert.equal(await bar.getAttribute("data-more-left"), "false");
+    assert.equal(await page.getByTestId("top-categories-prev").count(), 0, "rien à gauche au départ");
+    const next = page.getByTestId("top-categories-next");
+    await next.waitFor();
+    assert.equal((await next.boundingBox()) !== null, true);
+    await shot(page, "U16-barre-categories-debordement");
+    await next.click();
+    await page.waitForFunction(() => document.querySelector("[data-testid=top-categories]")?.getAttribute("data-more-left") === "true");
+    assert.ok((await bar.locator("ul").evaluate((e) => e.scrollLeft)) > 0, "la barre a défilé");
+    await page.getByTestId("top-categories-prev").waitFor();
+    assert.ok((await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)), "la page ne défile pas en largeur");
+    // Aller jusqu'au bout : la flèche de droite disparaît.
+    await bar.locator("ul").evaluate((e) => e.scrollTo({ left: e.scrollWidth }));
+    await page.waitForFunction(() => document.querySelector("[data-testid=top-categories]")?.getAttribute("data-more-right") === "false");
+    await page.context().close();
+
+    // Mobile : la catégorie « Mobilier » a une sous-catégorie ; une seule rangée de pastilles (Tout · courante · sous-catégories · autres), pas de seconde rangée.
+    await scene("F_SIMPLE_READY.activate_first");
+    const mobile = await newPage(VIEWPORTS.mobile);
+    await mobile.goto(BASE + "/categorie/mobilier");
+    const pills = mobile.getByTestId("category-pills");
+    await pills.waitFor();
+    const labels = await pills.locator("a").allInnerTexts();
+    assert.equal(labels[0], "Tout");
+    assert.match(labels[1] ?? "", /Mobilier/, "la catégorie courante vient juste après « Tout »");
+    assert.match(labels[2] ?? "", /Chaises/, "puis sa sous-catégorie");
+    assert.equal(await mobile.getByTestId("subcategory-pill").count(), 1);
+    assert.equal(await mobile.locator('nav[aria-label="Sous-catégories"]').isVisible(), false, "plus de seconde rangée de sous-catégories sur mobile");
+    assert.equal(await mobile.getByTestId("category-sidebar").isVisible(), false);
+    await shot(mobile, "U16-categorie-mobile-une-rangee");
+    assert.ok((await mobile.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)));
+    await mobile.context().close();
+    // Ordinateur : les sous-catégories restent affichées en pastilles sous le titre.
+    const desktop = await newPage(VIEWPORTS.desktop);
+    await desktop.goto(BASE + "/categorie/mobilier");
+    assert.equal(await desktop.locator('nav[aria-label="Sous-catégories"]').isVisible(), true);
+    await desktop.context().close();
   });
 
   test("U8 — aucune erreur console (dont violations CSP) sur l'ensemble du parcours", async () => {

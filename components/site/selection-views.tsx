@@ -10,6 +10,7 @@ import { CarouselRow } from "@/components/site/carousel-row";
 import { MediaImage } from "@/components/site/media-image";
 import { shortRef } from "@/lib/site-catalog/short-ref";
 import { CompareButton, WishlistButton } from "@/components/site/list-buttons";
+import { count } from "@/components/site/format";
 import { KEYS, clearList, removeFromList, rememberRecent, useLocalList } from "@/components/site/local-list";
 import { useFamilies } from "@/components/site/use-families";
 import type { LookedUp } from "@/lib/site-catalog/family-lookup";
@@ -145,7 +146,7 @@ export function CompareView() {
                 <tbody>
                   {([
                     ["Catégorie", (f) => f.category ?? "—"],
-                    ["Référence", (f) => (f.reference ? shortRef(f.reference) : `${f.variantCount} variantes`)],
+                    ["Référence", (f) => (f.reference ? shortRef(f.reference) : `${count(f.variantCount)} variantes`)],
                     ["Choix", (f) => (f.axes.length ? f.axes.join(", ") : "Modèle unique")],
                     ["Description", (f) => f.description || "—"],
                   ] as [string, (f: LookedUp) => string][]).map(([label, cell]) => (

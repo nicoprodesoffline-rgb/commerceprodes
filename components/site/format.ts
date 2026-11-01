@@ -74,3 +74,10 @@ export function parisDate(utc: string): string {
   const d = new Date(utc);
   return Number.isNaN(d.getTime()) ? utc : `${PARIS.format(d)} (heure de Paris)`;
 }
+
+const COUNT = new Intl.NumberFormat("fr-FR");
+
+/** Nombre entier affiché (références, familles, résultats) : séparateur de milliers fr-FR (« 8 329 », espace fine insécable). */
+export function count(n: number): string {
+  return COUNT.format(n);
+}

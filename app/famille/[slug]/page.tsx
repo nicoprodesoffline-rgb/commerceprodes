@@ -95,8 +95,9 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
     "@context": "https://schema.org", "@type": "BreadcrumbList",
     itemListElement: crumbs.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.label, ...("href" in c && c.href ? { item: c.href } : {}) })),
   }).replace(/</g, "\\u003c");
+  // Sur mobile la barre collante « Ajouter au panier » (48 px, à 72 px du bas) et la barre de navigation recouvrent le bas de page : on réserve leur hauteur (pb-40).
   return (
-    <div className="min-w-0 pb-20 lg:pb-0">
+    <div className="min-w-0 pb-40 lg:pb-0">
       <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: breadcrumbLd }} />
       <Breadcrumbs items={crumbs} />
       <FamilyBuyBox
