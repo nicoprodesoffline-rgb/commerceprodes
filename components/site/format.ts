@@ -64,8 +64,17 @@ export function axisValue(v: string): string {
 
 export type AxisDisplay = { label: string; value: string };
 
+/** Valeur réservée publiée pour « pas de valeur sur cet axe » (option, accessoire) : jamais montrée à l'acheteur. */
+export const NO_AXIS_VALUE = "rv-none";
+
+/** Les axes qui ont une valeur à montrer : ni vide, ni la valeur réservée « pas de valeur ». */
+export function shownAxes(axes: AxisDisplay[]): AxisDisplay[] {
+  return axes.filter((a) => a.value !== "" && a.value !== NO_AXIS_VALUE);
+}
+
 export function axesText(axes: AxisDisplay[]): string {
-  return axes.length === 0 ? "Modèle unique" : axes.map((a) => `${a.label} : ${axisValue(a.value)}`).join(" · ");
+  const shown = shownAxes(axes);
+  return shown.length === 0 ? "Modèle unique" : shown.map((a) => `${a.label} : ${axisValue(a.value)}`).join(" · ");
 }
 
 const PARIS = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", dateStyle: "long", timeStyle: "short" });

@@ -50,7 +50,7 @@ export function lookUp(
     single: family.items.length === 1 ? {
       public_item_key: family.items[0]!.public_item_key,
       variant_axes: family.items[0]!.variant_axes,
-      axes: family.axes.map((a) => ({ label: a.label, value: family.items[0]!.variant_axes[a.axis_key] ?? "" })),
+      axes: family.axes.map((a) => ({ label: a.label, value: family.items[0]!.variant_axes[a.axis_key] ?? "" })).filter((a) => a.value !== "rv-none"),
     } : null,
     axes: family.axes.map((a) => a.label), priceText: priceText(price),
     best: lowest !== null && price !== null && cents(price.amount) === lowest,

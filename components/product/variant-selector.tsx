@@ -4,12 +4,13 @@
  * Sélecteur de variante : un groupe de boutons radio par axe (`axes[]` du DTO, libellés du DTO), axes « type » en premier. Sélecteur à choix épinglés
  * (`lib/site-catalog/variant-choice.ts`) : seuls les clics de l'acheteur sont des choix ; une valeur sans variante publiée avec ces
  * choix est GRISÉE mais reste cliquable — le clic ajuste les autres axes sur une variante publiée réelle (aucune combinaison construite, C0 §8.3) et le dit ;
- * recliquer un choix le retire. Clavier : flèches dans un groupe (radio natif), Tab entre groupes.
+ * recliquer un choix le retire. La valeur réservée « pas de valeur » (option, accessoire sur un axe qui ne le concerne pas) n'est jamais montrée : aucune pastille, l'axe se lit alors
+ * seulement par son titre ; ses autres valeurs restent cliquables et recalent. Clavier : flèches dans un groupe (radio natif), Tab entre groupes.
  */
 import { useId, useState } from "react";
 import { axisValue } from "@/components/site/format";
 import { isColorAxis, swatchFor } from "@/lib/site-catalog/color-swatch";
-import { adjustments, click, compatible, orderAxes, type Adjustment, type Pinned } from "@/lib/site-catalog/variant-choice";
+import { adjustments, click, compatible, isShown, orderAxes, type Adjustment, type Pinned } from "@/lib/site-catalog/variant-choice";
 
 export type SelectorAxis = { axis: string; label: string; values: string[] };
 export type SelectorItem = { public_item_key: string; variant_axes: Record<string, string> };
@@ -45,28 +46,31 @@ export function VariantSelector({
     <div className="space-y-4" data-testid="variant-selector">
       {ordered.map((option) => {
         const current = selected[option.axis];
+        const values = option.values.filter(isShown);
+        if (values.length === 0) return null;
         const colorAxis = isColorAxis(option.axis, option.label);
-        if (option.values.length === 1) {
-          const backgroundColor = colorAxis ? swatchFor(option.values[0]!) : null;
+        const withoutValue = items.some((i) => !isShown(i.variant_axes[option.axis]));
+        if (values.length === 1 && !withoutValue) {
+          const backgroundColor = colorAxis ? swatchFor(values[0]!) : null;
           return (
             <p key={option.axis} className="text-sm">
               <span className="font-medium">{option.label}</span> : {backgroundColor && (
                 <span aria-hidden="true" className="mr-2 inline-block h-4 w-4 rounded-full border border-line-strong align-middle" style={{ backgroundColor }} />
-              )}{axisValue(option.values[0]!)} <span className="text-ink-3">(seule option)</span>
+              )}{axisValue(values[0]!)} <span className="text-ink-3">(seule option)</span>
             </p>
           );
         }
         const others = ordered.filter((o) => o.axis !== option.axis && pinned[o.axis] !== undefined);
-        const greyed = option.values.filter((v) => !compatible(items, pinned, option.axis, v));
+        const greyed = values.filter((v) => !compatible(items, pinned, option.axis, v));
         const hintId = `${base}-${option.axis}-hint`;
         return (
           <fieldset key={option.axis} aria-describedby={greyed.length > 0 ? hintId : undefined} data-axis={option.axis}>
             <legend className="mb-2 text-sm font-medium">
               {option.label}
-              {current !== undefined && <span className="font-normal text-ink-2"> : {axisValue(current)}</span>}
+              {isShown(current) && <span className="font-normal text-ink-2"> : {axisValue(current)}</span>}
             </legend>
             <div className="flex flex-wrap gap-2">
-              {option.values.map((value) => {
+              {values.map((value) => {
                 const ok = compatible(items, pinned, option.axis, value);
                 const id = `${base}-${option.axis}-${value}`;
                 const backgroundColor = colorAxis ? swatchFor(value) : null;
@@ -117,7 +121,7 @@ export function VariantSelector({
         );
       })}
       <p role="status" aria-live="polite" className="text-xs text-ink-2" data-testid="variant-adjusted">
-        {adjusted.length > 0 && <>Autres choix ajustés pour garder une variante publiée : {adjusted.map((a) => `${labelOf(a.axis)} « ${axisValue(a.from)} » → « ${axisValue(a.to)} »`).join(", ")}.</>}
+        {adjusted.length > 0 && <>Autres choix ajustés pour garder une variante publiée : {adjusted.map((a) => (isShown(a.from) ? `${labelOf(a.axis)} « ${axisValue(a.from)} » → « ${axisValue(a.to)} »` : `${labelOf(a.axis)} « ${axisValue(a.to)} »`)).join(", ")}.</>}
       </p>
     </div>
   );

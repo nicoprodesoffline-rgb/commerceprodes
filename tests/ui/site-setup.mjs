@@ -85,6 +85,47 @@ export async function addCloneFamilies(nameOrUrl, count) {
   return addClones(nameOrUrl, count, false);
 }
 
+/**
+ * Base de TEST seulement : fait de la famille « gmce-demo » une famille MIXTE : un axe « Type » déclaré en dernier (tous les articles existants = « Produit ») et un accessoire
+ * (clé neuve, copie du premier article) qui n'a pas de valeur sur l'axe « Taille » : valeur réservée « rv-none ». Document recanonisé, SHA recalculé ; garde d'immutabilité
+ * suspendu le temps de la transaction. Renvoie la clé de l'accessoire.
+ */
+export async function makeGmceMixed(nameOrUrl) {
+  const { createRequire } = await import("node:module");
+  const require = createRequire(import.meta.url);
+  const snapshot = require("../../c0/ts/dist/src/snapshot.js");
+  const jsonc = require("../../c0/ts/dist/src/jsonc.js");
+  const identity = require("../../c0/ts/dist/src/identity.js");
+  const client = new pg.Client({ connectionString: dbUrl(nameOrUrl) });
+  await client.connect();
+  try {
+    const row = (await client.query("SELECT id, snapshot_bytes FROM site_generation WHERE status = 'ACTIVE'")).rows[0];
+    const doc = jsonc.parseBytes(new Uint8Array(row.snapshot_bytes), 1 << 24);
+    const family = doc.families.find((f) => f.slug === "gmce-demo");
+    family.axes.push({ axis_key: "type", label: "Type" });
+    for (const item of family.items) item.variant_axes.type = "Produit";
+    const accessory = JSON.parse(JSON.stringify(family.items[0]));
+    accessory.public_item_key = identity.makeKey("item", 7001);
+    accessory.variant_axes = { couleur: "rouge", taille: "rv-none", type: "Accessoire" };
+    family.items.push(accessory);
+    doc.manifest_counts.items += 1;
+    doc.payload_sha256 = snapshot.payloadSha256(doc);
+    await client.query("BEGIN");
+    await client.query("SET CONSTRAINTS ALL DEFERRED");
+    await client.query("ALTER TABLE site_generation DISABLE TRIGGER site_generation_immutable");
+    await client.query("UPDATE site_generation SET snapshot_bytes = $1, snapshot_json = $2::jsonb, payload_sha256 = $3 WHERE id = $4", [Buffer.from(jsonc.canonicalBytes(doc)), JSON.stringify(doc), doc.payload_sha256, row.id]);
+    await client.query("UPDATE site_active_pointer SET payload_sha256 = $1 WHERE singleton = 1", [doc.payload_sha256]);
+    await client.query("ALTER TABLE site_generation ENABLE TRIGGER site_generation_immutable");
+    await client.query("COMMIT");
+    return accessory.public_item_key;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
 async function addClones(nameOrUrl, count, ownCategory) {
   const { createRequire } = await import("node:module");
   const require = createRequire(import.meta.url);

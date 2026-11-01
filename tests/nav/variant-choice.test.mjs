@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { adjustments, click, compatible, orderAxes } from "../../lib/site-catalog/variant-choice.ts";
+import { NO_VALUE, adjustments, click, compatible, isShown, orderAxes } from "../../lib/site-catalog/variant-choice.ts";
 
 // Catalogue publié (3 axes) : toutes les combinaisons ne sont PAS publiées.
 const mk = (n, couleur, taille, matiere) => ({ public_item_key: `K${n}`, variant_axes: { couleur, taille, matiere } });
@@ -109,4 +109,85 @@ test("une clé inconnue ne change rien ; une valeur sans variante ne change rien
   assert.equal(click(ITEMS, unknown, "couleur", "bleu"), unknown);
   const s = start();
   assert.equal(click(ITEMS, s, "couleur", "jaune"), s);
+});
+
+// Famille MIXTE : un axe « Type » (Produit / Accessoire / Option) ; un accessoire ou une option n'a pas de dimension, la Factory publie la valeur réservée « rv-none ».
+const mix = (key, type, dimension, couleur) => ({ public_item_key: key, variant_axes: { dimension, couleur, type } }); // « type » déclaré en dernier à dessein
+const MIXED = [
+  mix("P1", "Produit", "120", "rouge"), mix("P2", "Produit", "140", "rouge"), mix("P3", "Produit", "140", "bleu"),
+  mix("A1", "Accessoire", NO_VALUE, "rouge"), mix("A2", "Accessoire", NO_VALUE, "bleu"), mix("O1", "Option", NO_VALUE, NO_VALUE),
+];
+
+test("famille mixte : la valeur réservée « rv-none » est la seule à n'être jamais montrée", () => {
+  assert.equal(NO_VALUE, "rv-none");
+  assert.equal(isShown("rv-none"), false);
+  assert.equal(isShown(""), false);
+  assert.equal(isShown(undefined), false);
+  assert.equal(isShown("120"), true);
+  assert.equal(isShown("none"), true, "seul le texte exact réservé est écarté");
+});
+
+test("famille mixte : « rv-none » n'est jamais compatible, ne respecte aucun choix, et un accessoire ne rend compatible aucune dimension", () => {
+  for (const pinned of [{}, { type: "Produit" }, { type: "Accessoire" }, { couleur: "rouge" }]) assert.equal(compatible(MIXED, pinned, "dimension", NO_VALUE), false, JSON.stringify(pinned));
+  assert.equal(compatible(MIXED, { type: "Produit" }, "dimension", "140"), true);
+  assert.equal(compatible(MIXED, { type: "Accessoire" }, "dimension", "120"), false, "aucun accessoire n'a de dimension");
+  assert.equal(compatible(MIXED, { type: "Accessoire" }, "dimension", "140"), false);
+  assert.equal(compatible(MIXED, { type: "Accessoire" }, "couleur", "bleu"), true, "les accessoires ont bien une couleur");
+  assert.equal(compatible(MIXED, { type: "Option" }, "couleur", "rouge"), false, "l'option n'a pas de couleur non plus : « rv-none » ne respecte aucun choix");
+  assert.equal(compatible(MIXED, { dimension: "140" }, "type", "Accessoire"), false, "un choix de dimension écarte les accessoires");
+  assert.equal(compatible(MIXED, { dimension: "140" }, "type", "Produit"), true);
+});
+
+test("famille mixte : passer au type Accessoire donne une variante publiée réelle, sans annoncer la dimension qui disparaît", () => {
+  const next = click(MIXED, start("P1"), "type", "Accessoire");
+  assert.equal(MIXED.find((i) => i.public_item_key === next.key).variant_axes.type, "Accessoire");
+  assert.deepEqual(next.pinned, { type: "Accessoire" });
+  assert.deepEqual(adjustments(MIXED, "P1", next.key, "type").map((a) => a.axis), [], "dimension → rv-none n'est pas annoncé (l'axe disparaît de la fiche), la couleur reste rouge");
+  assert.equal(adjustments(MIXED, "P1", "O1", "type").some((a) => a.to === NO_VALUE), false, "jamais « rv-none » comme destination");
+});
+
+test("famille mixte : un clic sur une dimension depuis un accessoire recale vers une autre variante (un produit) et le dit", () => {
+  const onAccessory = { key: "A1", pinned: { type: "Accessoire" } };
+  for (const dimension of ["120", "140"]) {
+    const next = click(MIXED, onAccessory, "dimension", dimension);
+    const item = MIXED.find((i) => i.public_item_key === next.key);
+    assert.equal(item.variant_axes.dimension, dimension);
+    assert.equal(item.variant_axes.type, "Produit", "le choix « Accessoire » ne tient plus : on le retire");
+    assert.deepEqual(next.pinned, { dimension });
+    assert.ok(adjustments(MIXED, "A1", next.key, "dimension").some((a) => a.axis === "type" && a.from === "Accessoire" && a.to === "Produit"));
+  }
+  // Sans choix épinglé (accessoire présélectionné par l'adresse) : même chose.
+  const fromInitial = click(MIXED, start("O1"), "dimension", "120");
+  assert.equal(fromInitial.key, "P1");
+});
+
+test("famille mixte : revenir à un produit depuis un accessoire annonce la dimension retrouvée sans « rv-none » côté lecteur (from vaut rv-none)", () => {
+  const next = click(MIXED, start("A1"), "type", "Produit");
+  const item = MIXED.find((i) => i.public_item_key === next.key);
+  assert.equal(item.variant_axes.type, "Produit");
+  const list = adjustments(MIXED, "A1", next.key, "type");
+  assert.deepEqual(list.find((a) => a.axis === "dimension"), { axis: "dimension", from: NO_VALUE, to: item.variant_axes.dimension });
+});
+
+test("famille mixte : « rv-none » n'est jamais une pastille cliquable ni un choix", () => {
+  const before = start("P1");
+  assert.deepEqual(click(MIXED, before, "dimension", NO_VALUE), before);
+  assert.deepEqual(click(MIXED, before, "dimension", ""), before);
+});
+
+test("propriété (famille mixte) : toute valeur montrée est atteignable depuis n'importe quelle variante ; jamais « rv-none » épinglé ; l'axe « type » vient en premier", () => {
+  const axes = ["dimension", "couleur", "type"];
+  for (const from of MIXED) for (const axis of axes) {
+    for (const value of new Set(MIXED.map((i) => i.variant_axes[axis]).filter(isShown))) {
+      for (const pinned of [{}, { type: "Produit" }, { type: "Accessoire" }, { couleur: "rouge" }, { dimension: "140" }]) {
+        if (pinned[axis] === value) continue; // re-clic sur un choix épinglé : il est retiré (testé plus haut)
+        const next = click(MIXED, { key: from.public_item_key, pinned }, axis, value);
+        const item = MIXED.find((i) => i.public_item_key === next.key);
+        assert.ok(item, "variante publiée réelle");
+        assert.equal(item.variant_axes[axis], value, `${from.public_item_key} ${axis}=${value} ${JSON.stringify(pinned)}`);
+        assert.equal(Object.values(next.pinned).includes(NO_VALUE), false);
+      }
+    }
+  }
+  assert.deepEqual(orderAxes(axes.map((a) => ({ axis: a, label: a }))).map((o) => o.axis), ["type", "dimension", "couleur"]);
 });

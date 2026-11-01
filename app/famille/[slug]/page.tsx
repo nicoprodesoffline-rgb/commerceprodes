@@ -12,7 +12,7 @@ import { categoryCrumbs, familyCard, navigationOf } from "@/components/site/cata
 import { CompareButton, WishlistButton } from "@/components/site/list-buttons";
 import { RecentlyViewed } from "@/components/site/selection-views";
 import { CarouselRow } from "@/components/site/carousel-row";
-import { axesText } from "@/components/site/format";
+import { axesText, shownAxes } from "@/components/site/format";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
@@ -48,7 +48,7 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
   const items = family.items.map((i) => ({
     public_item_key: i.public_item_key,
     variant_axes: i.variant_axes,
-    axes: family.axes.map((a) => ({ label: labels.get(a.axis_key) ?? a.axis_key, value: i.variant_axes[a.axis_key] ?? "" })),
+    axes: shownAxes(family.axes.map((a) => ({ label: labels.get(a.axis_key) ?? a.axis_key, value: i.variant_axes[a.axis_key] ?? "" }))), // sans « pas de valeur » (option, accessoire)
     image_sha256: i.public_media_refs[0] ?? null,
     rows: priceRows(catalog.c0Generation, i, instant),
   }));

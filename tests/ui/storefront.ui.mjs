@@ -14,7 +14,7 @@ import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import pg from "pg";
-import { activateOverHttp, addCloneFamilies, addRootCategories, dbUrl, makePoteletQuoteOnly, resetSiteDb } from "./site-setup.mjs";
+import { activateOverHttp, addCloneFamilies, addRootCategories, dbUrl, makeGmceMixed, makePoteletQuoteOnly, resetSiteDb } from "./site-setup.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const PORT = Number(process.env.SITE_TEST_PORT ?? 3361);
@@ -767,6 +767,44 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     assert.equal(await compat("M"), "true");
     assert.match(page.url(), /\?article=PI-00000037S$/);
     assert.equal(await page.getByTestId("variant-adjusted").innerText(), "" , "aucune phrase quand rien n'est ajusté");
+    await page.context().close();
+  });
+
+  test("U17 — famille mixte : « Type » en premier, accessoire sans dimension (« rv-none » jamais affiché), recalage vers un produit, ajout au panier de l'accessoire", async () => {
+    await scene("F_GMCE_VARIANTS.activate");
+    const accessory = await makeGmceMixed(DB);
+    const page = await newPage();
+    await page.goto(BASE + `/famille/gmce-demo?article=${accessory}`); // l'accessoire est la sélection initiale (pas un choix)
+    await page.getByTestId("variant-selector").waitFor();
+    assert.deepEqual(await page.locator("[data-testid=variant-selector] fieldset").evaluateAll((els) => els.map((e) => e.getAttribute("data-axis"))), ["type", "couleur", "taille"], "Type en premier");
+    assert.equal(await page.locator('input[type=radio][value="rv-none"]').count(), 0, "aucune pastille pour « pas de valeur »");
+    assert.equal(((await page.locator("main").innerText()).toLowerCase()).includes("rv-none"), false, "« rv-none » n'est écrit nulle part sur la fiche");
+    assert.equal(await page.locator('input[type=radio][value="Accessoire"]').isChecked(), true);
+    assert.equal(await page.locator('fieldset[data-axis="taille"] input:checked').count(), 0, "aucune taille cochée sur l'accessoire");
+    await page.getByTestId("selected-variant").getByText("Couleur : Rouge · Type : Accessoire").waitFor();
+    await shot(page, "U17-accessoire-sans-dimension");
+    // Ajout de l'accessoire : la ligne ne montre pas la taille, le serveur chiffre la ligne avec les axes exacts (« rv-none » compris).
+    await page.getByRole("button", { name: "Ajouter au panier" }).click();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier — \d+ × Couleur : Rouge · Type : Accessoire/).waitFor();
+    const line = page.getByTestId("drawer-line").first();
+    await line.waitFor();
+    const lineText = await line.innerText();
+    assert.match(lineText, /Type : Accessoire/);
+    assert.equal(/taille/i.test(lineText), false, "la ligne du panier ne montre pas la taille de l'accessoire");
+    assert.equal(lineText.toLowerCase().includes("rv-none"), false, "le panier n'écrit pas l'axe sans valeur");
+    await page.keyboard.press("Escape");
+    await page.getByTestId("cart-drawer").waitFor({ state: "hidden" }).catch(() => {});
+    // Clic sur une taille : on quitte l'accessoire vers un produit publié réel ; l'ajustement est dit sans « rv-none ».
+    await page.locator('label:has(input[value="M"])').click();
+    await page.getByTestId("variant-adjusted").getByText(/Autres choix ajustés.*Type « Accessoire » → « Produit »/).waitFor();
+    assert.equal((await page.getByTestId("variant-adjusted").innerText()).toLowerCase().includes("rv-none"), false);
+    assert.match(page.url(), /\?article=PI-000000363$/);
+    await page.locator('input[type=radio][value="Produit"]').waitFor();
+    assert.equal(await page.locator('input[type=radio][value="Produit"]').isChecked(), true);
+    // Retour à l'accessoire par l'axe Type : la taille disparaît de la ligne choisie, rien d'écrit en « rv-none ».
+    await page.locator('label:has(input[value="Accessoire"])').click();
+    await page.getByTestId("selected-variant").getByText("Couleur : Rouge · Type : Accessoire").waitFor();
+    assert.equal(((await page.locator("main").innerText()).toLowerCase()).includes("rv-none"), false);
     await page.context().close();
   });
 

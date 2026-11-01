@@ -3,7 +3,13 @@
  * quelles valeurs des autres axes sont compatibles ; une valeur incompatible reste cliquable et RECALE sur une variante PUBLIÉE réelle (jamais une
  * combinaison inventée, C0 §8.3) ; recliquer un choix le retire. Fonctions pures, sans dépendance : testées sans navigateur.
  * La variante affichée au départ (première, ou celle de `?article=`) n'est PAS un choix.
+ * Valeur réservée `rv-none` (« pas de valeur », publiée par la Factory pour une option ou un accessoire sur un axe qui ne le concerne pas) : jamais affichée, jamais une
+ * pastille, ne rend aucune valeur de l'axe compatible et ne respecte aucun choix épinglé sur cet axe ; on l'atteint par l'axe « type » ou par la sélection initiale.
  */
+export const NO_VALUE = "rv-none";
+/** Vrai pour une valeur qui se montre à l'acheteur (ni vide, ni la valeur réservée « pas de valeur »). */
+export const isShown = (value: string | undefined): value is string => value !== undefined && value !== "" && value !== NO_VALUE;
+
 export type ChoiceItem = { public_item_key: string; variant_axes: Record<string, string> };
 export type Pinned = Record<string, string>;
 export type ChoiceState = { key: string; pinned: Pinned };
@@ -25,7 +31,7 @@ export function orderAxes<T extends { axis: string; label: string }>(options: re
 
 /** Oui s'il existe un Item publié qui porte `value` sur `axis` ET tous les choix épinglés des AUTRES axes. Aucun choix : toute valeur qui existe l'est. */
 export function compatible(items: readonly ChoiceItem[], pinned: Pinned, axis: string, value: string): boolean {
-  return value !== "" && items.some((i) => valueOf(i, axis) === value && respects(i, pinned, axis));
+  return isShown(value) && items.some((i) => valueOf(i, axis) === value && respects(i, pinned, axis));
 }
 
 const respects = (item: ChoiceItem, pinned: Pinned, except: string): boolean =>
@@ -37,6 +43,7 @@ const respects = (item: ChoiceItem, pinned: Pinned, except: string): boolean =>
  * qui porte la valeur. Le choix est alors épinglé, avec ceux d'avant qui tiennent encore.
  */
 export function click(items: readonly ChoiceItem[], state: ChoiceState, axis: string, value: string): ChoiceState {
+  if (!isShown(value)) return state; // « pas de valeur » n'est jamais une pastille, donc jamais un choix
   if (state.pinned[axis] === value) {
     const { [axis]: _removed, ...rest } = state.pinned;
     return { key: state.key, pinned: rest };
@@ -49,7 +56,7 @@ export function click(items: readonly ChoiceItem[], state: ChoiceState, axis: st
   if (!next) {
     const carrying = items.filter((i) => valueOf(i, axis) === value);
     const keeping = Object.keys(state.pinned).length > 0 ? carrying.filter((i) => respects(i, state.pinned, axis)) : [];
-    const closeness = (i: ChoiceItem) => axes.filter((a) => a !== axis && valueOf(i, a) === valueOf(current, a)).length;
+    const closeness = (i: ChoiceItem) => axes.filter((a) => a !== axis && isShown(valueOf(i, a)) && valueOf(i, a) === valueOf(current, a)).length;
     next = keeping.reduce<ChoiceItem | undefined>((best, i) => (best === undefined || closeness(i) > closeness(best) ? i : best), undefined) ?? carrying[0];
   }
   if (!next) return state;
@@ -57,12 +64,12 @@ export function click(items: readonly ChoiceItem[], state: ChoiceState, axis: st
   return { key: next.public_item_key, pinned: { ...stillHeld, [axis]: value } };
 }
 
-/** Les AUTRES axes que le recalage a changés : de quoi dire à l'acheteur ce qui a été ajusté. */
+/** Les AUTRES axes que le recalage a changés : de quoi dire à l'acheteur ce qui a été ajusté. Un axe qui devient « sans valeur » n'est pas annoncé (il disparaît de la fiche) ; `from` vaut `NO_VALUE` quand l'axe n'avait pas de valeur. */
 export function adjustments(items: readonly ChoiceItem[], beforeKey: string, afterKey: string, clickedAxis: string): Adjustment[] {
   const before = items.find((i) => i.public_item_key === beforeKey);
   const after = items.find((i) => i.public_item_key === afterKey);
   if (!before || !after) return [];
   return axesOf(items)
-    .filter((a) => a !== clickedAxis && valueOf(before, a) !== valueOf(after, a))
+    .filter((a) => a !== clickedAxis && valueOf(before, a) !== valueOf(after, a) && isShown(valueOf(after, a)))
     .map((a) => ({ axis: a, from: valueOf(before, a), to: valueOf(after, a) }));
 }
