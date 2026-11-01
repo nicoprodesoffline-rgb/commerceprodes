@@ -67,7 +67,7 @@ function retained(state: State, refs: CatalogRefs): EditorialSet | null {
       return section;
     }),
   }));
-  const result = validateEnvelope({ contract_version: "site_content.v1", generation: state.current.generation, publication_id: state.current.publicationId, catalogue_sequence: null, pages }, refs);
+  const result = validateEnvelope({ contract_version: "site_content.v1", generation: state.current.generation, publication_id: state.current.publicationId, catalogue_sequence: null, pages, ...(state.current.merchandising.length ? { merchandising: state.current.merchandising } : {}) }, refs);
   return result.ok ? state.current : null;
 }
 

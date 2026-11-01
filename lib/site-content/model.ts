@@ -16,7 +16,14 @@ export type EditorialPage = {
   sections: Section[];
 };
 
-export type EditorialSet = { generation: number; publicationId: string; pages: EditorialPage[] };
+export type MerchandisingRelation = {
+  source: string;
+  target: string;
+  kind: "LIE" | "COMPLEMENTAIRE" | "UPSELL";
+  order: number;
+};
+
+export type EditorialSet = { generation: number; publicationId: string; pages: EditorialPage[]; merchandising: MerchandisingRelation[] };
 export type CatalogRefs = {
   categoryKeys: ReadonlySet<string>;
   familyKeys: ReadonlySet<string>;

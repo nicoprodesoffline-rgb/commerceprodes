@@ -2,10 +2,12 @@ import Link from "next/link";
 import { FamilyCard } from "@/components/home/family-card";
 import { CarouselRow } from "@/components/site/carousel-row";
 import type { FamilyCardData } from "@/components/site/catalog-views";
+import type { FamilyPrice } from "@/lib/site-catalog/listing";
 import { visibleSectionItems } from "@/components/product/section-visibility";
 
 export type ProductCharacteristic = { label: string; value: string };
 export type ProductDocument = { label: string; href: string };
+type ProductFamilyCard = FamilyCardData & { from: FamilyPrice };
 type SectionItems<T> = { items?: readonly T[] | null };
 
 const sectionClass = "mt-12 min-w-0 border-t border-line pt-8";
@@ -46,25 +48,25 @@ export function ProductDocuments({ items }: SectionItems<ProductDocument>) {
   );
 }
 
-function ProductRow({ items, title, id }: { items: readonly FamilyCardData[]; title: string; id: string }) {
+function ProductRow({ items, title, id }: { items: readonly ProductFamilyCard[]; title: string; id: string }) {
   return (
     <section aria-labelledby={id} className={`${sectionClass} print:hidden`}>
       <h2 id={id} className={headingClass}>{title}</h2>
       <CarouselRow label={title}>
-        {items.map((item) => <FamilyCard key={item.slug} data={item} />)}
+        {items.map((item) => <FamilyCard key={item.slug} data={item} from={item.from} />)}
       </CarouselRow>
     </section>
   );
 }
 
-export function RelatedProducts({ items }: SectionItems<FamilyCardData>) {
+export function RelatedProducts({ items }: SectionItems<ProductFamilyCard>) {
   const visible = visibleSectionItems(items);
   if (!visible) return null;
-  return <ProductRow items={visible} title="Produits liés" id="related-h" />;
+  return <ProductRow items={visible} title="Produits complémentaires" id="related-h" />;
 }
 
-export function UpsellProducts({ items }: SectionItems<FamilyCardData>) {
+export function UpsellProducts({ items }: SectionItems<ProductFamilyCard>) {
   const visible = visibleSectionItems(items);
   if (!visible) return null;
-  return <ProductRow items={visible} title="Pour compléter votre commande" id="upsell-h" />;
+  return <ProductRow items={visible} title="Montée en gamme" id="upsell-h" />;
 }

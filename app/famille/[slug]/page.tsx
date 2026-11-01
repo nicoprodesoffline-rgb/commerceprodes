@@ -17,6 +17,8 @@ import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
 import { priceRows, selectorAxes } from "@/lib/site-catalog/view";
+import { getEditorialSet } from "@/lib/site-content/source";
+import { relatedFamilies } from "@/lib/site-content/merchandising";
 
 export const dynamic = "force-dynamic";
 
@@ -74,8 +76,14 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
     .map((k) => nav.node(k))
     .filter((c): c is NonNullable<typeof c> => c !== null);
 
-  // « Produits similaires » : les autres familles de la même catégorie principale (ordre du DTO), 8 au plus.
-  const similar = catalog.families.filter((f) => f.slug !== family.slug && f.primary_category_key === family.primary_category_key).slice(0, 8);
+  const byKey = new Map(catalog.families.map(f => [f.public_family_key, f]));
+  const relations = relatedFamilies(await getEditorialSet(), family.public_family_key, new Set(byKey.keys()));
+  const cards = (keys: string[]) => keys.map(key => byKey.get(key)!).map(f => ({ ...familyCard(f), from: familyPrice(catalog, f, instant) }));
+  const complementaryCards = cards(relations.complementary);
+  const upsellCards = cards(relations.upsell);
+  const shown = new Set([...relations.complementary, ...relations.upsell]);
+  // « Produits similaires » : même catégorie, hors familles déjà affichées (ordre du DTO), 8 au plus.
+  const similar = catalog.families.filter((f) => f.slug !== family.slug && !shown.has(f.public_family_key) && f.primary_category_key === family.primary_category_key).slice(0, 8);
   const similarCards = similar.map((f) => ({ ...familyCard(f), from: familyPrice(catalog, f, instant) }));
   const crumbs = [{ label: "Accueil", href: "/" }, ...categoryCrumbs(catalog, family.primary_category_key), { label: family.name }];
   // Données structurées « Fil d'Ariane » : chevrons échappés pour qu'aucune valeur ne puisse fermer la balise.
@@ -135,8 +143,8 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
       {/* alimenté par un futur contrat */}
       <ProductCharacteristics items={undefined} />
       <ProductDocuments items={undefined} />
-      <RelatedProducts items={undefined} />
-      <UpsellProducts items={undefined} />
+      <RelatedProducts items={complementaryCards} />
+      <UpsellProducts items={upsellCards} />
       {similar.length > 0 && (
         <section aria-labelledby="similar-h" className="mt-12 min-w-0 border-t border-line pt-8 print:hidden" data-testid="similar-families">
           <h2 id="similar-h" className="mb-6 text-xl font-semibold uppercase sm:text-2xl">Produits similaires</h2>

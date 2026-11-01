@@ -1,4 +1,4 @@
-import type { CatalogRefs, EditorialPage, EditorialSet, Section } from "./model";
+import type { CatalogRefs, EditorialPage, EditorialSet, MerchandisingRelation, Section } from "./model";
 
 type Failure = { ok: false; code: string; detail: string };
 export type Validation = { ok: true; set: EditorialSet } | Failure;
@@ -20,6 +20,28 @@ const string = (v: unknown, min: number, max: number, multiline = false): v is s
 const localPath = (v: unknown): v is string => string(v, 1, 200) && PATH.test(v);
 const keysOnly = (v: Record<string, unknown>, keys: string[]) => Object.keys(v).every(k => keys.includes(k));
 const failure = (code: string, detail: string): Failure => ({ ok: false, code, detail });
+const familyKey = (v: unknown): v is string => typeof v === "string" && v.length === 12 && /^PF-[0-9A-HJKMNP-TV-Z]{9}$/.test(v);
+const binary = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
+
+function merchandising(value: unknown): MerchandisingRelation[] | Failure {
+  if (!Array.isArray(value) || value.length === 0) return failure("MERCHANDISING_FIELD", "Liste de relations non vide exigée");
+  const rows: MerchandisingRelation[] = [];
+  const pairs = new Set<string>();
+  const orders = new Map<string, number>();
+  for (const row of value) {
+    if (!object(row) || Object.keys(row).length !== 4 || !keysOnly(row, ["source", "target", "kind", "order"]) || !familyKey(row.source) || !familyKey(row.target) || (row.kind !== "LIE" && row.kind !== "COMPLEMENTAIRE" && row.kind !== "UPSELL") || !integer(row.order) || row.order < 1) return failure("MERCHANDISING_FIELD", "Structure de relation invalide");
+    const pair = `${row.source}:${row.target}`;
+    if (row.source === row.target || pairs.has(pair)) return failure("MERCHANDISING_PAIR", "Relation répétée ou vers elle-même");
+    pairs.add(pair);
+    const previous = rows.at(-1);
+    if (previous && (binary(previous.source, row.source) || binary(previous.kind, row.kind) || previous.order - row.order || binary(previous.target, row.target)) >= 0) return failure("MERCHANDISING_SORT", "Ordre des relations invalide");
+    const group = `${row.source}:${row.kind}`;
+    if (row.order !== (orders.get(group) ?? 0) + 1) return failure("MERCHANDISING_ORDER", "Ordre de relation non consécutif");
+    orders.set(group, row.order);
+    rows.push({ source: row.source, target: row.target, kind: row.kind, order: row.order });
+  }
+  return rows;
+}
 
 /** Garde partagée avec le rendu : aucun chemin réseau, séparateur encodé ni contrôle encodé. */
 export function isLocalLink(value: unknown): value is string {
@@ -62,6 +84,8 @@ export function validateEnvelope(value: unknown, refs: CatalogRefs): Validation 
   if (!object(value)) return failure("ENVELOPE", "Objet enveloppe exigé");
   if (value.contract_version !== "site_content.v1") return failure("CONTRACT_VERSION", "Version de contrat invalide");
   if (!integer(value.generation) || value.generation < 1 || !string(value.publication_id, 36, 36) || !UUID.test(value.publication_id) || !(value.catalogue_sequence === null || integer(value.catalogue_sequence)) || !Array.isArray(value.pages)) return failure("ENVELOPE", "Identité ou liste de pages invalide");
+  const relations = "merchandising" in value ? merchandising(value.merchandising) : [];
+  if (!Array.isArray(relations)) return relations;
   const pages: EditorialPage[] = [];
   const slugs = new Set<string>();
   for (const page of value.pages) {
@@ -90,5 +114,5 @@ export function validateEnvelope(value: unknown, refs: CatalogRefs): Validation 
     }
     pages.push({ key: page.key, slug: page.slug, title: page.title, nav, revision: page.revision, seo_title: page.seo_title, seo_description: page.seo_description, canonical: page.canonical, sections });
   }
-  return { ok: true, set: { generation: value.generation, publicationId: value.publication_id, pages } };
+  return { ok: true, set: { generation: value.generation, publicationId: value.publication_id, pages, merchandising: relations } };
 }
