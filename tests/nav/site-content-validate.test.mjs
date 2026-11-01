@@ -19,7 +19,7 @@ test("jeu vide valide, champs d'enveloppe supplémentaires ignorés, ordre et cl
   const d = doc(); d.extra = "ignoré";
   const r = validateEnvelope(d, refs);
   assert.equal(r.ok, true);
-  assert.deepEqual(r.set, { generation: 1, publicationId: uuid, pages: d.pages.map(p => ({ ...p, nav: { showInBar: true, order: 100 } })) });
+  assert.deepEqual(r.set, { generation: 1, publicationId: uuid, merchandising: [], pages: d.pages.map(p => ({ ...p, nav: { showInBar: true, order: 100 } })) });
   assert.equal(validateEnvelope({ ...d, pages: [] }, refs).ok, true);
   assert.equal(validateEnvelope({ ...d, catalogue_sequence: -1 }, refs).ok, true);
 });

@@ -114,7 +114,9 @@ test("description pleine largeur, sections futures branchées et URL de variante
   const page = read("app/famille/[slug]/page.tsx");
   assert.match(page, /lg:grid-cols-\[minmax\(0,58fr\)_minmax\(0,42fr\)\]/);
   assert.match(page, /family\.description_long/);
-  for (const name of ["ProductCharacteristics", "ProductDocuments", "RelatedProducts", "UpsellProducts"]) assert.match(page, new RegExp(`<${name} items=\\{undefined\\}`));
+  for (const name of ["ProductCharacteristics", "ProductDocuments"]) assert.match(page, new RegExp(`<${name} items=\\{undefined\\}`));
+  // Liés et montée en gamme sont maintenant alimentés par les relations éditoriales ; vides, ils ne rendent rien.
+  for (const name of ["RelatedProducts", "UpsellProducts"]) assert.match(page, new RegExp(`<${name} items=\\{(?!undefined)`));
   const buy = read("components/product/family-buy-box.tsx");
   assert.match(buy, /url\.searchParams\.set\("article", item\.public_item_key\)/);
   assert.match(buy, /data-testid="quote-from-family"/);
