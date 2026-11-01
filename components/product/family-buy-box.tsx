@@ -270,6 +270,8 @@ export function FamilyBuyBox({
                 Pour {quantity} : <strong>{unit(priced.selection.unit_amount, priced.selection.tax_basis_or_status)}</strong> l&apos;unité
                 {priced.line_total ? <>, soit {money(priced.line_total)} {basisLabel(priced.selection.tax_basis_or_status)} pour la ligne</> : null}.
               </span>
+            ) : quoteOnly ? (
+              <span className="text-ink-2" data-codes="QUOTE_ONLY">Vendu sur devis : indiquez la quantité et demandez un devis.</span>
             ) : (
               <span className="text-ink-2" data-codes={current.line.error_codes.join(" ")}>Pour {quantity} : {codesMessage(current.line.error_codes)}</span>
             )}

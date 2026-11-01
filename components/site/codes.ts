@@ -11,7 +11,7 @@ const TEXT: Record<string, string> = {
   ITEM_SUPERSEDED: "Cet article a été remplacé par une nouvelle référence.",
   ITEM_RETIRED: "Cet article a été retiré du catalogue.",
   ITEM_NOT_PUBLISHED: "Cet article n'est pas proposé dans le catalogue actuel.",
-  QUOTE_ONLY: "Prix sur devis : cet article ne se commande pas en ligne, demandez un devis.",
+  QUOTE_ONLY: "Vendu sur devis : demandez un devis.",
   PRICE_WINDOW_UNAVAILABLE: "Aucun prix publié ne s'applique à cette quantité maintenant (devis sans prix possible).",
   PRICE_WINDOW_OVERLAP: "Prix momentanément indisponible : article non commandable pour le moment.",
   CATALOG_UNSAFE: "Le catalogue est momentanément indisponible par sécurité.",

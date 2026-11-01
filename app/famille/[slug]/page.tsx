@@ -16,6 +16,7 @@ import { axesText } from "@/components/site/format";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
+import { descriptionRest } from "@/lib/site-catalog/description";
 import { shortRef } from "@/lib/site-catalog/short-ref";
 import { priceRows, selectorAxes } from "@/lib/site-catalog/view";
 import { getEditorialSet } from "@/lib/site-content/source";
@@ -86,6 +87,8 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
   // « Produits similaires » : même catégorie, hors familles déjà affichées (ordre du DTO), 8 au plus.
   const similar = catalog.families.filter((f) => f.slug !== family.slug && !shown.has(f.public_family_key) && f.primary_category_key === family.primary_category_key).slice(0, 8);
   const similarCards = similar.map((f) => ({ ...familyCard(f), from: familyPrice(catalog, f, instant) }));
+  // Le texte court est sous le prix ; l'onglet « Description » ne reprend pas ce qu'il répète.
+  const longText = descriptionRest(family.description_short ?? "", family.description_long ?? "");
   const crumbs = [{ label: "Accueil", href: "/" }, ...categoryCrumbs(catalog, family.primary_category_key), { label: family.name }];
   // Données structurées « Fil d'Ariane » : chevrons échappés pour qu'aucune valeur ne puisse fermer la balise.
   const breadcrumbLd = JSON.stringify({
@@ -133,12 +136,12 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
           )}
         </div>
       </FamilyBuyBox>
-      {family.description_long && (
+      {longText !== "" && (
         <section aria-labelledby="desc-h" className="mt-12 border-t border-line pb-4">
           <div className="mb-8 flex justify-center border-b border-line">
             <h2 id="desc-h" className="border-b-2 border-[color:var(--color-brand,#a71c19)] px-7 py-4 text-sm font-semibold uppercase tracking-wide">Description</h2>
           </div>
-          <p className="whitespace-pre-line leading-relaxed text-ink-2 [overflow-wrap:anywhere]">{family.description_long}</p>
+          <p className="whitespace-pre-line leading-relaxed text-ink-2 [overflow-wrap:anywhere]">{longText}</p>
         </section>
       )}
       {/* alimenté par un futur contrat */}

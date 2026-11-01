@@ -13,7 +13,7 @@ export function ListingControls({ formId, action, query, hidden }: { formId: str
   const cleared = new URLSearchParams(hidden ?? {}).toString();
   return (
     <div className="space-y-3" data-testid="listing-controls">
-      <form id={formId} action={action} method="get" className="space-y-3 rounded-[14px] border border-line bg-white p-4" aria-label="Filtrer et trier">
+      <form id={formId} action={action} method="get" className="space-y-3 rounded-[14px] border border-line bg-white p-3 lg:p-4" aria-label="Filtrer et trier">
         {Object.entries(hidden ?? {}).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-3">Filtres</h2>
         <fieldset className="min-w-0">
@@ -30,8 +30,10 @@ export function ListingControls({ formId, action, query, hidden }: { formId: str
             </label>
           </div>
         </fieldset>
-        <button type="submit" className="h-[44px] w-full rounded-[9px] bg-brand hover:bg-brand-dark px-4 text-sm font-medium text-white">Appliquer</button>
-        <Link href={cleared ? `${action}?${cleared}` : action} className="flex min-h-[44px] items-center justify-center text-sm text-ink-2 underline-offset-2 hover:underline">Effacer</Link>
+        <div className="flex items-center gap-3">
+          <button type="submit" className="h-[44px] flex-1 rounded-[9px] bg-brand hover:bg-brand-dark px-4 text-sm font-medium text-white">Appliquer</button>
+          <Link href={cleared ? `${action}?${cleared}` : action} className="flex min-h-[44px] items-center justify-center px-2 text-sm text-ink-2 underline-offset-2 hover:underline">Effacer</Link>
+        </div>
       </form>
       {query.ignored.map((m) => <p key={m} role="note" className="text-sm text-caution">{m}</p>)}
       {active.length > 0 && (

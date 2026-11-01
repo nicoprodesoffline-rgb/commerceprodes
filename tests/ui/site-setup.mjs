@@ -68,6 +68,53 @@ export async function makePoteletQuoteOnly(nameOrUrl, rateId = "rq-402", amount 
   }
 }
 
+/**
+ * Base de TEST seulement : ajoute `count` familles clonées (1 article chacune, même catégorie que « panneau-paliers ») à la génération ACTIVE, pour qu'une fiche porte
+ * 8 produits similaires et plus. Clés publiques valides (contrôle C0), document recanonisé, SHA recalculé ; garde d'immutabilité suspendu le temps de la transaction.
+ * Renvoie `[{ slug, key }]` (clé de famille).
+ */
+export async function addCloneFamilies(nameOrUrl, count) {
+  const { createRequire } = await import("node:module");
+  const require = createRequire(import.meta.url);
+  const snapshot = require("../../c0/ts/dist/src/snapshot.js");
+  const jsonc = require("../../c0/ts/dist/src/jsonc.js");
+  const identity = require("../../c0/ts/dist/src/identity.js");
+  const client = new pg.Client({ connectionString: dbUrl(nameOrUrl) });
+  await client.connect();
+  try {
+    const row = (await client.query("SELECT id, snapshot_bytes FROM site_generation WHERE status = 'ACTIVE'")).rows[0];
+    const doc = jsonc.parseBytes(new Uint8Array(row.snapshot_bytes), 1 << 24);
+    const base = doc.families[0];
+    const made = [];
+    for (let i = 1; i <= count; i += 1) {
+      const key = identity.makeKey("family", 5000 + i);
+      const clone = JSON.parse(JSON.stringify(base));
+      clone.public_family_key = key;
+      clone.slug = `clone-${i}`;
+      clone.name = `STAGING_FIXTURE Clone ${i}`;
+      clone.items = clone.items.map((item, n) => ({ ...item, public_item_key: identity.makeKey("item", 6000 + i * 10 + n) }));
+      doc.families.push(clone);
+      made.push({ slug: clone.slug, key });
+    }
+    doc.manifest_counts.families += count;
+    doc.manifest_counts.items += count * base.items.length;
+    doc.payload_sha256 = snapshot.payloadSha256(doc);
+    await client.query("BEGIN");
+    await client.query("SET CONSTRAINTS ALL DEFERRED");
+    await client.query("ALTER TABLE site_generation DISABLE TRIGGER site_generation_immutable");
+    await client.query("UPDATE site_generation SET snapshot_bytes = $1, snapshot_json = $2::jsonb, payload_sha256 = $3 WHERE id = $4", [Buffer.from(jsonc.canonicalBytes(doc)), JSON.stringify(doc), doc.payload_sha256, row.id]);
+    await client.query("UPDATE site_active_pointer SET payload_sha256 = $1 WHERE singleton = 1", [doc.payload_sha256]);
+    await client.query("ALTER TABLE site_generation ENABLE TRIGGER site_generation_immutable");
+    await client.query("COMMIT");
+    return made;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
 export async function activateOverHttp(base, caseId) {
   process.env.SITE_TEST_DATABASE_URL ??= dbUrl("prodes_site_bc3_test"); // lu par tests/bc2/helpers.mjs à l'import
   const { loadCase, mediaHeaders } = await import("../bc2/helpers.mjs");

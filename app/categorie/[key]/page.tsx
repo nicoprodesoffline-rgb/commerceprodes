@@ -75,7 +75,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
         <div className="min-w-0 space-y-4 lg:w-60 lg:shrink-0">
           <CategorySidebar roots={nav.menu} current={key} />
           {families.length > 0 && <ListingControls formId="category-filters" action={`/categorie/${key}`} query={query} />}
-          <QuickOrder />
+          <div className="hidden lg:block"><QuickOrder /></div>
         </div>
         <div className="min-w-0 flex-1 space-y-4">
           {families.length === 0 ? (
@@ -88,6 +88,8 @@ export default async function CategoryPage({ params, searchParams }: { params: P
             <FamilyGrid prices families={listing.rows.map((r) => ({ ...familyCard(r.family), from: r.price }))} label={`Familles de la catégorie ${cat.name}`} notes={notes} />
           )}
           <Pager action={`/categorie/${key}`} params={pageParams} page={listing.page} pages={listing.pages} />
+          {/* Sur mobile, la commande rapide passe après les produits (elle gardait trois blocs avant la liste) */}
+          <div className="lg:hidden"><QuickOrder /></div>
         </div>
       </div>
     </div>

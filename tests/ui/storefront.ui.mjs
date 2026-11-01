@@ -9,10 +9,12 @@ import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
-import { mkdirSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import pg from "pg";
-import { activateOverHttp, dbUrl, makePoteletQuoteOnly, resetSiteDb } from "./site-setup.mjs";
+import { activateOverHttp, addCloneFamilies, dbUrl, makePoteletQuoteOnly, resetSiteDb } from "./site-setup.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const PORT = Number(process.env.SITE_TEST_PORT ?? 3361);
@@ -45,6 +47,8 @@ async function portAnswers() {
   }
 }
 
+const CONTENT_DIR = mkdtempSync(path.join(tmpdir(), "prodes-ui-content-"));
+
 async function startServer() {
   assert.equal(await portAnswers(), false, `port ${PORT} occupé`);
   const child = spawn(process.execPath, [path.join(ROOT, "node_modules/next/dist/bin/next"), "start", "-H", "127.0.0.1", "-p", String(PORT)], {
@@ -60,6 +64,7 @@ async function startServer() {
       SITE_DATABASE_URL: dbUrl(DB),
       SITE_CATALOG_SOURCE: "db",
       SITE_BUSINESS_PERSISTENCE: "postgresql",
+      SITE_CONTENT_DIR: CONTENT_DIR,
     },
     stdio: ["ignore", "ignore", "pipe"],
   });
@@ -667,7 +672,8 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     // Fiche : « Prix sur devis », aucune action d'achat, aucun montant de convention.
     await page.goto(BASE + "/famille/potelet-paliers");
     await page.getByTestId("product-price-quote").getByText("Prix sur devis", { exact: true }).waitFor();
-    await page.getByTestId("qty-price").getByText(/Prix sur devis/).waitFor();
+    await page.getByTestId("qty-price").getByText(/Vendu sur devis/).waitFor();
+    assert.equal(await page.getByTestId("price-quote-only").count(), 0, "une seule formulation : l'étiquette et une phrase");
     assert.equal(await page.getByRole("button", { name: "Ajouter au panier" }).count(), 0, "pas d'ajout au panier");
     assert.doesNotMatch(await page.locator("body").innerText(), /0[,.]01\s*€|\b0[,.]01\b/, "le montant de convention n'est jamais affiché");
     await shot(page, "U13-fiche-prix-sur-devis");
@@ -701,6 +707,39 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.getByTestId("flow-blocked").waitFor();
     await shot(page, "U13-commande-bloquee");
     await page.context().close();
+  });
+
+  test("U14 — aucune fiche ne défile en largeur : 8 produits complémentaires, 8 de montée en gamme et 8 similaires (1440 et 390 px)", async () => {
+    await scene("F_SELL_WINDOWS.activate");
+    const clones = await addCloneFamilies(DB, 32);
+    const source = "PF-000000CHM"; // « panneau-paliers »
+    const binary = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+    const relations = [
+      ...clones.slice(0, 4).map((c, n) => ({ source, target: c.key, kind: "LIE", order: n + 1 })),
+      ...clones.slice(4, 8).map((c, n) => ({ source, target: c.key, kind: "COMPLEMENTAIRE", order: n + 1 })),
+      ...clones.slice(8, 16).map((c, n) => ({ source, target: c.key, kind: "UPSELL", order: n + 1 })),
+    ].sort((a, b) => binary(a.source, b.source) || binary(a.kind, b.kind) || a.order - b.order || binary(a.target, b.target)); // ordre canonique exigé par le lecteur
+    const publicationId = "77777777-7777-4777-8777-777777777777";
+    const file = `${String(1).padStart(12, "0")}-${publicationId}.json`;
+    const bytes = Buffer.from(JSON.stringify({ contract_version: "site_content.v1", generation: 1, publication_id: publicationId, catalogue_sequence: null, pages: [], merchandising: relations }, null, 2) + "\n");
+    writeFileSync(path.join(CONTENT_DIR, file), bytes);
+    writeFileSync(path.join(CONTENT_DIR, file.replace(/\.json$/, ".ready.json")), JSON.stringify({ contract_version: "site_content.v1", generation: 1, publication_id: publicationId, file, sha256: createHash("sha256").update(bytes).digest("hex") }));
+    for (const [vp, size] of [["desktop", VIEWPORTS.desktop], ["mobile", VIEWPORTS.mobile]]) {
+      const page = await newPage(size);
+      await page.goto(BASE + "/famille/panneau-paliers");
+      for (const [heading, id] of [["Produits complémentaires", "related-h"], ["Montée en gamme", "upsell-h"], ["Produits similaires", "similar-h"]]) {
+        const sectionOf = page.locator(`section[aria-labelledby="${id}"]`);
+        await sectionOf.waitFor();
+        assert.equal(await sectionOf.getByRole("heading", { name: heading }).count(), 1, `${heading} (${vp})`);
+        assert.equal(await sectionOf.locator("[role=region] ul > li").count(), 8, `${heading} : 8 cartes (${vp})`);
+        const inner = await sectionOf.locator("[role=region]").evaluate((e) => ({ scroll: e.scrollWidth, client: e.clientWidth }));
+        assert.ok(inner.scroll > inner.client, `${heading} : la rangée défile DANS son cadre (${inner.scroll} > ${inner.client}) (${vp})`);
+      }
+      const widths = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth, inner: window.innerWidth }));
+      assert.ok(widths.doc <= widths.inner, `la page ne défile pas en largeur (${widths.doc} px pour ${widths.inner}) (${vp})`);
+      await shot(page, `U14-fiche-8-cartes-${vp}`);
+      await page.context().close();
+    }
   });
 
   test("U8 — aucune erreur console (dont violations CSP) sur l'ensemble du parcours", async () => {

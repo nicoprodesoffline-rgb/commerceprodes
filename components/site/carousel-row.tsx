@@ -43,7 +43,7 @@ export function CarouselRow({ label, children }: { label: string; children: Reac
           <button type="button" aria-label="Suivant" aria-controls={id} disabled={position.end} onClick={() => move(1)} className={button}>→</button>
         </div>
       )}
-      <div id={id} ref={row} tabIndex={0} role="region" aria-label={label} className="w-full min-w-0 snap-x snap-mandatory overflow-x-auto pb-3">
+      <div id={id} ref={row} tabIndex={0} role="region" aria-label={label} className="relative w-full min-w-0 snap-x snap-mandatory overflow-x-auto pb-3">
         <ul className="flex gap-4 [overflow-wrap:anywhere] [&>li]:w-[min(82vw,340px)] [&>li]:shrink-0 [&>li]:snap-start [&_img]:aspect-square [&_img]:object-contain [&_[data-testid=media-missing]]:aspect-square">{children}</ul>
       </div>
     </div>
