@@ -35,7 +35,7 @@ export async function GET(req: Request) {
   const nav = navigationOf(catalog);
   const { found, missing } = lookUp(
     slugs, (s) => catalog.familyBySlug(s), (f) => familyPrice(catalog, f, now),
-    (p) => (p === null ? "Sur devis" : `À partir de ${price(p.amount, p.basis)}`),
+    (p) => (p === null ? "Sur devis" : `À partir de ${price(p.amount, p.basis)}${p.pack ? ` · ${p.pack}` : ""}`),
     (f) => nav.node(nav.anchor(f.primary_category_key) ?? "")?.name ?? null,
   );
   return json({ families: found, missing });

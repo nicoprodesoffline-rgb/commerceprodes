@@ -1,6 +1,7 @@
 "use client";
 
 import { NO_AXIS_VALUE, axisValue, money, parisDate, price, totalBasisLabel, uniformBasis } from "@/components/site/format";
+import { packValue } from "@/lib/site-catalog/conditionnement";
 import { shortRef } from "@/lib/site-catalog/short-ref";
 
 type ReceiptLine = { public_item_key: string; variant_axes: Record<string, string>; quantity: number; priced?: boolean; unit_amount?: string | null; tax_basis_or_status?: string | null; line_total?: string | null };
@@ -11,6 +12,7 @@ export function ReceiptDetails({ receipt, isOrder }: { receipt: ReceiptData; isO
   const lines = receipt.lines ?? [];
   const bases = lines.filter((l) => l.unit_amount).map((l) => l.tax_basis_or_status);
   const common = uniformBasis(bases);
+  const anyPack = lines.some((l) => packValue(l.variant_axes) !== null); // conditionnement : montant de l'article entier, pas un prix unitaire
   return (
     <div className="min-w-0 space-y-3" data-testid="receipt-details">
       {receipt.created_at_utc && (
@@ -24,7 +26,7 @@ export function ReceiptDetails({ receipt, isOrder }: { receipt: ReceiptData; isO
               <th scope="col" className="py-2 pr-2 font-medium">Référence</th>
               <th scope="col" className="py-2 pr-2 font-medium">Variante</th>
               <th scope="col" className="py-2 pr-2 text-right font-medium">Quantité</th>
-              <th scope="col" className="py-2 pr-2 text-right font-medium">Prix unitaire</th>
+              <th scope="col" className="py-2 pr-2 text-right font-medium">{anyPack ? "Prix" : "Prix unitaire"}</th>
               {isOrder && <th scope="col" className="py-2 text-right font-medium">Total ligne</th>}
             </tr>
           </thead>

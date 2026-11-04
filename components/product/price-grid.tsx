@@ -20,8 +20,8 @@ export type PriceGridRow = {
   validity_label: string | null;
 };
 
-/** `showBasis` : chaque ligne porte sa base fiscale (défaut) ; faux = la base est dite UNE fois par le bandeau de la fiche (`BasisNotice`, friction 14). */
-export function PriceGrid({ rows, selectedRateId, caption = "Prix selon la quantité", showBasis = true }: { rows: PriceGridRow[]; selectedRateId?: string | null; caption?: string; showBasis?: boolean }) {
+/** `pack` : l'Item est un conditionnement (lot, X+Y) : le montant est celui de l'article entier, la colonne ne s'appelle pas « Prix unitaire ». `showBasis` : chaque ligne porte sa base fiscale (défaut) ; faux = la base est dite UNE fois par le bandeau de la fiche (`BasisNotice`, friction 14). */
+export function PriceGrid({ rows, selectedRateId, caption = "Prix selon la quantité", showBasis = true, pack = false }: { rows: PriceGridRow[]; selectedRateId?: string | null; caption?: string; showBasis?: boolean; pack?: boolean }) {
   if (!rows.some((r) => r.selected)) {
     // « Prix sur devis » : l'étiquette près du prix et la phrase du bloc d'achat le disent déjà ; pas de troisième formulation ici.
     if (rows.length > 0 && rows.every((r) => r.error_codes.includes("QUOTE_ONLY"))) return null;
@@ -38,7 +38,7 @@ export function PriceGrid({ rows, selectedRateId, caption = "Prix selon la quant
         <thead>
           <tr className="border-b border-line-strong text-left text-xs text-ink-2">
             <th scope="col" className="py-3 pr-3 font-medium">Quantité</th>
-            <th scope="col" className="py-3 text-right font-medium">Prix unitaire</th>
+            <th scope="col" className="py-3 text-right font-medium">{pack ? "Prix" : "Prix unitaire"}</th>
           </tr>
         </thead>
         <tbody>

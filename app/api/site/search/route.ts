@@ -36,7 +36,7 @@ export async function GET(req: Request) {
   const nav = navigationOf(catalog);
   const results = suggestionsOf(
     found,
-    (p) => (p === null ? "Sur devis" : `À partir de ${price(p.amount, p.basis)}`),
+    (p) => (p === null ? "Sur devis" : `À partir de ${price(p.amount, p.basis)}${p.pack ? ` · ${p.pack}` : ""}`),
     (f) => nav.node(nav.anchor(f.primary_category_key) ?? "")?.name ?? null,
     (f) => familyPrice(catalog, f, now),
   );

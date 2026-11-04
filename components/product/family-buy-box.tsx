@@ -11,6 +11,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MAX_QUANTITY, useCart } from "@/components/cart/cart-provider";
 import { minimumQuantity } from "@/components/product/minimum-quantity";
 import { isUnpricedOnly } from "@/lib/site-catalog/quote-only";
+import { packValue } from "@/lib/site-catalog/conditionnement";
 import { shortRef } from "@/lib/site-catalog/short-ref";
 import { PriceGrid, type PriceGridRow } from "@/components/product/price-grid";
 import { VariantSelector, type SelectorAxis } from "@/components/product/variant-selector";
@@ -147,6 +148,8 @@ export function FamilyBuyBox({
   }, [feedback]);
 
   if (!item) return <p>Ce produit est momentanément indisponible.</p>;
+  // Item d'un conditionnement (lot, X+Y) : son prix est celui de l'article entier, jamais un prix à l'unité (le montant C0 s'appelle `unit_amount` : on n'écrit pas « l'unité »).
+  const pack = packValue(item.variant_axes);
   const inCart = lines.find((l) => l.public_item_key === item.public_item_key);
   // « Prix sur devis » (fenêtre `rq-`) : aucun montant, pas d'« Ajouter au panier » ; la demande de devis part directement de la fiche.
   const quoteOnly =
@@ -168,7 +171,7 @@ export function FamilyBuyBox({
       else if (r.status === 200 && l?.accepted && l.selection && r.json) {
         add(draft, r.json.catalogue_sequence, { announce: !toQuote, opener });
         if (toQuote) { router.push("/devis"); return; }
-        setFeedback({ kind: "ok", text: `Ajouté au panier — ${quantity} × ${axesText(item.axes)}, ${unit(l.selection.unit_amount, l.selection.tax_basis_or_status)} l'unité.` });
+        setFeedback({ kind: "ok", text: `Ajouté au panier — ${quantity} × ${axesText(item.axes)}, ${unit(l.selection.unit_amount, l.selection.tax_basis_or_status)}${pack ? " chacun" : " l'unité"}.` });
       } else if (r.status === 200 && l && r.json && isUnpricedOnly(l.error_codes)) {
         add(draft, r.json.catalogue_sequence, { announce: !toQuote, opener });
         if (toQuote) { router.push("/devis"); return; }
@@ -199,7 +202,7 @@ export function FamilyBuyBox({
           {priced?.selection && (
             <p className="tabular text-3xl font-semibold text-[color:var(--color-brand,#a71c19)]" data-testid="product-price">
               {price(priced.selection.unit_amount, priced.selection.tax_basis_or_status)}
-              <span className="mt-1 block text-sm font-normal text-ink-2">l’unité</span>
+              <span className="mt-1 block text-sm font-normal text-ink-2" data-testid="price-unit-note">{pack ?? "l’unité"}</span>
             </p>
           )}
         </div>
@@ -267,7 +270,7 @@ export function FamilyBuyBox({
               <span className="text-signal" data-codes={current.codes.join(" ")}>{current.text}</span>
             ) : priced?.selection ? (
               <span>
-                Pour {quantity} : <strong>{unit(priced.selection.unit_amount, priced.selection.tax_basis_or_status)}</strong> l&apos;unité
+                Pour {pack ? <>{quantity} × {pack}</> : quantity} : <strong>{unit(priced.selection.unit_amount, priced.selection.tax_basis_or_status)}</strong> {pack ? "chacun" : <>l&apos;unité</>}
                 {priced.line_total ? <>, soit {money(priced.line_total)} {basisLabel(priced.selection.tax_basis_or_status)} pour la ligne</> : null}.
               </span>
             ) : quoteOnly ? (
@@ -289,7 +292,7 @@ export function FamilyBuyBox({
             )}
             {!feedback && inCart && <p className="text-ink-2">Déjà dans le panier : {inCart.quantity} (un nouvel ajout s&apos;additionne à cette ligne).</p>}
           </div>
-          <PriceGrid rows={item.rows} selectedRateId={priced?.selection?.rate_id ?? null} />
+          <PriceGrid pack={pack !== null} rows={item.rows} selectedRateId={priced?.selection?.rate_id ?? null} />
           {description && <p className="whitespace-pre-line leading-relaxed text-ink-2">{description}</p>}
           {children}
         </div>

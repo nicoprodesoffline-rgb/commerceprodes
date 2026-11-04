@@ -14,7 +14,7 @@ import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import pg from "pg";
-import { activateOverHttp, addCloneFamilies, assertImmutabilityGuardEnabled, addRootCategories, dbUrl, makeGmceMixed, makePoteletQuoteOnly, resetSiteDb } from "./site-setup.mjs";
+import { activateOverHttp, addCloneFamilies, assertImmutabilityGuardEnabled, addRootCategories, dbUrl, makeGmceMixed, makeGmcePacks, makePoteletQuoteOnly, resetSiteDb } from "./site-setup.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const PORT = Number(process.env.SITE_TEST_PORT ?? 3361);
@@ -805,6 +805,48 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.locator('label:has(input[value="Accessoire"])').click();
     await page.getByTestId("selected-variant").getByText("Couleur : Rouge · Type : Accessoire").waitFor();
     assert.equal(((await page.locator("main").innerText()).toLowerCase()).includes("rv-none"), false);
+    await page.context().close();
+  });
+
+  test("U19 — conditionnements (lots) : valeurs rangées par la vitrine, Unitaire présélectionné, jamais « l'unité » pour un lot, total = prix du lot × quantité, « À partir de » d'une famille à lots seuls", async () => {
+    await scene("F_GMCE_VARIANTS.activate");
+    const keys = await makeGmcePacks(DB);
+    const flat = (s) => s.replace(/\s+/g, " ");
+    const page = await newPage();
+    await page.goto(BASE + "/famille/gmce-demo");
+    await page.getByTestId("variant-selector").waitFor();
+    assert.deepEqual(await page.locator("[data-testid=variant-selector] fieldset").evaluateAll((els) => els.map((e) => e.getAttribute("data-axis"))), ["couleur", "taille", "conditionnement"], "l'axe vient en dernier");
+    assert.deepEqual(await page.locator('fieldset[data-axis="conditionnement"] input[type=radio]').evaluateAll((els) => els.map((e) => e.value)), ["Unitaire", "Lot de 11", "Lot de 20"], "ordre proposé : sans chiffre, puis le premier entier croissant");
+    assert.equal(await page.locator('fieldset[data-axis="conditionnement"] input[value="Unitaire"]').isChecked(), true, "Unitaire présélectionné");
+    assert.equal(flat(await page.locator("main").innerText()).toLowerCase().includes("l'unité"), false, "un article de conditionnement ne se dit pas « l'unité »");
+    assert.equal(flat(await page.locator("main").innerText()).includes("Prix unitaire"), false);
+    await shot(page, "U19-unitaire-presélectionné");
+    await page.locator('label:has(input[value="Lot de 11"])').click();
+    assert.match(page.url(), new RegExp(`\\?article=${keys.lot10}$`));
+    await page.getByTestId("product-price").getByText("110,00").waitFor();
+    assert.equal(flat(await page.getByTestId("product-price").innerText()).includes("Lot de 11"), true, "le prix est dit pour le « Lot de 11 »");
+    await page.locator("input[id^=qty-]").fill("2");
+    await page.getByTestId("qty-price").getByText(/Pour 2 × Lot de 11/).waitFor();
+    assert.match(flat(await page.getByTestId("qty-price").innerText()), /Pour 2 × Lot de 11 : 110,00 €.* chacun, soit 220,00 €.* pour la ligne/);
+    assert.equal(flat(await page.locator("main").innerText()).includes("Prix unitaire"), false, "la grille ne dit pas « Prix unitaire »");
+    await shot(page, "U19-lot-de-10-quantite-2");
+    await page.getByRole("button", { name: "Ajouter au panier" }).click();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier — 2 × .*Conditionnement : Lot de 11, 110,00.*chacun\./).waitFor();
+    await page.goto(BASE + "/panier");
+    const cart = page.getByTestId("cart-line").first();
+    await cart.waitFor();
+    await cart.getByText(/220,00/).first().waitFor();
+    const cartText = flat(await cart.innerText());
+    assert.match(cartText, /Conditionnement : Lot de 11/);
+    assert.match(cartText, /220,00 €/, "total de ligne = prix du lot × 2");
+    assert.equal(flat(await page.locator("main").innerText()).includes("Prix unitaire"), false, "le panier ne dit pas « Prix unitaire » pour un lot");
+    await shot(page, "U19-panier-lot");
+    // Famille à lots seuls : le plus petit lot présélectionné, et le « à partir de » dit que c'est le prix d'un lot.
+    await page.goto(BASE + "/famille/lots-seuls");
+    await page.getByTestId("variant-selector").waitFor();
+    assert.equal(await page.locator('fieldset[data-axis="conditionnement"] input[value="Lot de 7"]').isChecked(), true);
+    const found = await (await page.request.get(BASE + "/api/site/search?q=lots")).json();
+    assert.match(JSON.stringify(found), /À partir de 50,00\s€[^"]*·\sLot de 7/);
     await page.context().close();
   });
 

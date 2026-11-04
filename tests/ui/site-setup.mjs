@@ -127,6 +127,62 @@ export async function makeGmceMixed(nameOrUrl) {
   }
 }
 
+/**
+ * Conditionnements (MW-04) : la famille « gmce-demo » reçoit l'axe « conditionnement » (ses articles = « Unitaire ») et deux lots du premier article, publiés par la Factory comme des Items
+ * ordinaires (clé propre, prix du lot entier) ; une seconde famille « lots-seuls » ne vend que des lots. Les clés des lots sont plus grandes que celles des articles et le « Lot de 20 »
+ * précède le « Lot de 11 » (C0 range les Items par clé) : l'ordre d'affichage est donc celui de la vitrine. Montants fictifs. Document recanonisé, SHA recalculé.
+ */
+export async function makeGmcePacks(nameOrUrl) {
+  const { createRequire } = await import("node:module");
+  const require = createRequire(import.meta.url);
+  const snapshot = require("../../c0/ts/dist/src/snapshot.js");
+  const jsonc = require("../../c0/ts/dist/src/jsonc.js");
+  const identity = require("../../c0/ts/dist/src/identity.js");
+  const client = new pg.Client({ connectionString: dbUrl(nameOrUrl) });
+  await client.connect();
+  try {
+    const row = (await client.query("SELECT id, snapshot_bytes FROM site_generation WHERE status = 'ACTIVE'")).rows[0];
+    const doc = jsonc.parseBytes(new Uint8Array(row.snapshot_bytes), 1 << 24);
+    const family = doc.families.find((f) => f.slug === "gmce-demo");
+    family.axes.push({ axis_key: "conditionnement", label: "Conditionnement" });
+    for (const item of family.items) item.variant_axes.conditionnement = "Unitaire";
+    const pack = (source, n, axes, rate, amount) => {
+      const item = JSON.parse(JSON.stringify(source));
+      item.public_item_key = identity.makeKey("item", n);
+      item.variant_axes = axes;
+      item.public_sell_price_windows = [{ ...source.public_sell_price_windows[0], rate_id: rate, unit_amount: amount }];
+      return item;
+    };
+    const first = family.items[0];
+    const lot20 = pack(first, 7101, { ...first.variant_axes, conditionnement: "Lot de 20" }, "R-PACK-20", "200.00");
+    const lot10 = pack(first, 7102, { ...first.variant_axes, conditionnement: "Lot de 11" }, "R-PACK-10", "110.00");
+    family.items.push(lot20, lot10);
+    const only = JSON.parse(JSON.stringify(family));
+    only.public_family_key = identity.makeKey("family", 5201);
+    only.slug = "lots-seuls";
+    only.name = "STAGING_FIXTURE Lots seuls";
+    only.axes = [{ axis_key: "conditionnement", label: "Conditionnement" }];
+    only.items = [pack(first, 7201, { conditionnement: "Lot de 13" }, "R-PACK-L13", "90.00"), pack(first, 7202, { conditionnement: "Lot de 7" }, "R-PACK-L7", "50.00")];
+    doc.families.push(only);
+    doc.manifest_counts.families += 1;
+    doc.manifest_counts.items += 4;
+    doc.payload_sha256 = snapshot.payloadSha256(doc);
+    await client.query("BEGIN");
+    await client.query("SET CONSTRAINTS ALL DEFERRED");
+    await client.query("ALTER TABLE site_generation DISABLE TRIGGER site_generation_immutable");
+    await client.query("UPDATE site_generation SET snapshot_bytes = $1, snapshot_json = $2::jsonb, payload_sha256 = $3 WHERE id = $4", [Buffer.from(jsonc.canonicalBytes(doc)), JSON.stringify(doc), doc.payload_sha256, row.id]);
+    await client.query("UPDATE site_active_pointer SET payload_sha256 = $1 WHERE singleton = 1", [doc.payload_sha256]);
+    await client.query("ALTER TABLE site_generation ENABLE TRIGGER site_generation_immutable");
+    await client.query("COMMIT");
+    return { lot10: lot10.public_item_key, lot20: lot20.public_item_key, unit: first.public_item_key };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
 async function addClones(nameOrUrl, count, ownCategory) {
   const { createRequire } = await import("node:module");
   const require = createRequire(import.meta.url);

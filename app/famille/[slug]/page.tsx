@@ -1,3 +1,4 @@
+import { firstByPack } from "@/lib/site-catalog/conditionnement";
 import "@/components/product/product-sheet.css";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -107,7 +108,7 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
         description={family.description_short}
         schema={selectorAxes(family)}
         items={items}
-        initialKey={preselected}
+        initialKey={preselected ?? firstByPack(items)}
         gallery={<Gallery familyName={family.name} images={images} />}
         notice={notice && (
           <div role="status" className="mb-6 border border-caution bg-white p-4 text-sm" data-testid="article-notice">

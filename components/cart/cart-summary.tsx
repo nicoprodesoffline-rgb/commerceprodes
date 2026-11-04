@@ -10,6 +10,7 @@ import { MAX_QUANTITY, type DraftLine } from "@/components/cart/cart-provider";
 import { bases } from "@/components/cart/use-cart-preview";
 import { codeMessage, reportCodes } from "@/components/site/codes";
 import { axesText, money, price, totalBasisLabel, uniformBasis } from "@/components/site/format";
+import { packValue } from "@/lib/site-catalog/conditionnement";
 import { shortRef } from "@/lib/site-catalog/short-ref";
 import type { PreviewJson, PreviewLineJson } from "@/lib/site-business/client-types";
 
@@ -64,6 +65,8 @@ export function CartLines({
   const priced = pls ? pls.filter((l) => l.accepted).length : 0;
   // Une seule base fiscale pour toutes les lignes chiffrées : dite une fois par le bandeau et sur le total ; sinon chaque ligne porte la sienne (friction 14).
   const common = pls ? uniformBasis(pls.filter((l) => l.accepted && l.selection).map((l) => l.selection!.tax_basis_or_status)) : ({ uniform: false } as const);
+  // Au moins une ligne est un conditionnement (lot, X+Y) : son montant est celui de l'article entier, la colonne ne dit pas « Prix unitaire ».
+  const anyPack = lines.some((l) => packValue(l.variant_axes) !== null);
   return (
     <div className="space-y-2">
     <div className="overflow-hidden rounded-[14px] border border-line bg-white">
@@ -73,7 +76,7 @@ export function CartLines({
           <tr>
             <th scope="col" className="px-3 py-2 font-medium">Article</th>
             <th scope="col" className="px-3 py-2 font-medium">Quantité</th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">Prix unitaire</th>
+            <th scope="col" className="px-3 py-2 text-right font-medium">{anyPack ? "Prix" : "Prix unitaire"}</th>
             <th scope="col" className="px-3 py-2 text-right font-medium">Total ligne</th>
             {editable && <th scope="col" className="px-3 py-2"><span className="sr-only">Action</span></th>}
           </tr>
@@ -115,7 +118,7 @@ export function CartLines({
                   )}
                 </td>
                 <td className="text-right sm:px-3 sm:py-3">
-                  <span className="block text-xs text-ink-3 sm:hidden">Prix unitaire</span>
+                  <span className="block text-xs text-ink-3 sm:hidden">{packValue(l.variant_axes) !== null ? "Prix" : "Prix unitaire"}</span>
                   {loading || !pls ? <span className="text-ink-3">…</span> : sel ? (common.uniform ? money(sel.unit_amount) : price(sel.unit_amount, sel.tax_basis_or_status)) : <span className="text-ink-2">{pl?.error_codes.includes("QUOTE_ONLY") ? "sur devis" : "sans prix"}</span>}
                 </td>
                 <td className="text-right font-semibold sm:px-3 sm:py-3">

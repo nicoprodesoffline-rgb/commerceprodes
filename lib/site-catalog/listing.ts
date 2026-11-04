@@ -8,7 +8,8 @@
  */
 import type { Family } from "./catalog";
 
-export type FamilyPrice = { amount: string; basis: string | null } | null;
+/** `pack` : valeur de conditionnement de l'Item le moins cher quand la Famille a l'axe « conditionnement » (le prix « à partir de » est alors celui d'un conditionnement, pas d'une unité). */
+export type FamilyPrice = { amount: string; basis: string | null; pack?: string } | null;
 
 export function cents(amount: string): bigint | null {
   const m = /^(\d+)\.(\d{2})$/.exec(amount);

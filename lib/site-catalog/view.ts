@@ -8,6 +8,7 @@ import { selectPriceOnServed } from "@/lib/site-db/select-price";
 import type { C0Generation } from "@/lib/site-business/validate";
 import type { Family, Item, PriceWindow } from "./catalog";
 import { QUOTE_ONLY_CODE, isQuoteOnlyRate } from "./quote-only";
+import { PACK_AXIS, sortPackValues } from "./conditionnement";
 import { isShown } from "./variant-choice";
 
 const PARIS = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", dateStyle: "short", timeStyle: "short" });
@@ -87,6 +88,6 @@ export function selectorAxes(f: Family): SelectorAxis[] {
       const v = i.variant_axes[a.axis_key];
       if (isShown(v) && !values.includes(v)) values.push(v); // la valeur réservée « pas de valeur » n'est jamais une pastille
     }
-    return { axis: a.axis_key, label: a.label, values };
+    return { axis: a.axis_key, label: a.label, values: a.axis_key === PACK_AXIS ? sortPackValues(values) : values };
   });
 }

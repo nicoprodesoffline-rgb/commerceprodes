@@ -23,7 +23,7 @@ export function FamilyCard({ data, note, from, category, showBasis = true }: { d
           <span className="mt-2 line-clamp-2 text-sm text-ink-2">{data.description}</span>
           {from !== undefined && (
             <span className="mt-4 text-base" data-testid="family-price">
-              {from === null ? <span className="font-medium text-ink-2">Sur devis</span> : <><span className="text-ink-3">À partir de </span><span className="tabular font-semibold text-ink">{showBasis ? price(from.amount, from.basis) : money(from.amount)}</span></>}
+              {from === null ? <span className="font-medium text-ink-2">Sur devis</span> : <><span className="text-ink-3">À partir de </span><span className="tabular font-semibold text-ink">{showBasis ? price(from.amount, from.basis) : money(from.amount)}</span>{from.pack && <span className="text-ink-3" data-testid="family-price-pack"> · {from.pack}</span>}</>}
             </span>
           )}
           <span className="mt-auto flex items-center justify-between pt-3 text-xs text-ink-3">
