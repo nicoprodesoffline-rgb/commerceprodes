@@ -28,6 +28,13 @@ export function publicOrigin(value: string | undefined): string | null {
   }
 }
 
+/** Avertissement de démarrage (décision du 17/11) : sans origine publique valide, le plan du site reste vide et il n'y a ni canonique ni adresse dans les données structurées ; jamais une adresse inventée. `null` si tout va bien. */
+export function originWarning(value: string | undefined): string | null {
+  if (publicOrigin(value) !== null) return null;
+  const state = value === undefined || value === "" ? "absent" : "invalide";
+  return `SITE_PUBLIC_ORIGIN ${state} : plan du site, canonique et données structurées désactivés`;
+}
+
 export function absolute(origin: string | null, path: string): string | null {
   return origin === null ? null : origin + path;
 }
