@@ -7,7 +7,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test:nav:unit": "node --test tests/nav/*.test.mjs",
-    "test:nav": "npm run c0:build && next build && node --test --test-concurrency=1 tests/nav/*.test.mjs tests/nav/navigation.http.mjs",
+    "test:nav": "npm run c0:build && next build && node --test --test-concurrency=1 tests/nav/*.test.mjs tests/nav/navigation.http.mjs tests/nav/seo.http.mjs",
     "test:content": "npm run c0:build && next build && node --test --test-concurrency=1 tests/nav/*.test.mjs tests/http/site-content.test.mjs tests/http/site-merchandising.test.mjs",
     "test:nav:ui": "node --test --test-concurrency=1 tests/nav/menu.ui.mjs",
     "test:http": "node --test tests/http/site.test.mjs",

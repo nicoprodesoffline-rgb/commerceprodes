@@ -17,7 +17,7 @@ async function portAnswers() {
   }
 }
 
-export async function withServer(fixture, fn, { now = "2026-10-19T06:00:00Z", file = "snapshot_nav.json" } = {}) {
+export async function withServer(fixture, fn, { now = "2026-10-19T06:00:00Z", file = "snapshot_nav.json", env = {} } = {}) {
   assert.equal(await portAnswers(), false, `port ${PORT} occupé`);
   const child = spawn(process.execPath, [path.join(ROOT, "node_modules/next/dist/bin/next"), "start", "-H", "127.0.0.1", "-p", String(PORT)], {
     cwd: ROOT,
@@ -29,6 +29,7 @@ export async function withServer(fixture, fn, { now = "2026-10-19T06:00:00Z", fi
       SITE_NOW_UTC: now,
       SITE_CATALOG_SOURCE: "fixture",
       SITE_CATALOG_FIXTURE: `${fixture}/${file}`,
+      ...env, // 3.19 : origine publique et réglage des moteurs d'un scénario
     },
     stdio: ["ignore", "ignore", "pipe"],
   });

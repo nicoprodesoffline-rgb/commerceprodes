@@ -14,6 +14,8 @@ import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogOrNull } from "@/lib/site-catalog/page";
 import { loadUniverse } from "@/lib/site-content/source";
 import { getShopSettings } from "@/lib/site-shop/source";
+import { homeJsonLd, publicOrigin, robotsDirective } from "@/lib/seo/seo";
+import { StructuredData } from "@/components/seo/structured-data";
 import "./globals.css";
 
 // Toutes les pages sont rendues à la demande : génération servie et instant serveur lus au runtime.
@@ -22,8 +24,8 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   icons: { icon: "/logo-prodes.png" },
   title: { default: "Catalogue PRODES", template: "%s | PRODES" },
-  // Aucun SEO en W1 (scope verdict : SEO = décision propriétaire) : jamais indexé.
-  robots: { index: false, follow: false },
+  // 3.19 (S10) : fermé aux moteurs tant que le réglage SITE_SEARCH_ENGINES n'est pas « open » ; l'ouverture est une décision de l'Owner.
+  robots: robotsDirective(process.env),
   // Partage social (T-T15) : titre et description sobres, jamais une marque déclarée à un moteur (C22) ni une image inventée.
   description: "Catalogue PRODES : mobilier, signalisation et équipements pour les collectivités. Livraison incluse.",
   openGraph: { type: "website", locale: "fr_FR", siteName: "PRODES", title: "Catalogue PRODES", description: "Mobilier, signalisation et équipements pour les collectivités. Livraison incluse." },
@@ -41,6 +43,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="fr">
       <body className="flex min-h-screen flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+        {/* 3.19 (S12) : Organisation et Recherche du site, sur toutes les pages ; les coordonnées viendront des réglages de la boutique (3.23). */}
+        <StructuredData value={homeJsonLd(publicOrigin(process.env.SITE_PUBLIC_ORIGIN), null)} />
         <a href="#contenu" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-[9px] focus:bg-white focus:px-4 focus:py-2">
           Aller au contenu
         </a>

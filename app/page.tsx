@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { absolute, publicOrigin } from "@/lib/seo/seo";
 import { PageSections } from "@/components/content/sections";
 import { getEditorialSet } from "@/lib/site-content/source";
 import { editorialMetadata } from "@/lib/site-content/metadata";
@@ -20,7 +21,10 @@ const HOME_FAMILIES = 12;
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = (await getEditorialSet())?.pages.find(p => p.slug === "/");
-  return page ? editorialMetadata(page, process.env.SITE_PUBLIC_ORIGIN) : {};
+  // 3.19 (S11) : l'accueil a sa canonique, même sans page éditoriale.
+  const canonical = absolute(publicOrigin(process.env.SITE_PUBLIC_ORIGIN), "/");
+  const metadata = page ? editorialMetadata({ ...page, canonical: page.canonical || "/" }, process.env.SITE_PUBLIC_ORIGIN) : {};
+  return canonical && !metadata.alternates ? { ...metadata, alternates: { canonical } } : metadata;
 }
 
 function findNode(nodes: NavNode[], match: (n: NavNode) => boolean): NavNode | null {

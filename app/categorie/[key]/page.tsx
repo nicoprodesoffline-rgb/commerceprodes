@@ -15,6 +15,7 @@ import { count } from "@/components/site/format";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
 import { MediaImage } from "@/components/site/media-image";
+import { absolute, categoryPath, publicOrigin } from "@/lib/seo/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +26,15 @@ export async function generateMetadata({ params }: { params: Promise<{ key: stri
   const cat = nav.node(key);
   // Une rubrique sans aucune famille (ni dans son sous-arbre) reste servie, mais ne doit jamais être indexée.
   const empty = cat !== null && cat.subtreeFamilyCount === 0;
-  // Cercle 3 (3.13, 3.22) : titre et description de référencement de la rubrique, quand la Factory en donne ; sinon son nom, comme avant.
-  const record = catalog.categories.find((c) => c.category_key === key);
-  return { title: record?.seo_title || cat?.name || "Catégorie introuvable", ...(record?.seo_description ? { description: record.seo_description } : {}), ...(empty ? { robots: { index: false, follow: true } } : {}) };
+  // 3.13 / 3.19 (S05) : titre et description de référencement de la rubrique (catalogue v2), sinon son nom ; adresse canonique.
+  const seo = catalog.categories.find((c) => c.category_key === key) as { seo_title?: string | null; seo_description?: string | null } | undefined;
+  const canonical = cat ? absolute(publicOrigin(process.env.SITE_PUBLIC_ORIGIN), categoryPath(key)) : null;
+  return {
+    title: seo?.seo_title || (cat?.name ?? "Catégorie introuvable"),
+    ...(seo?.seo_description ? { description: seo.seo_description } : {}),
+    ...(canonical ? { alternates: { canonical } } : {}),
+    ...(empty ? { robots: { index: false, follow: true } } : {}),
+  };
 }
 
 /** Catégorie : familles de tout le sous-arbre, classées en principal ou en secondaire (ordre du DTO). */

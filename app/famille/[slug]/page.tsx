@@ -3,7 +3,7 @@ import "@/components/product/product-sheet.css";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { FamilyCard } from "@/components/home/family-card";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { FamilyBuyBox } from "@/components/product/family-buy-box";
@@ -22,13 +22,23 @@ import { shortRef } from "@/lib/site-catalog/short-ref";
 import { priceRows, selectorAxes } from "@/lib/site-catalog/view";
 import { getEditorialSet } from "@/lib/site-content/source";
 import { relatedFamilies } from "@/lib/site-content/merchandising";
+import { absolute, familyByOldAddress, familyPath, jsonLdText, productJsonLd, publicOrigin } from "@/lib/seo/seo";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const catalog = await catalogForPage();
-  return { title: catalog.familyBySlug(slug)?.name ?? "Produit introuvable" };
+  const family = catalog.familyBySlug(slug);
+  if (!family) return { title: "Produit introuvable" };
+  // 3.13 / 3.19 (S01, S02, S11) : titre et description de référencement validés (catalogue v2), sinon le nom ; adresse canonique.
+  const seo = family as typeof family & { seo_title?: string | null; seo_description?: string | null };
+  const canonical = absolute(publicOrigin(process.env.SITE_PUBLIC_ORIGIN), familyPath(family.slug));
+  return {
+    title: seo.seo_title || family.name,
+    ...(seo.seo_description ? { description: seo.seo_description } : {}),
+    ...(canonical ? { alternates: { canonical } } : {}),
+  };
 }
 
 /**
@@ -43,7 +53,12 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   const catalog = await catalogForPage();
   const family = catalog.familyBySlug(slug);
-  if (!family) notFound();
+  if (!family) {
+    // 3.18 (S06, S07) : une adresse publiée reste valable — une ancienne adresse mène, en un seul saut permanent, à l'actuelle.
+    const moved = familyByOldAddress(catalog.families, slug);
+    if (moved) permanentRedirect(familyPath(moved.slug));
+    notFound();
+  }
   const instant = serverNowUtc();
   const labels = new Map(family.axes.map((a) => [a.axis_key, a.label]));
   const items = family.items.map((i) => ({
@@ -91,11 +106,12 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
   // Le texte court est sous le prix ; l'onglet « Description » ne reprend pas ce qu'il répète.
   const longText = descriptionRest(family.description_short ?? "", family.description_long ?? "");
   const crumbs = [{ label: "Accueil", href: "/" }, ...categoryCrumbs(catalog, family.primary_category_key), { label: family.name }];
-  // Données structurées « Fil d'Ariane » : chevrons échappés pour qu'aucune valeur ne puisse fermer la balise.
-  const breadcrumbLd = JSON.stringify({
-    "@context": "https://schema.org", "@type": "BreadcrumbList",
-    itemListElement: crumbs.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.label, ...("href" in c && c.href ? { item: c.href } : {}) })),
-  }).replace(/</g, "\\u003c");
+  // Données structurées (3.19, S11) : Produit (nom, image, prix de la première tranche, devise) et fil d'Ariane ; texte échappé.
+  const from = familyPrice(catalog, family, instant);
+  const breadcrumbLd = jsonLdText(productJsonLd({
+    origin: publicOrigin(process.env.SITE_PUBLIC_ORIGIN), name: family.name, slug: family.slug, description: family.description_short,
+    imageSha256: family.image_main_sha256, price: from?.amount ?? null, taxBasis: from?.basis ?? null, crumbs,
+  }));
   // Sur mobile la barre collante « Ajouter au panier » (48 px, à 72 px du bas) et la barre de navigation recouvrent le bas de page : on réserve leur hauteur (pb-40).
   return (
     <div className="min-w-0 pb-40 lg:pb-0">
