@@ -132,5 +132,5 @@ export async function proxy(req: NextRequest) {
 export const config = {
   // Next exige un littéral analysable statiquement : l'exclusion des routes machine est donc écrite en dur ici.
   // `(?:/|$)` : seul le préfixe exact (`/api/site/publish`, `/api/site/publish/…`) est exclu, pas `/api/site/publishX`.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/site/publish(?:/|$)|api/site/events(?:/|$)).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/site/publish(?:/|$)|api/site/content(?:/|$)|api/site/events(?:/|$)).*)"],
 };
