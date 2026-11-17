@@ -2,6 +2,7 @@
  * Configuration BC4, relue à chaque requête. Invalide = erreur explicite (HTTP 503), jamais une valeur par défaut.
  *
  *   SITE_BUSINESS_PERSISTENCE  absent → routes devis/commande A2 inchangées (`NONE_UNTIL_BC4`, jamais durables) ;
+ *                              `closed` → cercle 4 (4.15) : la demande en ligne n'est pas ouverte, 503 ONLINE_REQUEST_CLOSED, RIEN n'est lu ni écrit ;
  *                              `postgresql` → transactions BC4 durables sur SITE_DATABASE_URL ; autre valeur → 503.
  *   SITE_DATABASE_URL          base `prodes_site*` (lib/site-db/pool.ts, BC2).
  *   SITE_KEYRING_PATH          trousseau C0 pour poll/ACK (tests : c0/fixtures/keys/test_keyring.json).
@@ -13,13 +14,14 @@ export class TransactionsConfigError extends Error {
   readonly code = "TRANSACTIONS_CONFIG_INVALID";
 }
 
-export type BusinessMode = "none_until_bc4" | "postgresql";
+export type BusinessMode = "none_until_bc4" | "postgresql" | "closed";
 
 export function businessMode(env: Record<string, string | undefined> = process.env): BusinessMode {
   const raw = env["SITE_BUSINESS_PERSISTENCE"];
   if (raw === undefined || raw === "") return "none_until_bc4";
   if (raw === "postgresql") return "postgresql";
-  throw new TransactionsConfigError(`SITE_BUSINESS_PERSISTENCE doit être absente ou valoir « postgresql » (reçu : ${JSON.stringify(raw)})`);
+  if (raw === "closed") return "closed";
+  throw new TransactionsConfigError(`SITE_BUSINESS_PERSISTENCE doit être absente, « closed » ou « postgresql » (reçu : ${JSON.stringify(raw)})`);
 }
 
 export function loadEventsKeyring(env: Record<string, string | undefined> = process.env): Json {

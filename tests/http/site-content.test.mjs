@@ -29,7 +29,7 @@ async function withServer(dir, fn, { fixture = FIXTURE, origin = "https://demo.i
   assert.equal(await portAnswers(), false, `port ${PORT} occupé`);
   const child = spawn(process.execPath, [path.join(ROOT, "node_modules/next/dist/bin/next"), "start", "-H", "127.0.0.1", "-p", String(PORT)], {
     cwd: ROOT,
-    env: { PATH: process.env.PATH, HOME: process.env.HOME, NEXT_TELEMETRY_DISABLED: "1", SITE_ENV: "staging", SITE_NOW_UTC: "2026-10-19T06:00:00Z", SITE_CATALOG_SOURCE: "fixture", SITE_CATALOG_FIXTURE: fixture, ...(dir === undefined ? {} : { SITE_CONTENT_DIR: dir }), SITE_PUBLIC_ORIGIN: origin },
+    env: { PATH: process.env.PATH, HOME: process.env.HOME, NEXT_TELEMETRY_DISABLED: "1", SITE_ENV: "staging", SITE_NOW_UTC: "2026-10-19T06:00:00Z", SITE_CATALOG_SOURCE: "fixture", SITE_CATALOG_FIXTURE: fixture, ...(dir === undefined ? {} : { SITE_CONTENT_DIR: dir }), SITE_PUBLIC_ORIGIN: origin, SITE_MEMORY_MAX_AGE_SECONDS: "0" },
     stdio: ["ignore", "ignore", "pipe"],
   });
   let exited = false;

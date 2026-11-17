@@ -41,6 +41,21 @@ export function useBc4Persistence(): boolean {
   return businessMode() === "postgresql";
 }
 
+/** Cercle 4, 4.15 : enregistrement éteint — réponse 503 claire, avant toute lecture du corps et toute écriture. `null` si la demande en ligne est ouverte (ou en mode A2). */
+export function closedRefusal(): Response | null {
+  let mode;
+  try {
+    mode = businessMode();
+  } catch {
+    return null;   // configuration invalide : les routes la signalent elles-mêmes
+  }
+  if (mode !== "closed") return null;
+  return new Response(JSON.stringify({ site_status: "ONLINE_REQUEST_CLOSED", message: "La demande en ligne n'est pas encore ouverte. Rien n'a été enregistré.", persistence: "NONE", durable: false, verdict: null }), {
+    status: 503,
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+  });
+}
+
 export function businessConfigError(error: unknown, route: BusinessRoute): Response | null {
   return configError(error, route);
 }

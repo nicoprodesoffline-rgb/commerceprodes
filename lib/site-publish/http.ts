@@ -11,6 +11,8 @@
  * La porte de transport est un contrôle d'accès : elle ne remplace aucune étape C0 (le HMAC reste vérifié par
  * `evaluatePublication` à l'étape `signature`).
  */
+import { guarded } from "../site-ratelimit/machine-gate";
+import { advanceEpoch } from "../site-db/epoch";
 import { SiteDbConfigError, getPool } from "../site-db/pool";
 import { ReceiverConfigError, loadReceiverConfig } from "./config";
 import { transportGate, type HeaderSource, type ReceiverDeps, type ReceiverResponse } from "./receiver";
@@ -73,7 +75,10 @@ function loadDeps(operation: string): ReceiverDeps | Response {
 
 async function runSafely(operation: string, run: () => Promise<ReceiverResponse>): Promise<Response> {
   try {
-    return toResponse(await run());
+    const out = await run();
+    // Cercle 4 (4.11, 4.12) : une publication reçue par CE processus invalide ce que le site gardait en mémoire (réglages, redirections, résolution des images).
+    if (out.status === 200) advanceEpoch();
+    return toResponse(out);
   } catch (error) {
     const code = typeof (error as { code?: unknown }).code === "string" ? (error as { code: string }).code : "ERROR";
     console.error(`[site-publish] ${operation} échec interne code=${code}`);
@@ -83,6 +88,12 @@ async function runSafely(operation: string, run: () => Promise<ReceiverResponse>
 
 /** Opération sans corps (STATUS) : configuration, porte de transport, receiver. */
 export async function handle(operation: string, headers: HeaderSource | null, run: (deps: ReceiverDeps) => Promise<ReceiverResponse>): Promise<Response> {
+  // Cercle 4 (4.10) : garde par adresse avant tout (liste autorisée, limite de refus, débit). `headers` null (aucune route aujourd'hui) : pas de garde.
+  if (headers === null) return handleUnguarded(operation, headers, run);
+  return guarded(headers, () => handleUnguarded(operation, headers, run));
+}
+
+async function handleUnguarded(operation: string, headers: HeaderSource | null, run: (deps: ReceiverDeps) => Promise<ReceiverResponse>): Promise<Response> {
   const deps = loadDeps(operation);
   if (deps instanceof Response) return deps;
   if (headers !== null) {
@@ -94,6 +105,15 @@ export async function handle(operation: string, headers: HeaderSource | null, ru
 
 /** Opération avec corps : configuration, porte de transport (corps non lu), lecture bornée, receiver. */
 export async function handleWithBody(
+  operation: string,
+  request: Request,
+  maxBytes: number,
+  run: (deps: ReceiverDeps, body: Uint8Array) => Promise<ReceiverResponse>,
+): Promise<Response> {
+  return guarded(request.headers, () => handleWithBodyUnguarded(operation, request, maxBytes, run));
+}
+
+async function handleWithBodyUnguarded(
   operation: string,
   request: Request,
   maxBytes: number,
