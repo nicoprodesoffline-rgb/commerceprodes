@@ -50,7 +50,8 @@ export default async function HomePage() {
       key: n.key,
       name: n.name,
       familyCount: n.subtreeFamilyCount,
-      imageSha: catalog.families.find((f) => familySlugs.has(f.slug) && f.image_main_sha256)?.image_main_sha256 ?? null,
+      imageSha: catalog.categories.find((c) => c.category_key === n.key)?.image_sha256 ?? catalog.families.find((f) => familySlugs.has(f.slug) && f.image_main_sha256)?.image_main_sha256 ?? null,
+      intro: catalog.categories.find((c) => c.category_key === n.key)?.intro_text ?? null,
       children: n.children.map((s) => ({ key: s.key, name: s.name })),
     };
   });

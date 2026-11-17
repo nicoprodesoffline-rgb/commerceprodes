@@ -14,6 +14,7 @@ import { listFamilies, parseListingQuery } from "@/lib/site-catalog/listing";
 import { count } from "@/components/site/format";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
+import { MediaImage } from "@/components/site/media-image";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,9 @@ export async function generateMetadata({ params }: { params: Promise<{ key: stri
   const cat = nav.node(key);
   // Une rubrique sans aucune famille (ni dans son sous-arbre) reste servie, mais ne doit jamais être indexée.
   const empty = cat !== null && cat.subtreeFamilyCount === 0;
-  return { title: cat?.name ?? "Catégorie introuvable", ...(empty ? { robots: { index: false, follow: true } } : {}) };
+  // Cercle 3 (3.13, 3.22) : titre et description de référencement de la rubrique, quand la Factory en donne ; sinon son nom, comme avant.
+  const record = catalog.categories.find((c) => c.category_key === key);
+  return { title: record?.seo_title || cat?.name || "Catégorie introuvable", ...(record?.seo_description ? { description: record.seo_description } : {}), ...(empty ? { robots: { index: false, follow: true } } : {}) };
 }
 
 /** Catégorie : familles de tout le sous-arbre, classées en principal ou en secondaire (ordre du DTO). */
@@ -37,7 +40,10 @@ export default async function CategoryPage({ params, searchParams }: { params: P
   if (!cat) notFound();
   const children = nav.visibleChildren(cat.key);
   const slugs = new Set(nav.familySlugs(cat.key));
-  const families = catalog.families.filter((f) => slugs.has(f.slug));
+  // Ordre par défaut = celui que la Factory a donné à la rubrique (cercle 3, 3.21) ; le tri choisi par le visiteur reste possible.
+  const bySlug = new Map(catalog.families.map((f) => [f.slug, f]));
+  const families = nav.familySlugs(cat.key).flatMap((slug) => { const f = bySlug.get(slug); return f && slugs.has(slug) ? [f] : []; });
+  const record = catalog.categories.find((c) => c.category_key === key);
   const now = serverNowUtc();
   const listing = listFamilies(families, query, (f) => familyPrice(catalog, f, now));
   const pageParams: Record<string, string> = {};
@@ -54,6 +60,12 @@ export default async function CategoryPage({ params, searchParams }: { params: P
       <Breadcrumbs items={[{ label: "Accueil", href: "/" }, ...categoryCrumbs(catalog, key)]} />
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">{cat.name}</h1>
+        {(record?.intro_text || record?.image_sha256) && (
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start" data-testid="category-intro">
+            {record.image_sha256 && <div className="w-full sm:w-64 sm:shrink-0"><MediaImage sha256={record.image_sha256} alt={cat.name} className="aspect-[4/3] w-full rounded-[14px] border border-line" /></div>}
+            {record.intro_text && <p className="max-w-[70ch] whitespace-pre-line text-ink-2 [overflow-wrap:anywhere]">{record.intro_text}</p>}
+          </div>
+        )}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <p role="status" className="min-w-0 text-sm text-ink-2" data-testid="category-count">{count(listing.total)} famille{listing.total > 1 ? "s" : ""} dans cette catégorie.</p>
           {families.length > 0 && <ListingSort formId="category-filters" sort={query.sort} />}
