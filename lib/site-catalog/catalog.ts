@@ -69,7 +69,7 @@ export type Family = {
   seo_title?: string | null;
   seo_description?: string | null;
   slug_aliases?: string[];
-  /** Date de première publication sur le SITE (paquet A : `first_published_at_utc`; repli sur l'ancien nom `created_at_utc`). */
+  /** Date de première publication sur le SITE (paquet A : `first_published_at_utc`, sans repli). */
   first_published_at_utc?: string;
   characteristics?: Characteristic[];
   documents?: FamilyDocument[];
@@ -111,8 +111,7 @@ function v2Family(f: Record<string, unknown>): Partial<Family> {
   if ("seo_title" in f) out.seo_title = f["seo_title"] as string | null;
   if ("seo_description" in f) out.seo_description = f["seo_description"] as string | null;
   if (Array.isArray(f["slug_aliases"])) out.slug_aliases = f["slug_aliases"] as string[];
-  const first = typeof f["first_published_at_utc"] === "string" ? f["first_published_at_utc"] : f["created_at_utc"];
-  if (typeof first === "string") out.first_published_at_utc = first;
+  if (typeof f["first_published_at_utc"] === "string") out.first_published_at_utc = f["first_published_at_utc"];   // jamais la date de création : une famille jamais publiée n'est pas une nouveauté (N01, N02)
   if (Array.isArray(f["characteristics"])) out.characteristics = f["characteristics"] as Characteristic[];
   if (Array.isArray(f["documents"])) out.documents = f["documents"] as FamilyDocument[];
   return out;
