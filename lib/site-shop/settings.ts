@@ -1,4 +1,4 @@
-// Cercle 3, 3.23 — les réglages de la boutique tels que la Factory les publie (objets `shop`, `announcement` et `maintenance` des contenus v2) et ce que le SITE en fait.
+// Cercle 3, 3.23 — les réglages de la boutique tels que la Factory les publie (objets `shop`, `announcement` et `maintenance` des contenus v2, docs/contracts/c0_site_v2.md : `delivery_note`, `footer_links[{label, path}]`, `starts_at_utc`, `ends_at_utc`) et ce que le SITE en fait.
 // Module PUR : aucune dépendance, aucun accès réseau ni base. Les textes ne sont JAMAIS injectés comme du HTML : React les échappe à l'affichage, la page de maintenance
 // du proxy les échappe elle-même (`escapeHtml`). Sans réglage publié, le SITE garde les valeurs qu'il affichait avant ce lot (DEFAULT_SHOP) : rien ne casse.
 
@@ -46,13 +46,13 @@ export function parseShop(raw: unknown): ShopSettings {
     email: text(shop.email, DEFAULT_SHOP.email, 200),
     address: text(shop.address, DEFAULT_SHOP.address, 1000),
     openingHours: text(shop.opening_hours, DEFAULT_SHOP.openingHours, 200),
-    deliveryNotice: text(shop.delivery_notice, DEFAULT_SHOP.deliveryNotice, 300),
-    footerLinks: links.flatMap((link): ShopLink[] => (isObject(link) && typeof link.label === "string" && link.label.trim() !== "" && safeLink(link.url) ? [{ label: link.label.trim().slice(0, 80), url: link.url }] : [])).slice(0, 12),
+    deliveryNotice: text(shop.delivery_note, DEFAULT_SHOP.deliveryNotice, 300),
+    footerLinks: links.flatMap((link): ShopLink[] => (isObject(link) && typeof link.label === "string" && link.label.trim() !== "" && safeLink(link.path) ? [{ label: link.label.trim().slice(0, 80), url: link.path }] : [])).slice(0, 12),
     announcement: {
       text: text(announcement.text, "", 300),
       link: safeLink(announcement.link) ? announcement.link : "",
-      start: instant(announcement.start),
-      end: instant(announcement.end),
+      start: instant(announcement.starts_at_utc),
+      end: instant(announcement.ends_at_utc),
     },
     maintenance: { active: maintenance.active === true && text(maintenance.message, "", 500) !== "", message: text(maintenance.message, "", 500) },
   };
