@@ -20,6 +20,9 @@ export type PriceWindow = {
   currency: string;
   tax_basis_or_status: string;
   offer_price_version_public: string;
+  /** Catalogue v2 seulement (cercle 3, paquet B) : « PROMOTION » pour une promotion ; `reference_unit_amount` = prix barré fourni par le Calculateur, jamais calculé ici. */
+  price_nature?: string | null;
+  reference_unit_amount?: string | null;
 };
 
 /** Cercle 3 (3.22) : les champs `position`, `intro_text`, `image_sha256`, `seo_*` et `hidden` n'existent que dans un catalogue v2 ; absents (v1), le SITE se comporte comme avant. */
@@ -41,7 +44,12 @@ export type Item = {
   variant_axes: VariantAxes;
   public_media_refs: string[];
   windows: PriceWindow[];
+  /** Catalogue v2 seulement : cherchées par la recherche, jamais affichées en tableau (C01/C02). */
+  characteristics?: Characteristic[];
 };
+
+export type Characteristic = { label: string; value: string };
+export type FamilyDocument = { label: string; kind: string; sha256: string; mime: string; size: number };
 
 export type Axis = { axis_key: string; label: string };
 
@@ -61,7 +69,10 @@ export type Family = {
   seo_title?: string | null;
   seo_description?: string | null;
   slug_aliases?: string[];
-  created_at_utc?: string;
+  /** Date de première publication sur le SITE (paquet A : `first_published_at_utc`, sans repli). */
+  first_published_at_utc?: string;
+  characteristics?: Characteristic[];
+  documents?: FamilyDocument[];
 };
 
 export type CatalogMeta = {
@@ -100,7 +111,9 @@ function v2Family(f: Record<string, unknown>): Partial<Family> {
   if ("seo_title" in f) out.seo_title = f["seo_title"] as string | null;
   if ("seo_description" in f) out.seo_description = f["seo_description"] as string | null;
   if (Array.isArray(f["slug_aliases"])) out.slug_aliases = f["slug_aliases"] as string[];
-  if (typeof f["created_at_utc"] === "string") out.created_at_utc = f["created_at_utc"];
+  if (typeof f["first_published_at_utc"] === "string") out.first_published_at_utc = f["first_published_at_utc"];   // jamais la date de création : une famille jamais publiée n'est pas une nouveauté (N01, N02)
+  if (Array.isArray(f["characteristics"])) out.characteristics = f["characteristics"] as Characteristic[];
+  if (Array.isArray(f["documents"])) out.documents = f["documents"] as FamilyDocument[];
   return out;
 }
 
@@ -127,6 +140,7 @@ function build(served: ServedGeneration, source: CatalogSource["kind"]): Catalog
         variant_axes: { ...i.variant_axes },
         public_media_refs: i.public_media_refs,
         windows: i.public_sell_price_windows,
+        ...(Array.isArray((i as Record<string, unknown>)["characteristics"]) ? { characteristics: (i as Record<string, unknown>)["characteristics"] as Characteristic[] } : {}),
       })),
     }),
   );

@@ -6,11 +6,11 @@ import { CategoryMenu, type MenuCategory } from "@/components/layout/category-me
 import { LiveSearch } from "@/components/layout/live-search";
 import { TopCategories } from "@/components/layout/top-categories";
 import { UtilityBar } from "@/components/layout/utility-bar";
-import { UniverseBar } from "@/components/layout/universe-bar";
+import { UniverseBar, type ShopEntry } from "@/components/layout/universe-bar";
 import type { PublishedPage } from "@/lib/site-content/pages";
 import { DEFAULT_SHOP, type ShopSettings } from "@/lib/site-shop/settings";
 
-export function SiteHeader({ categories, universe = [], shop = DEFAULT_SHOP }: { categories: MenuCategory[]; universe?: PublishedPage[]; shop?: ShopSettings }) {
+export function SiteHeader({ categories, universe = [], shop = DEFAULT_SHOP, shopEntries = [] }: { categories: MenuCategory[]; universe?: PublishedPage[]; shop?: ShopSettings; shopEntries?: ShopEntry[] }) {
   return (
     <header className="sticky top-0 z-40 w-full min-w-0 bg-white">
       <UtilityBar shop={shop} />
@@ -34,7 +34,7 @@ export function SiteHeader({ categories, universe = [], shop = DEFAULT_SHOP }: {
           <Link href="/devis" className="ml-auto inline-flex min-h-12 items-center text-sm font-semibold text-brand lg:hidden">Demande de devis</Link>
         </div>
       </nav>
-      <UniverseBar entries={universe} />
+      <UniverseBar entries={universe} shopEntries={shopEntries} />
     </header>
   );
 }

@@ -5,13 +5,21 @@ import { usePathname } from "next/navigation";
 import { editorialSlug } from "@/lib/site-content/pages";
 import type { PublishedPage } from "@/lib/site-content/pages";
 
-export function UniverseBar({ entries, currentSlug }: { entries: PublishedPage[]; currentSlug?: string }) {
+export type ShopEntry = { href: string; label: string };
+
+/** `shopEntries` : les univers du catalogue (Promotions, Nouveautés) ; absents du menu quand il n'y a rien à y montrer. */
+export function UniverseBar({ entries, currentSlug, shopEntries = [] }: { entries: PublishedPage[]; currentSlug?: string; shopEntries?: ShopEntry[] }) {
   const pathname = usePathname();
   const activeSlug = currentSlug ?? (pathname?.startsWith("/p/") ? editorialSlug(pathname.slice(3).split("/"))?.slice(1) : undefined);
-  if (entries.length === 0) return null;
+  if (entries.length === 0 && shopEntries.length === 0) return null;
   return (
     <nav aria-label="Univers" data-testid="universe-bar" className="min-w-0 w-full border-b border-line bg-white">
       <ul className="mx-auto flex w-full max-w-[1440px] flex-nowrap items-center gap-1 overflow-x-auto px-4 py-1 lg:px-8">
+        {shopEntries.map(({ href, label }) => (
+          <li key={href} className="flex-none">
+            <Link href={href} aria-current={pathname === href ? "page" : undefined} className={`inline-flex min-h-[44px] min-w-[44px] items-center whitespace-nowrap border-b-2 px-3 text-sm text-ink-2 hover:text-ink ${pathname === href ? "border-signal" : "border-transparent"}`}>{label}</Link>
+          </li>
+        ))}
         {entries.map(({ slug, title }) => (
           <li key={slug} className="flex-none">
             <Link

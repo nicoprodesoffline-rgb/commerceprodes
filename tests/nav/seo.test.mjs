@@ -1,7 +1,7 @@
 // Cercle 3, ligne 3.19 (S09–S12) : plan du site, robots, canonique et données structurées. Fonctions pures, données fictives.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { familyByOldAddress, homeJsonLd, jsonLdText, productJsonLd, publicOrigin, robotsDirective, robotsFile, sitemapUrls } from "../../lib/seo/seo.ts";
+import { familyByOldAddress, homeJsonLd, jsonLdText, originWarning, productJsonLd, publicOrigin, robotsDirective, robotsFile, sitemapUrls } from "../../lib/seo/seo.ts";
 
 const ORIGIN = "https://recette.exemple.invalid";
 const categories = [
@@ -72,4 +72,12 @@ test("S06, S07 : une ancienne adresse désigne sa famille ; une adresse inconnue
   assert.equal(familyByOldAddress(list, "banc-a").slug, "banc-c");
   assert.equal(familyByOldAddress(list, "banc-b").slug, "banc-c", "deux changements : un seul saut vers la dernière");
   assert.equal(familyByOldAddress(list, "inconnue"), null);
+});
+
+test("démarrage sans origine publique : une ligne d'avertissement, jamais d'adresse inventée ; avec une origine valide : rien", () => {
+  assert.equal(originWarning(undefined), "SITE_PUBLIC_ORIGIN absent : plan du site, canonique et données structurées désactivés");
+  assert.equal(originWarning(""), "SITE_PUBLIC_ORIGIN absent : plan du site, canonique et données structurées désactivés");
+  assert.match(originWarning("recette.exemple.invalid"), /^SITE_PUBLIC_ORIGIN invalide : /);
+  assert.equal(originWarning("https://recette.exemple.invalid"), null);
+  assert.equal(originWarning("http://127.0.0.1:3460"), null);
 });

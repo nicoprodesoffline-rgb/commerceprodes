@@ -12,6 +12,9 @@ export type ShopSettings = {
   footerLinks: ShopLink[];
   announcement: { text: string; link: string; start: string | null; end: string | null };
   maintenance: { active: boolean; message: string };
+  /** Nouveautés (N04, N05) : durée en jours et nombre de familles au plus. */
+  noveltyDays: number;
+  noveltyCount: number;
 };
 
 export const DEFAULT_SHOP: ShopSettings = {
@@ -23,10 +26,13 @@ export const DEFAULT_SHOP: ShopSettings = {
   footerLinks: [],
   announcement: { text: "", link: "", start: null, end: null },
   maintenance: { active: false, message: "" },
+  noveltyDays: 60,
+  noveltyCount: 24,
 };
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 const text = (value: unknown, fallback: string, max: number): string => (typeof value === "string" && value.trim() !== "" ? value.trim().slice(0, max) : fallback);
+const whole = (value: unknown, fallback: number, max: number): number => (typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= max ? value : fallback);
 const instant = (value: unknown): string | null => (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(value) && !Number.isNaN(Date.parse(value)) ? value : null);
 
 /** Une adresse INTERNE du SITE (« /faq », « /recherche?q=banc » ; jamais « //hôte », ni schéma, ni espace) : c'est la règle du contrat v2 (§4.3) ; tout le reste est écarté. */
@@ -54,6 +60,8 @@ export function parseShop(raw: unknown): ShopSettings {
       start: instant(announcement.starts_at_utc),
       end: instant(announcement.ends_at_utc),
     },
+    noveltyDays: whole(shop.novelty_days, DEFAULT_SHOP.noveltyDays, 365),
+    noveltyCount: whole(shop.novelty_count, DEFAULT_SHOP.noveltyCount, 200),
     maintenance: { active: maintenance.active === true && text(maintenance.message, "", 500) !== "", message: text(maintenance.message, "", 500) },
   };
 }
