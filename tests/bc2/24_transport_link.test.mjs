@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { KEYRING, KEYRING_PATH, ROOT, activateBase, config, datedHeaders, gate, http, link, loadCase, newPool, putAllMedia, deps, resetDb, signing, testDatabaseUrl } from "./helpers.mjs";
+import { KEYRING, KEYRING_PATH, ROOT, activateBase, config, datedHeaders, gate, http, link, loadCase, newPool, putAllMedia, deps, receiver, resetDb, signing, testDatabaseUrl } from "./helpers.mjs";
 import { main as keyringMain, makeKeyring } from "../../scripts/keyring-create.mjs";
 
 let pool;
@@ -215,4 +215,23 @@ test("4.2, test croisé : un trousseau d'essai fabriqué par la Factory (site_ke
     SITE_WITHDRAWAL_HOLD_POLICY: '{"max_withdrawals_without_release":null,"released_expected_withdrawals_digest":null}' });
   assert.ok(gate.keyKnown(loaded.keyring, "essai-factory-publish-01"));
   assert.ok(signing.keyHasScope(loaded.keyring, "essai-factory-events-01", signing.SCOPE_EVENTS_READ));
+});
+
+test("L14 : un média de 30 Mio exactement est reçu en entier ; 30 Mio + 1 octet est refusé (413) sans être lu", async () => {
+  await withEnv(async () => {
+    assert.equal(receiver.MAX_MEDIA_BYTES, 30 * 1024 * 1024);
+    const signed = { "x-c0-key-id": PUBLISH, "x-c0-signature": "a".repeat(64) };
+    for (const [size, declared] of [[receiver.MAX_MEDIA_BYTES, true], [receiver.MAX_MEDIA_BYTES + 1, true], [receiver.MAX_MEDIA_BYTES + 1, false]]) {
+      const bytes = new Uint8Array(size);
+      const headers = { ...signed, ...datedHeaders(PUBLISH, "PUT", "/x", bytes), ...(declared ? { "content-length": String(size) } : {}) };
+      const request = new Request("http://local/x", { method: "PUT", body: bytes, duplex: "half", headers });
+      let got = -1;
+      const response = await http.handleWithBody("MEDIA_PUT", request, receiver.MAX_MEDIA_BYTES, async (_d, body) => { got = body.length; return { status: 200, headers: {}, body: new Uint8Array(0) }; });
+      if (size === receiver.MAX_MEDIA_BYTES) {
+        assert.deepEqual([response.status, got], [200, size]);
+      } else {
+        assert.deepEqual([response.status, got, (await response.json()).transport_error], [413, -1, "BODY_TOO_LARGE"], `déclaré : ${declared}`);
+      }
+    }
+  });
 });

@@ -45,7 +45,7 @@ export const HEADER_OUTCOME = "x-c0-outcome";
 export const MAX_CONTROL_BYTES = 256 * 1024;
 /** Plafond du corps STAGE = plafond C0 du snapshot (32 MiB, C0 §4). */
 export { MAX_BYTES };
-/** Plafond du corps PUT média = taille maximale d'un média C0 (20 MiB, C0 §8.5). */
+/** Plafond du corps PUT média : 30 Mio, voir MAX_DOCUMENT_SIZE (c0 v2 : un document PDF ; une image C0 reste à 20 Mio, C0 §8.5). */
 export const MAX_MEDIA_BYTES = Math.max(MAX_MEDIA_SIZE, MAX_DOCUMENT_SIZE);   // v2 : un document PDF peut peser 30 Mio
 const LOCK_TIMEOUT = "15s";
 
