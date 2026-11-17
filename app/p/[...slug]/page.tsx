@@ -5,6 +5,7 @@ import { PageSections } from "@/components/content/sections";
 import { catalogForPage } from "@/lib/site-catalog/page";
 import { editorialMetadata } from "@/lib/site-content/metadata";
 import { editorialSlug } from "@/lib/site-content/pages";
+import { editorialPath } from "@/lib/seo/seo";
 import { getEditorialSet } from "@/lib/site-content/source";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,9 @@ async function publishedPage({ params }: Props) {
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
-  return editorialMetadata(await publishedPage(props), process.env.SITE_PUBLIC_ORIGIN);
+  const page = await publishedPage(props);
+  // 3.19 (S11) : une canonique sur toute page ; sans chemin canonique saisi, l'adresse de la page elle-même.
+  return editorialMetadata({ ...page, canonical: page.canonical || editorialPath(page.slug) }, process.env.SITE_PUBLIC_ORIGIN);
 }
 
 export default async function EditorialPage(props: Props) {
