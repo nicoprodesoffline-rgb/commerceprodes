@@ -12,6 +12,7 @@ import { categoryCrumbs, familyCard, navigationOf } from "@/components/site/cata
 import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { listFamilies, parseListingQuery } from "@/lib/site-catalog/listing";
 import { count } from "@/components/site/format";
+import { isPromoNow } from "@/lib/site-catalog/merchandising";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
 import { MediaImage } from "@/components/site/media-image";
@@ -105,7 +106,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
           ) : listing.rows.length === 0 ? (
             <p role="status" className="rounded-[14px] border border-line bg-white p-4 text-ink-2">Aucune famille ne correspond à ces filtres.</p>
           ) : (
-            <FamilyGrid prices families={listing.rows.map((r) => ({ ...familyCard(r.family), from: r.price }))} label={`Familles de la catégorie ${cat.name}`} notes={notes} />
+            <FamilyGrid prices families={listing.rows.map((r) => ({ ...familyCard(r.family), from: r.price, promo: isPromoNow(r.family, now) }))} label={`Familles de la catégorie ${cat.name}`} notes={notes} />
           )}
           <Pager action={`/categorie/${key}`} params={pageParams} page={listing.page} pages={listing.pages} />
           {/* Sur mobile, la commande rapide passe après les produits (elle gardait trois blocs avant la liste) */}

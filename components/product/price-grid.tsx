@@ -18,6 +18,10 @@ export type PriceGridRow = {
   quantity_min: number;
   quantity_max: number | null;
   validity_label: string | null;
+  /** Promotion (paquet B) : la nature de la fenêtre retenue, le prix barré fourni par le Calculateur (jamais calculé) et l'économie par lot qui en découle. */
+  promo?: boolean;
+  reference_amount?: string | null;
+  economy?: string | null;
 };
 
 /** `pack` : l'Item est un conditionnement (lot, X+Y) : le montant est celui de l'article entier, la colonne ne s'appelle pas « Prix unitaire ». `showBasis` : chaque ligne porte sa base fiscale (défaut) ; faux = la base est dite UNE fois par le bandeau de la fiche (`BasisNotice`, friction 14). */
@@ -55,8 +59,10 @@ export function PriceGrid({ rows, selectedRateId, caption = "Prix selon la quant
                 <td className="py-3 pr-3">
                   {quantityRange(r.quantity_min, r.quantity_max)}
                   {current && <span className="mt-1 block text-xs font-medium text-signal">Quantité choisie</span>}
+                  {r.economy && <span className="mt-1 block text-xs font-medium text-signal" data-testid="economy">Vous économisez {money(r.economy)}{pack ? " par lot" : ""}</span>}
                 </td>
                 <td className="py-3 text-right font-semibold">
+                  {r.reference_amount && <s className="mr-2 font-normal text-ink-3" data-testid="reference-price">{money(r.reference_amount)}</s>}
                   {money(r.unit_amount ?? "")}{showBasis && <> <span className="font-normal">{basisLabel(r.tax_basis_or_status)}</span></>}
                 </td>
               </tr>

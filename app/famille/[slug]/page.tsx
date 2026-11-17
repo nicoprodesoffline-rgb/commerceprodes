@@ -1,3 +1,4 @@
+import { documentLinks, isPromoNow } from "@/lib/site-catalog/merchandising";
 import { firstByPack } from "@/lib/site-catalog/conditionnement";
 import "@/components/product/product-sheet.css";
 import type { Metadata } from "next";
@@ -117,6 +118,7 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
     <div className="min-w-0 pb-40 lg:pb-0">
       <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: breadcrumbLd }} />
       <Breadcrumbs items={crumbs} />
+      {isPromoNow(family, instant) && <p className="mb-3"><span className="inline-block bg-brand px-2 py-1 text-xs font-bold uppercase tracking-wide text-white" data-testid="promo-badge">Promo</span></p>}
       <FamilyBuyBox
         className="lg:grid-cols-[minmax(0,58fr)_minmax(0,42fr)]"
         familyName={family.name}
@@ -163,8 +165,9 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
         </section>
       )}
       {/* alimenté par un futur contrat */}
+      {/* C01 : les caractéristiques voyagent et se cherchent, sans tableau sur la fiche (la section reste débranchée) */}
       <ProductCharacteristics items={undefined} />
-      <ProductDocuments items={undefined} />
+      <ProductDocuments items={documentLinks(family)} />
       <RelatedProducts items={complementaryCards} />
       <UpsellProducts items={upsellCards} />
       {similar.length > 0 && (

@@ -4,6 +4,7 @@
  */
 import type { Catalog, Family } from "@/lib/site-catalog/catalog";
 import { buildNavigation, type Navigation } from "@/lib/site-catalog/navigation";
+import { characteristicsText } from "@/lib/site-catalog/merchandising";
 import { itemKeyFromInput } from "@/lib/site-catalog/short-ref";
 import type { Crumb } from "@/components/layout/breadcrumbs";
 
@@ -53,7 +54,7 @@ export function searchFamilies(catalog: Catalog, raw: string): Family[] {
   }
   const words = q.split(" ");
   return catalog.families.filter((f) => {
-    const hay = `${fold(f.name)} ${f.slug.replace(/-/g, " ")}`;
+    const hay = `${fold(f.name)} ${f.slug.replace(/-/g, " ")} ${fold(characteristicsText(f))}`;   // C02 : les caractéristiques se cherchent, sans s'afficher en tableau
     return words.every((w) => hay.includes(w));
   });
 }

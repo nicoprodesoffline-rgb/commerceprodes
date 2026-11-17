@@ -6,6 +6,7 @@ import { Pager } from "@/components/catalog/pager";
 import { FamilyGrid } from "@/components/home/family-card";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { SEARCH_MAX, familyCard, navigationOf, searchFamilies } from "@/components/site/catalog-views";
+import { isPromoNow } from "@/lib/site-catalog/merchandising";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { listFamilies, parseListingQuery } from "@/lib/site-catalog/listing";
 import { count } from "@/components/site/format";
@@ -58,7 +59,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         </div>
         <div className="min-w-0 flex-1 space-y-4">
           {listing.rows.length > 0 && (
-            <FamilyGrid prices label="Familles du catalogue" families={listing.rows.map((r) => ({ ...familyCard(r.family), from: r.price, ...(categoryOf(r.family.primary_category_key) ? { category: categoryOf(r.family.primary_category_key) as string } : {}) }))} />
+            <FamilyGrid prices label="Familles du catalogue" families={listing.rows.map((r) => ({ ...familyCard(r.family), from: r.price, promo: isPromoNow(r.family, now), ...(categoryOf(r.family.primary_category_key) ? { category: categoryOf(r.family.primary_category_key) as string } : {}) }))} />
           )}
           <Pager action="/recherche" params={params} page={listing.page} pages={listing.pages} />
         </div>

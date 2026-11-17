@@ -10,6 +10,8 @@ import type { MenuCategory } from "@/components/layout/category-menu";
 import type { NavNode } from "@/lib/site-catalog/navigation";
 import { MediaPolicyProvider } from "@/components/site/media-policy";
 import { imagesAllowed } from "@/lib/site-catalog/media-policy";
+import { serverNowUtc } from "@/lib/site-catalog/clock";
+import { novelFamilies, promoFamilies } from "@/lib/site-catalog/merchandising";
 import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogOrNull } from "@/lib/site-catalog/page";
 import { loadUniverse } from "@/lib/site-content/source";
@@ -39,6 +41,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const catalog = await catalogOrNull();
   const universe = await loadUniverse();
   const shop = await getShopSettings();
+  // Promotions et Nouveautés : une entrée de menu seulement s'il y a quelque chose à y voir (M07, N06).
+  const shopEntries: { href: string; label: string }[] = [];
+  if (catalog) {
+    const now = serverNowUtc();
+    if (promoFamilies(catalog.families, now).length > 0) shopEntries.push({ href: "/promotions", label: "Promotions" });
+    if (novelFamilies(catalog.families, now, shop.noveltyDays, shop.noveltyCount).length > 0) shopEntries.push({ href: "/nouveautes", label: "Nouveautés" });
+  }
   const roots = catalog ? toMenu(navigationOf(catalog).menu) : [];
   return (
     <html lang="fr">
@@ -51,7 +60,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <MediaPolicyProvider showImages={imagesAllowed(catalog?.meta.data_label)}>
           <CartProvider>
             <AnnouncementBanner shop={shop} />
-            <SiteHeader categories={roots} universe={universe} shop={shop} />
+            <SiteHeader categories={roots} universe={universe} shop={shop} shopEntries={shopEntries} />
             <main id="contenu" tabIndex={-1} className="mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">
               {children}
             </main>
