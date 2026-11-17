@@ -7,7 +7,7 @@
  */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { cloneElement, isValidElement, useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { MAX_QUANTITY, useCart } from "@/components/cart/cart-provider";
 import { minimumQuantity } from "@/components/product/minimum-quantity";
 import { isUnpricedOnly } from "@/lib/site-catalog/quote-only";
@@ -25,6 +25,8 @@ export type BuyBoxItem = {
   variant_axes: Record<string, string>;
   axes: AxisDisplay[];
   image_sha256: string | null;
+  /** L'image propre de la variante (3.6), absente quand elle n'a que celle de la famille : la galerie l'affiche au choix de la variante. */
+  own_image_sha256?: string | null;
   rows: PriceGridRow[];
 };
 
@@ -297,7 +299,7 @@ export function FamilyBuyBox({
           {children}
         </div>
       </div>
-      {gallery && <div className="order-2 min-w-0 lg:order-1 lg:sticky lg:top-56" data-testid="product-gallery">{gallery}</div>}
+      {gallery && <div className="order-2 min-w-0 lg:order-1 lg:sticky lg:top-56" data-testid="product-gallery">{isValidElement(gallery) ? cloneElement(gallery as ReactElement<{ focusSha?: string | null }>, { focusSha: item?.own_image_sha256 ?? null }) : gallery}</div>}
     </section>
   );
 }

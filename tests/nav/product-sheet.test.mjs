@@ -92,7 +92,7 @@ test("galerie : alt produit, clavier, vignettes masquées si les visuels sont in
   let allowed = true;
   const changes = [];
   const { Gallery } = load("components/product/gallery.tsx", {
-    react: { ...React, useState: () => [0, (next) => changes.push(next)], useRef: () => ({ current: [] }) },
+    react: { ...React, useState: () => [0, (next) => changes.push(next)], useRef: () => ({ current: [] }), useEffect: () => {} }, // 3.6 : la galerie suit la variante choisie par un effet
     "@/components/site/media-policy": { useShowImages: () => allowed },
     "@/components/site/media-image": { MediaImage: (props) => React.createElement("img", { alt: props.alt, "data-media": props.sha256 }) },
   });
@@ -108,6 +108,39 @@ test("galerie : alt produit, clavier, vignettes masquées si les visuels sont in
   const hidden = renderToStaticMarkup(Gallery(props));
   assert.doesNotMatch(hidden, /<button/);
   assert.doesNotMatch(hidden, /data-media="media-example/);
+});
+
+const sha = (n) => String(n).padStart(64, "0");
+const imageView = { alt: "Banc Léo, Chêne", publicName: "banc-leo-chene", derivatives: [320, 640, 1024, 1600].map((width, i) => ({ sha256: sha(11 + i), width, height: width * 3 / 4, mime: "image/webp", size: 1000 })) };
+
+test("image de la fiche (3.3, I10, I11) : srcset, sizes, width, height, texte alternatif, chargement différé hors de l'écran, clic vers la plus grande version", () => {
+  const stubs = { react: { ...React, useState: (v) => [v, () => {}], useRef: () => ({ current: null }), useEffect: () => {} }, "@/components/site/media-policy": { useShowImages: () => true } };
+  const { MediaImage } = load("components/site/media-image.tsx", stubs);
+  const main = renderToStaticMarkup(MediaImage({ sha256: sha(1), alt: "Banc", view: imageView, eager: true }));
+  assert.match(main, new RegExp(`srcSet="/media/${sha(11)}/banc-leo-chene.webp 320w, /media/${sha(12)}/banc-leo-chene.webp 640w, /media/${sha(13)}/banc-leo-chene.webp 1024w, /media/${sha(14)}/banc-leo-chene.webp 1600w"`));
+  assert.match(main, /sizes="/);
+  assert.match(main, /width="1024" height="768"/);
+  assert.match(main, /alt="Banc Léo, Chêne"/);
+  assert.match(main, /loading="eager"/);
+  const thumb = renderToStaticMarkup(MediaImage({ sha256: sha(1), alt: "", width: 320 }));
+  assert.match(thumb, new RegExp(`src="/media/${sha(1)}\\?w=320"`), "la vignette de liste demande la version de 320");
+  assert.match(thumb, /loading="lazy"/);
+  assert.doesNotMatch(thumb, /srcSet/, "sans version réduite connue, la balise reste celle d'avant");
+  const { Gallery } = load("components/product/gallery.tsx", { ...stubs, "@/components/site/media-image": { MediaImage: (props) => React.createElement("img", { alt: props.alt }) } });
+  const html = renderToStaticMarkup(Gallery({ familyName: "Banc", images: [{ sha256: sha(1), caption: "Vue principale", view: imageView }] }));
+  assert.match(html, new RegExp(`href="/media/${sha(14)}/banc-leo-chene.webp"`), "cliquer l'image ouvre la version de 1600");
+});
+
+test("galerie (3.6, I15) : la variante choisie met son image en avant, sans variante propre retour à la vue principale", () => {
+  const picks = [];
+  const stubs = { react: { ...React, useState: () => [0, (next) => picks.push(next)], useRef: () => ({ current: [] }), useEffect: (run) => run() }, "@/components/site/media-policy": { useShowImages: () => true },
+    "@/components/site/media-image": { MediaImage: () => null } };
+  const { Gallery } = load("components/product/gallery.tsx", stubs);
+  const images = [{ sha256: sha(1), caption: "Vue principale" }, { sha256: sha(2), caption: "Variante chêne" }];
+  Gallery({ familyName: "Banc", images, focusSha: sha(2) });
+  Gallery({ familyName: "Banc", images, focusSha: null });
+  Gallery({ familyName: "Banc", images, focusSha: sha(9) });
+  assert.deepEqual(picks, [1, 0, 0]);
 });
 
 test("description pleine largeur, sections futures branchées et URL de variante conservée", () => {

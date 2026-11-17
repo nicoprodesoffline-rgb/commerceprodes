@@ -14,7 +14,7 @@ export function FamilyCard({ data, note, from, category, showBasis = true }: { d
     <li className="flex list-none flex-col overflow-hidden min-w-0 rounded-sm border border-line bg-white hover:border-brand">
       <Link href={`/famille/${data.slug}`} className="group flex min-w-0 flex-1 flex-col [overflow-wrap:anywhere]">
         <div className="relative">
-          <MediaImage sha256={data.imageSha} alt="" className="aspect-[4/3] w-full p-5" />
+          <MediaImage sha256={data.imageSha} alt="" width={320} className="aspect-[4/3] w-full p-5" />
           <span className="absolute bottom-2 left-2 bg-white px-2 py-1 text-[11px] font-medium text-ink-2" data-testid="free-delivery">Livraison incluse</span>
         </div>
         <span className="flex flex-1 flex-col p-4">
