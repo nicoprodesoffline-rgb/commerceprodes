@@ -1,0 +1,25 @@
+{
+  "case_id": "V2_CONTENT.content_html_in_a_setting",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_html_in_a_setting.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "622de449614fdead43a5e3747815e919faecde55c668ff14d6cb900749b8f72d"
+    }
+  },
+  "notes": "E03: a setting is text; HTML in it is accepted as text and the SITE escapes it when it shows it.",
+  "scenario": "V2_CONTENT"
+}

@@ -1,0 +1,32 @@
+{
+  "case_id": "V2_CONTENT.redirect_with_a_scheme",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/V2_CONTENT/ack_content_ready.json"
+      },
+      "content": {
+        "$doc": "documents/V2_CONTENT/content_ready.json"
+      }
+    },
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_redirect_with_a_scheme.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "da8eb34f1596e8deb06b4c30d1b401d24c14f905849603320253b7eef76284b3"
+    }
+  },
+  "notes": "3.31: no scheme in a redirect target.",
+  "scenario": "V2_CONTENT"
+}

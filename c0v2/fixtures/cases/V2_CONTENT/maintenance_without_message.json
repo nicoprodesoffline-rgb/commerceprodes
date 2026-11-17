@@ -1,0 +1,32 @@
+{
+  "case_id": "V2_CONTENT.maintenance_without_message",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/V2_CONTENT/ack_content_ready.json"
+      },
+      "content": {
+        "$doc": "documents/V2_CONTENT/content_ready.json"
+      }
+    },
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_maintenance_without_message.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "6007fb00887b537946323aae27ceabdc9b10c19579f6758c7cba89d3d54ab189"
+    }
+  },
+  "notes": "B08: maintenance shows a message.",
+  "scenario": "V2_CONTENT"
+}

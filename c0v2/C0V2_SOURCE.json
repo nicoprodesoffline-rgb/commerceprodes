@@ -1,0 +1,7 @@
+{
+  "factory_repo": "nicoprodesoffline-rgb/prodes-data-factory-poc",
+  "branch": "c3/contrat-v2",
+  "archived_from_sha": "66655460ed2a5605808110b98910180fae5b5732",
+  "archive_paths": ["c0v2/README.md", "c0v2/fixtures", "c0v2/ts/package-lock.json", "c0v2/ts/package.json", "c0v2/ts/src", "c0v2/ts/test", "c0v2/ts/tsconfig.json", "docs/contracts/c0_site_v2.md"],
+  "note": "Copie sans modification (contrat v2, cercle 3). La v1 (c0/) est intacte. Le Python de référence et le générateur restent dans la Factory."
+}

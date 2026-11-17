@@ -1,0 +1,37 @@
+{
+  "as_of_utc": "2026-11-17T06:00:00Z",
+  "entries": [
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000358",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-00000069X",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-0000006AP",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-0000009DV",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000CHJ",
+      "reason": null
+    },
+    {
+      "partition": "READY",
+      "public_item_key": "PI-000000FN2",
+      "reason": null
+    }
+  ],
+  "manifest_version": "c0.private_coverage_manifest.v1",
+  "scope_key": "prodes.site.public.staging"
+}
