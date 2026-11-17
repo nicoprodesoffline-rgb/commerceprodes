@@ -24,7 +24,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "18f16f8115e6935332fa2e53ad6150b92cf74235309d63f9e138b4fc7b581426"
+      "signature": "6fa93920989cfa91dd8e25ad37ae3b185217ceec466979e3664d6afcac66bcdd"
     }
   },
   "notes": "Same content again: the stored ACK.",

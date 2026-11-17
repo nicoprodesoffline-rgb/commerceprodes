@@ -24,7 +24,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "147905ccd3507f394fe56b99b603e487e0eccf933ce9b665cb696b9a44ff3b4a"
+      "signature": "7cdbf137ac40d35c59bb223f9b625b2d2a30bc6e3a8d6d5271bede5483c3c7e2"
     }
   },
   "notes": "S07: one hop only; a redirect target is never itself redirected.",

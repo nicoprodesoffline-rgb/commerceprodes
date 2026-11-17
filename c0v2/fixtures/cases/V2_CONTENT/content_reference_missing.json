@@ -24,7 +24,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "a99c77e26300658d9a9c7e53e950f8e8c4fc06431db9727b0e33d7b9c4c0b513"
+      "signature": "880100ae60faa0cd1f4399ad85a2c5f1b1656a5cd766b5c55e5b5ae04e68467e"
     }
   },
   "notes": "V09: a content naming a family the SITE does not serve is refused whole; the previous content stays served.",

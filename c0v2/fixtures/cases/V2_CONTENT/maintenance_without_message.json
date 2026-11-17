@@ -24,7 +24,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "6007fb00887b537946323aae27ceabdc9b10c19579f6758c7cba89d3d54ab189"
+      "signature": "b83e6338d532c94703d4c83444e0f0719084121d53e1475d7beed0364af7d80c"
     }
   },
   "notes": "B08: maintenance shows a message.",

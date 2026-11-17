@@ -21,7 +21,7 @@ const ENVELOPE_KEYS = [
   "contract_version", "publication_id", "content_sequence", "generated_at_utc", "catalogue_sequence",
   "shop", "announcement", "maintenance", "redirects", "pages", "relations", "payload_sha256",
 ];
-const SHOP_KEYS = ["phone", "email", "address", "opening_hours", "delivery_note", "footer_links"];
+const SHOP_KEYS = ["phone", "email", "address", "opening_hours", "delivery_note", "footer_links", "novelty_days", "novelty_count"];
 const LINK_KEYS = ["label", "path"];
 const ANNOUNCEMENT_KEYS = ["text", "link", "starts_at_utc", "ends_at_utc"];
 const MAINTENANCE_KEYS = ["active", "message"];
@@ -54,6 +54,8 @@ const MAX_REFERENCES = 24;
 const MAX_QUESTIONS = 100;
 const MAX_REDIRECTS = 20000;
 const MAX_FOOTER_LINKS = 20;
+const MAX_NOVELTY_DAYS = 365; // 3.20 (N04): how long a family stays new, set in SITE › Boutique, 60 to start
+const MAX_NOVELTY_COUNT = 200; // 3.20 (N04): how many new families at most, 24 to start
 const MAX_NAV_ORDER = 1000000;
 
 export const PAGE_PATH = /^(?:\/(?:[a-z0-9_-]+(?:\/[a-z0-9_-]+)*)?)$/;
@@ -103,6 +105,8 @@ function shapeShop(value: Json | undefined): void {
   for (const link of list(shop["footer_links"], "shop.footer_links", MAX_FOOTER_LINKS)) {
     need(f.exactKeys(link, LINK_KEYS) && f.isText(obj(link)["label"], 60) && isLocalPath(obj(link)["path"]), "shop.footer_links");
   }
+  need(f.isCount(shop["novelty_days"], 1, MAX_NOVELTY_DAYS), "shop.novelty_days");
+  need(f.isCount(shop["novelty_count"], 1, MAX_NOVELTY_COUNT), "shop.novelty_count");
 }
 
 function shapeAnnouncement(value: Json | undefined): void {

@@ -24,7 +24,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "c4d6d1e1b30fec77c4b4bf36839ccd4a467d2afc498fcded48d87049611937f7"
+      "signature": "9139fc045a48af6b003b8c964781735994b1584718fa57b4d6c3f640307aad35"
     }
   },
   "notes": "An older content never replaces the served one.",

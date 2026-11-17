@@ -68,7 +68,7 @@
     },
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "c8ed6a12ee36c5cfb7f19162301846e0008d4d80c176458c5abc610d82546af7"
+      "signature": "63c60cd3aab7db74a837f22023d5a258e0af95d4c6c3b66bd3362004039cfb7b"
     }
   },
   "notes": "A derivative is served: PNG, JPEG or WebP only. The original of a derived image may be any image type (TIFF here).",
