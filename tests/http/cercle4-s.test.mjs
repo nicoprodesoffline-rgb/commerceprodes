@@ -6,9 +6,12 @@ import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ACTIVATE, ROOT, STAGE, VERIFY, deps, headersFor, jsonc, mediaHeaders, newPool, resetDb, receiver, testDatabaseUrl } from "../bc2/helpers.mjs";
+import { createRequire } from "node:module";
+import { ACTIVATE, KEYRING, ROOT, STAGE, VERIFY, deps, headersFor, jsonc, mediaHeaders, newPool, resetDb, receiver, testDatabaseUrl } from "../bc2/helpers.mjs";
 
 const V2 = join(ROOT, "c0v2", "fixtures");
+const requireBuild = createRequire(import.meta.url);
+const v2content = requireBuild(join(ROOT, ".bc2-build", "c0v2/ts/src/content.js"));
 const read = (rel) => new Uint8Array(readFileSync(join(V2, rel)));
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const PORT = Number(process.env.C4S_PORT ?? 3141);
@@ -184,6 +187,25 @@ test("S08 + S09 — dix pages sans changement : aucune lecture des contenus en b
   const redirected = await fetch(`${BASE}/12-bancs`, { redirect: "manual" });
   assert.ok([301, 308].includes(redirected.status), `requête suivante : HTTP ${redirected.status} (attendu 301/308)`);
   assert.equal(redirected.headers.get("location"), "/categorie/bancs");
+});
+
+test("S09 (maintenance) — activée par la route signée : 503 à la requête suivante ; retirée : 200 à la requête suivante ; la santé répond pendant la maintenance", async () => {
+  const base = JSON.parse(Buffer.from(read(contentCase.content.$bytes)).toString("utf8"));
+  const publish = async (sequence, maintenance) => {
+    const doc = { ...base, content_sequence: base.content_sequence + sequence, publication_id: `c4s-maintenance-${sequence}`, maintenance };
+    doc.payload_sha256 = v2content.payloadSha256(doc);
+    const signed = v2content.signContent(doc, KEYRING, contentCase.transport.key_id);
+    const res = await fetch(`${BASE}/api/site/content/activate`, { method: "POST", body: jsonc.canonicalBytes(doc), headers: headersFor(signed) });
+    assert.equal(res.headers.get("x-c0-outcome"), "ACTIVATED", await res.clone().text());
+  };
+  assert.equal((await fetch(`${BASE}/livraison`)).status, 200, "avant : le site répond");
+  await publish(1, { active: true, message: "Retour bientôt, merci." });
+  const down = await fetch(`${BASE}/livraison`);
+  assert.equal(down.status, 503, "requête suivante : maintenance");
+  assert.match(await down.text(), /Retour bientôt, merci\./);
+  assert.equal((await fetch(`${BASE}/api/site/health`)).status, 200);
+  await publish(2, { active: false, message: null });
+  assert.equal((await fetch(`${BASE}/livraison`)).status, 200, "requête suivante : le site est revenu");
 });
 
 // ---------------------------------------------------------------- 4.15 devis et commandes éteints
