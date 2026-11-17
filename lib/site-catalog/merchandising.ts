@@ -15,8 +15,9 @@ export function isCurrent(window: Pick<PriceWindow, "valid_from_utc" | "valid_un
   return window.valid_from_utc <= nowUtc && (window.valid_until_utc === null || nowUtc < window.valid_until_utc);
 }
 
+/** Une fenêtre « en promotion » : de nature PROMOTION, ou portant un prix barré fourni par le Calculateur (M01, M02 : le contrat v2 accepte le prix barré sur toute nature). */
 export function isPromotionWindow(window: PriceWindow, nowUtc: string): boolean {
-  return window.price_nature === PROMOTION && isCurrent(window, nowUtc);
+  return (window.price_nature === PROMOTION || (typeof window.reference_unit_amount === "string" && window.reference_unit_amount !== "")) && isCurrent(window, nowUtc);
 }
 
 /** La famille porte au moins une promotion en cours (M01, M06). */

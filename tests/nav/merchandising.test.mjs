@@ -11,7 +11,7 @@ const family = (slug, primary, windows, extra = {}) => ({ public_family_key: `PF
 const F1 = family("f1", "bancs", [window("PROMOTION")], { characteristics: [{ label: "Matière", value: "acier galvanisé" }, { label: "Places", value: "6" }], documents: [{ label: "Fiche technique", kind: "TECHNICAL_SHEET", sha256: "a".repeat(64), mime: "application/pdf", size: 2000000 }], first_published_at_utc: "2026-11-16T10:00:00Z" });
 const F2 = family("f2", "bancs", [window(null)], { first_published_at_utc: "2025-11-16T10:00:00Z" });
 const F3 = family("f3", "bancs", [window(null)]);
-const F4 = family("f4", "tables", [window("PROMOTION", { unit_amount: "30.00", reference_unit_amount: "40.00", valid_until_utc: "2026-12-31T00:00:00Z" })], { first_published_at_utc: "2026-10-01T10:00:00Z" });
+const F4 = family("f4", "tables", [window("BASE", { unit_amount: "30.00", reference_unit_amount: "40.00", valid_until_utc: "2026-12-31T00:00:00Z" })], { first_published_at_utc: "2026-10-01T10:00:00Z" });
 const ALL = [F1, F2, F3, F4];
 
 test("M01/M06 : F1 en promotion ; une promotion terminée ou à venir n'en est plus une", () => {
@@ -73,4 +73,9 @@ test("N04 : les réglages de la boutique portent la durée et le nombre, 60 et 2
   assert.deepEqual([set.noveltyDays, set.noveltyCount], [30, 2]);
   const bad = parseShop({ shop: { novelty_days: 0, novelty_count: "x" } });
   assert.deepEqual([bad.noveltyDays, bad.noveltyCount], [60, 24]);
+});
+
+test("M02 : un prix barré fourni fait une promotion même sur une fenêtre BASE (contrat v2 du paquet A) ; sans prix barré ni nature PROMOTION, non", () => {
+  assert.equal(isPromoNow(F4, NOW), true, "F4 : BASE + prix barré 40.00");
+  assert.equal(isPromoNow(family("z", "bancs", [window("BASE")]), NOW), false);
 });

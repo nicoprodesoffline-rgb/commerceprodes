@@ -10,7 +10,7 @@ import type { Family, Item, PriceWindow } from "./catalog";
 import { QUOTE_ONLY_CODE, isQuoteOnlyRate } from "./quote-only";
 import { PACK_AXIS, sortPackValues } from "./conditionnement";
 import { isShown } from "./variant-choice";
-import { economy } from "./merchandising";
+import { economy, isPromotionWindow } from "./merchandising";
 
 const PARIS = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", dateStyle: "short", timeStyle: "short" });
 
@@ -57,11 +57,11 @@ export function priceRows(generation: C0Generation, item: Item, nowUtc: string):
         tax_basis_or_status: w.tax_basis_or_status,
         quantity_min: w.quantity_min,
         quantity_max: w.quantity_max,
-        // Une promotion ne montre jamais sa date de fin (M05) ; le prix barré vient du fichier du Calculateur ou n'existe pas (M01, M03).
-        validity_label: w.price_nature === "PROMOTION" ? null : validityLabel(w),
-        promo: w.price_nature === "PROMOTION",
-        reference_amount: w.price_nature === "PROMOTION" && w.reference_unit_amount ? w.reference_unit_amount : null,
-        economy: w.price_nature === "PROMOTION" && w.reference_unit_amount ? economy(w.reference_unit_amount, w.unit_amount) : null,
+        // Une promotion ne montre jamais sa date de fin (M05) ; le prix barré vient du fichier du Calculateur, sur toute nature de fenêtre, ou n'existe pas (M01, M02, M03).
+        validity_label: isPromotionWindow(w, nowUtc) ? null : validityLabel(w),
+        promo: isPromotionWindow(w, nowUtc),
+        reference_amount: w.reference_unit_amount ? w.reference_unit_amount : null,
+        economy: w.reference_unit_amount ? economy(w.reference_unit_amount, w.unit_amount) : null,
       });
     } else {
       rows.push({
