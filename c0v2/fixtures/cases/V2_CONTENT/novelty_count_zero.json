@@ -1,0 +1,32 @@
+{
+  "case_id": "V2_CONTENT.novelty_count_zero",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/V2_CONTENT/ack_content_ready.json"
+      },
+      "content": {
+        "$doc": "documents/V2_CONTENT/content_ready.json"
+      }
+    },
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_novelty_count_zero.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "5f8169a33a3bfd7aa6fbf970ef3a9e1cd8db326f3911eda67f763ffa32297e68"
+    }
+  },
+  "notes": "N04: « Nouveautés » shows 1 to 200 families (24 to start) from the last 1 to 365 days (60 to start).",
+  "scenario": "V2_CONTENT"
+}

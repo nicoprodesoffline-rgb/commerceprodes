@@ -1,0 +1,19 @@
+{
+  "case_id": "V2_BUSINESS.price_of_a_v1_generation",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/V2_COEXISTENCE/snapshot_v1_ready.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-11-17T07:00:00Z",
+    "public_item_key": "PI-000000W57",
+    "quantity": 1,
+    "variant_axes": {}
+  },
+  "notes": "A SITE still serving a v1 catalogue prices it unchanged.",
+  "scenario": "V2_BUSINESS"
+}

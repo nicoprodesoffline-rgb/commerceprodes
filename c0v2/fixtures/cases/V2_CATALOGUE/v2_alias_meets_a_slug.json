@@ -68,7 +68,7 @@
     },
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "723388c6aa2fafce1d11ab70295442d8e5ff880ec54b272e06b22d799fe525f9"
+      "signature": "0e884dbb15803b21ef3878e4c681b0f23a2259f1717bf393c010570306cf979a"
     }
   },
   "notes": "An old address of a family is never the address of another one.",

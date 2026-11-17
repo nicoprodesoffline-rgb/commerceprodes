@@ -68,7 +68,7 @@
     },
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "83499fd7a6c1f8b50637de2c98c09e4e099d8368af4fc8b842bc471ce6ed5fb2"
+      "signature": "153ce6e6d5508778a3556c4aa8473a14fa98f6a388742667ab28d36c85d6a63d"
     }
   },
   "notes": "A position is given only in a category of the family.",

@@ -1,5 +1,32 @@
 {
   "cases": {
+    "V2_BUSINESS.price_of_a_v1_generation": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.unit_amount": "90.00"
+      },
+      "notes": "A SITE still serving a v1 catalogue prices it unchanged.",
+      "outcome": "SELECTED"
+    },
+    "V2_BUSINESS.price_of_a_v2_generation": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.unit_amount": "120.00"
+      },
+      "notes": "F1 bought alone: its BASE window, from the v2 catalogue served.",
+      "outcome": "SELECTED"
+    },
+    "V2_BUSINESS.promotion_from_ten_on_a_v2_generation": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "selection.unit_amount": "99.00"
+      },
+      "notes": "F1 from 10 units: its PROMOTION window, the same selection rule as in v1.",
+      "outcome": "SELECTED"
+    },
     "V2_CATALOGUE.v2_accepted": {
       "accepted": true,
       "error_codes": [],
@@ -110,7 +137,7 @@
       "notes": "A position is given only in a category of the family.",
       "outcome": "REJECTED"
     },
-    "V2_CATALOGUE.v2_reference_amount_without_promotion": {
+    "V2_CATALOGUE.v2_reference_amount_not_positive": {
       "accepted": false,
       "error_codes": [
         "SNAPSHOT_INVALID"
@@ -120,7 +147,7 @@
           "window.reference_unit_amount"
         ]
       },
-      "notes": "A base price shown struck through belongs to a PROMOTION window only.",
+      "notes": "M01–M03: a struck price is the one the Calculator file gives (F4, a fixed-price lot, in v2_accepted), on any window, never 0.",
       "outcome": "REJECTED"
     },
     "V2_CATALOGUE.v2_replay": {
@@ -278,6 +305,19 @@
         ]
       },
       "notes": "B08: maintenance shows a message.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.novelty_count_zero": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "shop.novelty_count"
+        ]
+      },
+      "notes": "N04: « Nouveautés » shows 1 to 200 families (24 to start) from the last 1 to 365 days (60 to start).",
       "outcome": "REJECTED"
     },
     "V2_CONTENT.redirect_chain": {

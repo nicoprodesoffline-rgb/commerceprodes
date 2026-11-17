@@ -68,7 +68,7 @@
     },
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "1946a3432907c6a300b91004fdf0d48579aa905aa9a7459afef396135624cd9b"
+      "signature": "595a75d94833600d4701e3d9e29ce296316a455273fe9f838fd6ab836ba9ede8"
     }
   },
   "notes": "V04: an unknown key is refused with its rule; nothing is activated.",

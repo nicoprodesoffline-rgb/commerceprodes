@@ -1,0 +1,19 @@
+{
+  "case_id": "V2_BUSINESS.promotion_from_ten_on_a_v2_generation",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-11-17T07:00:00Z",
+    "public_item_key": "PI-000000358",
+    "quantity": 10,
+    "variant_axes": {}
+  },
+  "notes": "F1 from 10 units: its PROMOTION window, the same selection rule as in v1.",
+  "scenario": "V2_BUSINESS"
+}

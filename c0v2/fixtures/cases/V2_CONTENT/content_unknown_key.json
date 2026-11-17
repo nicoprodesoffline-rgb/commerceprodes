@@ -24,7 +24,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "597754aa3cc855b0e9e04ffe0518cc471cbdab9be889003f5d2bc5ad3bae56e3"
+      "signature": "370bab033065492df9ae25f13e64dd33020300608b20ab1d1e421c58439084f9"
     }
   },
   "notes": "An unknown setting is refused with its rule.",
