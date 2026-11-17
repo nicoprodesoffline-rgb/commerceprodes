@@ -92,6 +92,22 @@
     "documents/V2_CONTENT/content_stale.json": {
       "canonical_sha256": "cf05b77b09adf4be8119cf8f31b269fa76ac1e74e03bae5a0220a53733a23309",
       "file_sha256": "cf05b77b09adf4be8119cf8f31b269fa76ac1e74e03bae5a0220a53733a23309"
+    },
+    "documents/V2_PREVIEW/content_preview_accepted.json": {
+      "canonical_sha256": "64ae6f96d6a12fa410d63784d925de15f847c9794049e867ab5b0296d69b6b78",
+      "file_sha256": "64ae6f96d6a12fa410d63784d925de15f847c9794049e867ab5b0296d69b6b78"
+    },
+    "documents/V2_PREVIEW/content_preview_expired.json": {
+      "canonical_sha256": "75bdefa4bd2778fe2cc030389a085e18e14b2fa647157d34b22c79ba9e579f1a",
+      "file_sha256": "75bdefa4bd2778fe2cc030389a085e18e14b2fa647157d34b22c79ba9e579f1a"
+    },
+    "documents/V2_PREVIEW/content_preview_reference_missing.json": {
+      "canonical_sha256": "64b68fc5651c48f7b0a122c6805b508b7c1649e411e2bfe5f8d5c4648a2ae52c",
+      "file_sha256": "64b68fc5651c48f7b0a122c6805b508b7c1649e411e2bfe5f8d5c4648a2ae52c"
+    },
+    "documents/V2_PREVIEW/content_preview_too_long.json": {
+      "canonical_sha256": "e4f283860ab2f6aa61aeaa993b745622c46d816fb1daf2df96c4b462fe2bf3c6",
+      "file_sha256": "e4f283860ab2f6aa61aeaa993b745622c46d816fb1daf2df96c4b462fe2bf3c6"
     }
   },
   "generator": "c0v2/tools/generate_fixtures.py",
@@ -177,6 +193,22 @@
     "documents/V2_CONTENT/content_stale.json": {
       "contract_version": "site_content.v2",
       "payload_sha256": "3e773f6f9c5845ee263f5a4dc3515fd8030073cb79b59c29f8916a4e0a2f7d47"
+    },
+    "documents/V2_PREVIEW/content_preview_accepted.json": {
+      "contract_version": "site_content_preview.v2",
+      "payload_sha256": "ae8e2c0a219049af1b038e04014feefad795163e18f7a947928180332faa273c"
+    },
+    "documents/V2_PREVIEW/content_preview_expired.json": {
+      "contract_version": "site_content_preview.v2",
+      "payload_sha256": "ad7ae6059d7c7c1f0203744858ada18ade5fc54ac5f0ed574d0e7c7088863b55"
+    },
+    "documents/V2_PREVIEW/content_preview_reference_missing.json": {
+      "contract_version": "site_content_preview.v2",
+      "payload_sha256": "135e9571294b724d6e334a3820c867d68f03a2e7a692b2cacc5ab3bb98cffe3d"
+    },
+    "documents/V2_PREVIEW/content_preview_too_long.json": {
+      "contract_version": "site_content_preview.v2",
+      "payload_sha256": "2c5500a278195fff2f744d27d3f74748b20b24febf749fb3778341c15a45d3bd"
     }
   },
   "results": {
@@ -208,6 +240,10 @@
     "V2_CONTENT.maintenance_without_message": "442f960a3897d039d16c22dbd26537aad80eaf49ad004a095c96aa4ef25bbd54",
     "V2_CONTENT.redirect_chain": "e08c685e936c3a71245dc097489f937efb42c4826b76d66ce9229f3a9b450d0a",
     "V2_CONTENT.redirect_to_another_host": "ebd112fddc74a8c6db1b938e137926a5d73d33edea59e95177afc65a486d9e1d",
-    "V2_CONTENT.redirect_with_a_scheme": "ebd112fddc74a8c6db1b938e137926a5d73d33edea59e95177afc65a486d9e1d"
+    "V2_CONTENT.redirect_with_a_scheme": "ebd112fddc74a8c6db1b938e137926a5d73d33edea59e95177afc65a486d9e1d",
+    "V2_PREVIEW.preview_accepted": "7aef753cbd77d4f03b5ea7c9edc41679412edea9351fb7dea6d7f5e0a4698100",
+    "V2_PREVIEW.preview_expired": "1dafc689e143c223f85bd9d1b2ce98df4b72bade2418eb8b522434e79c988585",
+    "V2_PREVIEW.preview_reference_missing": "c2f422a2b6981c055675baf58a27fa0445465c7359c6028e195a33bf7816ffd1",
+    "V2_PREVIEW.preview_too_long": "1dafc689e143c223f85bd9d1b2ce98df4b72bade2418eb8b522434e79c988585"
   }
 }

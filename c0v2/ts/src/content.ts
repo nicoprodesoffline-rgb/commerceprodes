@@ -5,6 +5,7 @@ import * as f from "../../../c0/ts/src/formats";
 import { isKey } from "../../../c0/ts/src/identity";
 import { Json, JsonObject, MalformedPayload, digest, isCanonical, isObject, parseBytes } from "../../../c0/ts/src/jsonc";
 import * as signing from "../../../c0/ts/src/signing";
+import { utcSeconds } from "../../../c0/ts/src/activation";
 import { Verdict, rejected, verdict } from "./errors";
 import { Doc, isSorted, isSortedTuples, isUnique } from "./snapshot";
 
@@ -232,6 +233,17 @@ export function catalogueRefs(catalogue: Json): Refs {
   };
 }
 
+/** Every rubrique, family and image a page names is in the catalogue the SITE serves. */
+export function pageReferencesServed(page: Doc, refs: Refs): boolean {
+  for (const section of page["sections"] as Doc[]) {
+    const data = section["data"] as Doc;
+    if (((data["categories"] ?? []) as string[]).some((key) => !refs.categories.has(key))) return false;
+    if (((data["families"] ?? []) as string[]).some((key) => !refs.families.has(key))) return false;
+    if (["media_sha", "image_sha256"].some((key) => has(data, key) && !refs.media.has(data[key]))) return false;
+  }
+  return true;
+}
+
 export function semanticFindings(doc: Doc, refs: Refs): [string[], string[]] {
   const codes = new Set<string>();
   const rules = new Set<string>();
@@ -250,16 +262,7 @@ export function semanticFindings(doc: Doc, refs: Refs): [string[], string[]] {
   if (!isSorted(slugs) || !isUnique(slugs)) invalid("pages.order");
   if (!isUnique(pages.map((page) => page["key"] as string))) invalid("pages.key_unique");
   if (slugs.some((slug) => sourceSet.has(slug))) invalid("redirects.page");
-  for (const page of pages) {
-    for (const section of page["sections"] as Doc[]) {
-      const data = section["data"] as Doc;
-      if (((data["categories"] ?? []) as string[]).some((key) => !refs.categories.has(key))) codes.add("REFERENCE_MISSING");
-      if (((data["families"] ?? []) as string[]).some((key) => !refs.families.has(key))) codes.add("REFERENCE_MISSING");
-      for (const key of ["media_sha", "image_sha256"]) {
-        if (has(data, key) && !refs.media.has(data[key])) codes.add("REFERENCE_MISSING");
-      }
-    }
-  }
+  for (const page of pages) if (!pageReferencesServed(page, refs)) codes.add("REFERENCE_MISSING");
   const relations = doc["relations"] as Doc[];
   if (!isSortedTuples(relations.map((r) => [r["source"], r["kind"], r["order"], r["target"]]))) invalid("relations.order");
   const pairs: string[] = [];
@@ -374,4 +377,74 @@ export function evaluateContent(
     }
   }
   return { ...verdict(true, "ACTIVATED"), stage: "activated", ack: buildAck(doc, nowUtc, keyring, ackKeyId), detail: {} };
+}
+
+// --- preview of a draft page (line 3.26, B14) ------------------------------------------------------
+
+export const PREVIEW_CONTRACT_VERSION = "site_content_preview.v2";
+export const PREVIEW_MAX_BYTES = 1024 * 1024;
+/** The SITE keeps a preview 30 minutes at most: a later expiry is refused, so the contract carries the cap. */
+export const PREVIEW_MAX_SECONDS = 1800;
+export const DOMAIN_PREVIEW = "prodes.c0.site_content_preview.v2";
+export const DOMAIN_SIG_PREVIEW = "prodes.c0.sig.site_content_preview.v2";
+const PREVIEW_KEYS = ["contract_version", "page", "generated_at_utc", "expires_at_utc", "payload_sha256"];
+
+function shapePreview(value: Json): void {
+  need(f.exactKeys(value, PREVIEW_KEYS), "envelope.keys");
+  const doc = obj(value);
+  need(f.isUtc(doc["generated_at_utc"]), "envelope.generated_at_utc");
+  need(f.isUtc(doc["expires_at_utc"]) && doc["expires_at_utc"] > (doc["generated_at_utc"] as string), "envelope.expires_at_utc");
+  need(f.isHex64(doc["payload_sha256"]), "envelope.payload_sha256");
+  shapePage(doc["page"] as Json);
+}
+
+export function previewPayloadSha256(doc: Doc): string {
+  const preimage: Record<string, unknown> = {};
+  for (const key of Object.keys(doc)) if (key !== "payload_sha256") preimage[key] = doc[key];
+  return digest(DOMAIN_PREVIEW, preimage);
+}
+
+export function previewSignatureContext(doc: Doc): JsonObject {
+  return { generated_at_utc: doc["generated_at_utc"], payload_sha256: doc["payload_sha256"] };
+}
+
+export function signPreview(doc: Doc, keyring: Json, keyId: string): JsonObject {
+  return { key_id: keyId, signature: signing.sign(keyring, keyId, signing.SCOPE_PUBLISH, DOMAIN_SIG_PREVIEW, previewSignatureContext(doc)) };
+}
+
+export type PreviewResult = Verdict & { stage: string; detail: { rules?: string[] }; expires_at_utc?: string; page?: Json };
+
+/** Receiver decision for the preview of ONE draft page: never activated, never acknowledged (twin of ``evaluate_preview``). */
+export function evaluatePreview(previewBytes: Uint8Array, transport: Json, catalogue: Json, nowUtc: string, keyring: Json): PreviewResult {
+  if (!f.isUtc(nowUtc)) throw new Error("receiver configuration is invalid (fixture error, not a verdict)");
+  const stop = (stage: string, codes: string[], detail: { rules?: string[] } = {}): PreviewResult => ({ ...rejected(codes), stage, detail });
+  let parsed: Json;
+  try {
+    parsed = parseBytes(previewBytes, PREVIEW_MAX_BYTES);
+  } catch (error) {
+    if (error instanceof MalformedPayload) return stop("parse", ["PAYLOAD_MALFORMED"]);
+    throw error;
+  }
+  if (!isCanonical(previewBytes, parsed)) return stop("canonical", ["INTEGRITY_MISMATCH"]);
+  if (!isObject(parsed)) return stop("shape", ["CONTENT_INVALID"], { rules: ["envelope.keys"] });
+  if (parsed["contract_version"] !== PREVIEW_CONTRACT_VERSION) return stop("version", ["SCHEMA_UNSUPPORTED"]);
+  try {
+    shapePreview(parsed);
+  } catch (error) {
+    if (error instanceof Bad) return stop("shape", ["CONTENT_INVALID"], { rules: [error.rule] });
+    throw error;
+  }
+  const doc = parsed as Doc;
+  if (!pageReferencesServed(doc["page"], catalogueRefs(catalogue))) return stop("semantic", ["REFERENCE_MISSING"]);
+  if (doc["payload_sha256"] !== previewPayloadSha256(doc)) return stop("integrity", ["INTEGRITY_MISMATCH"]);
+  if (
+    !f.exactKeys(transport, TRANSPORT_KEYS) ||
+    !signing.verify(keyring, transport["key_id"], transport["signature"], signing.SCOPE_PUBLISH, DOMAIN_SIG_PREVIEW, previewSignatureContext(doc))
+  ) {
+    const problem = signing.keyProblem(keyring, isObject(transport) ? transport["key_id"] : null);
+    return stop("signature", ["SIGNATURE_INVALID"], problem !== null ? { rules: [problem] } : {});
+  }
+  const remaining = utcSeconds(doc["expires_at_utc"]) - utcSeconds(nowUtc);
+  if (remaining <= 0 || remaining > PREVIEW_MAX_SECONDS) return stop("expiry", ["PREVIEW_EXPIRED"]);
+  return { ...verdict(true, "PREVIEW_VALID"), stage: "valid", detail: {}, expires_at_utc: doc["expires_at_utc"], page: doc["page"] };
 }

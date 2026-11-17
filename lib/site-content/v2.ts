@@ -16,13 +16,18 @@ function section(raw: Obj): Section {
   }
 }
 
-export function editorialFromV2(doc: Obj): EditorialSet {
-  const pages: EditorialPage[] = (doc.pages as Obj[]).map((page) => ({
+/** Une page de `site_content.v2` à la forme des composants (aussi pour l'aperçu d'une page en brouillon). */
+export function pageFromV2(page: Obj): EditorialPage {
+  return {
     key: page.key, slug: page.slug, title: page.title, revision: page.revision,
     nav: { showInBar: page.nav.show_in_bar, order: page.nav.order },
     seo_title: page.seo_title ?? "", seo_description: page.seo_description ?? "", canonical: page.canonical ?? "",
     sections: (page.sections as Obj[]).map(section),
-  }));
+  };
+}
+
+export function editorialFromV2(doc: Obj): EditorialSet {
+  const pages: EditorialPage[] = (doc.pages as Obj[]).map(pageFromV2);
   const merchandising: MerchandisingRelation[] = (doc.relations as Obj[]).map((r) => ({ source: r.source, target: r.target, kind: r.kind, order: r.order }));
   return { generation: doc.content_sequence, publicationId: doc.publication_id, pages, merchandising };
 }

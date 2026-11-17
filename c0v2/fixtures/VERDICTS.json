@@ -318,6 +318,49 @@
       },
       "notes": "3.31: no scheme in a redirect target.",
       "outcome": "REJECTED"
+    },
+    "V2_PREVIEW.preview_accepted": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "page.slug": "/saison",
+        "stage": "valid"
+      },
+      "notes": "B14: a draft page, signed, naming the served catalogue, expiring in 20 minutes: the SITE keeps it and renders it.",
+      "outcome": "PREVIEW_VALID"
+    },
+    "V2_PREVIEW.preview_expired": {
+      "accepted": false,
+      "error_codes": [
+        "PREVIEW_EXPIRED"
+      ],
+      "expect": {
+        "stage": "expiry"
+      },
+      "notes": "An expired preview is refused; so is one expiring more than 30 minutes after the SITE clock.",
+      "outcome": "REJECTED"
+    },
+    "V2_PREVIEW.preview_reference_missing": {
+      "accepted": false,
+      "error_codes": [
+        "REFERENCE_MISSING"
+      ],
+      "expect": {
+        "stage": "semantic"
+      },
+      "notes": "A preview naming a family the SITE does not serve is refused, as a content would be.",
+      "outcome": "REJECTED"
+    },
+    "V2_PREVIEW.preview_too_long": {
+      "accepted": false,
+      "error_codes": [
+        "PREVIEW_EXPIRED"
+      ],
+      "expect": {
+        "stage": "expiry"
+      },
+      "notes": "The SITE never keeps a preview more than 30 minutes.",
+      "outcome": "REJECTED"
     }
   },
   "verdicts_version": "c0v2.verdicts.v1"

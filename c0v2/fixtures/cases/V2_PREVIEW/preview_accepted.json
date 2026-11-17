@@ -1,0 +1,23 @@
+{
+  "case_id": "V2_PREVIEW.preview_accepted",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_preview",
+  "input": {
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "preview": {
+      "$bytes": "documents/V2_PREVIEW/content_preview_accepted.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "ee82b4c6a9a58e8e861dbffb2dba98caa191e1db21ca06875a20abd184dda1a6"
+    }
+  },
+  "notes": "B14: a draft page, signed, naming the served catalogue, expiring in 20 minutes: the SITE keeps it and renders it.",
+  "scenario": "V2_PREVIEW"
+}
