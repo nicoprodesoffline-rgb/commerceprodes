@@ -18,7 +18,7 @@
  *    d'indisponibilité est rendue ICI en HTTP 503 (jamais un 500 vide ni un catalogue vide) — revue A2 F-01/F-11.
  *
  * RÈGLE (revue I1 D-02) : LES ROUTES MACHINE NE PASSENT PAS PAR CE PROXY NAVIGATEUR. Les routes signées HMAC C0
- * `/api/site/publish/**` (receiver BC2) et `/api/site/events/**` (poll/ACK BC4) sont EXCLUES (de même `/api/site/health`, cercle 4) du `matcher` ci-dessous.
+ * `/api/site/publish/**` (receiver BC2) et `/api/site/events/**` (poll/ACK BC4) sont EXCLUES (de même `/api/site/health` et `/api/site/link`, cercle 4) du `matcher` ci-dessous.
  * Raison : dès qu'un proxy Next 16 couvre une route, Next met le corps de la requête en mémoire tampon et le TRONQUE
  * à `proxyClientMaxBodySize` (10 MiB par défaut) avant la route ; BC2 lit alors un corps amputé (média légitime de
  * 10–20 MiB → 401 `SIGNATURE_INVALID`, snapshot de 10–32 MiB → 400 `PAYLOAD_MALFORMED`, flux surdimensionné →
@@ -161,5 +161,5 @@ export async function proxy(req: NextRequest) {
 export const config = {
   // Next exige un littéral analysable statiquement : l'exclusion des routes machine est donc écrite en dur ici.
   // `(?:/|$)` : seul le préfixe exact (`/api/site/publish`, `/api/site/publish/…`) est exclu, pas `/api/site/publishX`.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/site/publish(?:/|$)|api/site/content(?:/|$)|api/site/events(?:/|$)|api/site/health(?:/|$)).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/site/publish(?:/|$)|api/site/content(?:/|$)|api/site/events(?:/|$)|api/site/health(?:/|$)|api/site/link(?:/|$)).*)"],
 };

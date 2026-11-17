@@ -12,6 +12,7 @@
  * Seul ajout : le contrôle d'environnement `data_label` (C0 §15, contrôle receiver), appliqué quand
  * l'évaluation a dépassé l'étape `shape` (donc après `shape`, avant `semantic`).
  */
+import { keyKnown } from "./transport-gate";
 import type { Pool, PoolClient } from "pg";
 // Cercle 3 (3.1) : le récepteur lit `site_snapshot.v1` ET `site_snapshot.v2`. `evaluatePublication` de c0v2 envoie un document v1 au récepteur v1 gelé (c0/), inchangé, et applique
 // les règles v2 à un document v2 ; `signatureContext` et l'accusé sont ceux de la v1. Aucun fichier de c0/ n'est modifié.
@@ -139,7 +140,9 @@ export function transportGate(config: ReceiverConfig, headers: HeaderSource, ope
   const keyId = headers.get(HEADER_KEY_ID);
   const signature = headers.get(HEADER_SIGNATURE);
   if (keyHasScope(config.keyring, keyId, SCOPE_PUBLISH) && isHex64(signature)) return null;
-  return json(401, { accepted: false, outcome: "REJECTED", operation, error_codes: ["SIGNATURE_INVALID"], stage: "transport_gate" });
+  // Cercle 4 (L10) : une clé absente ou retirée du trousseau du SITE est dite telle quelle à la Factory (« clé inconnue du site »).
+  const unknown = !keyKnown(config.keyring, keyId) ? { transport_error: "KEY_UNKNOWN" } : {};
+  return json(401, { accepted: false, outcome: "REJECTED", operation, error_codes: ["SIGNATURE_INVALID"], stage: "transport_gate", ...unknown });
 }
 
 function transportFromHeaders(headers: HeaderSource): JsonObject {

@@ -1,0 +1,25 @@
+{
+ "created_utc": "2026-11-17T19:02:50Z",
+ "keyring_version": "prodes.site_keyring.v1",
+ "keys": [
+  {
+   "key_id": "essai-factory-publish-01",
+   "scope": "site_snapshot.publish",
+   "secret_utf8": "TEST_SECRET_NOT_FOR_PRODUCTION1e9798a4cc88513870ce4e98e1ae9a37e073c677f97762d1d30aba06b377d24a",
+   "status": "ACTIVE"
+  },
+  {
+   "key_id": "essai-factory-ack-01",
+   "scope": "activation_ack",
+   "secret_utf8": "TEST_SECRET_NOT_FOR_PRODUCTIONe0242ed5fb4ce8ae0f382f9d35509401d59e192e6851c93cf3f07d7359b3b3bd",
+   "status": "ACTIVE"
+  },
+  {
+   "key_id": "essai-factory-events-01",
+   "scope": "site_events.read",
+   "secret_utf8": "TEST_SECRET_NOT_FOR_PRODUCTION35b6b2b428bfbe1081d2a25d522d90aa3e66818732c9b8c6f280d4cf46e0b3de",
+   "status": "ACTIVE"
+  }
+ ],
+ "nature": "test"
+}
