@@ -24,7 +24,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "87ed36cd199ed8da6a601a67c053334bf61199d7fdd23ea44e783f516aebf008"
+      "signature": "973f6d05024fe628ea8ae6d4b1ae9e941c6b5a831db75edb82266e7d065d0ebe"
     }
   },
   "notes": "3.31: a redirect leads inside the SITE only (no « // »).",

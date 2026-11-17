@@ -1,5 +1,5 @@
 {
-  "case_id": "V2_CATALOGUE.v2_reference_amount_without_promotion",
+  "case_id": "V2_CATALOGUE.v2_reference_amount_not_positive",
   "data_label": "STAGING_FIXTURE",
   "function": "evaluate_publication",
   "input": {
@@ -64,13 +64,13 @@
       "released_expected_withdrawals_digest": null
     },
     "snapshot": {
-      "$bytes": "documents/V2_CATALOGUE/snapshot_v2_reference_amount_without_promotion.json"
+      "$bytes": "documents/V2_CATALOGUE/snapshot_v2_reference_amount_not_positive.json"
     },
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "9efc2220abef7c3ce20073692fcdfed3845b6b0efa428fb5b1ae19a3438e3142"
+      "signature": "0cdb57072ab79d36da9cdd7bb0fd5bfe8d3d4625849cd17716e96f3e48033e26"
     }
   },
-  "notes": "A base price shown struck through belongs to a PROMOTION window only.",
+  "notes": "M01–M03: a struck price is the one the Calculator file gives (F4, a fixed-price lot, in v2_accepted), on any window, never 0.",
   "scenario": "V2_CATALOGUE"
 }

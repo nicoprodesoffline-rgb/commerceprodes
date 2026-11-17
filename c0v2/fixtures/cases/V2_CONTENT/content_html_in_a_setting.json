@@ -17,7 +17,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "622de449614fdead43a5e3747815e919faecde55c668ff14d6cb900749b8f72d"
+      "signature": "889a6a6107879e4cfb28a2eb49ddaa1a8e34eb089b9ef533368239a46e3212b8"
     }
   },
   "notes": "E03: a setting is text; HTML in it is accepted as text and the SITE escapes it when it shows it.",

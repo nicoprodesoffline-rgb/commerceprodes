@@ -44,14 +44,14 @@ est un refus `SNAPSHOT_INVALID` avec sa règle (V04).
 | Rubrique | `hidden` | booléen (masquée du menu et du plan du site, pas retirée) | `category.hidden` | 3.22 |
 | Famille | `seo_title`, `seo_description` | texte ≤ 200 / ≤ 1 000, ou `null` (le SITE prend alors le nom) | `family.seo_title`, `family.seo_description` | 3.13 |
 | Famille | `slug_aliases` | anciennes adresses, triées, uniques ; aucune n'est l'adresse ou l'alias d'une autre famille | `family.slug_aliases`, `family.slug_aliases_order`, `families.slug_unique` | 3.18 |
-| Famille | `created_at_utc` | instant UTC | `family.created_at_utc` | 3.20 |
+| Famille | `first_published_at_utc` | instant UTC de la **première arrivée sur le SITE** (décision Owner du 17/11, N01–N03) : retenu par la Factory à l'accusé d'activation, jamais changé ensuite, même après une dépublication ; une famille qui n'est jamais arrivée porte l'instant du document qui la publie | `family.first_published_at_utc` | 3.20 |
 | Famille | `category_positions` | `[{category_key, position}]`, triée, seulement dans les rubriques de la famille ; liste vide = ordre par défaut du SITE | `family.category_positions` | 3.21 |
 | Famille | `characteristics` | `[{label ≤ 100, value ≤ 500}]`, ≤ 200, libellés uniques, ordre de la Factory | `family.characteristics`, `family.characteristics_unique` | 3.14 |
 | Famille | `documents` | `[{label, kind: TECHNICAL_SHEET\|NOTICE\|OTHER, sha256, mime: application/pdf, size ≤ 30 Mio}]`, triée par empreinte | `family.documents`, `family.documents_order` | 3.15 |
 | Variante | `pack` | `{paid_units, free_units}` (entiers ≥ 1) ou `null` | `item.pack` | 3.20 |
 | Variante | `characteristics` | comme la famille : ce qui diffère d'une variante à l'autre | `item.characteristics`, `item.characteristics_unique` | 3.14 |
 | Fenêtre de prix | `price_nature` | `BASE`, `PROMOTION`, `URGENCE` ou `null` | `window.price_nature` | 3.20 |
-| Fenêtre de prix | `reference_unit_amount` | montant > 0, **seulement** sur une fenêtre `PROMOTION` (prix de base barré), sinon `null` | `window.reference_unit_amount` | 3.20 |
+| Fenêtre de prix | `reference_unit_amount` | montant > 0 sur toute nature de fenêtre : le **prix barré fourni par le fichier du Calculateur** (lot à prix fixe d'abord, M02), sinon `null` ; la Factory n'en calcule jamais | `window.reference_unit_amount` | 3.20 |
 | Média | `derivatives` | `[{sha256, width, height, mime, size}]`, ≤ 8, largeurs strictement croissantes, empreintes uniques et distinctes des médias | `media.derivatives`, `media.derivatives_order`, `media.derivatives_unique` | 3.3 |
 | Média | `alt` | texte ≤ 150, ou `null` | `media.alt` | 3.4 |
 | Média | `public_name` | nom lisible de l'adresse `/media/<empreinte>/<nom>.webp` (format d'une adresse), ou `null` ; l'empreinte seule fait foi | `media.public_name` | 3.4 |
@@ -75,6 +75,14 @@ les règles v2 et l'étape `media` du §2 ; identité, couverture, retenue et s�
 v1). L'accusé est `build_ack` v1 : la Factory le vérifie avec `verify_ack` v1, sans changement (cas `v2_ack_verified_by_v1`). La
 preuve de couverture avant envoi est `check_source_coverage` sur la validation v2, avec le même manifeste privé.
 
+### 3.1 Fonctions métier (`site_business.v1`) sur un catalogue v2
+
+Les fonctions métier v1 (`select_price`, `validate_quote_request`, `validate_order_submit`, `lookup_receipt`) sont gelées et exigent un
+`site_snapshot.v1` bien formé. Sur un SITE qui sert un catalogue v2, elles reçoivent sa **vue v1** (`business.v1_view`, `v1View` en
+TypeScript) : même enveloppe, rubriques, familles, variantes et fenêtres réduites à leurs clés v1, sans médias (aucune fonction métier
+ne lit un média). Mêmes prix, mêmes codes, mêmes résultats ; un catalogue v1 passe tel quel. Le SITE appelle `c0v2` (`business.ts` :
+`selectPrice`, `generationOf` + `selectPriceIn`, `validateQuoteRequest`, `validateOrderSubmit`), jamais la v1 sur un document v2.
+
 ## 4. `site_content.v2`
 
 Un seul document porte tout ce que le SITE sert hors du catalogue ; il remplace le dossier partagé `site_content.v1` (V08) et passe par
@@ -82,7 +90,8 @@ le même canal que le catalogue : envoi, vérification, activation, accusé sign
 
 ```text
 { contract_version:"site_content.v2", publication_id, content_sequence:int>=1, generated_at_utc, catalogue_sequence:int|null,
-  shop:{ phone|null, email|null, address|null, opening_hours|null, delivery_note|null, footer_links:[{label, path}] },
+  shop:{ phone|null, email|null, address|null, opening_hours|null, delivery_note|null, footer_links:[{label, path}],
+         novelty_days:1..365, novelty_count:1..200 },  (nouveautés N04 : au plus novelty_count familles arrivées depuis novelty_days jours ; départ 60 et 24)
   announcement:{ text, link|null, starts_at_utc, ends_at_utc|null } | null,
   maintenance:{ active, message|null },            (active ⇒ message)
   redirects:[{ from_path, to_path, status: 301|308 }],
@@ -164,7 +173,7 @@ réponse `200 {accepted:true, outcome:"PREVIEW_STORED", path:"/apercu/<preview_i
 
 ## 5. Jeux d'essai
 
-33 cas, 27 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
+36 cas, 27 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
 (rubriques Bancs avec F1 à F3, Tables avec F4 et F5, Corbeilles vide). Les WebP sont des octets fixes écrits une fois avec Pillow ; les
 originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur empreinte, puisqu'ils ne quittent pas la Factory.
 
@@ -172,6 +181,7 @@ originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur e
 |---|---|
 | `V2_CATALOGUE` | V01 (v2 activé, dérivés et document servis, originaux absents), rejeu, accusé vérifié par la v1, couverture prouvée, V04 (clé inconnue, clé v2 absente), V05 (SITE resté en v1), domaines séparés, dérivé ou document manquant, règles v2 |
 | `V2_COEXISTENCE` | V03 (v1 lu par un SITE v2) et premier v2 sur une base v1 |
+| `V2_BUSINESS` | §3.1 : prix d'une variante sur un catalogue v2 (fenêtre de base, promotion à partir de 10) et sur un catalogue v1 |
 | `V2_PREVIEW` | B14 : aperçu accepté, expiré, gardé plus de 30 minutes, référence absente |
 | `V2_CONTENT` | V07–V09 (activé, accusé vérifié, rejeu, séquence ancienne, référence absente), 3.31 (redirection vers un autre hôte ou avec un schéma), S07 (un seul saut), E03, maintenance sans message, clé inconnue |
 

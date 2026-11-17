@@ -29,7 +29,7 @@ const CATEGORY_KEYS = ["category_key", "name", "parent_category_key", "position"
 const FAMILY_KEYS = [
   "public_family_key", "slug", "name", "description_short", "description_long",
   "primary_category_key", "secondary_category_keys", "image_main_sha256", "axes", "items",
-  "seo_title", "seo_description", "slug_aliases", "created_at_utc", "category_positions", "characteristics", "documents",
+  "seo_title", "seo_description", "slug_aliases", "first_published_at_utc", "category_positions", "characteristics", "documents",
 ];
 const AXIS_KEYS = ["axis_key", "label"];
 const ITEM_KEYS = ["public_item_key", "status", "variant_axes", "public_media_refs", "public_sell_price_windows", "pack", "characteristics"];
@@ -127,7 +127,8 @@ function shapeWindow(window: Json): void {
   const reference = w["reference_unit_amount"];
   if (reference !== null) {
     const referenceCents = f.moneyCents(reference);
-    need(referenceCents !== null && referenceCents > 0n && nature === "PROMOTION", "window.reference_unit_amount");
+    // 3.20 (M02): the struck price the Calculator file gives, on any window (a fixed-price lot first); never computed by the Factory.
+    need(referenceCents !== null && referenceCents > 0n, "window.reference_unit_amount");
   }
 }
 
@@ -172,7 +173,7 @@ function shapeFamily(value: Json): void {
   need(optionalText(family["seo_title"], 200), "family.seo_title");
   need(optionalText(family["seo_description"], 1000, true), "family.seo_description");
   for (const alias of list(family["slug_aliases"], "family.slug_aliases")) need(slugOk(alias), "family.slug_aliases");
-  need(f.isUtc(family["created_at_utc"]), "family.created_at_utc");
+  need(f.isUtc(family["first_published_at_utc"]), "family.first_published_at_utc");
   for (const entry of list(family["category_positions"], "family.category_positions")) {
     need(f.exactKeys(entry, POSITION_KEYS), "family.category_positions");
     need(categoryKeyOk(obj(entry)["category_key"]) && f.isCount(obj(entry)["position"], 1, MAX_POSITION), "family.category_positions");

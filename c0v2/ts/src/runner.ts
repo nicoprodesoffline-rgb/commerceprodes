@@ -6,6 +6,7 @@ import * as v1activation from "../../../c0/ts/src/activation";
 import { Json, JsonObject, MalformedPayload, canonicalBytes, isObject, parseBytes, sha256Hex } from "../../../c0/ts/src/jsonc";
 import * as v1snap from "../../../c0/ts/src/snapshot";
 import * as activation from "./activation";
+import * as business from "./business";
 import * as content from "./content";
 import { Doc } from "./snapshot";
 
@@ -93,6 +94,8 @@ export function runFunction(name: string, data: Data): JsonObject {
         data["ack_key_id"] as string,
       ) as unknown as JsonObject;
     }
+    case "select_price":
+      return business.selectPrice(json(data["generation"]), json(data["public_item_key"]), json(data["variant_axes"]), json(data["quantity"]), json(data["instant_utc"])) as unknown as JsonObject;
     case "evaluate_preview":
       return content.evaluatePreview(bytes(data["preview"]), json(data["transport"]), json(data["catalogue"]), data["now_utc"] as string, json(data["keyring"])) as unknown as JsonObject;
     case "verify_content_ack":

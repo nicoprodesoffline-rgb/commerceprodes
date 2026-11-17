@@ -1,0 +1,19 @@
+{
+  "case_id": "V2_BUSINESS.price_of_a_v2_generation",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_price",
+  "input": {
+    "generation": {
+      "snapshot": {
+        "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+      },
+      "status": "ACTIVE"
+    },
+    "instant_utc": "2026-11-17T07:00:00Z",
+    "public_item_key": "PI-000000358",
+    "quantity": 1,
+    "variant_axes": {}
+  },
+  "notes": "F1 bought alone: its BASE window, from the v2 catalogue served.",
+  "scenario": "V2_BUSINESS"
+}
