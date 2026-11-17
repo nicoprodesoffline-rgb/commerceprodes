@@ -111,7 +111,7 @@ Les quatre types v1 gardent leurs clés (une clé absente = non donnée), plus :
 (`CONTENT_INVALID`, la première règle) → `semantic` (`CONTENT_INVALID` avec ses règles ; `REFERENCE_MISSING` pour une rubrique, une famille
 ou une image absente du catalogue servi) → `integrity` (`INTEGRITY_MISMATCH`) → `signature` (`SIGNATURE_INVALID`) → `sequence`
 (`STALE_SEQUENCE`, `SEQUENCE_COLLISION`, ou l'accusé stocké rejoué `REPLAY_ACK`) → `ACTIVATED` et accusé. Un refus laisse servis les
-contenus précédents (V09). `CONTENT_INVALID` et `REFERENCE_MISSING` sont les deux codes ajoutés (`c0v2/python/c0_contracts_v2/errors.py`).
+contenus précédents (V09). `CONTENT_INVALID`, `REFERENCE_MISSING` et `PREVIEW_EXPIRED` (§4.5) sont les codes ajoutés (`c0v2/python/c0_contracts_v2/errors.py`).
 
 Règles sémantiques : `redirects.order` (triées par `from_path`, uniques), `redirects.self`, `redirects.chain` (une cible n'est jamais
 elle-même redirigée : un seul saut, S07), `redirects.page` (une page publiée n'est jamais redirigée), `pages.order` (triées par adresse,
@@ -144,9 +144,27 @@ Hors contrat au sens du §15 v1 : seuls octets, digests et signatures sont figé
 Réponse aux contenus : `200` avec `x-c0-outcome: ACTIVATED` ou `REPLAY_ACK` et l'accusé en corps ; refus `4xx` avec
 `{accepted:false, outcome, error_codes, detail}`. Le SITE garde les contenus actifs et leur accusé ; un refus laisse servis les précédents.
 
+### 4.5 Aperçu d'une page brouillon (`site_content_preview.v2`, ligne 3.26, B14)
+
+Une seule page, jamais activée, jamais acquittée : le SITE la rend pour l'opérateur avant publication.
+
+```text
+{ contract_version:"site_content_preview.v2", page:<une page de site_content.v2>, generated_at_utc, expires_at_utc, payload_sha256 }
+```
+
+Hachage `prodes.c0.site_content_preview.v2` ; signature de la clé de publication, domaine `prodes.c0.sig.site_content_preview.v2`, contexte
+`{generated_at_utc, payload_sha256}`. Étapes : `parse`, `canonical`, `version`, `shape` (`CONTENT_INVALID`, règles de la page), `semantic`
+(`REFERENCE_MISSING` contre le catalogue servi), `integrity`, `signature`, `expiry` : `PREVIEW_EXPIRED` si `expires_at_utc` est passé
+ou à plus de 30 minutes de l'horloge du SITE (le SITE ne garde jamais un aperçu plus longtemps). Résultat accepté : `PREVIEW_VALID`, avec
+`page` et `expires_at_utc`.
+
+Transport : `POST /api/site/content/preview`, corps = octets canoniques, en-têtes `x-c0-key-id`, `x-c0-signature` = `sign_preview` ;
+réponse `200 {accepted:true, outcome:"PREVIEW_STORED", path:"/apercu/<preview_id>", expires_at_utc}`, le jeton tiré au hasard par le SITE
+(le document n'en porte pas) ; refus `4xx` comme les contenus. La page d'aperçu est `noindex`, `no-store`, et répond 404 après expiration.
+
 ## 5. Jeux d'essai
 
-29 cas, 23 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
+33 cas, 27 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
 (rubriques Bancs avec F1 à F3, Tables avec F4 et F5, Corbeilles vide). Les WebP sont des octets fixes écrits une fois avec Pillow ; les
 originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur empreinte, puisqu'ils ne quittent pas la Factory.
 
@@ -154,6 +172,7 @@ originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur e
 |---|---|
 | `V2_CATALOGUE` | V01 (v2 activé, dérivés et document servis, originaux absents), rejeu, accusé vérifié par la v1, couverture prouvée, V04 (clé inconnue, clé v2 absente), V05 (SITE resté en v1), domaines séparés, dérivé ou document manquant, règles v2 |
 | `V2_COEXISTENCE` | V03 (v1 lu par un SITE v2) et premier v2 sur une base v1 |
+| `V2_PREVIEW` | B14 : aperçu accepté, expiré, gardé plus de 30 minutes, référence absente |
 | `V2_CONTENT` | V07–V09 (activé, accusé vérifié, rejeu, séquence ancienne, référence absente), 3.31 (redirection vers un autre hôte ou avec un schéma), S07 (un seul saut), E03, maintenance sans message, clé inconnue |
 
 ## 6. Ce que ce contrat ne prouve pas

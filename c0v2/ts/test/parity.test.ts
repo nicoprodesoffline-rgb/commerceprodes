@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Json, JsonObject, canonicalBytes, isObject, parseBytes, sha256Hex } from "../../../c0/ts/src/jsonc";
 import { ERROR_CODES } from "../src/errors";
-import { payloadSha256 as contentPayload } from "../src/content";
+import { payloadSha256 as contentPayload, previewPayloadSha256 } from "../src/content";
 import { Doc, payloadSha256 as snapshotPayload } from "../src/snapshot";
 import { FIXTURES, FIXTURE_MAX_BYTES, caseFiles, readCase, resultSha256, runCase } from "../src/runner";
 
@@ -65,7 +65,8 @@ test("V02: documents, payload digests and media are the same bytes as in Python"
   }
   for (const [relative, entry] of Object.entries(expected["payloads"] as Record<string, JsonObject>)) {
     const doc = readJson(join(FIXTURES, relative)) as Doc;
-    const recomputed = entry["contract_version"] === "site_snapshot.v2" ? snapshotPayload(doc) : contentPayload(doc);
+    const version = entry["contract_version"];
+    const recomputed = version === "site_snapshot.v2" ? snapshotPayload(doc) : version === "site_content_preview.v2" ? previewPayloadSha256(doc) : contentPayload(doc);
     if (recomputed !== entry["payload_sha256"]) failures.push(`${relative}: payload_sha256`);
   }
   for (const [relative, digest] of Object.entries(expected["media"] as Record<string, string>)) {

@@ -93,6 +93,8 @@ export function runFunction(name: string, data: Data): JsonObject {
         data["ack_key_id"] as string,
       ) as unknown as JsonObject;
     }
+    case "evaluate_preview":
+      return content.evaluatePreview(bytes(data["preview"]), json(data["transport"]), json(data["catalogue"]), data["now_utc"] as string, json(data["keyring"])) as unknown as JsonObject;
     case "verify_content_ack":
       return content.verifyAck(json(data["ack"]), json(data["keyring"]), data["content"] as unknown as Doc) as unknown as JsonObject;
     default:

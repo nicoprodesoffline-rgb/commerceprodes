@@ -1,0 +1,23 @@
+{
+  "case_id": "V2_PREVIEW.preview_reference_missing",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_preview",
+  "input": {
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "preview": {
+      "$bytes": "documents/V2_PREVIEW/content_preview_reference_missing.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "158ed2005fefdeeafc4f431a988d1b4b77fa53b262644a4e4176c833ea52a1b4"
+    }
+  },
+  "notes": "A preview naming a family the SITE does not serve is refused, as a content would be.",
+  "scenario": "V2_PREVIEW"
+}

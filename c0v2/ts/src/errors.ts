@@ -9,6 +9,7 @@ export const ERROR_CODES: Readonly<Record<string, readonly string[]>> = {
   ...V1_ERROR_CODES,
   CONTENT_INVALID: ["content"],
   REFERENCE_MISSING: ["content"],
+  PREVIEW_EXPIRED: ["content"],
 };
 
 export function verdict(accepted: boolean, outcome: string, codes: Iterable<string> = []): Verdict {
