@@ -29,9 +29,9 @@ const isObject = (value: unknown): value is Record<string, unknown> => typeof va
 const text = (value: unknown, fallback: string, max: number): string => (typeof value === "string" && value.trim() !== "" ? value.trim().slice(0, max) : fallback);
 const instant = (value: unknown): string | null => (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(value) && !Number.isNaN(Date.parse(value)) ? value : null);
 
-/** Une adresse du SITE (« /faq », jamais « //hôte ») ou une adresse web http(s) : tout le reste (script, fichier) est écarté. */
+/** Une adresse INTERNE du SITE (« /faq », « /recherche?q=banc » ; jamais « //hôte », ni schéma, ni espace) : c'est la règle du contrat v2 (§4.3) ; tout le reste est écarté. */
 export function safeLink(value: unknown): value is string {
-  return typeof value === "string" && (/^\/(?!\/)[A-Za-z0-9._~\-/?=&#%]*$/.test(value) || /^https?:\/\/[^\s<>"']+$/.test(value));
+  return typeof value === "string" && /^\/(?![/\\])[A-Za-z0-9._~!$&'()*+,;=@%/?-]{0,499}$/.test(value);
 }
 
 /** Les trois objets des contenus v2 → les réglages du SITE. Tolérant : un champ absent ou invalide retombe sur la valeur d'avant le lot, jamais sur une erreur. */

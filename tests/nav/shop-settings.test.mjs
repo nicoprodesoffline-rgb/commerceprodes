@@ -30,7 +30,8 @@ test("B08 : la maintenance n'est active qu'avec son message", () => {
 
 test("un lien piégé (script, fichier, //hôte) est écarté du pied de page et du bandeau", () => {
   assert.equal(safeLink("/faq"), true);
-  assert.equal(safeLink("https://exemple.test/a"), true);
+  assert.equal(safeLink("/recherche?q=banc"), true);
+  assert.equal(safeLink("https://exemple.test/a"), false, "une adresse web n'est pas une adresse interne (contrat v2 §4.3)");
   for (const bad of ["javascript:alert(1)", "file:///etc/passwd", "//evil.test/x", "data:text/html,x", ""]) assert.equal(safeLink(bad), false, bad);
   const s = parseShop({ shop: { footer_links: [{ label: "FAQ", path: "/faq" }, { label: "Piège", path: "javascript:alert(1)" }] }, announcement: { text: "x", link: "javascript:alert(1)" } });
   assert.deepEqual(s.footerLinks, [{ label: "FAQ", url: "/faq" }]);
