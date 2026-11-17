@@ -8,12 +8,15 @@
 //   --out         dossier des preuves (créé) : preuves/<GESTE>.md et RAPPORT_S.md.
 //   --only        liste de gestes, séparés par des virgules (S01,S04,S05,S06,S08,S09,MAINT,S11,S12). Par défaut : tous.
 //   --wait        secondes d'attente d'un geste fait par un autre (Factory, opérateur) : 240 par défaut.
-//   --stop-cmd / --start-cmd   commandes (shell) qui arrêtent et relancent le site derrière le frontal, pour S11. Sans elles, le script demande à l'opérateur et attend.
+//   --s09-cmd         commande (shell) qui modifie un réglage visible de la boutique ET l'envoie au site (geste de la Factory, S09).
+//   --maint-on-cmd / --maint-off-cmd   commandes qui activent puis retirent le mode maintenance de la boutique et l'envoient au site.
+//   --stop-cmd / --start-cmd   commandes qui arrêtent et relancent le SITE seul (derrière le frontal), pour S11.
+//                     Chaque commande est lancée par le script (code de sortie et fin de sa sortie consignés dans la preuve, jamais la commande elle-même), PUIS le script guette l'effet. Sans la commande, le script
+//                     écrit une ligne `ATTENTE_FACTORY: …` / `ATTENTE_OPERATEUR: …` et guette seulement (repli : un autre rejeu fait le geste).
 //   --page        page dont le contenu change quand un réglage de la boutique change (S09), « / » par défaut.
 //   --commit      commit servi (sinon `git rev-parse` du dossier courant, sinon « inconnu »).
 //
-// Gestes faits par un AUTRE : le script écrit sur sa sortie une ligne `ATTENTE_FACTORY: …` ou `ATTENTE_OPERATEUR: …` puis surveille ; il n'agit jamais sur la Factory. Le poste fait tourner la Factory et sa boucle de
-// synchronisation : un rejeu automatique (le rejeu de la Factory, f1) répond à ces lignes. Aucune dépendance nouvelle (Node 22 + `pg` du site).
+// Le script n'agit jamais sur la Factory lui-même : les gestes de la Factory sont des commandes qu'on lui passe. Aucune dépendance nouvelle (Node 22 + `pg` du site).
 // Par tests seulement : S02 (on n'arrête pas le PostgreSQL du poste), S03 (sonde signée du lot T), S07, S13. S10 : hors mandat.
 import http from "node:http";
 import https from "node:https";
@@ -24,7 +27,7 @@ import { parseArgs } from "node:util";
 import pg from "pg";
 
 const { values: opt } = parseArgs({
-  options: { site: { type: "string" }, stats: { type: "string" }, out: { type: "string" }, only: { type: "string" }, wait: { type: "string", default: "240" }, "stop-cmd": { type: "string" }, "start-cmd": { type: "string" }, page: { type: "string", default: "/" }, commit: { type: "string" }, ca: { type: "string" } },
+  options: { site: { type: "string" }, stats: { type: "string" }, out: { type: "string" }, only: { type: "string" }, wait: { type: "string", default: "240" }, "stop-cmd": { type: "string" }, "start-cmd": { type: "string" }, "s09-cmd": { type: "string" }, "maint-on-cmd": { type: "string" }, "maint-off-cmd": { type: "string" }, page: { type: "string", default: "/" }, commit: { type: "string" }, ca: { type: "string" } },
 });
 for (const need of ["site", "out"]) if (!opt[need]) { console.error(`--${need} obligatoire (voir l'en-tête du script)`); process.exit(2); }
 const SITE = new URL(opt.site);
@@ -75,13 +78,28 @@ async function scans(table) {
 
 const results = [];
 const H = (res, ...names) => names.map((n) => `${n}: ${res.headers[n] ?? "—"}`).join(" · ");
-function proof(id, title, status, lines, limit) { results.push({ id, title, status, lines, limit, at: now() }); console.log(`${status} ${id} ${title}`); }
+let notes = [];
+function proof(id, title, status, lines, limit) { results.push({ id, title, status, lines: [...lines, ...notes], limit, at: now() }); notes = []; console.log(`${status} ${id} ${title}`); }
+/** Lance une commande (shell), attend sa fin (au plus --wait) ; consigne son code de sortie et la fin de sa sortie, jamais la commande. */
+function runCmd(what, command) {
+  return new Promise((resolve) => {
+    const child = spawn(command, { shell: true, stdio: ["ignore", "pipe", "pipe"] });
+    let out = "";
+    const keep = (c) => { out = (out + c.toString()).slice(-300); };
+    child.stdout.on("data", keep);
+    child.stderr.on("data", keep);
+    const timer = setTimeout(() => child.kill("SIGTERM"), WAIT_MS);
+    child.on("error", (error) => { clearTimeout(timer); notes.push(`commande « ${what} » : lancement impossible (${error.code ?? error.message})`); resolve(null); });
+    child.on("exit", (code, signal) => { clearTimeout(timer); notes.push(`commande « ${what} » : code ${code ?? signal}${out.trim() ? `, fin de sortie : ${out.trim().replace(/\s+/g, " ").slice(-200)}` : ""}`); resolve(code); });
+  });
+}
 const wanted = (id) => ONLY === null || ONLY.has(id);
 const skipped = (id, title, why) => proof(id, title, "⏸️", [why], "Non joué dans ce rejeu.");
 
 /** Attend `check()` (vrai) pendant au plus `--wait` secondes, en annonçant l'attente sur la sortie. */
-async function waitFor(marker, what, check, every = 200) {
-  console.log(`${marker}: ${what}`);
+async function waitFor(marker, what, check, every = 200, command = undefined) {
+  if (command) { console.log(`COMMANDE: ${what}`); await runCmd(what, command); }
+  else console.log(`${marker}: ${what}`);
   const end = Date.now() + WAIT_MS;
   while (Date.now() < end) {
     const out = await check();
@@ -185,7 +203,7 @@ async function s09() {
   const seq = () => scalar("SELECT content_sequence AS n FROM site_content_active WHERE singleton = 1").catch(() => -1);
   const beforeSeq = await seq();
   const beforeHtml = normal(text(await tryRequest(opt.page)));
-  const changed = await waitFor("ATTENTE_FACTORY", "modifier un réglage visible de la boutique (SITE › Boutique) et l'envoyer au site", async () => ((await seq()) !== beforeSeq ? Date.now() : null), 100);
+  const changed = await waitFor("ATTENTE_FACTORY", "modifier un réglage visible de la boutique (SITE › Boutique) et l'envoyer au site", async () => ((await seq()) !== beforeSeq ? Date.now() : null), 100, opt["s09-cmd"]);
   if (changed === null) return proof("S09", "Réglages de la boutique modifiés par la Factory", "⏸️", [`aucune nouvelle séquence de contenus en ${opt.wait} s`], "Le geste de la Factory n'a pas eu lieu.");
   await sleep(300);   // l'époque du site avance juste après l'écriture : on laisse passer cet instant, la lecture de la base se voit un peu avant la réponse à la Factory
   const afterSeq = await seq();
@@ -200,11 +218,11 @@ async function s09() {
 
 async function maint() {
   const health = [];
-  const on = await waitFor("ATTENTE_FACTORY", "activer le mode maintenance de la boutique (SITE › Boutique) et l'envoyer au site", async () => { const r = await tryRequest(opt.page); return r.status === 503 ? r : null; }, 200);
+  const on = await waitFor("ATTENTE_FACTORY", "activer le mode maintenance de la boutique (SITE › Boutique) et l'envoyer au site", async () => { const r = await tryRequest(opt.page); return r.status === 503 ? r : null; }, 200, opt["maint-on-cmd"]);
   if (on === null) return proof("MAINT", "Maintenance des réglages : 503 puis 200", "⏸️", [`aucun 503 en ${opt.wait} s`], "Le geste de la Factory n'a pas eu lieu.");
   health.push((await tryRequest("/api/site/health")).status);
   const body = text(on);
-  const off = await waitFor("ATTENTE_FACTORY", "retirer le mode maintenance de la boutique et l'envoyer au site", async () => { const r = await tryRequest(opt.page); return r.status === 200 ? r : null; }, 200);
+  const off = await waitFor("ATTENTE_FACTORY", "retirer le mode maintenance de la boutique et l'envoyer au site", async () => { const r = await tryRequest(opt.page); return r.status === 200 ? r : null; }, 200, opt["maint-off-cmd"]);
   const ok = off !== null && health[0] === 200;
   proof("MAINT", "Maintenance des réglages : 503 puis 200", ok ? "✅" : "❌",
     [`maintenance active : GET ${opt.page} → HTTP 503, ${H(on, "retry-after", "cache-control")}, message de la boutique présent dans la page : ${/data-testid="maintenance"/.test(body) ? "oui" : "NON"}`, `GET /api/site/health pendant la maintenance → HTTP ${health[0]}`, off === null ? `la page ne répond pas 200 après le retrait (${opt.wait} s)` : "maintenance retirée : GET → HTTP 200"],
@@ -213,14 +231,11 @@ async function maint() {
 
 async function s11() {
   const down = async () => { const r = await tryRequest(opt.page); return r.status === 503 && /de retour dans quelques minutes/.test(text(r)) ? r : null; };
-  let stopped;
-  if (opt["stop-cmd"]) { spawn(opt["stop-cmd"], { shell: true, stdio: "ignore" }).on("error", () => undefined); stopped = await waitFor("ARRET", "arrêt du site par --stop-cmd", down, 500); }
-  else stopped = await waitFor("ATTENTE_OPERATEUR", "arrêter le site derrière le frontal d'essai (pas le frontal)", down, 500);
+  const stopped = await waitFor("ATTENTE_OPERATEUR", "arrêter le site derrière le frontal d'essai (pas le frontal)", down, 500, opt["stop-cmd"]);
   if (stopped === null) return proof("S11", "Site arrêté : le frontal sert la page de maintenance en 503", "❌", [`aucune réponse 503 avec la page de maintenance en ${opt.wait} s`], "—");
   const retry = stopped.headers["retry-after"];
   const health = await tryRequest("/api/site/health");
-  if (opt["start-cmd"]) spawn(opt["start-cmd"], { shell: true, stdio: "ignore" }).on("error", () => undefined);
-  const back = await waitFor(opt["start-cmd"] ? "REDEMARRAGE" : "ATTENTE_OPERATEUR", opt["start-cmd"] ? "relance du site par --start-cmd" : "relancer le site", async () => ((await tryRequest(opt.page)).status === 200 ? true : null), 1000);
+  const back = await waitFor("ATTENTE_OPERATEUR", "relancer le site", async () => ((await tryRequest(opt.page)).status === 200 ? true : null), 1000, opt["start-cmd"]);
   const ok = retry !== undefined && back !== null;
   proof("S11", "Site arrêté : le frontal sert la page de maintenance en 503", ok ? "✅" : "❌",
     [`GET ${opt.page} site arrêté → HTTP 503, Retry-After: ${retry ?? "ABSENT"}, texte « de retour dans quelques minutes » présent`, `GET /api/site/health site arrêté → HTTP ${health.status} (${health.status === 503 ? "le frontal répond 503 aussi" : "autre"})`, back === null ? "le site ne répond pas 200 après la relance" : "site relancé : GET → HTTP 200"],
