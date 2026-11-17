@@ -1,3 +1,4 @@
+import { DEFAULT_SHOP, type ShopSettings } from "@/lib/site-shop/settings";
 import Link from "next/link";
 import { MediaImage } from "@/components/site/media-image";
 import { count } from "@/components/site/format";
@@ -22,8 +23,8 @@ export function Hero({ references, imageSha, title, text, link, linkLabel }: { r
   );
 }
 
-export function TrustBar({ references, basis }: { references: number; basis?: CatalogBasis }) {
-  const items = ["Livraison incluse sur tout le catalogue", "Lun–Sam 8h30–19h", ...(basis === "HT" ? ["Prix HT"] : [])];
+export function TrustBar({ references, basis, shop = DEFAULT_SHOP }: { references: number; basis?: CatalogBasis; shop?: ShopSettings }) {
+  const items = [shop.deliveryNotice, shop.openingHours, ...(basis === "HT" ? ["Prix HT"] : [])];
   if (references === 0) return null;
   return (
     <ul aria-label="En bref" className="flex flex-col justify-center gap-x-12 gap-y-3 border-b border-line py-5 text-sm text-ink-2 sm:flex-row sm:flex-wrap" data-testid="trust-bar">
