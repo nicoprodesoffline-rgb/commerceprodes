@@ -5,11 +5,13 @@
  *   1. liste d'adresses autorisées (`SITE_MACHINE_ALLOWLIST`, adresses séparées par des virgules ; VIDE par défaut = tout le monde passe au contrôle suivant) : une adresse hors liste reçoit 403 ;
  *   2. limite de REFUS par adresse (`SITE_MACHINE_FAILURE_LIMIT`, 30 par minute) : chaque réponse 401 compte ; au seuil, l'adresse reçoit 429 jusqu'à la fin de la fenêtre
  *      (401 d'abord, puis 429, et plus aucune ligne de journal : la requête n'atteint pas le receveur) ;
- *   3. plafond de débit total par adresse (`SITE_MACHINE_RATE_LIMIT`, 1200 par minute) : de quoi publier des centaines d'images, pas de quoi saturer le serveur.
+ *
+ * Une requête dont la signature est valide n'est jamais limitée (« tout republier » envoie des milliers d'images, à plus de 20 par seconde) : seuls les REFUS comptent. Un débordement
+ * signé supposerait la clé, et le rejeu est refusé par l'anti-rejeu du transport.
  *
  * L'adresse vient du frontal (`clientAddress`), jamais de l'en-tête du visiteur. L'état vit sur `globalThis` : le proxy et les routes sont empaquetés séparément.
  */
-import { clientAddress, createLimiter } from "./limiter";
+import { clientAddress } from "./limiter";
 
 const WINDOW_MS = 60_000;
 const MAX_KEYS = 10_000;
@@ -17,14 +19,12 @@ const KEY = Symbol.for("prodes.site.machine-gate");
 
 interface State {
   failures: Map<string, number[]>;
-  rate: ReturnType<typeof createLimiter> | null;
-  rateLimit: number;
 }
 type Holder = typeof globalThis & { [KEY]?: State };
 
 function state(): State {
   const holder = globalThis as Holder;
-  return (holder[KEY] ??= { failures: new Map(), rate: null, rateLimit: 0 });
+  return (holder[KEY] ??= { failures: new Map() });
 }
 
 function positive(raw: string | undefined, fallback: number): number {
@@ -52,14 +52,6 @@ export function machineGuard(headers: { get(name: string): string | null }, env:
   if (recent.length > 0) s.failures.set(address, recent);
   else s.failures.delete(address);
   if (recent.length >= limit) return { ...noop, refusal: refuse(429, "RATE_LIMITED", Math.max(1, Math.ceil((recent[0]! + WINDOW_MS - now) / 1000))) };
-
-  const rateLimit = positive(env["SITE_MACHINE_RATE_LIMIT"], 1200);
-  if (s.rate === null || s.rateLimit !== rateLimit) {
-    s.rate = createLimiter({ limit: rateLimit, windowMs: WINDOW_MS, maxKeys: MAX_KEYS });
-    s.rateLimit = rateLimit;
-  }
-  const taken = s.rate.take(address, now);
-  if (!taken.ok) return { ...noop, refusal: refuse(429, "RATE_LIMITED", taken.retryAfterSeconds) };
 
   return {
     refusal: null,

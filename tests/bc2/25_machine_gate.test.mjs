@@ -28,7 +28,7 @@ test("seuil de refus : au seuil, 429 ; la fenêtre d'une minute expire ; une aut
   assert.equal(gate.machineGuard(h("198.51.100.1"), e, 61_000).refusal, null, "les refus de plus d'une minute ne comptent plus");
 });
 
-test("un client signé qui ne se trompe jamais n'est jamais bloqué par la limite de refus (centaines d'images)", () => {
+test("un client signé qui ne se trompe jamais n'est jamais bloqué par la limite de refus (des milliers d'images, plus de 20 par seconde) : aucun plafond de débit sur les requêtes signées", () => {
   const e = env({ SITE_MACHINE_FAILURE_LIMIT: "3" });
-  for (let i = 0; i < 500; i += 1) assert.equal(gate.machineGuard(h("198.51.100.1"), e, i).refusal, null);
+  for (let i = 0; i < 5000; i += 1) assert.equal(gate.machineGuard(h("198.51.100.1"), e, i).refusal, null);
 });
