@@ -129,7 +129,12 @@ export async function proxy(req: NextRequest) {
   // Cercle 3, 3.17 : anciennes adresses du site actuel. Contenus ACTIFS vérifiés seulement (jamais un aperçu) ; cible locale ; une vraie page n'est jamais redirigée. Location relative : jamais l'hôte interne.
   if ((req.method === "GET" || req.method === "HEAD") && pathname !== "/") {
     const hit = resolveRedirect(await getActiveContentV2(), pathname);
-    if (hit !== null) return secure(new NextResponse(null, { status: hit.status, headers: { location: hit.to, "cache-control": "public, max-age=3600" } }), req, nonce);
+    if (hit !== null) {
+      // L'adaptateur de Next fait `new NextURL(location)` sans base pour toute réponse qui porte une Location : une Location relative donne HTTP 500 (vu au rejeu sur le poste, relu par 8f en 16.4.2 et 16.4.5).
+      // On donne donc une adresse absolue ; Next renvoie lui-même `Location: /categorie/…` en relatif, l'hôte interne ne sort pas. Défense : jamais une autre origine.
+      const target = new URL(hit.to, req.nextUrl);
+      if (target.origin === req.nextUrl.origin) return secure(new NextResponse(null, { status: hit.status, headers: { location: target.toString(), "cache-control": "public, max-age=3600" } }), req, nonce);
+    }
   }
 
   if ((req.method === "GET" || req.method === "HEAD") && isStorePage(pathname)) {
