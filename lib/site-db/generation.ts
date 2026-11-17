@@ -18,6 +18,8 @@
 import type { PoolClient } from "pg";
 import { isCanonical, parseBytes, type Json } from "../../c0/ts/src/jsonc";
 import { MAX_BYTES, payloadSha256, type Snapshot } from "../../c0/ts/src/snapshot";
+import { payloadSha256 as payloadSha256V2 } from "../../c0v2/ts/src/snapshot";
+import { isV2 } from "../site-catalog/v1-view";
 import { getPool, type Queryable } from "./pool";
 import { markVerified } from "./verified";
 
@@ -74,7 +76,7 @@ function interpret(row: PointerRow | undefined): ActiveGeneration | null {
   if (bytes !== null) {
     try {
       doc = parseBytes(bytes, MAX_BYTES);
-      consistent = consistent && isCanonical(bytes, doc) && payloadSha256(doc as unknown as Snapshot) === row.p_sha; // MUTATION_POINT:verify
+      consistent = consistent && isCanonical(bytes, doc) && (isV2(doc) ? payloadSha256V2(doc as unknown as Record<string, any>) : payloadSha256(doc as unknown as Snapshot)) === row.p_sha; // MUTATION_POINT:verify
     } catch {
       consistent = false;
     }

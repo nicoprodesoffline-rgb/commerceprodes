@@ -24,6 +24,7 @@ import type { Json } from "@/c0/ts/src/jsonc";
 import type { Snapshot } from "@/c0/ts/src/snapshot";
 import { getActiveGeneration, type ActiveGeneration } from "@/lib/site-db/generation";
 import { SiteDbConfigError, getPool } from "@/lib/site-db/pool";
+import { asV1, servedIndex } from "./v1-view";
 import { CatalogUnavailable, type CatalogSource, type ServedGeneration, type ServedMedia } from "./source";
 
 const SHA_RE = /^[0-9a-f]{64}$/;
@@ -31,7 +32,7 @@ const SHA_RE = /^[0-9a-f]{64}$/;
 /** Documents déjà acceptés par `new Generation` de C0 (clé = l'objet vérifié par BC2, jamais une valeur comparée). */
 const c0Accepted = new WeakSet<object>();
 /** Index SHA -> déclaration de média, par objet document vérifié. */
-const mediaIndex = new WeakMap<object, Map<string, Snapshot["media_refs"][number]>>();
+const mediaIndex = new WeakMap<object, Map<string, { mime: string; size: number }>>();
 
 function dbError(error: unknown): never {
   if (error instanceof SiteDbConfigError) throw new CatalogUnavailable("SITE_DB_CONFIG_INVALID", error.message);
@@ -61,7 +62,7 @@ export class ActiveGenerationSource implements CatalogSource {
     const snapshot = active.snapshot as unknown as Json;
     if (!c0Accepted.has(active.snapshot)) {
       try {
-        new Generation({ snapshot, status: "ACTIVE" });
+        new Generation({ snapshot: asV1(snapshot), status: "ACTIVE" });
       } catch (error) {
         throw new CatalogUnavailable("GENERATION_REFUSED", `génération ACTIVE ${active.catalogue_sequence} refusée par C0 (${(error as Error).message})`);
       }
@@ -77,8 +78,7 @@ export class ActiveGenerationSource implements CatalogSource {
     if (active.status === "UNSAFE" || active.snapshot === null) throw new CatalogUnavailable("CATALOG_UNSAFE", "génération ACTIVE non sûre (BC2)");
     let index = mediaIndex.get(active.snapshot);
     if (index === undefined) {
-      index = new Map();
-      for (const m of active.snapshot.media_refs) if (!index.has(m.sha256)) index.set(m.sha256, m);
+      index = servedIndex(active.snapshot);   // v2 : les dérivés, les images sans dérivé et les documents ; v1 : les media_refs
       mediaIndex.set(active.snapshot, index);
     }
     const ref = index.get(sha256);
