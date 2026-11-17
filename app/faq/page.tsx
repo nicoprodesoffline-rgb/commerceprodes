@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogOrNull } from "@/lib/site-catalog/page";
+import { getShopSettings } from "@/lib/site-shop/source";
+import { EditablePage, publishedAt } from "@/components/content/published-page";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Questions fréquentes" };
@@ -15,21 +17,24 @@ type Qa = { q: string; a: React.ReactNode };
  * commande, l'annulation, l'installation ou les données ne sont pas reprises : aucune décision ne les porte. La base fiscale n'est dite que si la génération la déclare.
  */
 export default async function FaqPage() {
+  const edited = await publishedAt("/faq");   // cercle 3, 3.24 : la FAQ publiée par la Factory remplace le texte provisoire
+  if (edited) return <EditablePage page={edited} />;
   const catalog = await catalogOrNull();
+  const shop = await getShopSettings();
   const basis = catalog ? catalogBasis(catalog.families, catalog.meta.payload_sha256) : "NOT_DECLARED";
   const groups: { title: string; items: Qa[] }[] = [
     {
       title: "Devis et commandes",
       items: [
         { q: "Comment obtenir un devis ?", a: <>Ajoutez les produits à votre panier, puis choisissez « Demander un devis » : vous indiquez vos coordonnées et, si vous le souhaitez, un message. Nous vous répondons rapidement. Vous pouvez aussi le demander directement depuis la fiche d&apos;un produit.</> },
-        { q: "Quels sont vos horaires ?", a: <>Du lundi au samedi, de 8h30 à 19h.</> },
+        { q: "Quels sont vos horaires ?", a: <>Nos horaires : {shop.openingHours}.</> },
         ...(basis === "HT" ? [{ q: "Les prix sont-ils hors taxes ?", a: <>Les prix sont hors taxes ; la TVA apparaît sur le devis et la facture.</> }] : []),
       ],
     },
     {
       title: "Livraison",
       items: [
-        { q: "La livraison est-elle incluse dans les prix ?", a: <>Oui, la livraison est incluse sur tout le catalogue.</> },
+        { q: "La livraison est-elle incluse dans les prix ?", a: <>{shop.deliveryNotice}.</> },
         { q: "Dans quels délais suis-je livré ?", a: <>Aucun délai général n&apos;est annoncé. Le délai propre à un produit sera indiqué sur sa fiche lorsqu&apos;il est publié ; en attendant, demandez-le dans votre demande de devis.</> },
       ],
     },

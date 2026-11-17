@@ -12,6 +12,7 @@ import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { imagesAllowed } from "@/lib/site-catalog/media-policy";
 import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogForPage } from "@/lib/site-catalog/page";
+import { getShopSettings } from "@/lib/site-shop/source";
 import type { NavNode } from "@/lib/site-catalog/navigation";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,7 @@ function findNode(nodes: NavNode[], match: (n: NavNode) => boolean): NavNode | n
  */
 export default async function HomePage() {
   const catalog = await catalogForPage();
+  const shop = await getShopSettings();
   const page = (await getEditorialSet())?.pages.find(p => p.slug === "/");
   const nav = navigationOf(catalog);
   const categorySection = page?.sections.find(section => section.type === "category_grid");
@@ -48,7 +50,8 @@ export default async function HomePage() {
       key: n.key,
       name: n.name,
       familyCount: n.subtreeFamilyCount,
-      imageSha: catalog.families.find((f) => familySlugs.has(f.slug) && f.image_main_sha256)?.image_main_sha256 ?? null,
+      imageSha: catalog.categories.find((c) => c.category_key === n.key)?.image_sha256 ?? catalog.families.find((f) => familySlugs.has(f.slug) && f.image_main_sha256)?.image_main_sha256 ?? null,
+      intro: catalog.categories.find((c) => c.category_key === n.key)?.intro_text ?? null,
       children: n.children.map((s) => ({ key: s.key, name: s.name })),
     };
   });
@@ -60,7 +63,8 @@ export default async function HomePage() {
   const featured = featuredSection ? featuredSection.data.families.flatMap(key => { const family = catalog.families.find(f => f.public_family_key === key); return family ? [family] : []; }) : catalog.families;
   const shown = featured.slice(0, HOME_FAMILIES);
   const hero = page?.sections.find(section => section.type === "hero");
-  const heroImage = imagesAllowed(catalog.meta.data_label) ? shown.find(f => f.image_main_sha256)?.image_main_sha256 : null;
+  // Cercle 3 (B11) : l'image du bandeau choisie dans la Factory remplace l'image prise automatiquement.
+  const heroImage = imagesAllowed(catalog.meta.data_label) ? (hero?.data.imageSha ?? shown.find(f => f.image_main_sha256)?.image_main_sha256) : null;
   const contentSections = page?.sections.filter(section => section !== hero && section !== categorySection && section !== featuredSection) ?? [];
   return (
     <div className="min-w-0 space-y-12 lg:space-y-16">
@@ -75,7 +79,7 @@ export default async function HomePage() {
           </aside>}
           <Hero references={references} imageSha={heroImage} title={hero?.data.title ?? page?.title} text={hero?.data.text} link={hero?.data.link} linkLabel={hero?.data.linkLabel} />
         </div>
-        <TrustBar references={references} basis={basis} />
+        <TrustBar references={references} basis={basis} shop={shop} />
       </div>
       {roots.length > 0 && <section id="categories" aria-labelledby="cat-h">
         <h2 id="cat-h" className="commerce-section-title mb-6">{categorySection?.data.title || "Nos univers produits"}</h2>

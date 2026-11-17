@@ -1,0 +1,18 @@
+{
+  "case_id": "V2_CATALOGUE.v2_ack_verified_by_v1",
+  "data_label": "STAGING_FIXTURE",
+  "function": "verify_ack",
+  "input": {
+    "ack": {
+      "$doc": "documents/V2_CATALOGUE/ack_v2_ready.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "publication": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    }
+  },
+  "notes": "The Factory checks the acknowledgement of a v2 publication with the frozen v1 verify_ack.",
+  "scenario": "V2_CATALOGUE"
+}

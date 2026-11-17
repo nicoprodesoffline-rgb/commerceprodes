@@ -14,8 +14,9 @@
  */
 export const MAX_NAV_LEVEL = 3;
 
-export type NavCategory = { category_key: string; name: string; parent_category_key: string | null };
-export type NavFamily = { slug: string; primary_category_key: string; secondary_category_keys: string[] };
+/** Cercle 3 : `position` (ordre parmi les sœurs) et `hidden` (absente du menu, pas des adresses) n'existent qu'en catalogue v2 ; `category_positions` ordonne les familles DANS une rubrique. */
+export type NavCategory = { category_key: string; name: string; parent_category_key: string | null; position?: number; hidden?: boolean };
+export type NavFamily = { slug: string; primary_category_key: string; secondary_category_keys: string[]; category_positions?: readonly { category_key: string; position: number }[] };
 
 export type NavNode = {
   key: string;
@@ -77,6 +78,9 @@ export function buildNavigation(categories: readonly NavCategory[], families: re
       nodes.set(c.category_key, { key: c.category_key, name: c.name, level: chain.length, parentKey: c.parent_category_key, children: [], subtreeFamilyCount: 0, ownFamilyCount: 0 });
     }
   }
+  // Ordre des rubriques : leur position quand le catalogue en donne une (v2), sinon l'ordre du DTO ; le tri est stable.
+  const positionOf = new Map<string, number>(categories.flatMap((c): [string, number][] => (typeof c.position === "number" ? [[c.category_key, c.position]] : [])));
+  const hidden = new Set(categories.filter((c) => c.hidden === true).map((c) => c.category_key));
   const roots: Mutable[] = [];
   for (const c of categories) {
     const n = nodes.get(c.category_key);
@@ -107,18 +111,29 @@ export function buildNavigation(categories: readonly NavCategory[], families: re
   };
   for (const r of roots) fill(r);
 
-  const pruned = (n: Mutable): NavNode => ({ ...n, children: n.children.filter((c) => c.subtreeFamilyCount > 0).map(pruned) });
-  const menu = roots.filter((r) => r.subtreeFamilyCount > 0).map(pruned);
+  const bySiblingOrder = (a: Mutable, b: Mutable) => (positionOf.get(a.key) ?? 0) - (positionOf.get(b.key) ?? 0);
+  const shown = (n: Mutable) => n.subtreeFamilyCount > 0 && !hidden.has(n.key);   // une rubrique masquée quitte le menu, jamais les adresses ni la recherche
+  const ordered = (list: Mutable[]) => (positionOf.size === 0 ? list : [...list].sort(bySiblingOrder));
+  const pruned = (n: Mutable): NavNode => ({ ...n, children: ordered(n.children).filter(shown).map(pruned) });
+  const menu = ordered(roots).filter(shown).map(pruned);
+
+  // Ordre des familles dans une rubrique : celles qui ont une place dans CETTE rubrique d'abord (par place), les autres ensuite dans l'ordre du DTO.
+  const rankIn = new Map<string, Map<string, number>>();
+  for (const f of families) for (const p of f.category_positions ?? []) (rankIn.get(p.category_key) ?? rankIn.set(p.category_key, new Map()).get(p.category_key)!).set(f.slug, p.position);
 
   return {
     menu,
     node: (key) => nodes.get(key) ?? null,
-    visibleChildren: (key) => (nodes.get(key)?.children ?? []).filter((c) => c.subtreeFamilyCount > 0),
+    visibleChildren: (key) => ordered(nodes.get(key)?.children ?? []).filter(shown),
     chain(key) {
       const chain = nodes.has(key) ? fullChain(key) : null;
       return chain === null ? [] : chain.map((c) => nodes.get(c.category_key)!);
     },
     anchor: (key) => anchorOf.get(key) ?? null,
-    familySlugs: (key) => familyOrder.filter((slug) => subtree.get(key)?.has(slug)),
+    familySlugs(key) {
+      const slugs = familyOrder.filter((slug) => subtree.get(key)?.has(slug));
+      const ranks = rankIn.get(key);
+      return ranks === undefined ? slugs : slugs.map((slug, index) => ({ slug, index })).sort((a, b) => (ranks.get(a.slug) ?? Infinity) - (ranks.get(b.slug) ?? Infinity) || a.index - b.index).map((e) => e.slug);
+    },
   };
 }

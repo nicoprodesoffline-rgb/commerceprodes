@@ -2,8 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CatalogBasis } from "@/lib/site-catalog/basis";
 import type { CatalogMeta } from "@/lib/site-catalog/catalog";
+import { DEFAULT_SHOP, type ShopSettings } from "@/lib/site-shop/settings";
 
-export function SiteFooter({ meta }: { meta: CatalogMeta | null; basis: CatalogBasis }) {
+export function SiteFooter({ meta, shop = DEFAULT_SHOP }: { meta: CatalogMeta | null; basis: CatalogBasis; shop?: ShopSettings }) {
   return (
     <footer className="mt-16 bg-ink text-sm text-white print:hidden">
       <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-12 md:grid-cols-3 lg:px-8">
@@ -28,8 +29,11 @@ export function SiteFooter({ meta }: { meta: CatalogMeta | null; basis: CatalogB
         </nav>
         <div>
           <h2 className="mb-3 text-base font-bold uppercase">À votre écoute</h2>
-          <p>Lun–Sam 8h30–19h</p>
-          <p className="mt-3 text-white/80">Livraison incluse sur tout le catalogue.</p>
+          <p>{shop.openingHours}</p>
+          <p className="mt-3 text-white/80">{shop.deliveryNotice}</p>
+          {shop.phone && <p className="mt-3" data-testid="shop-phone">{shop.phone}</p>}
+          {shop.email && <p data-testid="shop-email">{shop.email}</p>}
+          {shop.address && <p className="mt-3 whitespace-pre-line text-white/80" data-testid="shop-address">{shop.address}</p>}
           <Link href="/contact" className="mt-3 inline-flex min-h-11 items-center underline underline-offset-4">Nous contacter</Link>
         </div>
       </div>
@@ -39,6 +43,7 @@ export function SiteFooter({ meta }: { meta: CatalogMeta | null; basis: CatalogB
           <nav aria-label="Informations pratiques" className="flex flex-wrap gap-x-6">
             <Link href="/faq" className="inline-flex min-h-11 items-center px-2 hover:underline">FAQ</Link>
             <Link href="/mentions-legales" className="inline-flex min-h-11 items-center hover:underline">Mentions légales</Link>
+            {shop.footerLinks.map(l => <Link key={l.url + l.label} href={l.url} className="inline-flex min-h-11 items-center hover:underline">{l.label}</Link>)}
           </nav>
         </div>
       </div>

@@ -13,14 +13,27 @@
  * l'évaluation a dépassé l'étape `shape` (donc après `shape`, avant `semantic`).
  */
 import type { Pool, PoolClient } from "pg";
-import { evaluatePublication, signatureContext, type Active, type ActivationResult } from "../../c0/ts/src/activation";
+// Cercle 3 (3.1) : le récepteur lit `site_snapshot.v1` ET `site_snapshot.v2`. `evaluatePublication` de c0v2 envoie un document v1 au récepteur v1 gelé (c0/), inchangé, et applique
+// les règles v2 à un document v2 ; `signatureContext` et l'accusé sont ceux de la v1. Aucun fichier de c0/ n'est modifié.
+import { evaluatePublication, signatureContext, DOMAIN_SIG_SNAPSHOT as DOMAIN_SIG_SNAPSHOT_V2, type Active, type ActivationResult } from "../../c0v2/ts/src/activation";
+import { CONTRACT_VERSION as SNAPSHOT_V2, MAX_DOCUMENT_SIZE, payloadSha256 as payloadSha256V2, servedMedia } from "../../c0v2/ts/src/snapshot";
 import { rejected } from "../../c0/ts/src/errors";
 import { exactKeys, isCount, isHex64, isToken } from "../../c0/ts/src/formats";
 import { canonicalBytes, isCanonical, isObject, parseBytes, sha256Hex, utf8, type Json, type JsonObject } from "../../c0/ts/src/jsonc";
-import { DOMAIN_SIG_SNAPSHOT, SCOPE_PUBLISH, keyHasScope, verify } from "../../c0/ts/src/signing";
+import { DOMAIN_SIG_SNAPSHOT as DOMAIN_SIG_SNAPSHOT_V1, SCOPE_PUBLISH, keyHasScope, verify } from "../../c0/ts/src/signing";
 import { MAX_BYTES, MAX_MEDIA_SIZE, payloadSha256, type Snapshot } from "../../c0/ts/src/snapshot";
 import { toSafeInt } from "../site-db/generation";
 import type { ReceiverConfig } from "./config";
+
+/** Domaine de signature des en-têtes d'un catalogue : celui de SA version (v1 gelé, ou v2 : domaine distinct, un document v2 signé en v1 est refusé). */
+export function snapshotDomain(doc: unknown): string {
+  return isObject(doc as Json) && (doc as JsonObject)["contract_version"] === SNAPSHOT_V2 ? DOMAIN_SIG_SNAPSHOT_V2 : DOMAIN_SIG_SNAPSHOT_V1;
+}
+
+/** Empreinte de contenu d'un catalogue selon sa version. */
+function payloadShaOf(snapshot: Snapshot): string {
+  return (snapshot as unknown as JsonObject)["contract_version"] === SNAPSHOT_V2 ? payloadSha256V2(snapshot as unknown as Record<string, any>) : payloadSha256(snapshot);
+}
 
 /** Domaine HMAC du PUT média : STAGING_TRANSPORT, hors contrat C0 (transport DEFERRED_FOR_PROD, C0 §15). */
 export const MEDIA_TRANSPORT_DOMAIN = "prodes.c0.transport.media.v1";
@@ -32,7 +45,7 @@ export const MAX_CONTROL_BYTES = 256 * 1024;
 /** Plafond du corps STAGE = plafond C0 du snapshot (32 MiB, C0 §4). */
 export { MAX_BYTES };
 /** Plafond du corps PUT média = taille maximale d'un média C0 (20 MiB, C0 §8.5). */
-export const MAX_MEDIA_BYTES = MAX_MEDIA_SIZE;
+export const MAX_MEDIA_BYTES = Math.max(MAX_MEDIA_SIZE, MAX_DOCUMENT_SIZE);   // v2 : un document PDF peut peser 30 Mio
 const LOCK_TIMEOUT = "15s";
 
 export interface HeaderSource {
@@ -306,7 +319,7 @@ async function loadActive(q: Querier, lockPointer: boolean): Promise<LoadedActiv
     const parsed = parseBytes(row.bytes, MAX_BYTES);
     if (!isCanonical(row.bytes, parsed) || !isObject(parsed)) return UNSAFE_ACTIVE;
     const snapshot = parsed as unknown as Snapshot;
-    if (payloadSha256(snapshot) !== row.payload_sha256 || snapshot.payload_sha256 !== row.payload_sha256) return UNSAFE_ACTIVE;
+    if (payloadShaOf(snapshot) !== row.payload_sha256 || snapshot.payload_sha256 !== row.payload_sha256) return UNSAFE_ACTIVE;
     const ack = parseBytes(row.ackBytes, MAX_CONTROL_BYTES);
     return { row, c0: { snapshot, ack }, ackBytes: row.ackBytes };
   } catch {
@@ -329,16 +342,18 @@ async function authenticateControl(deps: ReceiverDeps, control: ControlBody, hea
   const row = await generationByKey(deps.pool, control.catalogue_sequence, control.payload_sha256, false);
   if (row === null || row.publication_id !== control.publication_id) return transportError(404, "GENERATION_NOT_STAGED", operation);
   const doc = tryParse(row.bytes, MAX_BYTES);
-  const ok = isObject(doc) && verify(deps.config.keyring, headers.get(HEADER_KEY_ID), headers.get(HEADER_SIGNATURE), SCOPE_PUBLISH, DOMAIN_SIG_SNAPSHOT, signatureContext(doc as unknown as Snapshot));
+  const ok = isObject(doc) && verify(deps.config.keyring, headers.get(HEADER_KEY_ID), headers.get(HEADER_SIGNATURE), SCOPE_PUBLISH, snapshotDomain(doc), signatureContext(doc as unknown as Snapshot));
   if (!ok) return json(401, { accepted: false, outcome: "REJECTED", operation, error_codes: ["SIGNATURE_INVALID"], stage: "transport_gate" });
   return row;
 }
 
-/** Store média de l'évaluation : octets présents en base pour les media_refs du document. */
+/** Store média de l'évaluation : octets présents en base pour ce que le SITE sert (v2 : dérivés, images sans dérivé et documents ; v1 : les media_refs). */
 async function mediaStoreFor(q: Querier, doc: Json | undefined): Promise<Map<string, Uint8Array>> {
   const store = new Map<string, Uint8Array>();
   if (!isObject(doc) || !Array.isArray(doc["media_refs"])) return store;
-  const shas = doc["media_refs"].map((ref) => (isObject(ref) ? ref["sha256"] : null)).filter(isHex64);
+  const shas = doc["contract_version"] === SNAPSHOT_V2
+    ? servedMedia(doc as Record<string, any>).map(([sha]) => sha).filter(isHex64)
+    : doc["media_refs"].map((ref) => (isObject(ref) ? ref["sha256"] : null)).filter(isHex64);
   if (shas.length === 0) return store;
   const { rows } = await q.query("SELECT sha256, bytes FROM site_media WHERE sha256 = ANY($1::char(64)[])", [shas]);
   for (const row of rows) store.set(row.sha256, new Uint8Array(row.bytes));
@@ -435,14 +450,14 @@ export async function putMedia(deps: ReceiverDeps, sha256: string, bytes: Uint8A
     // Refus non authentifié : aucune ligne de journal (review F-01, pas de remplissage par un tiers).
     return json(401, { accepted: false, outcome: "REJECTED", operation: "MEDIA_PUT", error_codes: ["SIGNATURE_INVALID"] });
   }
-  if (bytes.length < 1 || bytes.length > MAX_MEDIA_SIZE) {
+  if (bytes.length < 1 || bytes.length > Math.max(MAX_MEDIA_SIZE, MAX_DOCUMENT_SIZE)) {
     return transportError(413, "MEDIA_SIZE_OUT_OF_RANGE", "MEDIA_PUT");
   }
   if (sha256Hex(bytes) !== sha256) {
     await log(deps.pool, { ...base, outcome: "REJECTED", error_codes: ["MEDIA_HASH_MISMATCH"], detail });
     return json(422, { accepted: false, outcome: "REJECTED", operation: "MEDIA_PUT", error_codes: ["MEDIA_HASH_MISMATCH"] });
   }
-  const mime = contentType !== null && ["image/png", "image/jpeg", "image/webp"].includes(contentType) ? contentType : null;
+  const mime = contentType !== null && ["image/png", "image/jpeg", "image/webp", "application/pdf"].includes(contentType) ? contentType : null;
   const buffer = Buffer.from(bytes);
   const inserted = await deps.pool.query(
     "INSERT INTO site_media (sha256, mime, size, bytes) VALUES ($1, $2, $3, $4) ON CONFLICT (sha256) DO NOTHING RETURNING sha256",
@@ -634,7 +649,7 @@ export async function status(deps: ReceiverDeps, publicationId: string | null, s
   // Même signature que la publication (contexte C0 §7 de la génération stockée).
   const row = rows.map(toGeneration).find((g) => {
     const doc = tryParse(g.bytes, MAX_BYTES);
-    return isObject(doc) && verify(deps.config.keyring, keyId, signature, SCOPE_PUBLISH, DOMAIN_SIG_SNAPSHOT, signatureContext(doc as unknown as Snapshot));
+    return isObject(doc) && verify(deps.config.keyring, keyId, signature, SCOPE_PUBLISH, snapshotDomain(doc), signatureContext(doc as unknown as Snapshot));
   });
   if (row === undefined) return json(401, { accepted: false, outcome: "REJECTED", operation: "STATUS", error_codes: ["SIGNATURE_INVALID"] });
   const pointer = await deps.pool.query("SELECT generation_id FROM site_active_pointer WHERE singleton = 1");

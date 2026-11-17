@@ -1,0 +1,324 @@
+{
+  "cases": {
+    "V2_CATALOGUE.v2_accepted": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "ack.catalogue_sequence": 2,
+        "ack.contract_version": "site_activation.v1",
+        "stage": "activated"
+      },
+      "notes": "V01, I09: a v2 catalogue is activated; the SITE holds the derivatives and the document, never the JPEG and TIFF originals.",
+      "outcome": "ACTIVATED"
+    },
+    "V2_CATALOGUE.v2_ack_verified_by_v1": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "The Factory checks the acknowledgement of a v2 publication with the frozen v1 verify_ack.",
+      "outcome": "ACK_VALID"
+    },
+    "V2_CATALOGUE.v2_alias_meets_a_slug": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "families.slug_unique"
+        ]
+      },
+      "notes": "An old address of a family is never the address of another one.",
+      "outcome": "REJECTED"
+    },
+    "V2_CATALOGUE.v2_category_image_unknown": {
+      "accepted": false,
+      "error_codes": [
+        "MEDIA_MISSING"
+      ],
+      "expect": {
+        "detail.rules": [
+          "media_ref_unknown"
+        ]
+      },
+      "notes": "A category image is a declared media, like a family image.",
+      "outcome": "REJECTED"
+    },
+    "V2_CATALOGUE.v2_coverage_proven": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "The private manifest proves the v2 FULL catalogue, as in v1.",
+      "outcome": "COVERAGE_PROVEN"
+    },
+    "V2_CATALOGUE.v2_derivative_missing": {
+      "accepted": false,
+      "error_codes": [
+        "MEDIA_MISSING"
+      ],
+      "expect": {
+        "stage": "media"
+      },
+      "notes": "A derivative not received: MEDIA_MISSING, the previous catalogue stays served.",
+      "outcome": "REJECTED"
+    },
+    "V2_CATALOGUE.v2_derivative_not_webp_png_jpeg": {
+      "accepted": false,
+      "error_codes": [
+        "MEDIA_TYPE_REJECTED"
+      ],
+      "expect": {
+        "stage": "semantic"
+      },
+      "notes": "A derivative is served: PNG, JPEG or WebP only. The original of a derived image may be any image type (TIFF here).",
+      "outcome": "REJECTED"
+    },
+    "V2_CATALOGUE.v2_document_missing": {
+      "accepted": false,
+      "error_codes": [
+        "MEDIA_MISSING"
+      ],
+      "expect": {
+        "stage": "media"
+      },
+      "notes": "A PDF document is verified like an image.",
+      "outcome": "REJECTED"
+    },
+    "V2_CATALOGUE.v2_missing_v2_key": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "family.keys"
+        ]
+      },
+      "notes": "Every v2 field is present: an empty list or null, never absent.",
+      "outcome": "REJECTED"
+    },
+    "V2_CATALOGUE.v2_position_outside_its_categories": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "family.category_positions"
+        ]
+      },
+      "notes": "A position is given only in a category of the family.",
+      "outcome": "REJECTED"
+    },
+    "V2_CATALOGUE.v2_reference_amount_without_promotion": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "window.reference_unit_amount"
+        ]
+      },
+      "notes": "A base price shown struck through belongs to a PROMOTION window only.",
+      "outcome": "REJECTED"
+    },
+    "V2_CATALOGUE.v2_replay": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "sequence"
+      },
+      "notes": "Same v2 document again: the stored ACK, no second activation.",
+      "outcome": "REPLAY_ACK"
+    },
+    "V2_CATALOGUE.v2_signed_under_the_v1_domain": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {
+        "stage": "signature"
+      },
+      "notes": "Signature domains are separated: a v1 signature never covers a v2 document.",
+      "outcome": "REJECTED"
+    },
+    "V2_CATALOGUE.v2_to_a_v1_site": {
+      "accepted": false,
+      "error_codes": [
+        "SCHEMA_UNSUPPORTED"
+      ],
+      "expect": {
+        "stage": "version"
+      },
+      "notes": "V05: a SITE that reads only v1 refuses a v2 catalogue at the version stage; its served catalogue does not change.",
+      "outcome": "REJECTED"
+    },
+    "V2_CATALOGUE.v2_unknown_key": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "family.keys"
+        ]
+      },
+      "notes": "V04: an unknown key is refused with its rule; nothing is activated.",
+      "outcome": "REJECTED"
+    },
+    "V2_COEXISTENCE.v1_read_by_a_v2_site": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "V03: a SITE that reads v2 still activates a v1 catalogue (the frozen v1 receiver).",
+      "outcome": "ACTIVATED"
+    },
+    "V2_COEXISTENCE.v2_after_a_v1_active": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "The first v2 catalogue takes a v1 generation as its base (sequence, digest, explained withdrawals).",
+      "outcome": "ACTIVATED"
+    },
+    "V2_CONTENT.content_accepted": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "ack.content_sequence": 3,
+        "ack.contract_version": "site_content_activation.v2",
+        "stage": "activated"
+      },
+      "notes": "V07, V08: pages, settings, redirects and relations arrive by the signed channel, with no shared folder; the SITE acknowledges.",
+      "outcome": "ACTIVATED"
+    },
+    "V2_CONTENT.content_ack_verified": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {},
+      "notes": "The Factory checks the SITE's acknowledgement before showing « reçue par le SITE ».",
+      "outcome": "ACK_VALID"
+    },
+    "V2_CONTENT.content_html_in_a_setting": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "E03: a setting is text; HTML in it is accepted as text and the SITE escapes it when it shows it.",
+      "outcome": "ACTIVATED"
+    },
+    "V2_CONTENT.content_reference_missing": {
+      "accepted": false,
+      "error_codes": [
+        "REFERENCE_MISSING"
+      ],
+      "expect": {
+        "stage": "semantic"
+      },
+      "notes": "V09: a content naming a family the SITE does not serve is refused whole; the previous content stays served.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.content_replay": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "sequence"
+      },
+      "notes": "Same content again: the stored ACK.",
+      "outcome": "REPLAY_ACK"
+    },
+    "V2_CONTENT.content_signed_under_the_catalogue_domain": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {
+        "stage": "signature"
+      },
+      "notes": "A catalogue signature never covers a content.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.content_stale": {
+      "accepted": false,
+      "error_codes": [
+        "STALE_SEQUENCE"
+      ],
+      "expect": {
+        "stage": "sequence"
+      },
+      "notes": "An older content never replaces the served one.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.content_unknown_key": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "shop.keys"
+        ]
+      },
+      "notes": "An unknown setting is refused with its rule.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.maintenance_without_message": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "maintenance.message"
+        ]
+      },
+      "notes": "B08: maintenance shows a message.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.redirect_chain": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "redirects.chain"
+        ]
+      },
+      "notes": "S07: one hop only; a redirect target is never itself redirected.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.redirect_to_another_host": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "redirect.to_path"
+        ]
+      },
+      "notes": "3.31: a redirect leads inside the SITE only (no « // »).",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.redirect_with_a_scheme": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "redirect.to_path"
+        ]
+      },
+      "notes": "3.31: no scheme in a redirect target.",
+      "outcome": "REJECTED"
+    }
+  },
+  "verdicts_version": "c0v2.verdicts.v1"
+}

@@ -22,7 +22,18 @@ export type PriceWindow = {
   offer_price_version_public: string;
 };
 
-export type Category = { category_key: string; name: string; parent_category_key: string | null };
+/** Cercle 3 (3.22) : les champs `position`, `intro_text`, `image_sha256`, `seo_*` et `hidden` n'existent que dans un catalogue v2 ; absents (v1), le SITE se comporte comme avant. */
+export type Category = {
+  category_key: string;
+  name: string;
+  parent_category_key: string | null;
+  position?: number;
+  intro_text?: string | null;
+  image_sha256?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  hidden?: boolean;
+};
 
 export type Item = {
   public_item_key: string;
@@ -45,6 +56,12 @@ export type Family = {
   image_main_sha256: string;
   axes: Axis[];
   items: Item[];
+  /** Catalogue v2 seulement (cercle 3). */
+  category_positions?: { category_key: string; position: number }[];
+  seo_title?: string | null;
+  seo_description?: string | null;
+  slug_aliases?: string[];
+  created_at_utc?: string;
 };
 
 export type CatalogMeta = {
@@ -76,6 +93,17 @@ export type Catalog = {
   childCategories(categoryKey: string): Category[];
 };
 
+/** Les champs de famille que seule la v2 porte, quand ils existent (le SITE ne les invente jamais). */
+function v2Family(f: Record<string, unknown>): Partial<Family> {
+  const out: Partial<Family> = {};
+  if (Array.isArray(f["category_positions"])) out.category_positions = f["category_positions"] as Family["category_positions"] & object;
+  if ("seo_title" in f) out.seo_title = f["seo_title"] as string | null;
+  if ("seo_description" in f) out.seo_description = f["seo_description"] as string | null;
+  if (Array.isArray(f["slug_aliases"])) out.slug_aliases = f["slug_aliases"] as string[];
+  if (typeof f["created_at_utc"] === "string") out.created_at_utc = f["created_at_utc"];
+  return out;
+}
+
 /* Le document a passé la forme C0 (validateSnapshotBytes + Generation) : les champs existent. */
 function build(served: ServedGeneration, source: CatalogSource["kind"]): Catalog {
   const doc = served.snapshot as JsonObject;
@@ -91,6 +119,7 @@ function build(served: ServedGeneration, source: CatalogSource["kind"]): Catalog
       secondary_category_keys: f.secondary_category_keys,
       image_main_sha256: f.image_main_sha256,
       axes: f.axes,
+      ...v2Family(f as unknown as Record<string, unknown>),
       items: f.items.map((i) => ({
         public_item_key: i.public_item_key,
         public_family_key: f.public_family_key,

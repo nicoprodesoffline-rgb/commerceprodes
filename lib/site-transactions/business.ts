@@ -15,6 +15,7 @@
  *
  * Interdits ici : prix du navigateur comme autorité, `Number` pour un montant, TVA, port, statut client, paiement.
  */
+import { asV1 } from "../site-catalog/v1-view";
 import type { Pool, PoolClient } from "pg";
 import { Generation, MAX_BYTES, selectPrice, validateOrderSubmit, validateQuoteRequest, type BusinessResult } from "../../c0/ts/src/business";
 import { payloadDigest, validateEvent } from "../../c0/ts/src/events";
@@ -324,7 +325,7 @@ export async function submitBusiness(deps: BusinessDeps, kind: BusinessKind, byt
       outcome = { response: unavailable(base, "NO_ACTIVE_GENERATION"), log: { operation, outcome: "CATALOG_UNAVAILABLE", detail: { reason: "NO_ACTIVE_GENERATION" } } };
       return outcome.response;
     }
-    const generation: Json = { snapshot: active.snapshot as unknown as Json, status: active.status };
+    const generation: Json = { snapshot: asV1(active.snapshot as unknown as Json), status: active.status };
     try {
       new Generation(generation);
     } catch {
