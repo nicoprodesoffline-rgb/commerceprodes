@@ -83,6 +83,20 @@ TypeScript) : même enveloppe, rubriques, familles, variantes et fenêtres rédu
 ne lit un média). Mêmes prix, mêmes codes, mêmes résultats ; un catalogue v1 passe tel quel. Le SITE appelle `c0v2` (`business.ts` :
 `selectPrice`, `generationOf` + `selectPriceIn`, `validateQuoteRequest`, `validateOrderSubmit`), jamais la v1 sur un document v2.
 
+### 3.2 Promotions, lots et caractéristiques lus par le SITE (3.14, 3.20 ; décisions de l'Owner du 17/11)
+
+- **Famille en promotion** (pastille, univers `/promotions`, entrée de menu ; M01, M04–M07) : une de ses variantes a, à l'instant
+  servi, une fenêtre `price_nature = PROMOTION` **ou** une fenêtre qui porte un `reference_unit_amount` (lot à prix fixe avec prix barré
+  du Calculateur, M02 : F4 est en promotion sur une fenêtre `BASE`). Une fenêtre est en cours si `valid_from_utc ≤ instant` et
+  (`valid_until_utc` nul ou `instant < valid_until_utc`). `valid_until_utc` ne s'affiche jamais au public (M05).
+- **Prix barré** : `reference_unit_amount`, fourni par le fichier du Calculateur, jamais calculé ; économie = `reference_unit_amount −
+  unit_amount` ; absent, rien n'est barré (M03).
+- **Lot** : `item.pack = {paid_units, free_units}` pour « N achetés + M offerts » d'un seul produit ; `null` pour tout autre article.
+- **Caractéristiques** (C01–C03) : pour la recherche seulement, jamais en tableau sur la fiche ; `label` et `value` s'affichent
+  toujours échappés. Ce que les variantes publiées partagent est sur la famille, le reste sur la variante. La Factory n'en transmet
+  aucune qui nomme ou cite un fournisseur, une marque, une référence, une norme, une garantie ou un prix (règle C03, garde éditoriale) ;
+  une caractéristique écartée ne bloque jamais la famille.
+
 ## 4. `site_content.v2`
 
 Un seul document porte tout ce que le SITE sert hors du catalogue ; il remplace le dossier partagé `site_content.v1` (V08) et passe par
