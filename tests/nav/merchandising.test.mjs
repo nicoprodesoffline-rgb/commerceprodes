@@ -79,3 +79,12 @@ test("M02 : un prix barré fourni fait une promotion même sur une fenêtre BASE
   assert.equal(isPromoNow(F4, NOW), true, "F4 : BASE + prix barré 40.00");
   assert.equal(isPromoNow(family("z", "bancs", [window("BASE")]), NOW), false);
 });
+
+test("C01/C02 : une caractéristique peut contenir < ou & : elle ne sert qu'à la recherche, jamais rendue (ni en HTML brut, ni en extrait)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const f = family("h", "bancs", [window(null)], { characteristics: [{ label: "A<b>", value: "x & <script>alert(1)</script> galvanisé" }] });
+  assert.match(characteristicsText(f), /galvanis/);
+  for (const file of ["app/api/site/search/route.ts", "app/recherche/page.tsx", "lib/site-catalog/suggest.ts", "app/famille/[slug]/page.tsx"]) {
+    assert.doesNotMatch(readFileSync(new URL(`../../${file}`, import.meta.url), "utf8"), /characteristicsText|\.characteristics/, `${file} n'affiche aucune caractéristique`);
+  }
+});
