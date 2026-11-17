@@ -8,11 +8,12 @@ import { TopCategories } from "@/components/layout/top-categories";
 import { UtilityBar } from "@/components/layout/utility-bar";
 import { UniverseBar } from "@/components/layout/universe-bar";
 import type { PublishedPage } from "@/lib/site-content/pages";
+import { DEFAULT_SHOP, type ShopSettings } from "@/lib/site-shop/settings";
 
-export function SiteHeader({ categories, universe = [] }: { categories: MenuCategory[]; universe?: PublishedPage[] }) {
+export function SiteHeader({ categories, universe = [], shop = DEFAULT_SHOP }: { categories: MenuCategory[]; universe?: PublishedPage[]; shop?: ShopSettings }) {
   return (
     <header className="sticky top-0 z-40 w-full min-w-0 bg-white">
-      <UtilityBar />
+      <UtilityBar shop={shop} />
       <div className="border-b border-line">
         <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-5 gap-y-3 px-4 py-4 lg:flex-nowrap lg:px-8 lg:py-5">
           <Link href="/" className="inline-flex min-h-12 shrink-0 items-center gap-2.5 text-[28px] font-extrabold tracking-tight text-ink lg:text-[32px]" aria-label="PRODES — accueil du catalogue">

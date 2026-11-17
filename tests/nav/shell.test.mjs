@@ -45,10 +45,16 @@ test("pas de loading.tsx à la racine (un vrai 404 exige que la page ne soit pas
 });
 
 test("les textes validés par le propriétaire sont présents : horaires (C5) et livraison incluse (C1)", () => {
+  // Cercle 3, 3.23 (B05) : plus aucun horaire écrit en dur dans les composants ; les textes validés sont la valeur par défaut des réglages de la boutique, que la Factory remplace.
+  const defaults = fs.readFileSync(path.join(root, "lib/site-shop/settings.ts"), "utf8");
+  assert.match(defaults, /Lun–Sam 8h30–19h/);
+  assert.match(defaults, /Livraison incluse sur tout le catalogue/);
   const bar = fs.readFileSync(path.join(root, "components/layout/utility-bar.tsx"), "utf8");
-  assert.match(bar, /Lun–Sam 8h30–19h/);
-  assert.match(bar, /Livraison incluse sur tout le catalogue/);
+  assert.doesNotMatch(bar, /8h30/);
+  assert.match(bar, /shop\.openingHours/);
+  assert.match(bar, /shop\.deliveryNotice/);
   const footer = fs.readFileSync(path.join(root, "components/layout/footer.tsx"), "utf8");
-  assert.match(footer, /Lun–Sam 8h30–19h/);
+  assert.doesNotMatch(footer, /8h30/);
+  assert.match(footer, /shop\.openingHours/);
   assert.doesNotMatch(footer, /Montant indicatif|base fiscale/, "plus de mention fiscale répétée dans le pied de page (une seule sous le total du panier)");
 });

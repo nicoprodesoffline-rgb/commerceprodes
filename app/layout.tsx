@@ -3,6 +3,7 @@ import { CartProvider } from "@/components/cart/cart-provider";
 import { SiteFooter } from "@/components/layout/footer";
 import { CompareBar } from "@/components/site/compare-bar";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
+import { AnnouncementBanner } from "@/components/layout/announcement";
 import { SiteHeader } from "@/components/layout/site-header";
 import { navigationOf } from "@/components/site/catalog-views";
 import type { MenuCategory } from "@/components/layout/category-menu";
@@ -12,6 +13,7 @@ import { imagesAllowed } from "@/lib/site-catalog/media-policy";
 import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogOrNull } from "@/lib/site-catalog/page";
 import { loadUniverse } from "@/lib/site-content/source";
+import { getShopSettings } from "@/lib/site-shop/source";
 import "./globals.css";
 
 // Toutes les pages sont rendues à la demande : génération servie et instant serveur lus au runtime.
@@ -34,6 +36,7 @@ const toMenu = (nodes: NavNode[]): MenuCategory[] => nodes.map((n) => ({ key: n.
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const catalog = await catalogOrNull();
   const universe = await loadUniverse();
+  const shop = await getShopSettings();
   const roots = catalog ? toMenu(navigationOf(catalog).menu) : [];
   return (
     <html lang="fr">
@@ -43,11 +46,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </a>
         <MediaPolicyProvider showImages={imagesAllowed(catalog?.meta.data_label)}>
           <CartProvider>
-            <SiteHeader categories={roots} universe={universe} />
+            <AnnouncementBanner shop={shop} />
+            <SiteHeader categories={roots} universe={universe} shop={shop} />
             <main id="contenu" tabIndex={-1} className="mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">
               {children}
             </main>
-            <SiteFooter meta={catalog?.meta ?? null} basis={catalog ? catalogBasis(catalog.families, catalog.meta.payload_sha256) : "NOT_DECLARED"} />
+            <SiteFooter meta={catalog?.meta ?? null} basis={catalog ? catalogBasis(catalog.families, catalog.meta.payload_sha256) : "NOT_DECLARED"} shop={shop} />
             <CompareBar />
             <MobileBottomNav />
           </CartProvider>
