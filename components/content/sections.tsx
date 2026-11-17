@@ -73,6 +73,33 @@ export function TextImageSection({ data }: { data: Data<"text_image"> }) {
   );
 }
 
+/** Cercle 3, 3.24 : une FAQ éditable — questions et réponses publiées par la Factory, affichées comme du texte (jamais comme du code). Accordéon natif, sans script. */
+export function FaqSection({ data }: { data: Data<"faq"> }) {
+  return (
+    <section data-testid="section-faq" className="min-w-0">
+      {data.title && <h2 className={heading}>{data.title}</h2>}
+      <div className="divide-y divide-line rounded-[14px] border border-line bg-white">
+        {data.questions.map((item, index) => (
+          <details key={index} name="faq" className="group px-4">
+            <summary className="flex min-h-[48px] cursor-pointer items-center justify-between gap-3 font-medium">{item.question}<span aria-hidden="true" className="text-ink-3 group-open:rotate-180">▾</span></summary>
+            <p className="whitespace-pre-line pb-4 text-ink-2 [overflow-wrap:anywhere]">{item.answer}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** Cercle 3, 3.24 : un texte libre (contact, mentions légales, livraison). */
+export function RichTextSection({ data }: { data: Data<"rich_text"> }) {
+  return (
+    <section data-testid="section-rich-text" className="min-w-0">
+      {data.title && <h2 className={heading}>{data.title}</h2>}
+      <p className="max-w-[70ch] whitespace-pre-line text-ink-2 [overflow-wrap:anywhere]">{data.text}</p>
+    </section>
+  );
+}
+
 export function PageSections({ page, catalog }: { page: EditorialPage; catalog: Catalog }) {
   return (
     <div className="w-full min-w-0 space-y-10">
@@ -82,6 +109,8 @@ export function PageSections({ page, catalog }: { page: EditorialPage; catalog: 
           case "category_grid": return <CategoryGridSection key={index} data={section.data} catalog={catalog} />;
           case "product_carousel": return <FamilyCarouselSection key={index} data={section.data} catalog={catalog} />;
           case "text_image": return <TextImageSection key={index} data={section.data} />;
+          case "faq": return <FaqSection key={index} data={section.data} />;
+          case "rich_text": return <RichTextSection key={index} data={section.data} />;
         }
       })}
     </div>

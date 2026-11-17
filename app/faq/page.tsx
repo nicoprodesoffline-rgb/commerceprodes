@@ -4,6 +4,7 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogOrNull } from "@/lib/site-catalog/page";
 import { getShopSettings } from "@/lib/site-shop/source";
+import { EditablePage, publishedAt } from "@/components/content/published-page";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Questions fréquentes" };
@@ -16,6 +17,8 @@ type Qa = { q: string; a: React.ReactNode };
  * commande, l'annulation, l'installation ou les données ne sont pas reprises : aucune décision ne les porte. La base fiscale n'est dite que si la génération la déclare.
  */
 export default async function FaqPage() {
+  const edited = await publishedAt("/faq");   // cercle 3, 3.24 : la FAQ publiée par la Factory remplace le texte provisoire
+  if (edited) return <EditablePage page={edited} />;
   const catalog = await catalogOrNull();
   const shop = await getShopSettings();
   const basis = catalog ? catalogBasis(catalog.families, catalog.meta.payload_sha256) : "NOT_DECLARED";

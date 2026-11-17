@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { getShopSettings } from "@/lib/site-shop/source";
+import { PageSections } from "@/components/content/sections";
+import { publishedAt } from "@/components/content/published-page";
+import { catalogForPage } from "@/lib/site-catalog/page";
 
 export const metadata: Metadata = { title: "Nous contacter" };
 
@@ -13,10 +16,12 @@ export const dynamic = "force-dynamic";
 
 export default async function ContactPage() {
   const shop = await getShopSettings();
+  const edited = await publishedAt("/contact");   // cercle 3, 3.24 : le texte de contact publié par la Factory, au-dessus des coordonnées des réglages
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <Breadcrumbs items={[{ label: "Accueil", href: "/" }, { label: "Nous contacter" }]} />
       <h1 className="text-2xl font-semibold">Nous contacter</h1>
+      {edited && <PageSections page={{ ...edited, sections: edited.sections.filter(s => s.type !== "hero") }} catalog={await catalogForPage()} />}
       <section className="space-y-3 rounded-[14px] border border-line bg-white p-5" aria-labelledby="presentation">
         <h2 id="presentation" className="text-lg font-semibold">PRODES</h2>
         <p className="text-ink-2">Au service des collectivités : mobilier, signalisation et équipements pour les organismes publics.</p>

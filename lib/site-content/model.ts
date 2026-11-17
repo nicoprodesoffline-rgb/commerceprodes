@@ -1,8 +1,10 @@
 export type Section =
-  | { type: "hero"; data: { title: string; text?: string; link?: string; linkLabel?: string } }
+  | { type: "hero"; data: { title: string; text?: string; link?: string; linkLabel?: string; imageSha?: string } }
   | { type: "category_grid"; data: { categories: string[]; title?: string } }
   | { type: "product_carousel"; data: { families: string[]; title?: string } }
-  | { type: "text_image"; data: { text: string; media_sha: string; title?: string; imageAlt?: string } };
+  | { type: "text_image"; data: { text: string; media_sha: string; title?: string; imageAlt?: string } }
+  | { type: "faq"; data: { title?: string; questions: { question: string; answer: string }[] } }
+  | { type: "rich_text"; data: { title?: string; text: string } };
 
 export type EditorialPage = {
   key: string;

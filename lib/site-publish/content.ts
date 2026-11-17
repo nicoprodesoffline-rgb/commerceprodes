@@ -41,6 +41,19 @@ export async function readActiveContent(q: Pool | PoolClient): Promise<StoredCon
   }
 }
 
+let memo: { sha: string; value: StoredContent | null } | null = null;
+
+/** Lecture du SITE à chaque requête : un sondage de l'empreinte, et la relecture complète seulement quand elle a changé. */
+export async function readActiveContentCached(q: Pool | PoolClient): Promise<StoredContent | null> {
+  const probe = await q.query("SELECT payload_sha256 FROM site_content_active WHERE singleton = 1");
+  if (probe.rows.length !== 1) { memo = null; return null; }
+  const sha = probe.rows[0].payload_sha256 as string;
+  if (memo !== null && memo.sha === sha) return memo.value;
+  const value = await readActiveContent(q);
+  memo = { sha, value };
+  return value;
+}
+
 async function activeCatalogue(q: Pool | PoolClient): Promise<Json> {
   const active = await getActiveGeneration(q);
   // Aucun catalogue actif : seules les références sont vides, une page sans référence reste acceptable.

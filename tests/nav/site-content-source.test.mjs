@@ -8,9 +8,12 @@ import { createHash } from "node:crypto";
 
 // Seul l'accès au catalogue est remplacé ; source, construction des refs et lecteur restent réels.
 const catalogStub = "data:text/javascript," + encodeURIComponent("let value = null; export function setCatalog(v) { value = v; } export async function catalogOrNull() { if (value instanceof Error) throw value; return value; }");
+// Cercle 3 : la lecture des contenus v2 en base est remplacée (aucun contenu v2 reçu) ; ce test lit le dossier partagé v1.
+const v2Stub = "data:text/javascript," + encodeURIComponent("export async function getActiveContentV2() { return null; }");
 const hooks = registerHooks({ resolve(specifier, context, next) {
+  if (specifier === "./v2-source") return next(v2Stub, context);
   if (specifier === "@/lib/site-catalog/page") return next(catalogStub, context);
-  if (context.parentURL?.includes("/lib/site-content/") && ["./pages", "./reader", "./validate"].includes(specifier)) return next(specifier + ".ts", context);
+  if (context.parentURL?.includes("/lib/site-content/") && ["./pages", "./reader", "./validate", "./v2"].includes(specifier)) return next(specifier + ".ts", context);
   return next(specifier, context);
 } });
 const { setCatalog } = await import(catalogStub);

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { EditablePage, publishedAt } from "@/components/content/published-page";
 
 // Provisoire : page exclue des moteurs de recherche tant que son contenu n'est pas validé.
 export const metadata: Metadata = { title: "Mentions légales", robots: { index: false, follow: false } };
@@ -9,7 +10,11 @@ export const metadata: Metadata = { title: "Mentions légales", robots: { index:
  * Elle n'est pas reprise : écrire ici une identité, un hébergeur ou une politique de cookies non validés serait une affirmation fausse. Le contenu juridique est
  * fourni par le propriétaire et piloté depuis la Factory (S4) avant toute ouverture au public.
  */
-export default function LegalNoticePage() {
+export const dynamic = "force-dynamic";
+
+export default async function LegalNoticePage() {
+  const edited = await publishedAt("/mentions-legales");   // cercle 3, 3.24 : le texte publié par la Factory remplace le texte provisoire
+  if (edited) return <EditablePage page={edited} />;
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <Breadcrumbs items={[{ label: "Accueil", href: "/" }, { label: "Mentions légales" }]} />

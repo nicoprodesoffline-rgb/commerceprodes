@@ -4,11 +4,16 @@ import type { Catalog } from "@/lib/site-catalog/catalog";
 import type { CatalogRefs, EditorialSet } from "./model";
 import { readEditorialSet } from "./reader";
 import { universeEntries } from "./pages";
+import { editorialFromV2 } from "./v2";
+import { getActiveContentV2 } from "./v2-source";
 import type { PagesSource, PublishedPage } from "./pages";
 
 const references = new WeakMap<Catalog, CatalogRefs>();
 
 export const getEditorialSet = cache(async (): Promise<EditorialSet | null> => {
+  // Cercle 3 : les contenus v2 reçus par le canal signé passent d'abord ; sans eux, le dossier partagé v1 (SITE_CONTENT_DIR) reste lu comme avant.
+  const v2 = await getActiveContentV2();
+  if (v2 !== null) return editorialFromV2(v2);
   try {
     const catalog = await catalogOrNull();
     if (!catalog) return null;

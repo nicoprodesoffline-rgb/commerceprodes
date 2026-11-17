@@ -62,7 +62,8 @@ export default async function HomePage() {
   const featured = featuredSection ? featuredSection.data.families.flatMap(key => { const family = catalog.families.find(f => f.public_family_key === key); return family ? [family] : []; }) : catalog.families;
   const shown = featured.slice(0, HOME_FAMILIES);
   const hero = page?.sections.find(section => section.type === "hero");
-  const heroImage = imagesAllowed(catalog.meta.data_label) ? shown.find(f => f.image_main_sha256)?.image_main_sha256 : null;
+  // Cercle 3 (B11) : l'image du bandeau choisie dans la Factory remplace l'image prise automatiquement.
+  const heroImage = imagesAllowed(catalog.meta.data_label) ? (hero?.data.imageSha ?? shown.find(f => f.image_main_sha256)?.image_main_sha256) : null;
   const contentSections = page?.sections.filter(section => section !== hero && section !== categorySection && section !== featuredSection) ?? [];
   return (
     <div className="min-w-0 space-y-12 lg:space-y-16">
