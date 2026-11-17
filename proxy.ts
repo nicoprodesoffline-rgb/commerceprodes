@@ -33,6 +33,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { catalogAvailability } from "@/lib/site-catalog/page";
 import { escapeHtml } from "@/lib/site-shop/settings";
 import { getShopSettings } from "@/lib/site-shop/source";
+import { resolveRedirect } from "@/lib/site-content/redirects";
+import { getActiveContentV2 } from "@/lib/site-content/v2-source";
 
 const CSRF_ROUTES = new Set(["/api/site/cart/preview", "/api/site/quote", "/api/site/order"]);
 const PAGE_EXACT = new Set(["/", "/panier", "/recherche", "/devis", "/commande", "/favoris", "/comparer", "/gamme-pro-intens"]);
@@ -122,6 +124,12 @@ export async function proxy(req: NextRequest) {
       });
       return secure(res, req, nonce);
     }
+  }
+
+  // Cercle 3, 3.17 : anciennes adresses du site actuel. Contenus ACTIFS vérifiés seulement (jamais un aperçu) ; cible locale ; une vraie page n'est jamais redirigée. Location relative : jamais l'hôte interne.
+  if ((req.method === "GET" || req.method === "HEAD") && pathname !== "/") {
+    const hit = resolveRedirect(await getActiveContentV2(), pathname);
+    if (hit !== null) return secure(new NextResponse(null, { status: hit.status, headers: { location: hit.to, "cache-control": "public, max-age=3600" } }), req, nonce);
   }
 
   if ((req.method === "GET" || req.method === "HEAD") && isStorePage(pathname)) {
