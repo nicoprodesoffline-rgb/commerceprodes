@@ -105,7 +105,7 @@ export function LiveSearch() {
             {results.map((s, i) => (
               <li key={s.slug} id={optionId(i)} role="option" aria-selected={i === active}>
                 <Link href={`/famille/${s.slug}`} onClick={() => setOpen(false)} className={`flex items-center gap-3 rounded-[9px] px-2 py-2 hover:bg-surface ${i === active ? "bg-surface" : ""}`}>
-                  <MediaImage sha256={s.imageSha ?? null} alt="" className="h-16 w-16 shrink-0 text-[10px]!" />
+                  <MediaImage sha256={s.imageSha ?? null} alt="" width={320} className="h-16 w-16 shrink-0 text-[10px]!" />
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{s.name}</span>
                     {s.category && <span className="block truncate text-xs text-ink-3">{s.category}</span>}

@@ -8,6 +8,7 @@ import { FamilyCard } from "@/components/home/family-card";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { FamilyBuyBox } from "@/components/product/family-buy-box";
 import { Gallery, type GalleryImage } from "@/components/product/gallery";
+import { mediaViews } from "@/lib/site-catalog/media-view";
 import { ProductCharacteristics, ProductDocuments, RelatedProducts, UpsellProducts } from "@/components/product/product-sections";
 import { categoryCrumbs, familyCard, navigationOf } from "@/components/site/catalog-views";
 import { CompareButton, WishlistButton } from "@/components/site/list-buttons";
@@ -66,6 +67,8 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
     variant_axes: i.variant_axes,
     axes: shownAxes(family.axes.map((a) => ({ label: labels.get(a.axis_key) ?? a.axis_key, value: i.variant_axes[a.axis_key] ?? "" }))), // sans « pas de valeur » (option, accessoire)
     image_sha256: i.public_media_refs[0] ?? null,
+    // 3.6 : l'image propre de la variante (celle qui n'est pas la vue principale de la famille), affichée quand on la choisit.
+    own_image_sha256: i.public_media_refs.find((sha) => sha !== family.image_main_sha256) ?? null,
     rows: priceRows(catalog.c0Generation, i, instant),
   }));
   const preselected = typeof article === "string" && items.some((i) => i.public_item_key === article) ? article : undefined;
@@ -80,10 +83,12 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
     else notice = { text: `La référence ${shown} est inconnue du catalogue actuel.` };
   }
 
-  const images: GalleryImage[] = [{ sha256: family.image_main_sha256, caption: "Vue principale" }];
+  // 3.3 / 3.4 : les versions réduites, le texte alternatif et le nom lisible des images de la fiche (catalogue v2 seulement).
+  const views = mediaViews(catalog.c0Generation.snapshot);
+  const images: GalleryImage[] = [{ sha256: family.image_main_sha256, caption: "Vue principale", view: views.get(family.image_main_sha256) ?? null }];
   for (const i of items) {
     for (const sha of family.items.find((x) => x.public_item_key === i.public_item_key)!.public_media_refs) {
-      if (!images.some((g) => g.sha256 === sha)) images.push({ sha256: sha, caption: `Variante ${axesText(i.axes)}` });
+      if (!images.some((g) => g.sha256 === sha)) images.push({ sha256: sha, caption: `Variante ${axesText(i.axes)}`, view: views.get(sha) ?? null });
     }
   }
   // Rubriques navigables uniquement (un niveau 4+ est rattaché à son ancêtre de niveau 3), sans doublon ni la principale.

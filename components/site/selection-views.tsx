@@ -92,7 +92,7 @@ export function WishlistView() {
           {state.families.map((f) => (
             <li key={f.slug} className="flex flex-col overflow-hidden rounded-[14px] border border-line bg-white">
               <Link href={`/famille/${f.slug}`} className="group block">
-                <MediaImage sha256={f.imageSha} alt="" className="aspect-square w-full" />
+                <MediaImage sha256={f.imageSha} alt="" width={320} className="aspect-square w-full" />
                 <span className="block p-4">
                   {f.category && <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-3">{f.category}</span>}
                   <span className="block font-semibold group-hover:underline">{f.name}</span>
@@ -137,7 +137,7 @@ export function CompareView() {
                     <th scope="col" className="w-32 p-3 text-left text-xs font-medium text-ink-3">&nbsp;</th>
                     {state.families.map((f) => (
                       <th key={f.slug} scope="col" className="min-w-40 p-3 text-left align-top">
-                        <MediaImage sha256={f.imageSha} alt="" className="mb-2 aspect-square w-full rounded-[9px]" />
+                        <MediaImage sha256={f.imageSha} alt="" width={320} className="mb-2 aspect-square w-full rounded-[9px]" />
                         <Link href={`/famille/${f.slug}`} className="font-semibold hover:underline">{f.name}</Link>
                       </th>
                     ))}
@@ -202,7 +202,7 @@ export function RecentlyViewed({ slug }: { slug: string }) {
         {state.families.map((f) => (
           <li key={f.slug} className="shrink-0 snap-start">
             <Link href={`/famille/${f.slug}`} className="block overflow-hidden rounded-[14px] border border-line bg-white hover:border-ink-3">
-              <MediaImage sha256={f.imageSha} alt="" className="aspect-square w-full" />
+              <MediaImage sha256={f.imageSha} alt="" width={320} className="aspect-square w-full" />
               <span className="block p-3"><span className="block text-sm font-semibold">{f.name}</span><span className="mt-1 block text-xs text-ink-2">{f.priceText}</span></span>
             </Link>
           </li>

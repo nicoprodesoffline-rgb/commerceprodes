@@ -143,7 +143,8 @@ test("fiche : cartes ordonnées, prix transmis, similaires dédoublonnés et sec
     public_family_key, slug: `produit-${index}`, name: `Produit ${index}`, axes: [], items: [],
     primary_category_key: "rubrique", secondary_category_keys: [], description_long: "", image_main_sha256: "a".repeat(64),
   }));
-  const catalog = { families, familyBySlug: () => families[0] };
+  // 3.3 : la fiche lit les versions réduites des images dans le document servi (aucun ici : catalogue sans image dérivée).
+  const catalog = { families, familyBySlug: () => families[0], c0Generation: { snapshot: null } };
   let set = validateEnvelope(doc(valid()), refs).set;
   const FamilyCard = ({ data, from }) => React.createElement("li", null, React.createElement("a", { href: `/famille/${data.slug}`, "data-price": from?.amount ?? "sur-devis" }, data.name));
   const stubs = {
