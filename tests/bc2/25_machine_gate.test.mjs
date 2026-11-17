@@ -32,3 +32,23 @@ test("un client signé qui ne se trompe jamais n'est jamais bloqué par la limit
   const e = env({ SITE_MACHINE_FAILURE_LIMIT: "3" });
   for (let i = 0; i < 5000; i += 1) assert.equal(gate.machineGuard(h("198.51.100.1"), e, i).refusal, null);
 });
+
+test("r2 — 413, 400 et 401 comptent comme des refus ; 404 (génération non déposée, réponse normale), 409, 422 et 200 non", async () => {
+  const run = (status) => async () => new Response(null, { status });
+  for (const status of [413, 400, 401]) {
+    gate.resetMachineGuard();
+    process.env.SITE_TRUSTED_PROXY_HOPS = "1";
+    process.env.SITE_MACHINE_FAILURE_LIMIT = "3";
+    const seen = [];
+    for (let i = 0; i < 6; i += 1) seen.push((await gate.guarded(h("198.51.100.1"), run(status))).status);
+    assert.deepEqual(seen, [status, status, status, 429, 429, 429], `${status} compte`);
+  }
+  for (const status of [404, 409, 422, 200]) {
+    gate.resetMachineGuard();
+    const seen = new Set();
+    for (let i = 0; i < 20; i += 1) seen.add((await gate.guarded(h("198.51.100.1"), run(status))).status);
+    assert.deepEqual([...seen], [status], `${status} ne compte pas`);
+  }
+  delete process.env.SITE_TRUSTED_PROXY_HOPS;
+  delete process.env.SITE_MACHINE_FAILURE_LIMIT;
+});

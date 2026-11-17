@@ -3,7 +3,7 @@
  * et avant toute lecture de corps ni écriture de journal.
  *
  *   1. liste d'adresses autorisées (`SITE_MACHINE_ALLOWLIST`, adresses séparées par des virgules ; VIDE par défaut = tout le monde passe au contrôle suivant) : une adresse hors liste reçoit 403 ;
- *   2. limite de REFUS par adresse (`SITE_MACHINE_FAILURE_LIMIT`, 30 par minute) : chaque réponse 401 compte ; au seuil, l'adresse reçoit 429 jusqu'à la fin de la fenêtre
+ *   2. limite de REFUS par adresse (`SITE_MACHINE_FAILURE_LIMIT`, 30 par minute) : chaque refus de `COUNTED_REFUSALS` (401, 413, 400) compte ; au seuil, l'adresse reçoit 429 jusqu'à la fin de la fenêtre
  *      (401 d'abord, puis 429, et plus aucune ligne de journal : la requête n'atteint pas le receveur) ;
  *
  * Une requête dont la signature est valide n'est jamais limitée (« tout republier » envoie des milliers d'images, à plus de 20 par seconde) : seuls les REFUS comptent. Un débordement
@@ -62,12 +62,20 @@ export function machineGuard(headers: { get(name: string): string | null }, env:
   };
 }
 
-/** Exécute `run` derrière la garde ; une réponse 401 compte comme un refus pour l'adresse. */
+/**
+ * Les réponses qui comptent comme un refus pour l'adresse : celles qu'un appelant SANS la clé peut obtenir, avec un identifiant de clé public et une signature factice, et que la Factory légitime
+ * ne reçoit jamais dans un usage normal : 401 (signature, clé inconnue, requête non datée, périmée ou rejouée), 413 (corps trop gros, refusé avant toute vérification de signature) et 400
+ * (corps, chemin ou requête mal formés). 404 ne compte PAS : « génération non déposée » (GENERATION_NOT_STAGED) est une réponse normale que la Factory sait lire (relevé d'une publication
+ * qui n'a pas été déposée : projections/adapters/site_snapshot.py), elle ne doit jamais la bloquer. 409 et 422 viennent APRÈS la signature (séquence, contenu).
+ */
+export const COUNTED_REFUSALS: ReadonlySet<number> = new Set([400, 401, 413]);
+
+/** Exécute `run` derrière la garde ; une réponse de `COUNTED_REFUSALS` compte comme un refus pour l'adresse. */
 export async function guarded(headers: { get(name: string): string | null }, run: () => Promise<Response>): Promise<Response> {
   const guard = machineGuard(headers);
   if (guard.refusal !== null) return guard.refusal;
   const response = await run();
-  if (response.status === 401) guard.fail();
+  if (COUNTED_REFUSALS.has(response.status)) guard.fail();
   return response;
 }
 

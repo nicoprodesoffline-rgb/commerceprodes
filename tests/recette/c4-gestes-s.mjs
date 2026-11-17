@@ -11,6 +11,7 @@
 //   --s09-cmd         commande (shell) qui modifie un réglage visible de la boutique ET l'envoie au site (geste de la Factory, S09).
 //   --maint-on-cmd / --maint-off-cmd   commandes qui activent puis retirent le mode maintenance de la boutique et l'envoient au site.
 //   --stop-cmd / --start-cmd   commandes qui arrêtent et relancent le SITE seul (derrière le frontal), pour S11.
+//                     Chaque commande DOIT RENDRE LA MAIN (démarrage de service, jamais `next start` au premier plan) : elle est tuée au bout de --wait. Elle ne doit afficher aucun secret (la fin de sa sortie est recopiée).
 //                     Chaque commande est lancée par le script (code de sortie et fin de sa sortie consignés dans la preuve, jamais la commande elle-même), PUIS le script guette l'effet. Sans la commande, le script
 //                     écrit une ligne `ATTENTE_FACTORY: …` / `ATTENTE_OPERATEUR: …` et guette seulement (repli : un autre rejeu fait le geste).
 //   --page        page dont le contenu change quand un réglage de la boutique change (S09), « / » par défaut.
@@ -230,16 +231,18 @@ async function maint() {
 }
 
 async function s11() {
-  const down = async () => { const r = await tryRequest(opt.page); return r.status === 503 && /de retour dans quelques minutes/.test(text(r)) ? r : null; };
+  // Le site est arrêté dès que le frontal répond 503 ; le texte de la page est jugé ensuite. Le site est TOUJOURS relancé, que le geste réussisse ou non.
+  const down = async () => { const r = await tryRequest(opt.page); return r.status === 503 ? r : null; };
   const stopped = await waitFor("ATTENTE_OPERATEUR", "arrêter le site derrière le frontal d'essai (pas le frontal)", down, 500, opt["stop-cmd"]);
-  if (stopped === null) return proof("S11", "Site arrêté : le frontal sert la page de maintenance en 503", "❌", [`aucune réponse 503 avec la page de maintenance en ${opt.wait} s`], "—");
-  const retry = stopped.headers["retry-after"];
-  const health = await tryRequest("/api/site/health");
+  const retry = stopped?.headers["retry-after"];
+  const hasText = stopped !== null && /de retour dans quelques minutes/.test(text(stopped));
+  const health = stopped === null ? null : await tryRequest("/api/site/health");
   const back = await waitFor("ATTENTE_OPERATEUR", "relancer le site", async () => ((await tryRequest(opt.page)).status === 200 ? true : null), 1000, opt["start-cmd"]);
-  const ok = retry !== undefined && back !== null;
+  const ok = stopped !== null && retry !== undefined && hasText && back !== null;
   proof("S11", "Site arrêté : le frontal sert la page de maintenance en 503", ok ? "✅" : "❌",
-    [`GET ${opt.page} site arrêté → HTTP 503, Retry-After: ${retry ?? "ABSENT"}, texte « de retour dans quelques minutes » présent`, `GET /api/site/health site arrêté → HTTP ${health.status} (${health.status === 503 ? "le frontal répond 503 aussi" : "autre"})`, back === null ? "le site ne répond pas 200 après la relance" : "site relancé : GET → HTTP 200"],
-    "C'est le frontal d'essai de c2 (page ops/maintenance.html) qui répond, pas le site. Ce n'est pas le frontal de production (Caddy chez 01).");
+    [stopped === null ? `aucune réponse 503 du frontal en ${opt.wait} s après l'arrêt` : `GET ${opt.page} site arrêté → HTTP 503, Retry-After: ${retry ?? "ABSENT"}, texte « de retour dans quelques minutes » ${hasText ? "présent" : "ABSENT (le frontal sert une autre page)"}`,
+     health === null ? "—" : `GET /api/site/health site arrêté → HTTP ${health.status}`, back === null ? "le site ne répond pas 200 après la relance" : "site relancé : GET → HTTP 200"],
+    "C'est le frontal d'essai (lancé avec --maintenance <arbre du SITE>/ops/maintenance.html) qui répond, pas le site. Ce n'est pas le frontal de production (Caddy chez 01). Chaque commande doit rendre la main : elle est tuée au bout de --wait.");
 }
 
 async function s12() {

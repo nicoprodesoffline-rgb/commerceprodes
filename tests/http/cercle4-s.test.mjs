@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createRequire } from "node:module";
-import { ACTIVATE, KEYRING, ROOT, STAGE, VERIFY, deps, headersFor, jsonc, mediaHeaders, newPool, resetDb, receiver, testDatabaseUrl } from "../bc2/helpers.mjs";
+import { ACTIVATE, KEYRING, ROOT, STAGE, VERIFY, datedHeaders, deps, headersFor, jsonc, mediaHeaders, newPool, resetDb, receiver, testDatabaseUrl } from "../bc2/helpers.mjs";
 
 const V2 = join(ROOT, "c0v2", "fixtures");
 const requireBuild = createRequire(import.meta.url);
@@ -131,6 +131,17 @@ test("S04 — requêtes non signées sur une route de publication : 401 d'abord,
   assert.equal(await count("site_publication_log"), before, "aucune ligne de journal de publication au-delà du seuil");
 });
 
+test("r2 — 40 POST trop gros sous un identifiant de clé connu (signature factice) : 413 puis 429, jamais 413 sans fin", async () => {
+  // Le plafond d'une route de contrôle est 256 Kio : un vrai corps de 300 Kio est refusé AVANT toute vérification de signature.
+  const big = Buffer.alloc(300 * 1024);
+  const post = async (n) => (await fetch(`${BASE}/api/site/publish/verify-media`, { method: "POST", body: big,
+    headers: { "x-c0-key-id": "c0-test-publish-02", "x-c0-signature": "b".repeat(64), "x-forwarded-for": `203.0.113.${n}, 198.51.100.30` } })).status;
+  const statuses = [];
+  for (let i = 0; i < 40; i += 1) statuses.push(await post(i));
+  assert.deepEqual(statuses.slice(0, FAILURE_LIMIT), Array(FAILURE_LIMIT).fill(413), "les premiers : 413");
+  assert.deepEqual(statuses.slice(FAILURE_LIMIT), Array(40 - FAILURE_LIMIT).fill(429), "les suivants : 429");
+});
+
 test("S05 — l'adresse retenue est celle posée par le frontal : un X-Forwarded-For forgé par le visiteur est ignoré", async () => {
   // Autre adresse (posée en dernier par le frontal) : son compteur est neuf, malgré les valeurs forgées devant.
   const fresh = await fetch(`${BASE}/api/site/publish/stage`, { method: "POST", body: "{}", headers: forged(7, "198.51.100.8") });
@@ -182,7 +193,9 @@ test("S08 + S09 — dix pages sans changement : aucune lecture des contenus en b
   assert.equal(after10 - warm, 0, `dix requêtes de page : ${after10 - warm} lecture(s) des contenus en base (attendu 0)`);
 
   const c = contentCase;
-  const res = await fetch(`${BASE}/api/site/content/activate`, { method: "POST", body: read(c.content.$bytes), headers: headersFor(c.transport) });
+  const bytes = read(c.content.$bytes);
+  // Transport du cercle 4 : en plus de la signature C0, l'anti-rejeu daté (x-c0-issued-at, x-c0-nonce, x-c0-request-signature) est exigé sur les routes signées.
+  const res = await fetch(`${BASE}/api/site/content/activate`, { method: "POST", body: bytes, headers: { ...Object.fromEntries(headersFor(c.transport)), ...datedHeaders(c.transport.key_id, "POST", "/api/site/content/activate", bytes) } });
   assert.equal(res.headers.get("x-c0-outcome"), "ACTIVATED", await res.clone().text());
   const redirected = await fetch(`${BASE}/12-bancs`, { redirect: "manual" });
   assert.ok([301, 308].includes(redirected.status), `requête suivante : HTTP ${redirected.status} (attendu 301/308)`);
@@ -195,7 +208,8 @@ test("S09 (maintenance) — activée par la route signée : 503 à la requête s
     const doc = { ...base, content_sequence: base.content_sequence + sequence, publication_id: `c4s-maintenance-${sequence}`, maintenance };
     doc.payload_sha256 = v2content.payloadSha256(doc);
     const signed = v2content.signContent(doc, KEYRING, contentCase.transport.key_id);
-    const res = await fetch(`${BASE}/api/site/content/activate`, { method: "POST", body: jsonc.canonicalBytes(doc), headers: headersFor(signed) });
+    const bytes = jsonc.canonicalBytes(doc);
+    const res = await fetch(`${BASE}/api/site/content/activate`, { method: "POST", body: bytes, headers: { ...Object.fromEntries(headersFor(signed)), ...datedHeaders(signed.key_id, "POST", "/api/site/content/activate", bytes) } });
     assert.equal(res.headers.get("x-c0-outcome"), "ACTIVATED", await res.clone().text());
   };
   assert.equal((await fetch(`${BASE}/livraison`)).status, 200, "avant : le site répond");
