@@ -1,0 +1,201 @@
+{
+ "version": "site_filters.v1",
+ "rule": "palette",
+ "nuances": [
+  {
+   "name": "Blanc",
+   "hex": "#f7f7f5",
+   "motif": "uni"
+  },
+  {
+   "name": "Crème",
+   "hex": "#efe2bb",
+   "motif": "uni"
+  },
+  {
+   "name": "Beige",
+   "hex": "#d2b48c",
+   "motif": "uni"
+  },
+  {
+   "name": "Taupe",
+   "hex": "#86735e",
+   "motif": "uni"
+  },
+  {
+   "name": "Marron",
+   "hex": "#6b3e26",
+   "motif": "uni"
+  },
+  {
+   "name": "Bordeaux",
+   "hex": "#6d1a2a",
+   "motif": "uni"
+  },
+  {
+   "name": "Rouge",
+   "hex": "#d0141c",
+   "motif": "uni"
+  },
+  {
+   "name": "Rose",
+   "hex": "#f2a0bd",
+   "motif": "uni"
+  },
+  {
+   "name": "Fuchsia",
+   "hex": "#c2187a",
+   "motif": "uni"
+  },
+  {
+   "name": "Orange",
+   "hex": "#f07c12",
+   "motif": "uni"
+  },
+  {
+   "name": "Corail",
+   "hex": "#f78a6c",
+   "motif": "uni"
+  },
+  {
+   "name": "Jaune",
+   "hex": "#f7d000",
+   "motif": "uni"
+  },
+  {
+   "name": "Ocre",
+   "hex": "#c48a1e",
+   "motif": "uni"
+  },
+  {
+   "name": "Vert clair",
+   "hex": "#8fd16a",
+   "motif": "uni"
+  },
+  {
+   "name": "Vert",
+   "hex": "#2e9a3c",
+   "motif": "uni"
+  },
+  {
+   "name": "Vert foncé",
+   "hex": "#164d2c",
+   "motif": "uni"
+  },
+  {
+   "name": "Kaki",
+   "hex": "#74723a",
+   "motif": "uni"
+  },
+  {
+   "name": "Turquoise",
+   "hex": "#1fb5b0",
+   "motif": "uni"
+  },
+  {
+   "name": "Bleu clair",
+   "hex": "#86c3ec",
+   "motif": "uni"
+  },
+  {
+   "name": "Bleu",
+   "hex": "#1f5fbf",
+   "motif": "uni"
+  },
+  {
+   "name": "Bleu marine",
+   "hex": "#16244a",
+   "motif": "uni"
+  },
+  {
+   "name": "Violet",
+   "hex": "#7b3fa0",
+   "motif": "uni"
+  },
+  {
+   "name": "Gris clair",
+   "hex": "#cfcfcb",
+   "motif": "uni"
+  },
+  {
+   "name": "Gris",
+   "hex": "#8a8a88",
+   "motif": "uni"
+  },
+  {
+   "name": "Anthracite",
+   "hex": "#3c3f42",
+   "motif": "uni"
+  },
+  {
+   "name": "Noir",
+   "hex": "#1a1a1a",
+   "motif": "uni"
+  },
+  {
+   "name": "Terracotta",
+   "hex": "#c2603e",
+   "motif": "uni"
+  },
+  {
+   "name": "Argent",
+   "hex": "#c4c7c9",
+   "motif": "metal"
+  },
+  {
+   "name": "Or",
+   "hex": "#c9a640",
+   "motif": "metal"
+  },
+  {
+   "name": "Inox",
+   "hex": "#a9b0b4",
+   "motif": "brosse"
+  },
+  {
+   "name": "Galvanisé",
+   "hex": "#9aa2a5",
+   "motif": "galva"
+  },
+  {
+   "name": "Cuivre",
+   "hex": "#b8713a",
+   "motif": "metal"
+  },
+  {
+   "name": "Bronze",
+   "hex": "#8a6a3a",
+   "motif": "metal"
+  },
+  {
+   "name": "Corten",
+   "hex": "#8e4a26",
+   "motif": "uni"
+  },
+  {
+   "name": "Bois clair",
+   "hex": "#ddb57e",
+   "motif": "bois"
+  },
+  {
+   "name": "Bois",
+   "hex": "#a8743f",
+   "motif": "bois"
+  },
+  {
+   "name": "Bois foncé",
+   "hex": "#5a3722",
+   "motif": "bois"
+  },
+  {
+   "name": "Transparent",
+   "hex": "#eef4f7",
+   "motif": "transparent"
+  }
+ ],
+ "speciaux": {
+  "multicolore": "Multicolore",
+  "non_precise": "Non précisé",
+  "separateur_bicolore": " / "
+ }
+}

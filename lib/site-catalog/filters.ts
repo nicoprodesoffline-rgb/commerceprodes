@@ -3,6 +3,7 @@
  * Le SITE ne plie rien : les libellés et les valeurs se comparent à l'octet ; c'est la Factory qui regroupe les formes à la publication.
  */
 import type { Family } from "./catalog";
+import { BICOLORE_SEPARATOR, NON_PRECISE, PASTILLE_LABEL } from "./pastille.ts";
 
 /** Les réglages, en UNE seule constante. Un test la compare à `reglages_par_defaut` du jeu d'essai commun : pour en changer, modifier d'abord la règle. */
 export const FILTER_SETTINGS = { seuil_pct: 30, valeurs_min: 2, familles_min: 5 } as const;
@@ -19,11 +20,20 @@ export type FilterOption = { value: string; families: number };
 export type FilterGroup = { label: string; param: string; options: FilterOption[] };
 type Carrier = Pick<Family, "characteristics"> & { items: readonly { characteristics?: { label: string; value: string }[] }[] };
 
-/** Les valeurs qu'une famille porte pour un libellé : les siennes et celles de ses variantes, sans doublon. */
+/**
+ * Les valeurs qu'une famille porte pour un libellé : les siennes et celles de ses variantes, sans doublon.
+ * « Coloris » ne lit QUE la caractéristique réservée « Pastille », jamais le texte de coloris : sa valeur se coupe sur « / » (un bicolore compte dans
+ * ses deux nuances) et « Non précisé » n'est jamais une valeur.
+ */
 export function valuesOf(family: Carrier, label: string): string[] {
   const out = new Set<string>();
-  for (const c of family.characteristics ?? []) if (c.label === label) out.add(c.value);
-  for (const item of family.items) for (const c of item.characteristics ?? []) if (c.label === label) out.add(c.value);
+  const source = label === "Coloris" ? PASTILLE_LABEL : label;
+  const add = (value: string) => {
+    if (label !== "Coloris") return void out.add(value);
+    for (const part of value.split(BICOLORE_SEPARATOR)) if (part !== "" && part !== NON_PRECISE) out.add(part);
+  };
+  for (const c of family.characteristics ?? []) if (c.label === source) add(c.value);
+  for (const item of family.items) for (const c of item.characteristics ?? []) if (c.label === source) add(c.value);
   return [...out];
 }
 

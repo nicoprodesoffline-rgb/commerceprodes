@@ -26,24 +26,23 @@ function load(path) {
 const { ListingControls } = load("../../components/catalog/listing-controls.tsx");
 const { Pager } = load("../../components/catalog/pager.tsx");
 
-const fam = (coloris, type) => ({ characteristics: [{ label: "Coloris", value: coloris }, { label: "Type", value: type }], items: [] });
-const families = [fam("Noire", "Banc"), fam("Rouge/Blanc", "Banc"), fam("Standard", "Table"), fam("Noire", "Table"), fam("Rouge/Blanc", "Chaise")];
+const fam = (coloris, type) => ({ characteristics: [{ label: "Pastille", value: coloris }, { label: "Type", value: type }], items: [] });
+const families = [fam("Noir", "Banc"), fam("Rouge / Blanc", "Banc"), fam("Inconnu", "Table"), fam("Noir", "Table"), fam("Rouge / Blanc", "Chaise")];
 const groups = filterGroups(families);
 const query = { q: "", minRaw: "", maxRaw: "", min: null, max: null, sort: "pertinence", page: 1, ignored: [] };
 
-test("filtres : cases à cocher natives, nombre de familles, pastilles décoratives sur Coloris seulement", () => {
-  const html = renderToStaticMarkup(React.createElement(ListingControls, { formId: "f", action: "/categorie/x", query, filters: groups, choice: { coloris: ["Noire"], type: ["Banc"] } }));
-  assert.equal([...html.matchAll(/<input type="checkbox"/g)].length, 3 + 3);
-  assert.match(html, /name="coloris" checked="" value="Noire"/);
+test("filtres : cases à cocher natives, nombre de familles, une pastille par nuance sur Coloris seulement", () => {
+  const html = renderToStaticMarkup(React.createElement(ListingControls, { formId: "f", action: "/categorie/x", query, filters: groups, choice: { coloris: ["Noir"], type: ["Banc"] } }));
+  assert.deepEqual(groups[0].options.map((o) => o.value).sort(), ["Blanc", "Inconnu", "Noir", "Rouge"], "le bicolore compte dans ses deux nuances");
+  assert.equal([...html.matchAll(/<input type="checkbox"/g)].length, 4 + 3);
+  assert.match(html, /name="coloris" checked="" value="Noir"/);
   assert.match(html, /name="type" checked="" value="Banc"/);
   assert.doesNotMatch(html, /name="type" checked="" value="Table"/);
-  assert.match(html, /Noire<\/span><span class="text-ink-3">\(2\)<\/span>/);
+  assert.match(html, /Noir<\/span><span class="text-ink-3">\(2\)<\/span>/);
   assert.match(html, /<legend[^>]*>Coloris<\/legend>/);
-  assert.match(html, /<legend[^>]*>Type<\/legend>/);
-  assert.equal([...html.matchAll(/aria-hidden="true" class="h-4 w-4[^"]*"/g)].length, 2, "Noire et Rouge/Blanc ont une teinte ; Standard reste écrit seul ; aucune pastille sur Type");
-  assert.match(html, /linear-gradient\(90deg/);
-  assert.match(html, /Coloris : Noire/);
-  assert.match(html, />Standard<\/span>/);
+  assert.equal([...html.matchAll(/aria-hidden="true" class="h-4 w-4[^"]*"/g)].length, 3, "Noir, Rouge et Blanc ont une pastille ; « Inconnu » n'en a pas ; aucune sur Type");
+  assert.match(html, />Inconnu<\/span>/);
+  assert.match(html, /Coloris : Noir/);
 });
 
 test("sans filtre à montrer : le bloc de prix seul, comme avant", () => {

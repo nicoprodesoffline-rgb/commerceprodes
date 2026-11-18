@@ -9,11 +9,12 @@
  */
 import { useId, useState } from "react";
 import { axisValue } from "@/components/site/format";
-import { isColorAxis, swatchFor, swatchStyle } from "@/lib/site-catalog/color-swatch";
+import { isColorAxis, pastilleStyle } from "@/lib/site-catalog/color-swatch";
 import { adjustments, click, compatible, isShown, orderAxes, type Adjustment, type Pinned } from "@/lib/site-catalog/variant-choice";
 
 export type SelectorAxis = { axis: string; label: string; values: string[] };
-export type SelectorItem = { public_item_key: string; variant_axes: Record<string, string> };
+/** `pastille` : la valeur de « Pastille » de la variante, sinon de la famille (résolue par la fiche) ; absente = aucune pastille. */
+export type SelectorItem = { public_item_key: string; variant_axes: Record<string, string>; pastille?: string | undefined };
 
 export function VariantSelector({
   options,
@@ -32,6 +33,8 @@ export function VariantSelector({
   const selected = items.find((i) => i.public_item_key === selectedKey)?.variant_axes ?? {};
   if (options.length === 0) return null;
   const ordered = orderAxes(options);
+  /** La pastille d'une valeur de l'axe coloris : celle de la première variante qui la porte. Jamais déduite du texte. */
+  const tintOf = (axis: string, value: string) => pastilleStyle(items.find((i) => i.variant_axes[axis] === value)?.pastille);
   const labelOf = (axis: string) => options.find((o) => o.axis === axis)?.label ?? axis;
 
   /** Un clic (ou une flèche) sur `axis = value` : choix épinglé, ajustement des autres axes si besoin, ou retrait du choix. */
@@ -51,11 +54,11 @@ export function VariantSelector({
         const colorAxis = isColorAxis(option.axis, option.label);
         const withoutValue = items.some((i) => !isShown(i.variant_axes[option.axis]));
         if (values.length === 1 && !withoutValue) {
-          const backgroundColor = colorAxis ? swatchFor(values[0]!) : null;
+          const tint = colorAxis ? tintOf(option.axis, values[0]!) : null;
           return (
             <p key={option.axis} className="text-sm">
-              <span className="font-medium">{option.label}</span> : {backgroundColor && (
-                <span aria-hidden="true" className="mr-2 inline-block h-4 w-4 rounded-full border border-line-strong align-middle" style={swatchStyle(backgroundColor)} />
+              <span className="font-medium">{option.label}</span> : {tint && (
+                <span aria-hidden="true" className="mr-2 inline-block h-4 w-4 rounded-full border border-line-strong align-middle" style={tint} />
               )}{axisValue(values[0]!)} <span className="text-ink-3">(seule option)</span>
             </p>
           );
@@ -73,7 +76,7 @@ export function VariantSelector({
               {values.map((value) => {
                 const ok = compatible(items, pinned, option.axis, value);
                 const id = `${base}-${option.axis}-${value}`;
-                const backgroundColor = colorAxis ? swatchFor(value) : null;
+                const tint = colorAxis ? tintOf(option.axis, value) : null;
                 return (
                   <label
                     key={value}
@@ -102,8 +105,8 @@ export function VariantSelector({
                       }}
                       className="sr-only"
                     />
-                    {backgroundColor && (
-                      <span aria-hidden="true" className="mr-2 h-4 w-4 shrink-0 rounded-full border border-line-strong" style={swatchStyle(backgroundColor)} />
+                    {tint && (
+                      <span aria-hidden="true" className="mr-2 h-4 w-4 shrink-0 rounded-full border border-line-strong" style={tint} />
                     )}
                     {axisValue(value)}
                     {!ok && <span className="sr-only"> (aucune variante avec vos choix : un clic ajuste les autres choix)</span>}

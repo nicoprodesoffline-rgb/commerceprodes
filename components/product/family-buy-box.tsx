@@ -27,6 +27,8 @@ export type BuyBoxItem = {
   image_sha256: string | null;
   /** L'image propre de la variante (3.6), absente quand elle n'a que celle de la famille : la galerie l'affiche au choix de la variante. */
   own_image_sha256?: string | null;
+  /** La « Pastille » de la variante, sinon de la famille : dessine la pastille du coloris. */
+  pastille?: string | undefined;
   rows: PriceGridRow[];
 };
 
