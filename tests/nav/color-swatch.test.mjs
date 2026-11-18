@@ -169,7 +169,7 @@ test("teinte fine : une partie RAL prend la teinte de ral.json avec le motif de 
 
 test("teinte fine mal formée : ignorée en entier, la nuance reste dessinée", () => {
   const base = full("Rouge / Blanc");
-  for (const teinte of ["RAL 3020", "RAL 3020 / RAL 9003 / RAL 9010", "RAL 9999 / Blanc", "RAL 3020 / n'importe quoi", "ral 3020 / Blanc", "RAL 30200 / Blanc", "3020 / Blanc", "", undefined, null]) {
+  for (const teinte of ["RAL 3020", "RAL 3020 / RAL 9003 / RAL 9010", "RAL 9999 / Blanc", "RAL 3020 / n'importe quoi", "ral 3020 / Blanc", "RAL 30X0 / Blanc", "3020 / Blanc", "", undefined, null]) {
     assert.equal(full("Rouge / Blanc", teinte), base, String(teinte));
   }
   assert.equal(full(MULTICOLORE, "RAL 3020"), full(MULTICOLORE), "pas de RAL sur Multicolore");
