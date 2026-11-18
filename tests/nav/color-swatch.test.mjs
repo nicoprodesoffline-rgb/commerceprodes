@@ -150,7 +150,7 @@ test("sélecteur : valeur unique avec Pastille ; autre axe, sans Pastille : aucu
   for (const tree of [render("matiere", "Matière", ["Rouge", "Bleu"], "Rouge"), render("coloris", "Coloris", ["Inconnu"], undefined)]) assert.equal(nodes(tree, (n) => tinted(n)).length, 0);
 });
 
-// ---- N4 : teinte fine (ral.json) et règle de sûreté du sélecteur ----
+// ---- N4 : teinte fine (ral.json), pastille seule sur la fiche, et fonctions de MESURE de la comparaison ----
 const hexOf = (nuance) => palette.nuances.find((n) => n.name === nuance).hex;
 const full = (value, teinte) => pastilleStyle(value, teinte)?.backgroundImage ?? null;
 
@@ -189,39 +189,38 @@ const items = (rows) => rows.map(([value, pastille, teinte], i) => ({ public_ite
 const render = (rows, selectedKey = "k0") => VariantSelector({ options: [{ axis: "coloris", label: "Coloris", values: rows.map(([v]) => v) }], items: items(rows), selectedKey, onSelect() {} });
 const labelHtml = (tree) => renderToStaticMarkup(tree).match(/<label[\s\S]*?<\/label>/g);
 
-test("sûreté : trois valeurs, deux de même pastille gardent leur nom, la troisième reste en pastille seule", () => {
-  const out = labelHtml(render([["Réf. A1 (blanc)", "Blanc"], ["Réf. B2 (blanc)", "Blanc"], ["Réf. C3 (noir)", "Noir"]]));
-  assert.match(out[0], /<\/span>Réf\. A1 \(blanc\)<\/label>/, "nom visible à côté de la pastille");
-  assert.match(out[1], /<\/span>Réf\. B2 \(blanc\)<\/label>/);
-  assert.match(out[2], /<span class="sr-only">Réf\. C3 \(noir\)<\/span><\/label>/, "pastille seule : nom réservé aux lecteurs d'écran");
-  assert.match(out[2], /title="Réf\. C3 \(noir\)"/, "l'infobulle est le texte exact de l'axe");
-  assert.doesNotMatch(out[0], /sr-only">Réf\. A1/);
+const inkOf = (out, i) => /<span class="sr-only">[^<]+<\/span><\/label>/.test(out[i]); // pastille seule : le nom n'est que pour les lecteurs d'écran
+
+test("fiche : toute valeur qui a une pastille est en pastille seule, même quand deux pastilles se confondent", () => {
+  const rows = [["Réf. A1 (blanc)", "Blanc"], ["Réf. B2 (blanc)", "Blanc"], ["Réf. C3 (noir)", "Noir"], ["Étiquette D", "Rouge / Blanc"], ["Étiquette E", "Rouge / Blanc"],
+    ["Étiquette F", "Anthracite", "RAL 7016"], ["Étiquette G", "Anthracite", "RAL 7021"], ["Étiquette H", NON_PRECISE], ["Étiquette I", NON_PRECISE], ["Étiquette J", "Gris clair"], ["Étiquette K", MULTICOLORE]];
+  assert.ok(namedValues(items(rows), "coloris", rows.map(([v]) => v)).size >= 8, "pré-condition : la mesure voit bien des pastilles qui se confondent");
+  const out = labelHtml(render(rows));
+  assert.equal(out.length, rows.length);
+  rows.forEach(([value], i) => {
+    assert.ok(inkOf(out, i), `pastille seule : ${value}`);
+    assert.match(out[i], /<span aria-hidden="true"/, `pastille dessinée : ${value}`);
+    assert.equal(out[i].replace(/<span class="sr-only">[^<]+<\/span>/, "").replace(/<[^>]*>/g, ""), "", `aucun texte visible à côté de la pastille : ${value}`);
+    assert.match(out[i], new RegExp(`title="${value.replace(/[.()]/g, "\\$&")}"`), `l'infobulle est le texte exact : ${value}`);
+  });
 });
 
-test("sûreté : un bicolore identique deux fois ; le même bicolore à l'envers est une autre pastille", () => {
-  const out = labelHtml(render([["A", "Rouge / Blanc"], ["B", "Rouge / Blanc"], ["C", "Blanc / Rouge"]]));
-  assert.match(out[0], /<\/span>A<\/label>/);
-  assert.match(out[1], /<\/span>B<\/label>/);
-  assert.match(out[2], /sr-only">C<\/span><\/label>/);
+test("fiche : « Non précisé » est lui aussi en pastille seule ; la légende écrit la valeur choisie", () => {
+  const out = labelHtml(render([["Standard", NON_PRECISE], ["Noir", "Noir"]]));
+  assert.ok(inkOf(out, 0));
+  assert.match(renderToStaticMarkup(render([["Standard", NON_PRECISE], ["Noir", "Noir"]])), /<legend[^>]*>Coloris<span class="font-normal text-ink-2"> : Standard<\/span><\/legend>/);
 });
 
-test("sûreté : « Non précisé » garde toujours son nom, même seul", () => {
-  const out = labelHtml(render([["Standard", NON_PRECISE], ["Selon nuancier", NON_PRECISE], ["Noir", "Noir"]]));
-  assert.match(out[0], /<\/span>Standard<\/label>/);
-  assert.match(out[1], /<\/span>Selon nuancier<\/label>/);
-  assert.match(labelHtml(render([["Seul", NON_PRECISE], ["Noir", "Noir"]]))[0], /<\/span>Seul<\/label>/);
+test("fiche : seule une valeur sans « Pastille » publiée (ancien catalogue) reste en texte", () => {
+  const out = labelHtml(render([["Texte A", undefined], ["Texte B", undefined], ["Pastillée", "Noir"], ["Inconnue", "Inconnu"]]));
+  assert.doesNotMatch(out[0], /<span aria-hidden/);
+  assert.match(out[0], />Texte A<\/label>/);
+  assert.match(out[1], />Texte B<\/label>/);
+  assert.ok(inkOf(out, 2));
+  assert.match(out[3], />Inconnue<\/label>/, "valeur de Pastille inconnue : aucune pastille, le texte reste");
 });
 
-test("sûreté : toutes les pastilles diffèrent, tout en pastille seule ; sans pastille ou inconnue, le rendu texte d'avant", () => {
-  const out = labelHtml(render([["A", "Blanc"], ["B", "Noir"], ["C", "Rouge / Noir"], ["D", undefined], ["E", "Inconnu"], ["F", "Inconnu"]]));
-  for (const i of [0, 1, 2]) assert.match(out[i], /sr-only">[ABC]<\/span><\/label>/, `pastille seule ${i}`);
-  assert.doesNotMatch(out[3], /<span aria-hidden/);
-  assert.match(out[3], />D<\/label>/);
-  assert.match(out[4], />E<\/label>/);
-  assert.match(out[5], />F<\/label>/);
-});
-
-test("sûreté : le rendu final décide — deux RAL proches deviennent indiscernables, deux RAL éloignés non, motif différent non", () => {
+test("mesure : le rendu final décide — deux RAL proches deviennent indiscernables, deux RAL éloignés non, motif différent non", () => {
   const close = namedValues(items([["a", "Anthracite", "RAL 7016"], ["b", "Anthracite", "RAL 7021"], ["c", "Anthracite", "RAL 7035"]]), "coloris", ["a", "b", "c"]);
   assert.ok(deltaE76(ral.teintes["7016"], ral.teintes["7021"]) < INDISCERNIBLE_DELTA_E);
   assert.ok(deltaE76(ral.teintes["7016"], ral.teintes["7035"]) >= INDISCERNIBLE_DELTA_E);
@@ -237,10 +236,10 @@ test("sûreté : le rendu final décide — deux RAL proches deviennent indiscer
   assert.equal(namedValues(items([["a", "Blanc"]]), "coloris", ["a"]).size, 0);
 });
 
-test("sûreté : « Non précisé » est un aplat — un Gris clair indiscernable le garde, un Noir éloigné non ; aucun autre motif n'est un aplat déguisé", () => {
+test("mesure : « Non précisé » est un aplat — un Gris clair indiscernable le garde, un Noir éloigné non ; aucun autre motif n'est un aplat déguisé", () => {
   assert.ok(deltaE76(hexOf("Gris clair"), "#d9d9d6") < INDISCERNIBLE_DELTA_E, "pré-condition : le gris neutre est proche de la nuance Gris clair");
-  assert.deepEqual([...namedValues(items([["a", "Gris clair"], ["b", NON_PRECISE]]), "coloris", ["a", "b"])].sort(), ["a", "b"], "les deux gardent leur nom");
-  assert.deepEqual([...namedValues(items([["a", "Noir"], ["b", NON_PRECISE]]), "coloris", ["a", "b"])], ["b"], "seul « Non précisé » garde son nom");
+  assert.deepEqual([...namedValues(items([["a", "Gris clair"], ["b", NON_PRECISE]]), "coloris", ["a", "b"])].sort(), ["a", "b"], "les deux sont relevés");
+  assert.deepEqual([...namedValues(items([["a", "Noir"], ["b", NON_PRECISE]]), "coloris", ["a", "b"])], ["b"], "seul « Non précisé » est relevé");
   const flat = (value) => /^linear-gradient\(#[0-9a-f]{6}, #[0-9a-f]{6}\)$/.test(full(value));
   const flats = palette.nuances.filter((n) => flat(n.name)).map((n) => n.motif);
   assert.ok(flats.length > 0 && flats.every((motif) => motif === "uni"), "seuls les motifs « uni » sont des aplats");

@@ -9,7 +9,7 @@
  */
 import { useId, useState } from "react";
 import { axisValue } from "@/components/site/format";
-import { isColorAxis, namedValues, pastilleStyle } from "@/lib/site-catalog/color-swatch";
+import { isColorAxis, pastilleStyle } from "@/lib/site-catalog/color-swatch";
 import { adjustments, click, compatible, isShown, orderAxes, type Adjustment, type Pinned } from "@/lib/site-catalog/variant-choice";
 
 export type SelectorAxis = { axis: string; label: string; values: string[] };
@@ -68,8 +68,6 @@ export function VariantSelector({
         }
         const others = ordered.filter((o) => o.axis !== option.axis && pinned[o.axis] !== undefined);
         const greyed = values.filter((v) => !compatible(items, pinned, option.axis, v));
-        // Règle de sûreté : une valeur peinte s'affiche en pastille seule, sauf si l'œil ne la sépare pas d'une autre valeur de l'axe (ou « Non précisé ») : elle garde son nom.
-        const named = colorAxis ? namedValues(items, option.axis, values) : new Set<string>();
         const hintId = `${base}-${option.axis}-hint`;
         return (
           <fieldset key={option.axis} aria-describedby={greyed.length > 0 ? hintId : undefined} data-axis={option.axis}>
@@ -82,7 +80,7 @@ export function VariantSelector({
                 const ok = compatible(items, pinned, option.axis, value);
                 const id = `${base}-${option.axis}-${value}`;
                 const tint = colorAxis ? tintOf(option.axis, value) : null;
-                const swatchOnly = tint !== null && !named.has(value);
+                const swatchOnly = tint !== null; // décision de l'Owner : toute valeur peinte s'affiche en pastille seule, même quand deux pastilles se ressemblent
                 const greyedTitle = "Aucune variante avec vos choix : cliquer ajustera les autres choix";
                 return (
                   <label
