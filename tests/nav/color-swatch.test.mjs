@@ -227,3 +227,13 @@ test("4.27 : bicolore « A/B » ou « A et B » : pastille coupée en deux ; une
   assert.equal(swatchStyle(swatchFor("Rouge/Blanc")).backgroundImage, swatchFor("Rouge/Blanc"));
   assert.deepEqual(swatchStyle("#cc0000"), { backgroundColor: "#cc0000" });
 });
+
+test("4.27 : abréviations « galva » et « alu » ; « standard/galva », transparent, brut, nature, naturel et 4 chiffres sans RAL restent écrits", () => {
+  assert.equal(swatchFor("Galva"), swatchFor("galvanisé"));
+  assert.equal(swatchFor("galva"), swatchFor("Galva"));
+  assert.equal(swatchFor("Alu"), swatchFor("aluminium"));
+  assert.notEqual(swatchFor("alu"), null);
+  assert.equal(swatchFor("Alu/Noir"), `linear-gradient(90deg, ${swatchFor("aluminium")} 50%, ${swatchFor("noir")} 50%)`);
+  assert.equal(swatchFor("standard/galva"), null, "« standard » n'a pas de teinte : la valeur reste écrite");
+  for (const value of ["transparent", "brut", "nature", "naturel", "1234", "7016", "aluminerie", "valu"]) assert.equal(swatchFor(value), null, value);
+});

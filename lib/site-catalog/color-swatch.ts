@@ -72,7 +72,7 @@ export const EXTRA_SWATCH_KEYWORDS: readonly (readonly [string, string])[] = [
   ["turquoise", "#2bb3b1"], ["violet", "#6a3d8f"], ["terracotta", "#c1654a"], ["dore", "#c8a850"], ["platine", "#d6d6d2"],
   ["bleu marine", "#14284b"], ["bleu ciel", "#8ec5e8"], ["vert olive", "#6b6b2e"], ["gris perle", "#b8b8b4"],
   // finitions métal
-  ["inox", "#b4b8ba"], ["galvanise", "#a7adb0"], ["aluminium", "#c4c8ca"], ["zingue", "#aeb3b5"],
+  ["inox", "#b4b8ba"], ["galvanise", "#a7adb0"], ["galva", "#a7adb0"], ["aluminium", "#c4c8ca"], ["alu", "#c4c8ca"], ["zingue", "#aeb3b5"],
   ["laiton", "#b5a642"], ["bronze", "#8c6a3f"], ["cuivre", "#b87333"],
   // bois
   ["chene", "#b58a52"], ["hetre", "#c89b6a"], ["pin", "#d4a96a"], ["teck", "#9c6b3c"], ["noyer", "#5b3a29"], ["bambou", "#c9b27a"], ["bois", "#a97c50"],
