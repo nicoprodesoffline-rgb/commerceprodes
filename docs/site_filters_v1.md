@@ -107,11 +107,11 @@ Deux niveaux : la **nuance** (§4, 38 noms) sert au filtre, aux listes et à l'�
   - le fait source n'est jamais réécrit.
 - **Filtre par tranches (SITE et écran Factory)**, dans l'ordre des libellés ci-dessus, après Coloris, Matière et Type :
   - **valeurs lisibles** : seule une valeur de la forme « nombre unité », avec l'unité `cm` (ou `kg` pour Poids), est lue ; les espaces, insécables comprises, sont ignorées et la virgule est décimale ; le reste est ignoré ;
-  - **porteurs et seuil** : une famille porte une valeur par la famille ou par l'une de ses variantes ; mêmes réglages qu'au §3 (`seuil_pct`, `familles_min`) ; si une rubrique mêle deux unités pour un même libellé, il n'y a pas de filtre ;
+  - **porteurs et seuil** : une famille porte une valeur par la famille ou par l'une de ses variantes ; mêmes réglages qu'au §3 (`seuil_pct`, `familles_min`) ; seule l'unité du libellé est lue (`kg` pour Poids, `cm` pour les autres) : une valeur écrite dans une autre unité est ignorée comme une valeur illisible ;
   - **bornes** :
     - L = toutes les valeurs des familles porteuses (chaque valeur distincte d'une famille une fois), triées ;
     - pour i = 1 à 4 : brute = L[⌊i·n/5⌋] ;
-    - borne = l'arrondi « rond » de brute : mantisse la plus proche dans la liste `bornes_rondes` de `tranches.json` × la puissance de dix, à égalité la plus petite ; une puissance négative se calcule en divisant par 10^|e| ;
+    - on écrit brute = m · 10^e, avec 1 ≤ m < 10 ; la borne remplace m par l'élément de `bornes_rondes` (`tranches.json`) le moins éloigné de m, le plus petit des deux si deux éléments sont aussi éloignés ; quand e < 0, cet élément est divisé par 10^(−e) au lieu d'être multiplié par 10^e ;
     - on garde les bornes b telles que L[0] < b ≤ L[n−1], sans doublon, triées ;
   - **tranches** : « moins de b1 », « b1 à b2 », …, « bk et plus », demi-ouvertes [bas, haut) ; une famille compte dans chaque tranche où tombe au moins une de ses valeurs ; une tranche vide n'est pas proposée ;
   - le filtre s'affiche s'il reste au moins `valeurs_min` tranches ;

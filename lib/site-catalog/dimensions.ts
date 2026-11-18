@@ -41,7 +41,7 @@ export function measuresOf(family: Carrier, label: string, unit: string): number
   return [...out];
 }
 
-/** Arrondi « rond » : mantisse la plus proche dans ROUND_MANTISSAS, à égalité la plus petite. Puissance négative : on DIVISE par 10^|e| (parité des flottants avec la Factory). */
+/** Borne ronde : brute = m·10^e avec 1 ≤ m < 10 ; on prend l'élément de ROUND_MANTISSAS le moins éloigné de m (le plus petit à écart égal) ; si e < 0, on divise par 10^(−e), même ordre d'opérations que la Factory. */
 export function roundBound(brute: number): number {
   if (!(brute > 0)) return 0;
   let e = Math.floor(Math.log10(brute));
