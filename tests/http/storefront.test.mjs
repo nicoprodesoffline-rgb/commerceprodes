@@ -572,12 +572,15 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.deepEqual(oRow, { status: "RECEIVED", total_amount: "77.00", cents: 7700, seq: 1 }, "commande persistée en base");
       assert.equal(Number(await scalar("SELECT count(*) FROM site_order_line l JOIN site_order o ON o.id = l.order_id WHERE o.order_ref = $1 AND l.rate_id = 'R-SIMPLE-1' AND l.quantity = 2", [o.json.receipt_ref])), 1);
 
-      const found = await get(`/api/site/receipt?ref=${o.json.receipt_ref}&access_token=${encodeURIComponent(o.json.access_token)}`);
+      // Cercle 5 (P03) : une demande v2 se consulte par POST, le code dans le corps ; le GET (code dans l'adresse) ne la sert pas.
+      const receiptHeaders = { "x-forwarded-for": "198.51.100.14" };
+      const found = await post("/api/site/receipt", { ref: o.json.receipt_ref, code: o.json.access_token }, { headers: receiptHeaders });
       assert.equal(found.status, 200);
       assert.equal(found.json.outcome, "FOUND");
       assert.equal(found.json.receipt.total_amount, "77.00");
-      assert.equal((await get(`/api/site/receipt?ref=${o.json.receipt_ref}&access_token=faux`)).status, 404);
-      assert.equal((await get(`/api/site/receipt?ref=${o.json.receipt_ref}`)).status, 401);
+      assert.equal((await post("/api/site/receipt", { ref: o.json.receipt_ref, code: "faux" }, { headers: receiptHeaders })).status, 404);
+      assert.equal((await post("/api/site/receipt", { ref: o.json.receipt_ref }, { headers: receiptHeaders })).status, 401);
+      assert.equal((await get(`/api/site/receipt?ref=${o.json.receipt_ref}&access_token=${encodeURIComponent(o.json.access_token)}`)).status, 404);
       // Rejeu à l'identique (réessai réseau) : même reçu, AUCUN jeton redonné, aucun doublon.
       const again = await http("POST", "/api/site/order", { body: wrapV2("/api/site/order", { ...orderFrom(pv), idempotency_key: "order-bc3-replay-0001" }) });
       const again2 = await http("POST", "/api/site/order", { body: wrapV2("/api/site/order", { ...orderFrom(pv), idempotency_key: "order-bc3-replay-0001" }) });

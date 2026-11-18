@@ -219,11 +219,11 @@ test("P06 : mise de côté, visible sur la demande, plus servie ; idempotente ; 
 
 test("état de l'accusé : sans aucune coordonnée, une référence inconnue absente, corps borné", async () => {
   const q = await newQuote("0005");
-  await pool.query("INSERT INTO site_ack_mail (object_ref, event_type, number, mode, state, recipient, subject, body) VALUES ($1, 'quote.requested', $2, 'garde', 'garde', 'camille@val-fictif.example', 'S', 'B')", [q.receipt_ref, q.number]);
   const r = await answer(routes.mailStatus, { object_refs: [q.receipt_ref, "QR-inconnu"] });
   assert.equal(r.status, 200);
   assert.deepEqual(r.body.items, [{ object_ref: q.receipt_ref, number: q.number, state: "garde", attempts: 0, last_attempt_at_utc: null, next_attempt_at_utc: null }]);
-  assert.ok(!JSON.stringify(r.body).includes("val-fictif"), "jamais le destinataire");
+  const recipient = (await pool.query("SELECT recipient FROM site_ack_mail WHERE object_ref = $1", [q.receipt_ref])).rows[0].recipient;
+  assert.ok(recipient.includes("@") && !JSON.stringify(r.body).includes(recipient), "jamais le destinataire");
   for (const bad of [{ object_refs: [] }, { object_refs: ["a", "a"] }, { object_refs: Array.from({ length: 501 }, (_, i) => `r${i}`) }, { refs: ["a"] }]) {
     assert.equal((await answer(routes.mailStatus, bad)).status, 400);
   }
@@ -266,12 +266,25 @@ test("conservation : aucun état de la file de l'accusé ne bloque l'effacement 
   for (const [i, state] of states.entries()) {
     const q = await newQuote(`01${i}`);
     quotes.push(q);
-    const mode = state === "garde" ? "garde" : "smtp";
-    await pool.query(
-      `INSERT INTO site_ack_mail (object_ref, event_type, number, mode, state, recipient, subject, body, next_attempt_at, sent_at)
-       VALUES ($1, 'quote.requested', $2, $3, $4, 'camille@val-fictif.example', 'S', 'B', CASE WHEN $4 = 'a_envoyer' THEN now() ELSE NULL END, CASE WHEN $4 = 'envoye' THEN now() ELSE NULL END)`,
-      [q.receipt_ref, q.number, mode, state],
-    );
+    if (state !== "garde") {
+      // Préparation du jeu d'essai : en mode smtp (non livré), ces états viennent de la file. Une vraie demande ne peut aujourd'hui fabriquer
+      // qu'un accusé « gardé » (état final) : l'état est posé ici directement, garde de la table suspendue le temps de cette seule préparation.
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        await client.query("ALTER TABLE site_ack_mail DISABLE TRIGGER site_ack_mail_guard");
+        await client.query(
+          `UPDATE site_ack_mail SET mode = 'smtp', state = $2, next_attempt_at = CASE WHEN $2 = 'a_envoyer' THEN now() ELSE NULL END,
+                  sent_at = CASE WHEN $2 = 'envoye' THEN now() ELSE NULL END WHERE object_ref = $1`,
+          [q.receipt_ref, state],
+        );
+        await client.query("ALTER TABLE site_ack_mail ENABLE TRIGGER site_ack_mail_guard");
+        await client.query("COMMIT");
+      } finally {
+        client.release();
+      }
+    }
+    assert.equal((await pool.query("SELECT state FROM site_ack_mail WHERE object_ref = $1", [q.receipt_ref])).rows[0].state, state);
     const e = await eventOf(q.receipt_ref);
     await pool.query("UPDATE site_outbox_event SET status = 'DELIVERED_TO_POLL', delivered_at = now() WHERE event_id = $1", [e.event_id]);
     await pool.query("UPDATE site_outbox_event SET status = 'ACKED', acked_at = now() - interval '31 days' WHERE event_id = $1", [e.event_id]);

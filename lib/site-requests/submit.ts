@@ -15,6 +15,7 @@ import { asV1 } from "../site-catalog/v1-view";
 import { displayName } from "../site-catalog/display-name";
 import { isShown } from "../site-catalog/variant-choice";
 import { QUOTE_ONLY_CODE, isQuoteOnlyRate } from "../site-catalog/quote-only";
+import { enqueueAcknowledgement, type AckEventType } from "../site-ack-mail/ack";
 import { readActiveCommerce } from "../site-commerce/store";
 import type { CommerceDocument } from "../site-commerce/document";
 import { readActiveForUpdate } from "../site-db/generation";
@@ -299,6 +300,8 @@ export async function submitRequest(deps: RequestDeps, kind: RequestKind, bytes:
         [event.event["event_id"], event.event["event_type"], event.event["created_at_utc"], event.event["object_ref"], event.event["idempotency_key"], event.event["catalogue_sequence"],
           JSON.stringify(event.event["payload"]), event.event["payload_digest"], Buffer.from(event.bytes)],
       );
+      // 5.17 (B2) : l'accusé au client, fabriqué dans la même transaction (mode « gardés » : rangé, rien ne sort).
+      await enqueueAcknowledgement(client, { eventType: event.event["event_type"] as AckEventType, objectRef: ref, payload: event.event["payload"] as JsonObject, accessToken: access.token });
       if (deps.hooks?.beforeCommit) await deps.hooks.beforeCommit(client);
       await client.query("COMMIT");
       return await finish(received(base, "RECEIVED", receiptBytes, access.token), { operation, outcome: "RECEIVED", object_ref: ref }, false);
@@ -495,6 +498,8 @@ async function submitMessage(deps: RequestDeps, client: PoolClient, base: Base, 
      VALUES ($1, 'message.received', 1, 'site_events.v2', $2, $3, $4, NULL, $5::jsonb, $6, $7, 'PENDING')`,
     [eventId, nowUtc, ref, event.event["idempotency_key"], JSON.stringify(event.event["payload"]), event.event["payload_digest"], Buffer.from(event.bytes)],
   );
+  // 5.17 (B2) : l'accusé au client, fabriqué dans la même transaction (mode « gardés » : rangé, rien ne sort).
+  await enqueueAcknowledgement(client, { eventType: "message.received", objectRef: ref, payload: event.event["payload"] as JsonObject, accessToken: access.token });
   if (deps.hooks?.beforeCommit) await deps.hooks.beforeCommit(client);
   await client.query("COMMIT");
   return finish(received(base, "RECEIVED", receiptBytes, access.token), { operation, outcome: "RECEIVED", object_ref: ref }, false);

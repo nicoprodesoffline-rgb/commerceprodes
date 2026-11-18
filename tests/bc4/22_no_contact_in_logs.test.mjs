@@ -56,7 +56,8 @@ test("P05 : le parcours complet ne laisse aucune coordonnée dans la sortie du p
     for (const created of [quote, order, message]) assert.ok(created.receipt_ref, JSON.stringify(created).slice(0, 200));
     for (const [created, type] of [[quote, "quote.requested"], [order, "order.received"], [message, "message.received"]]) {
       const { rows: [e] } = await pool.query("SELECT payload FROM site_outbox_event WHERE object_ref = $1", [created.receipt_ref]);
-      await ack.enqueueAcknowledgement(pool, { eventType: type, objectRef: created.receipt_ref, payload: e.payload, accessToken: created.access_token }, "smtp");
+      // L'accusé « gardé » est déjà rangé par la transaction de la demande ; la file smtp (non livrée) tourne sur une référence à part.
+      await ack.enqueueAcknowledgement(pool, { eventType: type, objectRef: `${created.receipt_ref}-smtp`, payload: e.payload, accessToken: created.access_token }, "smtp");
     }
     await ack.drainAcknowledgements(pool, { send: async () => ({ outcome: "failed", code: "SERVICE_DOWN" }) }, new Date(Date.now() + 1000));
     await receipt.postReceipt({ pool }, enc({ ref: quote.receipt_ref, code: quote.access_token }));

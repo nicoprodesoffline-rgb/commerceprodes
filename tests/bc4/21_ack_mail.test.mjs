@@ -15,6 +15,7 @@ const build = (rel) => requireBuild(join(ROOT, ".bc4-build", rel));
 const requests = build("lib/site-requests/submit.js");
 const commerce = build("lib/site-commerce/document.js");
 const ack = build("lib/site-ack-mail/ack.js");
+const routes = build("lib/site-requests-routes/handlers.js");
 const { canonicalBytes } = build("c0/ts/src/jsonc.js");
 
 let pool;
@@ -51,9 +52,12 @@ async function send(kind, body) {
 const fromCase = (name, key) => ({ ...JSON.parse(Buffer.from(businessCase(name).bytes).toString("utf8")), idempotency_key: key });
 const newQuote = (n) => send("quote_request", { request: fromCase("F_QUOTE_ORDER.quote_priced", `quote:c5a:${n}`), extras: { commerce_sequence: 1, privacy_notice: "m1" } });
 const newOrder = (n) => send("order", { request: fromCase("F_QUOTE_ORDER.order_valid", `order:c5a:${n}`), extras: { commerce_sequence: 1, privacy_notice: "m1", total_ttc: "150.90", addresses: { delivery: address, billing: null }, customer_refs: { siret: "", order_number: "ENG-0001", service_code: "SVC-A" }, payment_method: "mandat_administratif", terms: { accepted: true, cgv_version: "c1" } } });
-async function enqueue(created, eventType, mode = "garde") {
+/** File en mode smtp (non livré) : rangée sur une référence à part, avec la vraie charge de l'événement de la demande. */
+async function enqueueSmtp(created, eventType) {
   const { rows: [e] } = await pool.query("SELECT payload FROM site_outbox_event WHERE object_ref = $1", [created.receipt_ref]);
-  return ack.enqueueAcknowledgement(pool, { eventType, objectRef: created.receipt_ref, payload: e.payload, accessToken: created.access_token }, mode);
+  const objectRef = `${created.receipt_ref}-smtp`;
+  assert.equal(await ack.enqueueAcknowledgement(pool, { eventType, objectRef, payload: e.payload, accessToken: created.access_token }, "smtp"), "a_envoyer");
+  return objectRef;
 }
 const emailOf = async (ref) => (await pool.query("SELECT payload FROM site_outbox_event WHERE object_ref = $1", [ref])).rows[0].payload.contact.email;
 const mail = async (ref) => (await pool.query("SELECT * FROM site_ack_mail WHERE object_ref = $1", [ref])).rows[0];
@@ -78,11 +82,11 @@ async function noNetwork(fn) {
   return calls.filter(([kind, target]) => !(kind === "tcp" && (target === 54318 || String(target).includes(".s.PGSQL"))));
 }
 
-test("mode « gardés » : l'accusé est fabriqué et rangé, lisible, et AUCUNE connexion ne sort", async () => {
-  const q = await newQuote("0001");
+test("bout en bout : la demande fabrique son accusé « gardé » dans sa transaction, sans AUCUNE connexion sortante ; son état se lit par la route 5.4", async () => {
+  let q;
   let transportCalls = 0;
   const outgoing = await noNetwork(async () => {
-    assert.equal(await enqueue(q, "quote.requested"), "garde");
+    q = await newQuote("0001");
     const drained = await ack.drainAcknowledgements(pool, { send: async () => { transportCalls += 1; return { outcome: "sent" }; } });
     assert.deepEqual(drained, { sent: 0, refused: 0, retried: 0, abandoned: 0 });
   });
@@ -94,18 +98,21 @@ test("mode « gardés » : l'accusé est fabriqué et rangé, lisible, et AUCUNE
   assert.match(m.body, /Total HT : .+ ; TVA : .+ ; Total TTC : .+/);
   assert.ok(m.body.includes(`/recu#ref=${q.receipt_ref}&code=${encodeURIComponent(q.access_token)}`), "lien privé : référence et code dans le fragment");
   assert.ok(!/[?&]code=/.test(m.body.split("#")[0]), "jamais le code avant le fragment");
+  const status = await routes.mailStatus(pool, enc({ object_refs: [q.receipt_ref] }));
+  assert.deepEqual(status.body.items, [{ object_ref: q.receipt_ref, number: q.number, state: "garde", attempts: 0, last_attempt_at_utc: null, next_attempt_at_utc: null }]);
 });
 
-test("un envoi par demande : un second rangement de la même demande ne fabrique rien", async () => {
+test("un envoi par demande : un second rangement de la même demande ne fabrique rien ; demande libre comprise", async () => {
   const q = await newQuote("0002");
-  assert.equal(await enqueue(q, "quote.requested"), "garde");
-  assert.equal(await enqueue(q, "quote.requested"), null);
+  const { rows: [e] } = await pool.query("SELECT payload FROM site_outbox_event WHERE object_ref = $1", [q.receipt_ref]);
+  assert.equal(await ack.enqueueAcknowledgement(pool, { eventType: "quote.requested", objectRef: q.receipt_ref, payload: e.payload, accessToken: q.access_token }), null);
+  const msg = await send("message", { extras: { idempotency_key: "message:c5a:0001", commerce_sequence: 1, privacy_notice: "m1", contact: { organisation: "", name: "Camille Exemple", email: "camille@val-fictif.example", phone: "" }, message: "Une question d'essai.", product: null } });
+  assert.equal((await mail(msg.receipt_ref)).state, "garde");
   assert.equal((await pool.query("SELECT count(*)::int AS n FROM site_ack_mail WHERE object_ref = $1", [q.receipt_ref])).rows[0].n, 1);
 });
 
 test("commande : récapitulatif avec lignes, livraison, totaux et marche à suivre du règlement au moment de la commande", async () => {
   const o = await newOrder("0001");
-  await enqueue(o, "order.received");
   const m = await mail(o.receipt_ref);
   assert.match(m.body, /^- \d+ × .+ : .+ HT$/m);
   assert.match(m.body, /Livraison : .+ — .+ HT/);
@@ -129,47 +136,44 @@ test("réglages SMTP du serveur : lus des variables, validés, mot de passe par 
 });
 
 test("T03 : service en panne -> tentatives à 1, 5, 30 minutes puis toutes les heures ; au-delà de 48 h, « sans réponse »", async () => {
-  const q = await newQuote("0003");
-  assert.equal(await enqueue(q, "quote.requested", "smtp"), "a_envoyer");
-  await pool.query("UPDATE site_ack_mail SET next_attempt_at = $2 WHERE object_ref = $1", [q.receipt_ref, "2026-10-20T09:00:00Z"]);
+  const ref = await enqueueSmtp(await newQuote("0003"), "quote.requested");
+  await pool.query("UPDATE site_ack_mail SET next_attempt_at = $2 WHERE object_ref = $1", [ref, "2026-10-20T09:00:00Z"]);
   const down = { send: async () => ({ outcome: "failed", code: "SERVICE_DOWN" }) };
   const t0 = Date.parse("2026-10-20T09:00:00Z");
   const delays = [];
   let at = t0;
   for (let i = 0; i < 60; i += 1) {
     await ack.drainAcknowledgements(pool, down, new Date(at));
-    const m = await mail(q.receipt_ref);
+    const m = await mail(ref);
     if (m.state !== "a_envoyer") break;
     delays.push((m.next_attempt_at.getTime() - at) / 60_000);
     at = m.next_attempt_at.getTime();
   }
   assert.deepEqual(delays.slice(0, 4), [1, 5, 30, 60]);
   assert.ok(delays.slice(3).every((d) => d === 60));
-  const m = await mail(q.receipt_ref);
+  const m = await mail(ref);
   assert.equal(m.state, "sans_reponse");
   assert.ok(m.last_attempt_at.getTime() - t0 <= 48 * 3600_000);
   assert.equal(m.last_error, "SERVICE_DOWN");
 });
 
 test("T04 : service rétabli -> l'accusé part une seule fois, même avec deux tours concurrents", async () => {
-  const q = await newQuote("0004");
-  await enqueue(q, "quote.requested", "smtp");
+  const ref = await enqueueSmtp(await newQuote("0004"), "quote.requested");
   let sends = 0;
   const slowUp = { send: async () => { sends += 1; await new Promise((r) => setTimeout(r, 50)); return { outcome: "sent" }; } };
   const now = new Date(Date.now() + 1000);
   await Promise.all([ack.drainAcknowledgements(pool, slowUp, now), ack.drainAcknowledgements(pool, slowUp, now)]);
   await ack.drainAcknowledgements(pool, slowUp, new Date(now.getTime() + 3600_000));
   assert.equal(sends, 1);
-  const m = await mail(q.receipt_ref);
+  const m = await mail(ref);
   assert.deepEqual([m.state, m.attempts], ["envoye", 1]);
   assert.ok(m.sent_at);
 });
 
 test("T05 : adresse refusée par le service -> « refusé », plus de tentative", async () => {
-  const q = await newQuote("0005");
-  await enqueue(q, "quote.requested", "smtp");
+  const ref = await enqueueSmtp(await newQuote("0005"), "quote.requested");
   await ack.drainAcknowledgements(pool, { send: async () => ({ outcome: "refused", code: "RECIPIENT_REFUSED" }) }, new Date(Date.now() + 1000));
-  const m = await mail(q.receipt_ref);
+  const m = await mail(ref);
   assert.deepEqual([m.state, m.next_attempt_at, m.last_error], ["refuse", null, "RECIPIENT_REFUSED"]);
 });
 
@@ -179,7 +183,7 @@ test("P05 : ni le journal de la base ni la sortie du processus ne contiennent l'
   const saved = { log: console.log, warn: console.warn, error: console.error };
   for (const k of ["log", "warn", "error"]) console[k] = (...args) => lines.push(args.join(" "));
   try {
-    await enqueue(q, "quote.requested", "smtp");
+    await enqueueSmtp(q, "quote.requested");
     await ack.drainAcknowledgements(pool, { send: async () => ({ outcome: "failed", code: "SERVICE_DOWN" }) }, new Date(Date.now() + 1000));
   } finally {
     Object.assign(console, saved);
