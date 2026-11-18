@@ -1,0 +1,763 @@
+{
+ "version": "site_filters.v1",
+ "rule": "regle",
+ "libelles": [
+  "Coloris",
+  "Matière",
+  "Type"
+ ],
+ "reglages_par_defaut": {
+  "seuil_pct": 30,
+  "valeurs_min": 2,
+  "familles_min": 5
+ },
+ "cases": [
+  {
+   "name": "30 % tout juste : affiché",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Bleu"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Rouge"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Bleu"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Coloris",
+     "options": [
+      {
+       "value": "Bleu",
+       "families": 2
+      },
+      {
+       "value": "Rouge",
+       "families": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "20 % : caché",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Bleu"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Rouge"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": []
+  },
+  {
+   "name": "4 familles seulement : rien",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Bleu"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Rouge"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Matière",
+       "value": "Bois"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Matière",
+       "value": "Acier"
+      }
+     ],
+     "items": []
+    }
+   ],
+   "expected": []
+  },
+  {
+   "name": "une seule valeur : caché",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Matière",
+       "value": "Acier"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Matière",
+       "value": "Acier"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Matière",
+       "value": "Acier"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Matière",
+       "value": "Acier"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Matière",
+       "value": "Acier"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Matière",
+       "value": "Acier"
+      }
+     ],
+     "items": []
+    }
+   ],
+   "expected": []
+  },
+  {
+   "name": "valeurs portées par les variantes : la famille compte une fois, dans chaque option",
+   "families": [
+    {
+     "characteristics": [],
+     "items": [
+      {
+       "characteristics": [
+        {
+         "label": "Coloris",
+         "value": "Rouge"
+        }
+       ]
+      },
+      {
+       "characteristics": [
+        {
+         "label": "Coloris",
+         "value": "Bleu"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Bleu"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Coloris",
+     "options": [
+      {
+       "value": "Bleu",
+       "families": 2
+      },
+      {
+       "value": "Rouge",
+       "families": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ordre : nombre de familles décroissant puis points de code",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Type",
+       "value": "b"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Type",
+       "value": "B"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Type",
+       "value": "a"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Type",
+       "value": "a"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Type",
+       "value": "Z"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Type",
+       "value": "É"
+      }
+     ],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Type",
+     "options": [
+      {
+       "value": "a",
+       "families": 2
+      },
+      {
+       "value": "B",
+       "families": 1
+      },
+      {
+       "value": "Z",
+       "families": 1
+      },
+      {
+       "value": "b",
+       "families": 1
+      },
+      {
+       "value": "É",
+       "families": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "libellés hors des trois, ou mal écrits, ignorés",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Finition",
+       "value": "Mat"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Finition",
+       "value": "Brillant"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Matiere",
+       "value": "Bois"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Matiere",
+       "value": "Acier"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "coloris",
+       "value": "Bleu"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "coloris",
+       "value": "Vert"
+      }
+     ],
+     "items": []
+    }
+   ],
+   "expected": []
+  },
+  {
+   "name": "le site ne plie pas : Bleu et bleu sont deux options",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Bleu"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "bleu"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Coloris",
+     "options": [
+      {
+       "value": "Bleu",
+       "families": 1
+      },
+      {
+       "value": "bleu",
+       "families": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "les trois filtres, dans l'ordre Coloris, Matière, Type",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Type",
+       "value": "Banc"
+      },
+      {
+       "label": "Matière",
+       "value": "Bois"
+      },
+      {
+       "label": "Coloris",
+       "value": "Vert"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Type",
+       "value": "Table"
+      },
+      {
+       "label": "Matière",
+       "value": "Acier"
+      },
+      {
+       "label": "Coloris",
+       "value": "Gris"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Coloris",
+     "options": [
+      {
+       "value": "Gris",
+       "families": 1
+      },
+      {
+       "value": "Vert",
+       "families": 1
+      }
+     ]
+    },
+    {
+     "label": "Matière",
+     "options": [
+      {
+       "value": "Acier",
+       "families": 1
+      },
+      {
+       "value": "Bois",
+       "families": 1
+      }
+     ]
+    },
+    {
+     "label": "Type",
+     "options": [
+      {
+       "value": "Banc",
+       "families": 1
+      },
+      {
+       "value": "Table",
+       "families": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "réglage changé : seuil 50 %",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Bleu"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Rouge"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Bleu"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Coloris",
+     "options": [
+      {
+       "value": "Bleu",
+       "families": 2
+      },
+      {
+       "value": "Rouge",
+       "families": 1
+      }
+     ]
+    }
+   ],
+   "reglages": {
+    "seuil_pct": 50,
+    "valeurs_min": 2,
+    "familles_min": 5
+   }
+  },
+  {
+   "name": "réglage changé : seuil 50 %, juste en dessous",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Bleu"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Rouge"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": [],
+   "reglages": {
+    "seuil_pct": 50,
+    "valeurs_min": 2,
+    "familles_min": 5
+   }
+  },
+  {
+   "name": "même valeur sur la famille et sa variante : comptée une fois",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Bleu"
+      }
+     ],
+     "items": [
+      {
+       "characteristics": [
+        {
+         "label": "Coloris",
+         "value": "Bleu"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Rouge"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Coloris",
+     "options": [
+      {
+       "value": "Bleu",
+       "families": 1
+      },
+      {
+       "value": "Rouge",
+       "families": 1
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
