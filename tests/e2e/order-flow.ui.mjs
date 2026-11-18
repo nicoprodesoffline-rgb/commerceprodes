@@ -215,7 +215,7 @@ async function lookup(page, created) {
   await activateKey(page, page.getByRole("button", { name: "Consulter", exact: true }));
   await page.getByTestId("receipt-refused").waitFor();
   await typeKey(page, page.locator("#r-code"), created.access_token);
-  const response = page.waitForResponse((r) => r.url().includes("/api/site/receipt?") && r.status() === 200);
+  const response = page.waitForResponse((r) => new URL(r.url()).pathname === "/api/site/receipt" && r.request().method() === "POST" && r.status() === 200);
   await activateKey(page, page.getByRole("button", { name: "Consulter", exact: true }));
   assert.deepEqual((await (await response).json()).receipt, created.receipt, "reçu serveur identique");
   await page.getByTestId("receipt-found").waitFor();

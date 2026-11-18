@@ -15,7 +15,8 @@ import { TransactionsConfigError, businessMode, loadEventsKeyring } from "./conf
 import { ackEvents, pollEvents } from "./events";
 import type { Json } from "@/c0/ts/src/jsonc";
 import { checkDated, instant, signResponse, signedPath } from "@/lib/site-publish/transport-gate";
-import { getReceipt } from "./receipt";
+import { RECEIPT_POST_MAX_BYTES, getReceipt, postReceipt, postReceiptDocument } from "./receipt";
+import { clientAddress, createLimiter } from "@/lib/site-ratelimit/limiter";
 
 function toResponse(r: TxResponse, route?: BusinessRoute): Response {
   if (route && r.status >= 400) logRefusal(route, r.status, JSON.parse(Buffer.from(r.body).toString("utf8")));
@@ -78,6 +79,28 @@ export async function submitHttp(kind: RequestKind, req: Request): Promise<Respo
 
 export async function receiptHttp(req: Request): Promise<Response> {
   return guarded(async () => getReceipt({ pool: getPool() }, new URL(req.url).searchParams), "/api/site/receipt");
+}
+
+/** Cercle 5 (5.22, 5.23) : cinq consultations de reçu par minute et par adresse ; la sixième reçoit 429 (attendu P04). */
+const receiptLimiter = createLimiter({ limit: 5, windowMs: 60_000, maxKeys: 10_000 });
+
+function receiptLimited(req: Request): Response | null {
+  const taken = receiptLimiter.take(clientAddress(req.headers), Date.now());
+  if (taken.ok) return null;
+  return new Response(JSON.stringify({ accepted: false, outcome: "REJECTED", error_codes: ["TOO_MANY_REQUESTS"], message: "Trop de demandes, réessayez dans une minute." }), {
+    status: 429,
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "retry-after": String(taken.retryAfterSeconds) },
+  });
+}
+
+/** `POST /api/site/receipt` {ref, code} : le code voyage dans le corps, jamais dans l'adresse (P03). */
+export async function receiptPostHttp(req: Request): Promise<Response> {
+  return receiptLimited(req) ?? guarded(async () => postReceipt({ pool: getPool() }, await readBoundedBytes(req, RECEIPT_POST_MAX_BYTES)), "/api/site/receipt");
+}
+
+/** `POST /api/site/receipt/document` {ref, code} : le PDF de la Factory, une fois la demande transmise. */
+export async function receiptDocumentHttp(req: Request): Promise<Response> {
+  return receiptLimited(req) ?? guarded(async () => postReceiptDocument({ pool: getPool() }, await readBoundedBytes(req, RECEIPT_POST_MAX_BYTES)), "/api/site/receipt");
 }
 
 export async function pollHttp(req: Request): Promise<Response> {

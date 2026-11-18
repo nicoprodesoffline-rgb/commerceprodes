@@ -70,7 +70,9 @@ export function httpStatusFor(codes: readonly string[]): number {
   return statuses.size === 1 ? [...statuses][0]! : 409;
 }
 
-export type LogOperation = "QUOTE" | "ORDER" | "MESSAGE" | "RECEIPT" | "EVENTS_POLL" | "EVENTS_ACK";
+export type LogOperation = "QUOTE" | "ORDER" | "MESSAGE" | "RECEIPT" | "EVENTS_POLL" | "EVENTS_ACK"
+  // Cercle 5 (migration 024) : routes de la Factory vers le site, conservation et accusé au client.
+  | "REQUESTS_ERASE" | "REQUESTS_DOCUMENT" | "EVENTS_SET_ASIDE" | "REQUESTS_MAIL_STATUS" | "REQUESTS_PURGE" | "ACK_MAIL";
 
 export interface LogEntry {
   operation: LogOperation;

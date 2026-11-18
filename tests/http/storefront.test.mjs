@@ -9,8 +9,9 @@
 import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { createHash, createHmac, randomBytes } from "node:crypto";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { request as httpRequest } from "node:http";
 import path from "node:path";
 import pg from "pg";
@@ -30,6 +31,11 @@ const C0 = path.join(ROOT, "c0", "fixtures");
 const ORACLE = JSON.parse(readFileSync(path.join(C0, "VERDICTS.json"), "utf8")).cases;
 const KEYRING_PATH = path.join(C0, "keys", "test_keyring.json");
 const sha256 = (b) => createHash("sha256").update(b).digest("hex");
+// Cercle 5 : trousseau des routes de la Factory vers le site (hors C0), écrit pour ce test dans un dossier temporaire, jamais dans Git.
+const ROUTES_KEYRING_DIR = mkdtempSync(path.join(tmpdir(), "site-routes-keyring-"));
+const ROUTES_KEYRING_PATH = path.join(ROUTES_KEYRING_DIR, "routes.json");
+const ROUTES_SECRET = "secret-d-essai-des-routes-du-cercle-5-x";
+writeFileSync(ROUTES_KEYRING_PATH, JSON.stringify({ keys: [{ key_id: "essai-effacer", scope: "site_requests.erase", status: "ACTIVE", secret_utf8: ROUTES_SECRET }] }));
 
 // ── Serveur ──────────────────────────────────────────────────────────────────
 
@@ -57,6 +63,7 @@ const SERVER_ENV = {
   SITE_MEDIA_CACHE_MB: "0",
   // Un frontal est déclaré devant le site : l'adresse est la dernière valeur de x-forwarded-for.
   SITE_TRUSTED_PROXY_HOPS: "1",
+  SITE_REQUESTS_KEYRING_PATH: ROUTES_KEYRING_PATH,
 };
 
 let server = null;
@@ -818,6 +825,55 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
         assert.match(r.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/, `${p} reste sous le proxy`);
       }
     });
+  });
+
+  // ── 5. Cercle 5 : routes de la Factory vers le site et reçu en POST ──────────
+  describe("5 — cercle 5 : routes signées hors proxy, reçu en POST", () => {
+  after(() => rmSync(ROUTES_KEYRING_DIR, { recursive: true, force: true }));
+
+  /** Une requête signée comme la Factory : domaine de la route, {method, path, body_sha256, issued_at_utc, nonce} en octets canoniques (clés triées). */
+  function routeHeaders(p, body, domain = "prodes.site.transport.requests_erase.v1") {
+    const issued = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+    const nonce = randomBytes(16).toString("hex");
+    const context = { body_sha256: sha256(Buffer.from(body)), issued_at_utc: issued, method: "POST", nonce, path: p };
+    const mac = createHmac("sha256", ROUTES_SECRET).update(Buffer.concat([Buffer.from(domain), Buffer.from([0]), Buffer.from(JSON.stringify(context))])).digest("hex");
+    return { "x-c0-key-id": "essai-effacer", "x-c0-issued-at": issued, "x-c0-nonce": nonce, "x-c0-request-signature": mac, "content-type": "application/json" };
+  }
+
+  test("5.1 effacement signé : traverse jusqu'à la route (404 pour une référence inconnue), réponse signée, sans CSP du proxy ; non signé : 401", async () => {
+    const body = JSON.stringify({ object_ref: "QR-inconnu-http" });
+    const ok = await http("POST", "/api/site/requests/erase", { body, json: false, headers: routeHeaders("/api/site/requests/erase", body) });
+    assert.equal(ok.status, 404, JSON.stringify(ok.json));
+    assert.deepEqual([ok.json.operation, ok.json.error_codes], ["REQUESTS_ERASE", ["NOT_FOUND"]]);
+    assert.ok(ok.headers.get("x-c0-response-signature"), "réponse signée par la clé d'accusé du site");
+    assert.equal(ok.headers.get("content-security-policy"), null);
+    const unsigned = await http("POST", "/api/site/requests/erase", { body, json: false, headers: { "content-type": "text/plain" } });
+    assert.notEqual(unsigned.json?.site_status, "CONTENT_TYPE_REFUSED");
+    assert.deepEqual([unsigned.status, unsigned.json.error_codes], [401, ["SIGNATURE_INVALID"]]);
+    const wrongDomain = await http("POST", "/api/site/requests/erase", { body, json: false, headers: routeHeaders("/api/site/requests/erase", body, "prodes.site.transport.requests_document.v1") });
+    assert.equal(wrongDomain.status, 401);
+  });
+
+  test("5.2 les autres routes du cercle 5 sont hors proxy et refusent une clé d'une autre portée", async () => {
+    for (const p of ["/api/site/requests/document", "/api/site/requests/mail-status", "/api/site/events/set-aside"]) {
+      const body = "{}";
+      const r = await http("POST", p, { body, json: false, headers: routeHeaders(p, body) });
+      assert.equal(r.status, 401, p);
+      assert.deepEqual(r.json.error_codes, ["SIGNATURE_INVALID"], p);
+      assert.equal(r.headers.get("content-security-policy"), null, p);
+    }
+  });
+
+  test("5.3 reçu : POST {ref, code} sous le proxy ; référence inconnue 404 ; la sixième consultation en une minute reçoit 429", async () => {
+    const headers = { "x-forwarded-for": "198.51.100.77" };
+    const statuses = [];
+    for (let i = 0; i < 6; i += 1) {
+      const r = await http("POST", "/api/site/receipt", { body: { ref: "QR-inconnu-http", code: "c".repeat(43) }, headers });
+      statuses.push(r.status);
+      if (i === 5) assert.match(r.json.message, /réessayez dans une minute/);
+    }
+    assert.deepEqual(statuses, [404, 404, 404, 404, 404, 429]);
+  });
   });
 });
 

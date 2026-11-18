@@ -157,7 +157,8 @@ export async function pollEvents(deps: EventsDeps, headers: HeaderBag, params: U
     // ORDER BY sur la colonne QUALIFIÉE : `ORDER BY id` désignait l'alias texte `id::text AS id` (PostgreSQL préfère la
     // colonne de sortie) et triait « 10 » avant « 8 » dès dix événements (W4 lot I, campagne C12 ; test 16).
     const { rows } = await client.query<{ id: string; event_id: string; event_bytes: Buffer }>(
-      "SELECT site_outbox_event.id::text AS id, event_id, event_bytes FROM site_outbox_event WHERE status <> 'ACKED' ORDER BY site_outbox_event.id LIMIT $1 FOR UPDATE",
+      // Cercle 5 : un événement mis de côté (P06) ou effacé (ses octets ne portent plus rien) n'est plus servi.
+      "SELECT site_outbox_event.id::text AS id, event_id, event_bytes FROM site_outbox_event WHERE status IN ('PENDING', 'DELIVERED_TO_POLL') AND erased_at IS NULL ORDER BY site_outbox_event.id LIMIT $1 FOR UPDATE",
       [limit as number],
     );
     const ids = rows.map((r) => r.event_id);
@@ -254,6 +255,7 @@ export async function ackEvents(deps: EventsDeps, headers: HeaderBag, bytes: Uin
          FROM cur LEFT JOIN upd ON upd.event_id = cur.event_id`,
       [targets],
     );
+    await markRequestsAcked(deps.pool, targets);
     const by = new Map(rows.map((r) => [r.event_id, r]));
     const acked = targets.filter((id) => by.get(id)?.before === "DELIVERED_TO_POLL");
     const alreadyAcked = targets.filter((id) => by.get(id)?.before === "ACKED");
@@ -274,6 +276,42 @@ export async function ackEvents(deps: EventsDeps, headers: HeaderBag, bytes: Uin
     const reason = errorReason(error);
     console.error(`[site-transactions] EVENTS_ACK échec code=${reason}`);
     return json(503, { accepted: false, outcome: "TRANSPORT_ERROR", transport_error: "EVENTS_UNAVAILABLE", error_codes: [], detail: { reason } });
+  }
+}
+
+/** Cercle 5 (5.22, 5.3) : la conservation sur le site, en jours après l'acquittement (`SITE_REQUESTS_RETENTION_DAYS`, défaut 30, au moins 1). */
+export const DEFAULT_REQUESTS_RETENTION_DAYS = 30;
+
+export function requestsRetentionDays(env: Record<string, string | undefined> = process.env): number {
+  const raw = env["SITE_REQUESTS_RETENTION_DAYS"];
+  if (raw === undefined || raw === "") return DEFAULT_REQUESTS_RETENTION_DAYS;
+  const n = /^[1-9][0-9]{0,3}$/.test(raw) ? Number(raw) : NaN;
+  if (!Number.isSafeInteger(n)) throw new TransactionsConfigError(`SITE_REQUESTS_RETENTION_DAYS doit être un entier de 1 à 9999 (reçu : ${JSON.stringify(raw)})`);
+  return n;
+}
+
+/**
+ * Cercle 5 : l'acquittement de la Factory est l'instant où la demande devient « transmise à notre équipe » (P02) et le point de départ de sa
+ * conservation (D05). Pose `acked_at` sur la demande de chaque événement acquitté (une fois), puis efface les demandes acquittées depuis plus
+ * de la durée de conservation ; une demande jamais acquittée n'est jamais effacée (D06). Une erreur ici ne défait pas l'acquittement : elle est
+ * journalisée et l'opération se refait au tour suivant.
+ */
+export async function markRequestsAcked(pool: Pool, eventIds: readonly string[], retentionDays: number = requestsRetentionDays()): Promise<number> {
+  try {
+    for (const [type, table, column] of [["quote.requested", "site_quote_request", "quote_ref"], ["order.received", "site_order", "order_ref"], ["message.received", "site_message", "message_ref"]] as const) {
+      await pool.query(
+        `UPDATE ${table} r SET acked_at = e.acked_at FROM site_outbox_event e
+          WHERE e.event_id = ANY($1::text[]) AND e.status = 'ACKED' AND e.event_type = $2 AND r.${column} = e.object_ref AND r.acked_at IS NULL`,
+        [eventIds, type],
+      );
+    }
+    const { rows } = await pool.query<{ erased: number }>("SELECT site_purge_acknowledged_requests(make_interval(days => $1)) AS erased", [retentionDays]);
+    const erased = rows[0]?.erased ?? 0;
+    if (erased > 0) await appendLog(pool, { operation: "REQUESTS_PURGE", outcome: "ERASED", detail: { erased } });
+    return erased;
+  } catch (error) {
+    console.error(`[site-transactions] conservation des demandes reportée code=${errorReason(error)}`);
+    return 0;
   }
 }
 
