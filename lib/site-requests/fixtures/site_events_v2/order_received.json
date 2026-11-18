@@ -1,0 +1,12 @@
+{
+ "case_id": "site_events_v2.order_received",
+ "note": "C07 : une commande valide",
+ "event_text": "{\"catalogue_sequence\":3,\"contract_version\":\"site_events.v2\",\"created_at_utc\":\"2026-11-18T10:00:00Z\",\"event_id\":\"EV-ORD-0001\",\"event_type\":\"order.received\",\"event_version\":1,\"idempotency_key\":\"order.received:ORD-0001\",\"object_ref\":\"ORD-0001\",\"payload\":{\"addresses\":{\"billing\":null,\"delivery\":{\"city\":\"Val-Fictif\",\"country\":\"FR\",\"line1\":\"7 sentier des Exemples Imaginaires\",\"line2\":null,\"name\":\"Mairie de Val-Fictif\",\"postal_code\":\"00000\"}},\"amounts\":{\"currency\":\"EUR\",\"excludes_quote_lines\":false,\"tax_rate\":\"20.00\",\"total_ht\":\"100.00\",\"total_ttc\":\"120.00\",\"total_tva\":\"20.00\"},\"contact\":{\"email\":\"achats@val-fictif.example\",\"name\":\"Camille Exemple\",\"organisation\":\"Mairie de Val-Fictif\",\"phone\":\"+33 1 00 00 00 00\"},\"customer_refs\":{\"order_number\":\"ENG-0001\",\"service_code\":\"SVC-A\",\"siret\":\"00000000000000\"},\"delivery\":{\"amount_ht\":\"0.00\",\"amount_tva\":\"0.00\",\"label\":\"Livraison incluse\",\"option\":\"incluse\"},\"lines\":[{\"item_label\":\"Banc d'essai\",\"line_total_ht\":\"100.00\",\"line_tva\":\"20.00\",\"lot\":null,\"public_item_key\":\"PI-00000001R\",\"quantity\":4,\"rate_id\":\"R-1\",\"unit_amount_ht\":\"25.00\",\"variant_axes\":{}}],\"message\":\"Pouvez-vous confirmer le délai ?\",\"number\":\"CMD-2026-000001\",\"payment\":{\"instructions\":\"Envoyez le bon de commande signé à l'adresse indiquée.\",\"method\":\"mandat_administratif\"},\"privacy_notice\":\"2026-11\",\"status\":\"RECEIVED\",\"terms\":{\"accepted\":true,\"cgv_version\":\"2026-11\"}},\"payload_digest\":\"7d7e413ae009f4f01ee0309559b821331e66682fcd3aeb3d191e6852e735c99c\"}",
+ "consumed": [],
+ "expected": {
+  "accepted": true,
+  "outcome": "APPLY",
+  "error_codes": [],
+  "rules": []
+ }
+}

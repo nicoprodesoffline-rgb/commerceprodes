@@ -1,0 +1,12 @@
+{
+ "case_id": "site_events_v2.quote_with_quote_line",
+ "note": "M08 : une ligne « prix sur devis » dans un devis",
+ "event_text": "{\"catalogue_sequence\":3,\"contract_version\":\"site_events.v2\",\"created_at_utc\":\"2026-11-18T10:00:00Z\",\"event_id\":\"EV-QR-0001\",\"event_type\":\"quote.requested\",\"event_version\":1,\"idempotency_key\":\"quote.requested:QR-0001\",\"object_ref\":\"QR-0001\",\"payload\":{\"amounts\":{\"currency\":\"EUR\",\"excludes_quote_lines\":true,\"tax_rate\":\"20.00\",\"total_ht\":\"100.00\",\"total_ttc\":\"120.00\",\"total_tva\":\"20.00\"},\"contact\":{\"email\":\"achats@val-fictif.example\",\"name\":\"Camille Exemple\",\"organisation\":\"Mairie de Val-Fictif\",\"phone\":\"+33 1 00 00 00 00\"},\"delivery\":{\"amount_ht\":\"0.00\",\"amount_tva\":\"0.00\",\"label\":\"Livraison incluse\",\"option\":\"incluse\"},\"lines\":[{\"item_label\":\"Banc d'essai\",\"line_total_ht\":\"100.00\",\"line_tva\":\"20.00\",\"lot\":null,\"public_item_key\":\"PI-00000001R\",\"quantity\":4,\"rate_id\":\"R-1\",\"unit_amount_ht\":\"25.00\",\"variant_axes\":{}},{\"item_label\":\"Table sur mesure\",\"line_total_ht\":null,\"line_tva\":null,\"lot\":null,\"public_item_key\":\"PI-00000002K\",\"quantity\":1,\"rate_id\":null,\"unit_amount_ht\":null,\"variant_axes\":{}}],\"message\":\"Pouvez-vous confirmer le délai ?\",\"number\":\"DEV-2026-000001\",\"privacy_notice\":\"2026-11\"},\"payload_digest\":\"7aaf80aaf0155f8a93b8e18cfae58158e62321e3b9bfc8c5f5822bfb23eab2ca\"}",
+ "consumed": [],
+ "expected": {
+  "accepted": true,
+  "outcome": "APPLY",
+  "error_codes": [],
+  "rules": []
+ }
+}
