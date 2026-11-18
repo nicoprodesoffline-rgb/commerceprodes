@@ -12,7 +12,7 @@ function read(filename) {
   if (cache.has(filename)) return cache.get(filename).exports;
   const module = { exports: {} };
   cache.set(filename, module);
-  const code = ts.transpileModule(fs.readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, esModuleInterop: true, target: ts.ScriptTarget.ES2022, resolveJsonModule: true } }).outputText;
+  const code = ts.transpileModule(fs.readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, esModuleInterop: true, target: ts.ScriptTarget.ES2022, resolveJsonModule: true, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   const localRequire = (name) => {
     if (name.startsWith("@/") || name.startsWith(".")) {
       const base = name.startsWith("@/") ? path.join(root, name.slice(2)) : path.resolve(path.dirname(filename), name);

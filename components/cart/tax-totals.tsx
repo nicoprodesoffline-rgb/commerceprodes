@@ -20,7 +20,11 @@ export function taxAmounts(preview: PreviewJson, commerce: Extract<PublicCommerc
 const rate = (tax: string): string => tax.replace(/\.00$/, "").replace(".", ",");
 
 export function TaxTotals({ preview, commerce, option = "incluse" }: { preview: PreviewJson; commerce: Extract<PublicCommerce, { ready: true }>; option?: DeliveryOption }) {
-  const { delivery, amounts } = useMemo(() => taxAmounts(preview, commerce, option), [preview, commerce, option]);
+  const { lines, delivery, amounts } = useMemo(() => taxAmounts(preview, commerce, option), [preview, commerce, option]);
+  // Un panier qui ne contient que des lignes « sur devis » (ou sans prix) n'a aucun montant à totaliser : jamais « 0,00 € » ni un total à zéro, seulement la demande de devis.
+  if (lines.every((l) => l.line_total_ht === null)) {
+    return <p className="border-t border-line bg-surface px-3 py-3 text-sm text-ink-2" data-testid="tax-totals-quote-only">Prix sur devis : aucun total n&apos;est calculé pour ces articles. Demandez un devis, nous vous répondons rapidement.</p>;
+  }
   return (
     <dl className="border-t border-line bg-surface px-3 py-3 text-sm" data-testid="tax-totals">
       <div className="flex justify-between gap-2"><dt>Total hors taxes (lignes)</dt><dd className="tabular" data-testid="total-ht-lines">{money(toMoney(toCents(amounts.total_ht) - toCents(delivery.amount_ht)))}</dd></div>
