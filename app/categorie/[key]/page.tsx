@@ -10,7 +10,7 @@ import { FamilyGrid } from "@/components/home/family-card";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { categoryCrumbs, familyCard, navigationOf } from "@/components/site/catalog-views";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
-import { applyFilters, filterGroups, parseFilterChoice } from "@/lib/site-catalog/filters";
+import { applyFilters, pageFilters as filtersOf, parseFilterChoice } from "@/lib/site-catalog/filters";
 import { listFamilies, parseListingQuery } from "@/lib/site-catalog/listing";
 import { count } from "@/components/site/format";
 import { isPromoNow } from "@/lib/site-catalog/merchandising";
@@ -57,7 +57,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
   const record = catalog.categories.find((c) => c.category_key === key);
   const now = serverNowUtc();
   // 4.27 : les filtres se calculent sur toutes les familles listées (sous-arbre) ; OU dans un filtre, ET entre filtres et avec le prix.
-  const groups = filterGroups(allFamilies);
+  const groups = filtersOf(allFamilies);
   const families = applyFilters(allFamilies, groups, choice);
   const listing = listFamilies(families, query, (f) => familyPrice(catalog, f, now));
   const pageParams: Record<string, string> = {};

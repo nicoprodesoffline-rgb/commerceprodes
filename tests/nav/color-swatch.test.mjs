@@ -247,3 +247,22 @@ test("mesure : « Non précisé » est un aplat — un Gris clair indiscernable 
   assert.equal(flat(MULTICOLORE), false, "l'arc-en-ciel reste à part");
   assert.deepEqual([...namedValues(items([["a", "Gris clair"], ["b", MULTICOLORE]]), "coloris", ["a", "b"])], [], "Multicolore ne se confond avec aucun aplat : les deux restent en pastille seule");
 });
+
+test("teinte « #rrggbb » : une partie hexadécimale prend cette teinte avec le motif de sa nuance ; mal écrite, la Teinte est ignorée en entier", () => {
+  const half = (hex) => `linear-gradient(${hex}, ${hex})`;
+  assert.equal(full("Gris", "#5b6770"), half("#5b6770"));
+  assert.equal(full("Anthracite / Blanc", "#5b6770 / Blanc"), `${half("#5b6770")}, ${half(hexOf("Blanc"))}`, "une seule moitié a une teinte directe : l'autre garde sa nuance");
+  assert.equal(full("Gris / Noir", "#5b6770 / RAL 7016"), `${half("#5b6770")}, ${half(ral.teintes["7016"])}`, "hexadécimal et RAL dans la même teinte");
+  assert.match(full("Inox", "#5b6770"), /^repeating-linear-gradient\(90deg, #5b6770 /, "le motif brossé de la nuance Inox est gardé");
+  assert.match(full("Bois", "#aa8f5c"), /^repeating-linear-gradient\(100deg, #aa8f5c /, "le motif bois est gardé");
+  for (const bad of ["#5B6770", "#5b677", "#5b67700", "5b6770", "#5b677g", "# 5b6770", "#5b6770 / #5b6770", "#5b6770 / RAL 9999"]) assert.equal(full("Gris", bad), full("Gris"), bad);
+  assert.equal(full("Rouge / Blanc", "#5b6770 / #zzzzzz"), full("Rouge / Blanc"), "une partie mal écrite : tout est ignoré, pas seulement elle");
+  assert.equal(full(MULTICOLORE, "#5b6770"), full(MULTICOLORE));
+  assert.equal(full(NON_PRECISE, "#5b6770"), full(NON_PRECISE), "pas de teinte directe sur Non précisé");
+});
+
+test("mesure : la comparaison prend en compte une teinte « #rrggbb »", () => {
+  const rows = (...teintes) => teintes.map((teinte, i) => ["v" + i, "Gris", teinte]);
+  assert.deepEqual([...namedValues(items(rows("#5b6770", "#5c6871", "#d0d8de")), "coloris", ["v0", "v1", "v2"])].sort(), ["v0", "v1"], "deux teintes directes proches se confondent, la troisième non");
+  assert.deepEqual([...namedValues(items(rows("#5b6770", "RAL 7016")), "coloris", ["v0", "v1"])].sort(), [], "une teinte directe et un RAL éloignés se distinguent");
+});

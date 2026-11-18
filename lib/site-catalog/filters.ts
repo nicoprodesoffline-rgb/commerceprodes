@@ -3,6 +3,7 @@
  * Le SITE ne plie rien : les libellés et les valeurs se comparent à l'octet ; c'est la Factory qui regroupe les formes à la publication.
  */
 import type { Family } from "./catalog";
+import { DIMENSION_LABELS, dimensionGroups, inTranche, measuresOf, type DimensionGroup } from "./dimensions.ts";
 import { BICOLORE_SEPARATOR, NON_PRECISE, PASTILLE_LABEL } from "./pastille.ts";
 
 /** Les réglages, en UNE seule constante. Un test la compare à `reglages_par_defaut` du jeu d'essai commun : pour en changer, modifier d'abord la règle. */
@@ -16,7 +17,7 @@ export const FILTER_LABELS = [
   { label: "Type", param: "type" },
 ] as const;
 
-export type FilterOption = { value: string; families: number };
+export type FilterOption = { value: string; families: number; text?: string };
 export type FilterGroup = { label: string; param: string; options: FilterOption[] };
 type Carrier = Pick<Family, "characteristics"> & { items: readonly { characteristics?: { label: string; value: string }[] }[] };
 
@@ -46,6 +47,12 @@ const byCodePoints = (a: string, b: string): number => {
   return x.length - y.length;
 };
 
+/** Tous les filtres de la page de rubrique, dans l'ordre : Coloris, Matière, Type, puis les dimensions et le poids (par tranches). */
+export type AnyFilterGroup = FilterGroup | DimensionGroup;
+export function pageFilters(families: readonly Carrier[], settings: FilterSettings = FILTER_SETTINGS): AnyFilterGroup[] {
+  return [...filterGroups(families, settings), ...dimensionGroups(families, settings)];
+}
+
 /** Les filtres à afficher pour l'ensemble des familles listées (sous-arbre compris), avant tout filtre choisi. */
 export function filterGroups(families: readonly Carrier[], settings: FilterSettings = FILTER_SETTINGS): FilterGroup[] {
   if (families.length < settings.familles_min) return [];
@@ -70,7 +77,7 @@ export type FilterChoice = Record<string, string[]>;
 /** Les choix de l'adresse (`?coloris=…&coloris=…&type=…`), répétables ; une valeur vide est ignorée. */
 export function parseFilterChoice(sp: Record<string, string | string[] | undefined>): FilterChoice {
   const out: FilterChoice = {};
-  for (const { param } of FILTER_LABELS) {
+  for (const { param } of [...FILTER_LABELS, ...DIMENSION_LABELS]) {
     const raw = sp[param];
     const values = (Array.isArray(raw) ? raw : raw === undefined ? [] : [raw]).map((v) => v.slice(0, 200)).filter((v) => v !== "");
     if (values.length > 0) out[param] = [...new Set(values)].slice(0, 50);
@@ -79,12 +86,16 @@ export function parseFilterChoice(sp: Record<string, string | string[] | undefin
 }
 
 /** OU dans un filtre, ET entre les filtres. Un choix qui ne figure pas dans les options affichées est ignoré (adresse ancienne ou fabriquée). */
-export function applyFilters<T extends Carrier>(families: readonly T[], groups: readonly FilterGroup[], choice: FilterChoice): T[] {
+export function applyFilters<T extends Carrier>(families: readonly T[], groups: readonly AnyFilterGroup[], choice: FilterChoice): T[] {
   const active = groups.flatMap((g) => {
-    const known = new Set(g.options.map((o) => o.value));
-    const wanted = (choice[g.param] ?? []).filter((v) => known.has(v));
-    return wanted.length > 0 ? [{ label: g.label, wanted: new Set(wanted) }] : [];
+    const wanted = g.options.filter((o) => (choice[g.param] ?? []).includes(o.value));
+    if (wanted.length === 0) return [];
+    if ("unit" in g) {
+      const ranges = (wanted as DimensionGroup["options"]).map((o) => ({ min: o.min, max: o.max }));
+      return [(f: T) => measuresOf(f, g.label, g.unit).some((v) => ranges.some((r) => inTranche(v, r.min, r.max)))];
+    }
+    const values = new Set(wanted.map((o) => o.value));
+    return [(f: T) => valuesOf(f, g.label).some((v) => values.has(v))];
   });
-  if (active.length === 0) return [...families];
-  return families.filter((f) => active.every((a) => valuesOf(f, a.label).some((v) => a.wanted.has(v))));
+  return active.length === 0 ? [...families] : families.filter((f) => active.every((matches) => matches(f)));
 }

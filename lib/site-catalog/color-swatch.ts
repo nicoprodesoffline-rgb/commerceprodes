@@ -57,9 +57,9 @@ function nuancePart(name: string): Part | null {
 
 /**
  * Les parties dessinées par « Pastille » (et « Teinte » si elle est bien formée), ou `null` : aucune pastille.
- * Une partie `RAL NNNN` de « Teinte » prend la teinte de ral.json avec le MOTIF DE SA NUANCE ; les autres gardent leur nuance.
+ * Une partie `RAL NNNN` de « Teinte » prend la teinte de ral.json, une partie `#rrggbb` cette teinte, toujours avec le MOTIF DE SA NUANCE ; les autres gardent leur nuance.
  * « Teinte » est ignorée en entier si son nombre de parties diffère de « Pastille », si une partie n'est ni `RAL NNNN` ni un nom de nuance,
- * si un code est absent de ral.json, ou si un RAL est posé sur Multicolore / Non précisé.
+ * si un code est absent de ral.json, si une teinte `#rrggbb` est mal écrite, ou si un RAL est posé sur Multicolore / Non précisé.
  */
 function partsOf(pastille: string | null | undefined, teinte?: string | null): Part[] | null {
   if (typeof pastille !== "string" || pastille === "") return null;
@@ -73,8 +73,9 @@ function partsOf(pastille: string | null | undefined, teinte?: string | null): P
   if (fine.length !== parts.length) return parts;
   const refined = fine.map((text, i) => {
     const code = /^RAL (\d{4})$/.exec(text)?.[1];
-    if (code === undefined) return nuancePart(text) === null ? null : parts[i]!;
-    const hex = RAL_TEINTES[code];
+    const direct = /^#[0-9a-f]{6}$/.test(text) ? text : undefined; // une teinte « #rrggbb » (six chiffres hexadécimaux, minuscules), avec le motif de sa nuance
+    if (code === undefined && direct === undefined) return nuancePart(text) === null ? null : parts[i]!;
+    const hex = direct ?? RAL_TEINTES[code!];
     const nuance = parts[i]!;
     return hex === undefined || nuance.hex === null || nuance.motif === "neutral" ? null : { hex, motif: nuance.motif };
   });
