@@ -59,7 +59,7 @@ test("le site ne devine rien : aucun nom de couleur ne se cherche dans un texte,
   const source = readFileSync(new URL("../../lib/site-catalog/color-swatch.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /\bfold\b|SWATCH_KEYWORDS|RAL_SWATCHES|RAL_CLASSIC/);
   assert.doesNotMatch(source, /#\d{6}\b/);
-  assert.equal(PALETTE.some(([, hex]) => /^#\d{6}$/.test(hex)), false);
+  // palette.json et ral.json sont recopiés à l'octet (décision de l'Owner, teintes comprises) : seul le CODE ne porte aucune teinte tout en chiffres.
   assert.equal(pastilleStyle("Noir très foncé"), null);
 });
 
@@ -265,4 +265,79 @@ test("mesure : la comparaison prend en compte une teinte « #rrggbb »", () => {
   const rows = (...teintes) => teintes.map((teinte, i) => ["v" + i, "Gris", teinte]);
   assert.deepEqual([...namedValues(items(rows("#5b6770", "#5c6871", "#d0d8de")), "coloris", ["v0", "v1", "v2"])].sort(), ["v0", "v1"], "deux teintes directes proches se confondent, la troisième non");
   assert.deepEqual([...namedValues(items(rows("#5b6770", "RAL 7016")), "coloris", ["v0", "v1"])].sort(), [], "une teinte directe et un RAL éloignés se distinguent");
+});
+
+// ---- K3 : « Reflet » (brillant / mat) et nouvelles nuances de la palette ----
+const withGloss = (value, teinte, reflet) => pastilleStyle(value, teinte, reflet);
+const GLOSS_LAYER = /^radial-gradient\(/;
+
+test("reflet : une partie « brillant » reçoit un éclat par-dessus son motif ; « mat » ne change rien", () => {
+  const base = pastilleStyle("Rouge");
+  assert.deepEqual(withGloss("Rouge", undefined, "mat"), base, "mat : identique à la pastille sans reflet");
+  const shiny = withGloss("Rouge", undefined, "brillant");
+  assert.match(shiny.backgroundImage, GLOSS_LAYER, "l'éclat est la première couche, donc dessiné par-dessus");
+  assert.ok(shiny.backgroundImage.endsWith(base.backgroundImage), "le motif de la nuance reste dessous, intact");
+  assert.match(shiny.backgroundImage, /rgba\(255, 255, 255, 0\)\s*100%\)/, "l'éclat s'éteint avant le bord : dégradé, jamais un aplat");
+  const metal = withGloss("Inox", undefined, "brillant").backgroundImage;
+  assert.ok(metal.endsWith(pastilleStyle("Inox").backgroundImage), "un motif à relief garde aussi son relief sous l'éclat");
+});
+
+test("reflet : bicolore, chaque moitié a son propre éclat ; tailles et positions suivent les couches", () => {
+  const one = withGloss("Rouge / Blanc", undefined, "brillant / mat");
+  const layers = one.backgroundImage.split("), ").length;
+  assert.equal(one.backgroundImage.match(/radial-gradient/g).length, 1, "une seule moitié brillante : un seul éclat");
+  assert.equal(one.backgroundSize.split(", ").length, 3, "trois couches : éclat A, motif A, motif B");
+  assert.equal(one.backgroundPosition, "left top, left top, right top", "l'éclat de A reste dans la moitié gauche");
+  const both = withGloss("Rouge / Blanc", undefined, "brillant / brillant");
+  assert.equal(both.backgroundImage.match(/radial-gradient/g).length, 2);
+  assert.equal(both.backgroundPosition, "left top, right top, left top, right top");
+  const second = withGloss("Rouge / Blanc", undefined, "mat / brillant");
+  assert.equal(second.backgroundPosition, "right top, left top, right top", "l'éclat de B reste dans la moitié droite");
+  assert.deepEqual(withGloss("Rouge / Blanc", undefined, "mat / mat"), pastilleStyle("Rouge / Blanc"));
+  assert.ok(layers >= 3);
+});
+
+test("reflet : nombre de parties différent de Pastille, ou valeur inconnue = ignoré en entier", () => {
+  for (const [value, reflet] of [["Rouge", "brillant / mat"], ["Rouge / Blanc", "brillant"], ["Rouge / Blanc", "brillant / mat / mat"], ["Rouge", "Brillant"], ["Rouge", "satiné"], ["Rouge / Blanc", "brillant / inconnu"], ["Rouge", ""], ["Rouge", undefined], ["Rouge", null], ["Rouge", " brillant"]]) {
+    assert.deepEqual(withGloss(value, undefined, reflet), pastilleStyle(value), `${value} + ${String(reflet)}`);
+  }
+  assert.equal(withGloss(undefined, undefined, "brillant"), null, "Reflet seul ne dessine rien");
+  assert.equal(withGloss("Inconnu", undefined, "brillant"), null, "pas de pastille devinée pour une nuance inconnue");
+});
+
+test("reflet : s'ajoute à la teinte fine, qui garde sa règle propre", () => {
+  const both = withGloss("Gris", "#5b6770", "brillant");
+  assert.match(both.backgroundImage, GLOSS_LAYER);
+  assert.ok(both.backgroundImage.endsWith(pastilleStyle("Gris", "#5b6770").backgroundImage), "la teinte fine est dessinée sous l'éclat");
+  const badFine = withGloss("Gris", "RAL 9999", "brillant");
+  assert.ok(badFine.backgroundImage.endsWith(pastilleStyle("Gris").backgroundImage), "Teinte mal formée ignorée ; le reflet, bien formé, reste");
+  assert.match(withGloss(MULTICOLORE, undefined, "brillant").backgroundImage, GLOSS_LAYER);
+});
+
+test("nouvelle nuance : Zinc (métal) et Gris manganèse (uni) sont dessinées d'après palette.json", () => {
+  const zinc = palette.nuances.find((n) => n.name === "Zinc");
+  const manganese = palette.nuances.find((n) => n.name === "Gris manganèse");
+  assert.equal(zinc.motif, "metal");
+  assert.equal(manganese.motif, "uni");
+  assert.equal(palette.nuances.length, 40);
+  assert.match(pastilleStyle("Zinc").backgroundImage, new RegExp(`^linear-gradient\\(135deg, .*${zinc.hex}`), "Zinc a le relief métal, centré sur sa teinte");
+  assert.equal(pastilleStyle("Gris manganèse").backgroundImage, `linear-gradient(${manganese.hex}, ${manganese.hex})`);
+  assert.ok(pastilleStyle("Zinc / Gris manganèse") !== null, "bicolore avec les nouvelles nuances");
+  assert.match(withGloss("Zinc", undefined, "brillant").backgroundImage, GLOSS_LAYER);
+});
+
+test("reflet : jamais une caractéristique, jamais un filtre ; la fiche le reprend là où elle prend la Pastille", async () => {
+  assert.equal(pastille.isReservedLabel("Reflet"), true);
+  assert.equal(pastille.isReservedLabel(" reflet "), true);
+  assert.equal(pastille.isReservedLabel("Reflets"), false);
+  const { characteristicsText } = await import("../../lib/site-catalog/merchandising.ts");
+  const text = characteristicsText({ characteristics: [{ label: "Pastille", value: "Zebre" }, { label: "Reflet", value: "brillant" }, { label: "Matière", value: "Acier" }], items: [{ characteristics: [{ label: " REFLET", value: "mat" }, { label: "Type", value: "Banc" }] }] });
+  assert.doesNotMatch(text, /Reflet|brillant|\bmat\b/i);
+  assert.match(text, /Acier/);
+  const fam = { characteristics: [{ label: "Pastille", value: "Gris" }, { label: "Reflet", value: "brillant" }] };
+  assert.deepEqual(pastille.drawnOf({}, fam), { pastille: "Gris", reflet: "brillant" });
+  assert.deepEqual(pastille.drawnOf({ characteristics: [{ label: "Pastille", value: "Noir" }] }, fam), { pastille: "Noir" }, "la variante qui a sa Pastille ne prend pas le Reflet de la famille");
+  const { filterGroups } = await import("../../lib/site-catalog/filters.ts");
+  const solo = [{ characteristics: [{ label: "Reflet", value: "brillant" }], items: [] }, { characteristics: [{ label: "Reflet", value: "mat" }], items: [] }];
+  assert.deepEqual(filterGroups(solo), [], "Reflet seul ne fait aucun filtre");
 });
