@@ -110,8 +110,11 @@ export function deltaE76(a: string, b: string): number {
   return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
 }
 
+/** Le motif DESSINÉ : « Non précisé » (neutral) est un aplat comme « uni » ; l'arc-en-ciel reste à part, comme chaque motif à relief (metal, brosse, galva, bois, transparent). */
+const drawnMotif = (part: Part): Part["motif"] => (part.motif === "neutral" ? "uni" : part.motif);
+
 function indiscernible(x: Part[], y: Part[]): boolean {
-  return x.length === y.length && x.every((p, i) => p.motif === y[i]!.motif && (p.hex === null || y[i]!.hex === null ? p.hex === y[i]!.hex : deltaE76(p.hex, y[i]!.hex) < INDISCERNIBLE_DELTA_E));
+  return x.length === y.length && x.every((p, i) => drawnMotif(p) === drawnMotif(y[i]!) && (p.hex === null || y[i]!.hex === null ? p.hex === y[i]!.hex : deltaE76(p.hex, y[i]!.hex) < INDISCERNIBLE_DELTA_E));
 }
 
 /**

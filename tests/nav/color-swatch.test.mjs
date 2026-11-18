@@ -236,3 +236,15 @@ test("sûreté : le rendu final décide — deux RAL proches deviennent indiscer
   assert.deepEqual([...namedValues(items(rows), "coloris", ["a", "b", "c"])].sort(), ["a", "b"], "a et b indiscernables, c séparé");
   assert.equal(namedValues(items([["a", "Blanc"]]), "coloris", ["a"]).size, 0);
 });
+
+test("sûreté : « Non précisé » est un aplat — un Gris clair indiscernable le garde, un Noir éloigné non ; aucun autre motif n'est un aplat déguisé", () => {
+  assert.ok(deltaE76(hexOf("Gris clair"), "#d9d9d6") < INDISCERNIBLE_DELTA_E, "pré-condition : le gris neutre est proche de la nuance Gris clair");
+  assert.deepEqual([...namedValues(items([["a", "Gris clair"], ["b", NON_PRECISE]]), "coloris", ["a", "b"])].sort(), ["a", "b"], "les deux gardent leur nom");
+  assert.deepEqual([...namedValues(items([["a", "Noir"], ["b", NON_PRECISE]]), "coloris", ["a", "b"])], ["b"], "seul « Non précisé » garde son nom");
+  const flat = (value) => /^linear-gradient\(#[0-9a-f]{6}, #[0-9a-f]{6}\)$/.test(full(value));
+  const flats = palette.nuances.filter((n) => flat(n.name)).map((n) => n.motif);
+  assert.ok(flats.length > 0 && flats.every((motif) => motif === "uni"), "seuls les motifs « uni » sont des aplats");
+  assert.equal(flat(NON_PRECISE), true);
+  assert.equal(flat(MULTICOLORE), false, "l'arc-en-ciel reste à part");
+  assert.deepEqual([...namedValues(items([["a", "Gris clair"], ["b", MULTICOLORE]]), "coloris", ["a", "b"])], [], "Multicolore ne se confond avec aucun aplat : les deux restent en pastille seule");
+});
