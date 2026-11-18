@@ -2,13 +2,15 @@
 
 import { NO_AXIS_VALUE, axisValue, money, parisDate, price, totalBasisLabel, uniformBasis } from "@/components/site/format";
 import { packValue } from "@/lib/site-catalog/conditionnement";
+import { lotText } from "@/lib/site-requests/amounts";
 import { shortRef } from "@/lib/site-catalog/short-ref";
 
-type ReceiptLine = { public_item_key: string; variant_axes: Record<string, string>; quantity: number; priced?: boolean; unit_amount?: string | null; tax_basis_or_status?: string | null; line_total?: string | null };
+type ReceiptLine = { item_label?: string; lot?: { bought: number; free: number } | null; line_tva?: string | null; public_item_key: string; variant_axes: Record<string, string>; quantity: number; priced?: boolean; unit_amount?: string | null; tax_basis_or_status?: string | null; line_total?: string | null };
 export type ReceiptData = { lines?: ReceiptLine[]; total_amount?: string | null; created_at_utc?: string; catalogue_sequence?: number | null };
 
 /** Données figées renvoyées par le serveur, communes à l'envoi et à la consultation. Aucun total recalculé. */
-export function ReceiptDetails({ receipt, isOrder }: { receipt: ReceiptData; isOrder: boolean }) {
+export function ReceiptDetails({ receipt, isOrder, hideTotal = false }: { receipt: ReceiptData; isOrder: boolean; hideTotal?: boolean }) {
+  // `hideTotal` (nom d'origine du réglage) : quand les totaux toutes taxes sont affichés au-dessus, ce total-ci est dit « des lignes » pour ne jamais se lire comme le total à payer.
   const lines = receipt.lines ?? [];
   const bases = lines.filter((l) => l.unit_amount).map((l) => l.tax_basis_or_status);
   const common = uniformBasis(bases);
@@ -34,7 +36,7 @@ export function ReceiptDetails({ receipt, isOrder }: { receipt: ReceiptData; isO
             {lines.map((l) => (
               <tr key={`${l.public_item_key}${JSON.stringify(l.variant_axes)}`} className="h-[34px] border-b border-line" data-testid="receipt-line">
                 <td className="py-1 pr-2 font-mono text-xs" data-key={l.public_item_key}>{shortRef(l.public_item_key)}</td>
-                <td className="py-1 pr-2">{Object.entries(l.variant_axes).filter(([, v]) => v !== "" && v !== NO_AXIS_VALUE).map(([k, v]) => `${axisValue(k.replace(/_/g, " "))} : ${axisValue(v)}`).join(" · ") || "Modèle unique"}</td>
+                <td className="py-1 pr-2">{Object.entries(l.variant_axes).filter(([, v]) => v !== "" && v !== NO_AXIS_VALUE).map(([k, v]) => `${axisValue(k.replace(/_/g, " "))} : ${axisValue(v)}`).join(" · ") || "Modèle unique"}{l.lot && <span className="block text-xs font-medium" data-testid="receipt-lot">{lotText(l.lot)}</span>}</td>
                 <td className="py-1 pr-2 text-right">{l.quantity}</td>
                 <td className="py-1 pr-2 text-right">{l.unit_amount ? (common.uniform ? money(l.unit_amount) : price(l.unit_amount, l.tax_basis_or_status)) : "sans prix (à chiffrer)"}</td>
                 {isOrder && <td className="py-1 text-right">{l.line_total ? (common.uniform ? money(l.line_total) : price(l.line_total, l.tax_basis_or_status)) : "—"}</td>}
@@ -45,7 +47,7 @@ export function ReceiptDetails({ receipt, isOrder }: { receipt: ReceiptData; isO
       </div>
       {receipt.total_amount ? (
         <p className="text-right font-semibold" data-testid="receipt-total">
-          Total {money(receipt.total_amount)} {totalBasisLabel(bases)}
+          Total {hideTotal ? "des lignes " : ""}{money(receipt.total_amount)} {totalBasisLabel(bases)}
         </p>
       ) : <p className="text-sm text-ink-2">Le montant de cette demande sera précisé sur le devis.</p>}
     </div>

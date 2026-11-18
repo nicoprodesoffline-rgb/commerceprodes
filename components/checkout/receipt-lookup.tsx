@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Consultation d'un reçu (C0 §10.5, route BC4 `GET /api/site/receipt`). La référence et le code d'accès sont lus
+ * Consultation d'un reçu (cercle 5, 5.22 : `POST /api/site/receipt`, le code dans le CORPS, jamais dans une adresse, attendu P03). La référence et le code d'accès sont lus
  * dans le FRAGMENT (`#ref=…&code=…`, jamais envoyé au serveur avec l'adresse de la page) ou saisis. Référence
  * inconnue et code faux sont indiscernables (même message, C0) ; aucune donnée de contact n'est affichée.
  * Après chaque consultation (revue BC3 F-04) : le fragment est retiré de l'adresse et de l'historique
@@ -12,7 +12,8 @@ import { useEffect, useRef, useState } from "react";
 import { codeMessage, reportCodes } from "@/components/site/codes";
 import { ReceiptDetails, type ReceiptData } from "@/components/checkout/receipt-details";
 
-type Found = { kind: string; status: string; receipt_ref: string; receipt: ReceiptData };
+type Found = { kind: string; status: string; receipt_ref: string; receipt: ReceiptData; number?: string | null; transmission_label?: string; document?: { kind: string; sha256: string } | null };
+const KIND_LABEL: Record<string, string> = { order: "Commande", quote_request: "Demande de devis", message: "Demande" };
 type State = { kind: "idle" } | { kind: "loading" } | { kind: "found"; data: Found } | { kind: "refused"; code: string };
 
 export function ReceiptLookup() {
@@ -22,6 +23,9 @@ export function ReceiptLookup() {
   const error = useRef<HTMLParagraphElement>(null);
   const [missing, setMissing] = useState({ ref: false, code: false });
   const [state, setState] = useState<State>({ kind: "idle" });
+  // Le couple référence + code de la dernière consultation réussie, gardé en mémoire seulement pour télécharger le PDF (jamais affiché ni stocké).
+  const access = useRef<{ ref: string; code: string } | null>(null);
+  const [pdfError, setPdfError] = useState(false);
 
   async function lookup(r: string, c: string) {
     const empty = { ref: !r.trim(), code: !c.trim() };
@@ -36,11 +40,17 @@ export function ReceiptLookup() {
     if (window.location.hash !== "") window.history.replaceState(window.history.state, "", "/recu");
     setCode("");
     try {
-      const qs = new URLSearchParams({ ref: r.trim(), access_token: c.trim() });
-      const res = await fetch(`/api/site/receipt?${qs}`, { cache: "no-store", credentials: "same-origin" });
+      const body = JSON.stringify({ ref: r.trim(), code: c.trim() });
+      const res = await fetch("/api/site/receipt", { method: "POST", body, headers: { "content-type": "application/json" }, cache: "no-store", credentials: "same-origin" });
       const j = (await res.json().catch(() => null)) as (Found & { error_codes?: string[]; outcome?: string }) | null;
-      if (res.status === 200 && j?.receipt_ref) setState({ kind: "found", data: j });
-      else setState({ kind: "refused", code: j?.error_codes?.[0] ?? (j?.outcome === "TRANSPORT_ERROR" ? "TRANSPORT_ERROR" : "NOT_FOUND") });
+      setPdfError(false);
+      if (res.status === 200 && j?.receipt_ref) {
+        access.current = { ref: r.trim(), code: c.trim() };
+        setState({ kind: "found", data: j });
+      } else {
+        access.current = null;
+        setState({ kind: "refused", code: j?.error_codes?.[0] ?? (j?.outcome === "TRANSPORT_ERROR" ? "TRANSPORT_ERROR" : "NOT_FOUND") });
+      }
     } catch {
       setState({ kind: "refused", code: "NETWORK" });
     }
@@ -80,6 +90,23 @@ export function ReceiptLookup() {
     }
   }, [state]);
 
+  async function downloadPdf(number: string) {
+    if (access.current === null) return;
+    setPdfError(false);
+    try {
+      const res = await fetch("/api/site/receipt/document", { method: "POST", body: JSON.stringify(access.current), headers: { "content-type": "application/json" }, cache: "no-store", credentials: "same-origin" });
+      if (res.status !== 200) throw new Error("document");
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${number}.pdf`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    } catch {
+      setPdfError(true);
+    }
+  }
+
   const d = state.kind === "found" ? state.data : null;
   return (
     <div className="min-w-0 space-y-6">
@@ -109,11 +136,19 @@ export function ReceiptLookup() {
         {d && (
           <section aria-labelledby="rc-h" className="min-w-0 rounded-[14px] border border-line bg-white p-4" data-testid="receipt-found">
             <h2 id="rc-h" ref={result} tabIndex={-1} className="break-all text-lg font-semibold">
-              {d.kind === "order" ? "Commande" : "Demande de devis"} <span className="font-mono">{d.receipt_ref}</span>
+              {KIND_LABEL[d.kind] ?? "Demande"} <span className="font-mono">{d.number ?? d.receipt_ref}</span>
             </h2>
-            <p className="text-sm text-ink-2">
-              État : {d.status === "RECEIVED" ? "reçue" : d.status}
+            <p className="text-sm text-ink-2" data-testid="receipt-transmission">
+              État : {d.transmission_label ?? (d.status === "RECEIVED" ? "Reçue" : d.status)}
             </p>
+            {d.document && (
+              <p className="mt-2">
+                <button type="button" onClick={() => void downloadPdf(d.number ?? d.receipt_ref)} className="h-[44px] rounded-[9px] border border-line-strong px-4 font-medium" data-testid="receipt-pdf">
+                  Télécharger le PDF
+                </button>
+                {pdfError && <span role="alert" className="ml-3 text-sm">Le PDF n&apos;a pas pu être téléchargé. Réessayez.</span>}
+              </p>
+            )}
             <div className="mt-3"><ReceiptDetails receipt={d.receipt} isOrder={d.kind === "order"} /></div>
           </section>
         )}

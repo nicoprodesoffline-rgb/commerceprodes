@@ -149,6 +149,7 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
           <WishlistButton slug={family.slug} name={family.name} />
           <CompareButton slug={family.slug} name={family.name} />
         </div>
+        <p className="mt-4 print:hidden"><Link href={`/contact?produit=${family.slug}#nous-ecrire`} className="inline-flex min-h-[44px] items-center text-sm font-medium underline" data-testid="ask-about-product">Une question sur ce produit</Link></p>
         <div className="mt-4 border-t border-line pt-4 text-sm text-ink-2 [&_a]:inline-flex [&_a]:min-h-[44px] [&_a]:items-center">
           {secondary.length > 0 && (
             <p data-testid="secondary-categories">

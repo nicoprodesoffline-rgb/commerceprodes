@@ -1,5 +1,5 @@
 /** Trace serveur limitée aux routes fixes, statuts et codes ; jamais de corps de requête ni d'adresse complète. */
-export type BusinessRoute = "/api/site/quote" | "/api/site/order" | "/api/site/cart/preview" | "/api/site/receipt";
+export type BusinessRoute = "/api/site/quote" | "/api/site/order" | "/api/site/message" | "/api/site/cart/preview" | "/api/site/receipt";
 
 export function logRefusal(route: BusinessRoute, status: number, body: unknown): void {
   const response = body as { error_codes?: unknown; verdict?: { error_codes?: unknown } | null; site_status?: unknown } | null;

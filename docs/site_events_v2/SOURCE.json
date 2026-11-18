@@ -1,0 +1,32 @@
+{
+ "factory_sha": "b874798f",
+ "note": "Recopié à l'octet ; jamais modifié ici. Une mise à jour se recopie de la Factory.",
+ "sha256": {
+  "address_missing.json": "4b065bcaf60ca56e4c12e8c429842f4bdf5d87983eb0a6813c6f087fee7a8046",
+  "amount_as_number.json": "ed7e67b1784496bf92d8215328dab1e377b9afe8719668c1953af547e6a4a1cc",
+  "contact_missing.json": "9b61b03b8fed3c08553222389660e8d9131ba4cd815fa970cd6a06c1f0958f53",
+  "digest_v1_domain.json": "6bfe4567346089637388338972fc1f46e8df6bf91716bd67b160e38c89c0190a",
+  "email_without_at.json": "4c7483412a7efbc7d80ed5783e85103cbd344b670e3df1162cddb62b5ae8c93c",
+  "event_type_unknown.json": "794abcd278033ea383675a5c5871e0ba172ec7632b2409559ff59574a94b83e7",
+  "message_empty.json": "06548ae20e99a0df7604227b7424c6ab367a5070efd322e41774c11360bd3c4d",
+  "message_received.json": "4ecc456d0dd3b0225e2ef79c95e1b23c8f01927858f80f2107816bb456299a05",
+  "non_canonical_bytes.json": "934dbf5ad35e3cea4a5d1603331d07b4e3180ad0058270198474ca5e7f6ebeaa",
+  "number_wrong_prefix.json": "0907e64f3dfa9f1cda9ae7809be0b933905eaae2557e0a8d094b68344153a23b",
+  "order_amounts_differ.json": "9c2dc597bada06d42d63dca02b2bf92aa2df39b29ba1edf9afedb2feeafc3130",
+  "order_duplicate_lines.json": "db61582674d11bb850fcfdd268da88520a063556f3f7138a150d96b4c9bada74",
+  "order_received.json": "ddbfe00bfcc5c5ab33e50f4353c94f4452929d656521d77b5cfa712cf11030b9",
+  "order_rendez_vous.json": "6650d56f373d83e76139b7ae923ffc8878fc6f9578a68aceb18de049660344f4",
+  "order_with_lot.json": "fc4a34b47b78c735301f72c772df0ddcb9a8626ccc6830f020100f4a6aa778a0",
+  "payment_method_unknown.json": "6fa1c32cb037948402cf7b9d359016d614aa6edd3c59efa8a769d9dcceff29bb",
+  "quote_line_in_order.json": "550b42007811bcfea255b0a5ca585f046a4ee6d06ba3907a8696f4f980579844",
+  "quote_requested.json": "6ec56a9f6d8d86cbc7b3f1c1833c89f48fb997150dfe89ef998e21f774d820dc",
+  "quote_with_quote_line.json": "dbd20f83f1d54b3e6f2e8b40416182837bc9fdf10574ec8fa66f0fbeeb456ce1",
+  "replay_same_content.json": "f6bcd878dd34516c27f6dd3e1a444d83c001970c0d9567551fccdf259d664ed4",
+  "same_key_other_content.json": "8a7e49bb245909efc88199b393b113f1cd169d2b53e5cacd4069f785aa464903",
+  "siret_13_digits.json": "fd4daa1e87b2524339a43af67ce738ded630990aa9290d05079824647f012443",
+  "terms_missing.json": "2a38ffa032c5635f29c20236034a20b6613e207965d91e695faa8b94a6f04685",
+  "unknown_key.json": "6a32e5832235ee85d85e1239957c73f6d75f8b95e6832f8cab42b79f8af2be7c",
+  "v1_envelope_to_v2_validator.json": "a86d8d44ee1c9d28823e81d355e9f00d34616ae341d3054757ea93fd8232811c"
+ },
+ "source": "prodes-data-factory-poc docs/contracts/site_events_v2/"
+}

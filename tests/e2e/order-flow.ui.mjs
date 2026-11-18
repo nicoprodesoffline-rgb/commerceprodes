@@ -23,6 +23,7 @@ assert.ok(Number.isInteger(PORT) && PORT >= 1024 && PORT <= 65535, "SITE_TEST_PO
 assert.ok(process.env.PLAYWRIGHT_DIR && path.isAbsolute(process.env.PLAYWRIGHT_DIR), "PLAYWRIGHT_DIR absolu contenant playwright requis");
 assert.ok(process.env.CHROMIUM && existsSync(process.env.CHROMIUM), "CHROMIUM doit désigner un exécutable existant");
 const require = createRequire(path.join(process.env.PLAYWRIGHT_DIR, "/"));
+const requireFrom = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 const { fullFlow, loadCase, newPool, resetDb } = await import("../bc2/helpers.mjs");
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -50,7 +51,7 @@ before(async () => {
   pool = newPool(2);
   server = spawn(process.execPath, [path.join(ROOT, "node_modules/next/dist/bin/next"), "start", "-H", "127.0.0.1", "-p", String(PORT)], {
     cwd: ROOT,
-    env: { PATH: process.env.PATH, HOME: process.env.HOME, NEXT_TELEMETRY_DISABLED: "1", SITE_ENV: "staging", SITE_NOW_UTC: "2026-10-20T09:00:00Z", SITE_DATABASE_URL: dbUrl.toString(), SITE_CATALOG_SOURCE: "db", SITE_BUSINESS_PERSISTENCE: "postgresql" },
+    env: { PATH: process.env.PATH, HOME: process.env.HOME, NEXT_TELEMETRY_DISABLED: "1", SITE_ENV: "staging", SITE_NOW_UTC: "2026-10-20T09:00:00Z", SITE_DATABASE_URL: dbUrl.toString(), SITE_CATALOG_SOURCE: "db", SITE_BUSINESS_PERSISTENCE: "postgresql", SITE_REQUEST_LIMIT: "1000" },
     stdio: "ignore",
   });
   server.on("exit", () => { exited = true; });
@@ -69,7 +70,23 @@ beforeEach(async () => {
   contexts.clear();
   await resetDb();
   fixture = await activate("F_SELL_WINDOWS.activate");
+  await installCommerce();
 });
+// Cercle 5 : sans réglages de vente reçus, la boutique n'est pas prête. Réglages d'essai : textes d'attente, taux de 20 %.
+async function installCommerce() {
+  const build = (rel) => requireFrom(path.join(ROOT, ".bc2-build", rel));
+  const commerce = build("lib/site-commerce/document.js");
+  const { canonicalBytes } = build("c0/ts/src/jsonc.js");
+  const d = {
+    contract_version: "site_commerce.v1", publication_id: "pub-0001", commerce_sequence: 1, generated_at_utc: "2026-10-20T08:00:00Z", tax_rate: "20.00",
+    delivery_rendez_vous: { label: "Livraison sur rendez-vous", amount_ht: "20.00" },
+    payment: { cheque: { label: "Chèque", instructions: "Texte d'attente." }, virement: { label: "Virement", instructions: "Texte d'attente." }, mandat_administratif: { label: "Mandat", instructions: "Texte d'attente." } },
+    privacy_notice: { version: "m1", text: "Texte d'attente." }, cgv_version: "c1",
+    acknowledgement: { quote: { subject: "S", body: "{numero}" }, order: { subject: "S", body: "{numero}" }, message: { subject: "S", body: "{numero}" } }, sender: null,
+  };
+  const doc = { ...d, payload_sha256: commerce.documentDigest(d) };
+  await pool.query("INSERT INTO site_commerce_active (singleton, commerce_sequence, publication_id, payload_sha256, document_bytes, ack_bytes) VALUES (1, 1, $1, $2, $3, $4)", [doc.publication_id, doc.payload_sha256, Buffer.from(canonicalBytes(doc)), Buffer.from("{}")]);
+}
 after(async () => {
   await browser?.close();
   if (server?.pid && !exited) {
@@ -133,7 +150,14 @@ async function cart(page) {
 async function contact(page) {
   for (const [field, value] of Object.entries(CONTACT)) await typeKey(page, page.locator(`#f-${field}`), value);
 }
+// Cercle 5 : adresse de livraison, règlement et conditions de vente sont obligatoires avant de confirmer une commande.
+async function orderInfo(page) {
+  for (const [field, value] of Object.entries({ name: "Services techniques", line1: "7 allée Fictive", postal_code: "00000", city: "Val-Fictif" })) await typeKey(page, page.locator(`#f-delivery-${field}`), value);
+  // Idempotent : après un refus, le formulaire garde ses choix (la case des conditions ne doit pas être décochée en la rejouant).
+  for (const id of ["#f-payment-cheque", "#f-terms"]) if (!(await page.locator(id).isChecked())) await activateKey(page, page.locator(id), "Space");
+}
 async function confirm(page) {
+  await orderInfo(page);
   await activateKey(page, page.getByTestId("order-confirm"), "Space");
 }
 async function send(page, mode) {
@@ -191,7 +215,7 @@ async function lookup(page, created) {
   await activateKey(page, page.getByRole("button", { name: "Consulter", exact: true }));
   await page.getByTestId("receipt-refused").waitFor();
   await typeKey(page, page.locator("#r-code"), created.access_token);
-  const response = page.waitForResponse((r) => r.url().includes("/api/site/receipt?") && r.status() === 200);
+  const response = page.waitForResponse((r) => new URL(r.url()).pathname === "/api/site/receipt" && r.request().method() === "POST" && r.status() === 200);
   await activateKey(page, page.getByRole("button", { name: "Consulter", exact: true }));
   assert.deepEqual((await (await response).json()).receipt, created.receipt, "reçu serveur identique");
   await page.getByTestId("receipt-found").waitFor();
@@ -305,7 +329,7 @@ describe("panier → devis → commande de test, 390 px et clavier seul", { conc
     assert.equal(replay.access_token, undefined, "contrat : code non réémis");
     assert.equal(await count("site_order"), 1);
     const savedKey = (await pool.query("SELECT idempotency_key FROM site_order")).rows[0].idempotency_key;
-    assert.equal(savedKey, originalBody.idempotency_key);
+    assert.equal(savedKey, originalBody.request.idempotency_key);
     assert.match(await page.getByTestId("result-received").innerText(), /code.*premier envoi/is);
   });
 
@@ -331,6 +355,7 @@ describe("panier → devis → commande de test, 390 px et clavier seul", { conc
   for (const mode of ["order", "quote"]) test(`catalogue changé avant l'envoi ${mode} : refus réel et vérification obligatoire`, async () => {
     await resetDb();
     const identity = await activate("F_IDENTITY.activate_gen_a");
+    await installCommerce();
     const page = await page390();
     await add(page, identity.families[0]);
     await cart(page);
