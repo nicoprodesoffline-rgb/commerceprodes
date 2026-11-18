@@ -5,10 +5,12 @@ import { createRequire } from "node:module";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
-import { PALETTE, pastilleStyle, isColorAxis } from "../../lib/site-catalog/color-swatch.ts";
+import { PALETTE, pastilleStyle, isColorAxis, namedValues, deltaE76, INDISCERNIBLE_DELTA_E } from "../../lib/site-catalog/color-swatch.ts";
+import * as pastille from "../../lib/site-catalog/pastille.ts";
 import { MULTICOLORE, NON_PRECISE, BICOLORE_SEPARATOR } from "../../lib/site-catalog/pastille.ts";
 import * as variantChoice from "../../lib/site-catalog/variant-choice.ts";
 
+const ral = JSON.parse(readFileSync(new URL("../../lib/site-catalog/fixtures/site_filters_v1/ral.json", import.meta.url), "utf8"));
 const palette = JSON.parse(readFileSync(new URL("../../lib/site-catalog/fixtures/site_filters_v1/palette.json", import.meta.url), "utf8"));
 const image = (value) => pastilleStyle(value)?.backgroundImage ?? null;
 
@@ -55,7 +57,7 @@ test("Multicolore : arc-en-ciel ; Non précisé : neutre ; inconnu ou absent : a
 
 test("le site ne devine rien : aucun nom de couleur ne se cherche dans un texte, aucune teinte écrite tout en chiffres", () => {
   const source = readFileSync(new URL("../../lib/site-catalog/color-swatch.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /\bfold\b|SWATCH_KEYWORDS|RAL_/);
+  assert.doesNotMatch(source, /\bfold\b|SWATCH_KEYWORDS|RAL_SWATCHES|RAL_CLASSIC/);
   assert.doesNotMatch(source, /#\d{6}\b/);
   assert.equal(PALETTE.some(([, hex]) => /^#\d{6}$/.test(hex)), false);
   assert.equal(pastilleStyle("Noir très foncé"), null);
@@ -79,7 +81,7 @@ new Function("require", "module", "exports", code)((name) => {
   if (name === "react") return { ...React, useId: () => "test-color", useState: (initial) => [initial, () => {}] };
   if (name === "@/lib/site-catalog/variant-choice") return variantChoice;
   if (name === "@/components/site/format") return { axisValue: (value) => value };
-  if (name === "@/lib/site-catalog/color-swatch") return { isColorAxis, pastilleStyle };
+  if (name === "@/lib/site-catalog/color-swatch") return { isColorAxis, pastilleStyle, namedValues };
   return require(name);
 }, module, module.exports);
 const { VariantSelector } = module.exports;
@@ -123,7 +125,7 @@ test("sélecteur : pastille de la « Pastille » de la variante, texte et nom ac
   assert.deepEqual(calls, ["rouge"]);
   const html = renderToStaticMarkup(tree);
   assert.match(html, /Rouge vif/);
-  assert.doesNotMatch(html, /title="Rouge/);
+  assert.match(html, /title="Rouge vif"/, "l'infobulle est le texte exact de l'axe");
 });
 
 test("sélecteur : un axe « Type » déclaré EN DERNIER par la Factory s'affiche en premier ; les autres gardent leur ordre", () => {
@@ -146,4 +148,91 @@ test("sélecteur : valeur unique avec Pastille ; autre axe, sans Pastille : aucu
   assert.equal(nodes(single, (n) => tinted(n))[0]?.props.style.backgroundImage, image("Blanc"));
   assert.match(renderToStaticMarkup(single), /Blanc pur.*seule option/);
   for (const tree of [render("matiere", "Matière", ["Rouge", "Bleu"], "Rouge"), render("coloris", "Coloris", ["Inconnu"], undefined)]) assert.equal(nodes(tree, (n) => tinted(n)).length, 0);
+});
+
+// ---- N4 : teinte fine (ral.json) et règle de sûreté du sélecteur ----
+const hexOf = (nuance) => palette.nuances.find((n) => n.name === nuance).hex;
+const full = (value, teinte) => pastilleStyle(value, teinte)?.backgroundImage ?? null;
+
+test("teinte fine : une partie RAL prend la teinte de ral.json avec le motif de sa nuance ; les autres gardent leur nuance", () => {
+  assert.equal(ral.rule, "ral");
+  assert.ok(Object.keys(ral.teintes).length >= 200);
+  const nuance = full("Anthracite / Blanc");
+  const fine = full("Anthracite / Blanc", "RAL 7016 / Blanc");
+  assert.notEqual(fine, nuance, "la moitié RAL change");
+  const half = (hex) => `linear-gradient(${hex}, ${hex})`;
+  assert.equal(fine, `${half(ral.teintes["7016"])}, ${half(hexOf("Blanc"))}`, "une seule moitié a un RAL : l'autre garde sa nuance, ordre du texte respecté");
+  assert.match(full("Inox", "RAL 7035"), /^repeating-linear-gradient\(90deg, #[0-9a-f]{6}/, "le motif brossé de la nuance Inox est gardé");
+  assert.notEqual(full("Inox", "RAL 7035"), full("Inox"));
+  assert.equal(full("Noir", "Noir"), full("Noir"), "une partie qui est un nom de nuance garde la nuance");
+});
+
+test("teinte fine mal formée : ignorée en entier, la nuance reste dessinée", () => {
+  const base = full("Rouge / Blanc");
+  for (const teinte of ["RAL 3020", "RAL 3020 / RAL 9003 / RAL 9010", "RAL 9999 / Blanc", "RAL 3020 / n'importe quoi", "ral 3020 / Blanc", "RAL 30200 / Blanc", "3020 / Blanc", "", undefined, null]) {
+    assert.equal(full("Rouge / Blanc", teinte), base, String(teinte));
+  }
+  assert.equal(full(MULTICOLORE, "RAL 3020"), full(MULTICOLORE), "pas de RAL sur Multicolore");
+  assert.equal(full(NON_PRECISE, "RAL 3020"), full(NON_PRECISE), "pas de RAL sur Non précisé");
+  assert.equal(pastilleStyle(undefined, "RAL 3020"), null, "Teinte seule ne dessine rien");
+  assert.equal(pastilleStyle("Inconnu", "RAL 3020"), null);
+});
+
+test("ΔE CIELAB 1976 : valeurs de référence et seuil unique", () => {
+  assert.equal(INDISCERNIBLE_DELTA_E, 10);
+  assert.ok(deltaE76("#ffffff", "#ffffff") < 1e-9);
+  assert.ok(Math.abs(deltaE76("#000000", "#ffffff") - 100) < 0.1, "noir / blanc : 100");
+  assert.ok(Math.abs(deltaE76("#ff0000", "#00ff00") - 170.6) < 1, "rouge / vert : environ 170,6");
+});
+
+const items = (rows) => rows.map(([value, pastille, teinte], i) => ({ public_item_key: `k${i}`, variant_axes: { coloris: value }, ...(pastille === undefined ? {} : { pastille }), ...(teinte === undefined ? {} : { teinte }) }));
+const render = (rows, selectedKey = "k0") => VariantSelector({ options: [{ axis: "coloris", label: "Coloris", values: rows.map(([v]) => v) }], items: items(rows), selectedKey, onSelect() {} });
+const labelHtml = (tree) => renderToStaticMarkup(tree).match(/<label[\s\S]*?<\/label>/g);
+
+test("sûreté : trois valeurs, deux de même pastille gardent leur nom, la troisième reste en pastille seule", () => {
+  const out = labelHtml(render([["Réf. A1 (blanc)", "Blanc"], ["Réf. B2 (blanc)", "Blanc"], ["Réf. C3 (noir)", "Noir"]]));
+  assert.match(out[0], /<\/span>Réf\. A1 \(blanc\)<\/label>/, "nom visible à côté de la pastille");
+  assert.match(out[1], /<\/span>Réf\. B2 \(blanc\)<\/label>/);
+  assert.match(out[2], /<span class="sr-only">Réf\. C3 \(noir\)<\/span><\/label>/, "pastille seule : nom réservé aux lecteurs d'écran");
+  assert.match(out[2], /title="Réf\. C3 \(noir\)"/, "l'infobulle est le texte exact de l'axe");
+  assert.doesNotMatch(out[0], /sr-only">Réf\. A1/);
+});
+
+test("sûreté : un bicolore identique deux fois ; le même bicolore à l'envers est une autre pastille", () => {
+  const out = labelHtml(render([["A", "Rouge / Blanc"], ["B", "Rouge / Blanc"], ["C", "Blanc / Rouge"]]));
+  assert.match(out[0], /<\/span>A<\/label>/);
+  assert.match(out[1], /<\/span>B<\/label>/);
+  assert.match(out[2], /sr-only">C<\/span><\/label>/);
+});
+
+test("sûreté : « Non précisé » garde toujours son nom, même seul", () => {
+  const out = labelHtml(render([["Standard", NON_PRECISE], ["Selon nuancier", NON_PRECISE], ["Noir", "Noir"]]));
+  assert.match(out[0], /<\/span>Standard<\/label>/);
+  assert.match(out[1], /<\/span>Selon nuancier<\/label>/);
+  assert.match(labelHtml(render([["Seul", NON_PRECISE], ["Noir", "Noir"]]))[0], /<\/span>Seul<\/label>/);
+});
+
+test("sûreté : toutes les pastilles diffèrent, tout en pastille seule ; sans pastille ou inconnue, le rendu texte d'avant", () => {
+  const out = labelHtml(render([["A", "Blanc"], ["B", "Noir"], ["C", "Rouge / Noir"], ["D", undefined], ["E", "Inconnu"], ["F", "Inconnu"]]));
+  for (const i of [0, 1, 2]) assert.match(out[i], /sr-only">[ABC]<\/span><\/label>/, `pastille seule ${i}`);
+  assert.doesNotMatch(out[3], /<span aria-hidden/);
+  assert.match(out[3], />D<\/label>/);
+  assert.match(out[4], />E<\/label>/);
+  assert.match(out[5], />F<\/label>/);
+});
+
+test("sûreté : le rendu final décide — deux RAL proches deviennent indiscernables, deux RAL éloignés non, motif différent non", () => {
+  const close = namedValues(items([["a", "Anthracite", "RAL 7016"], ["b", "Anthracite", "RAL 7021"], ["c", "Anthracite", "RAL 7035"]]), "coloris", ["a", "b", "c"]);
+  assert.ok(deltaE76(ral.teintes["7016"], ral.teintes["7021"]) < INDISCERNIBLE_DELTA_E);
+  assert.ok(deltaE76(ral.teintes["7016"], ral.teintes["7035"]) >= INDISCERNIBLE_DELTA_E);
+  assert.deepEqual([...close].sort(), ["a", "b"], "7016 et 7021 gardent leur nom ; 7035, éloigné, reste en pastille seule");
+  assert.deepEqual([...namedValues(items([["a", "Argent"], ["b", "Inox"]]), "coloris", ["a", "b"])], [], "même teinte proche mais motifs différents : séparés");
+  assert.deepEqual([...namedValues(items([["a", "Blanc"], ["b", "Crème"]]), "coloris", ["a", "b"])].sort(), [], "nuances distinctes de la palette");
+  // partie par partie : même nuance « Rouge / Blanc », la seconde avec un RAL rouge proche de la nuance, la troisième avec un RAL éloigné
+  const rows = [["a", "Rouge / Blanc"], ["b", "Rouge / Blanc", "RAL 3020 / Blanc"], ["c", "Rouge / Blanc", "RAL 3003 / Blanc"]];
+  const nearRed = deltaE76(hexOf("Rouge"), ral.teintes["3020"]) < INDISCERNIBLE_DELTA_E;
+  assert.equal(nearRed, true, "pré-condition : RAL 3020 est proche de la nuance Rouge");
+  assert.ok(deltaE76(hexOf("Rouge"), ral.teintes["3003"]) >= INDISCERNIBLE_DELTA_E, "pré-condition : RAL 3003 est éloigné");
+  assert.deepEqual([...namedValues(items(rows), "coloris", ["a", "b", "c"])].sort(), ["a", "b"], "a et b indiscernables, c séparé");
+  assert.equal(namedValues(items([["a", "Blanc"]]), "coloris", ["a"]).size, 0);
 });

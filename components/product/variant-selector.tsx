@@ -9,12 +9,12 @@
  */
 import { useId, useState } from "react";
 import { axisValue } from "@/components/site/format";
-import { isColorAxis, pastilleStyle } from "@/lib/site-catalog/color-swatch";
+import { isColorAxis, namedValues, pastilleStyle } from "@/lib/site-catalog/color-swatch";
 import { adjustments, click, compatible, isShown, orderAxes, type Adjustment, type Pinned } from "@/lib/site-catalog/variant-choice";
 
 export type SelectorAxis = { axis: string; label: string; values: string[] };
-/** `pastille` : la valeur de « Pastille » de la variante, sinon de la famille (résolue par la fiche) ; absente = aucune pastille. */
-export type SelectorItem = { public_item_key: string; variant_axes: Record<string, string>; pastille?: string | undefined };
+/** `pastille` : la valeur de « Pastille » de la variante, sinon de la famille (résolue par la fiche) ; absente = aucune pastille. `teinte` : la « Teinte » fine posée au même endroit. */
+export type SelectorItem = { public_item_key: string; variant_axes: Record<string, string>; pastille?: string | undefined; teinte?: string | undefined };
 
 export function VariantSelector({
   options,
@@ -34,7 +34,10 @@ export function VariantSelector({
   if (options.length === 0) return null;
   const ordered = orderAxes(options);
   /** La pastille d'une valeur de l'axe coloris : celle de la première variante qui la porte. Jamais déduite du texte. */
-  const tintOf = (axis: string, value: string) => pastilleStyle(items.find((i) => i.variant_axes[axis] === value)?.pastille);
+  const tintOf = (axis: string, value: string) => {
+    const carrier = items.find((i) => i.variant_axes[axis] === value);
+    return pastilleStyle(carrier?.pastille, carrier?.teinte);
+  };
   const labelOf = (axis: string) => options.find((o) => o.axis === axis)?.label ?? axis;
 
   /** Un clic (ou une flèche) sur `axis = value` : choix épinglé, ajustement des autres axes si besoin, ou retrait du choix. */
@@ -65,6 +68,8 @@ export function VariantSelector({
         }
         const others = ordered.filter((o) => o.axis !== option.axis && pinned[o.axis] !== undefined);
         const greyed = values.filter((v) => !compatible(items, pinned, option.axis, v));
+        // Règle de sûreté : une valeur peinte s'affiche en pastille seule, sauf si l'œil ne la sépare pas d'une autre valeur de l'axe (ou « Non précisé ») : elle garde son nom.
+        const named = colorAxis ? namedValues(items, option.axis, values) : new Set<string>();
         const hintId = `${base}-${option.axis}-hint`;
         return (
           <fieldset key={option.axis} aria-describedby={greyed.length > 0 ? hintId : undefined} data-axis={option.axis}>
@@ -77,11 +82,13 @@ export function VariantSelector({
                 const ok = compatible(items, pinned, option.axis, value);
                 const id = `${base}-${option.axis}-${value}`;
                 const tint = colorAxis ? tintOf(option.axis, value) : null;
+                const swatchOnly = tint !== null && !named.has(value);
+                const greyedTitle = "Aucune variante avec vos choix : cliquer ajustera les autres choix";
                 return (
                   <label
                     key={value}
                     htmlFor={id}
-                    title={ok ? undefined : "Aucune variante avec vos choix : cliquer ajustera les autres choix"}
+                    title={swatchOnly ? (ok ? axisValue(value) : `${axisValue(value)} : ${greyedTitle}`) : ok ? undefined : greyedTitle}
                     className={[
                       "relative inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-[9px] border px-3 text-sm",
                       "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink",
@@ -106,9 +113,9 @@ export function VariantSelector({
                       className="sr-only"
                     />
                     {tint && (
-                      <span aria-hidden="true" className="mr-2 h-4 w-4 shrink-0 rounded-full border border-line-strong" style={tint} />
+                      <span aria-hidden="true" className={`${swatchOnly ? "h-6 w-6" : "mr-2 h-4 w-4"} shrink-0 rounded-full border border-line-strong${swatchOnly && current === value ? " ring-2 ring-white" : ""}`} style={tint} />
                     )}
-                    {axisValue(value)}
+                    {swatchOnly ? <span className="sr-only">{axisValue(value)}</span> : axisValue(value)}
                     {!ok && <span className="sr-only"> (aucune variante avec vos choix : un clic ajuste les autres choix)</span>}
                   </label>
                 );

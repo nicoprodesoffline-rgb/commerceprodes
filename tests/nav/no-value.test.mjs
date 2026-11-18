@@ -14,6 +14,7 @@ const require = createRequire(import.meta.url);
 function load(file) {
   const cache = new Map();
   function read(filename) {
+    if (filename.endsWith(".json")) return JSON.parse(fs.readFileSync(filename, "utf8")); // tables de pastilles (palette.json, ral.json)
     if (cache.has(filename)) return cache.get(filename).exports;
     const module = { exports: {} };
     cache.set(filename, module);

@@ -29,6 +29,8 @@ export type BuyBoxItem = {
   own_image_sha256?: string | null;
   /** La « Pastille » de la variante, sinon de la famille : dessine la pastille du coloris. */
   pastille?: string | undefined;
+  /** La « Teinte » fine posée au même endroit que la Pastille. */
+  teinte?: string | undefined;
   rows: PriceGridRow[];
 };
 

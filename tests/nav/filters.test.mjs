@@ -66,11 +66,23 @@ test("catalogue publié avant les nuances (aucune Pastille) : aucun filtre Color
 
 test("« Pastille » n'est jamais une caractéristique : recherche et fiche", async () => {
   const { characteristicsText } = await import("../../lib/site-catalog/merchandising.ts");
-  const family = { characteristics: [{ label: "Pastille", value: "Zebre" }, { label: "Matière", value: "Acier" }], items: [{ characteristics: [{ label: "pastille ", value: "Zebre" }, { label: "Type", value: "Banc" }] }] };
+  const family = { characteristics: [{ label: "Pastille", value: "Zebre" }, { label: "Teinte", value: "RAL 7016" }, { label: "Matière", value: "Acier" }], items: [{ characteristics: [{ label: "pastille ", value: "Zebre" }, { label: " TEINTE", value: "RAL 7016" }, { label: "Type", value: "Banc" }] }] };
   const text = characteristicsText(family);
-  assert.doesNotMatch(text, /Zebre|Pastille/i);
+  assert.doesNotMatch(text, /Zebre|Pastille|Teinte|RAL 7016/i, "ni Pastille ni Teinte dans la recherche");
   assert.match(text, /Acier/);
   assert.match(text, /Banc/);
   const html = readFileSync(new URL("../../components/product/product-sections.tsx", import.meta.url), "utf8");
-  assert.match(html, /isPastilleLabel/);
+  assert.match(html, /isReservedLabel/);
+});
+
+test("« Teinte » : jamais affichée, jamais un filtre ; le filtre Coloris ne lit que « Pastille » ; la fiche dessine variante puis famille", async () => {
+  const withTeinte = (pastille, teinte) => ({ characteristics: [{ label: "Pastille", value: pastille }, { label: "Teinte", value: teinte }], items: [] });
+  const families = [withTeinte("Gris", "RAL 7035"), withTeinte("Gris", "RAL 7001"), withTeinte("Noir", "RAL 9005"), withTeinte("Noir", "RAL 9005"), withTeinte("Blanc", "RAL 9010")];
+  assert.deepEqual(filterGroups(families)[0].options.map((o) => o.value).sort(), ["Blanc", "Gris", "Noir"], "les valeurs de Teinte ne sont jamais des options");
+  assert.deepEqual(filterGroups(families.map((f) => ({ characteristics: [f.characteristics[1]], items: [] }))), [], "Teinte seule ne fait aucun filtre");
+  const { drawnOf } = await import("../../lib/site-catalog/pastille.ts");
+  const fam = { characteristics: [{ label: "Pastille", value: "Gris" }, { label: "Teinte", value: "RAL 7035" }] };
+  assert.deepEqual(drawnOf({ characteristics: [{ label: "Pastille", value: "Noir" }] }, fam), { pastille: "Noir" }, "la variante qui a une Pastille ne prend pas la Teinte de la famille");
+  assert.deepEqual(drawnOf({}, fam), { pastille: "Gris", teinte: "RAL 7035" });
+  assert.deepEqual(drawnOf({}, {}), {});
 });

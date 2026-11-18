@@ -7,7 +7,7 @@ import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
 import { FamilyCard } from "@/components/home/family-card";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
-import { pastilleOf } from "@/lib/site-catalog/pastille";
+import { drawnOf } from "@/lib/site-catalog/pastille";
 import { FamilyBuyBox } from "@/components/product/family-buy-box";
 import { Gallery, type GalleryImage } from "@/components/product/gallery";
 import { mediaViews } from "@/lib/site-catalog/media-view";
@@ -72,7 +72,7 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
     // 3.6 : l'image propre de la variante (celle qui n'est pas la vue principale de la famille), affichée quand on la choisit.
     own_image_sha256: i.public_media_refs.find((sha) => sha !== family.image_main_sha256) ?? null,
     rows: priceRows(catalog.c0Generation, i, instant),
-    pastille: pastilleOf(i) ?? pastilleOf(family), // la nuance vient de la Factory ; le site ne devine rien
+    ...drawnOf(i, family), // la nuance (et la teinte fine) viennent de la Factory ; le site ne devine rien
   }));
   const preselected = typeof article === "string" && items.some((i) => i.public_item_key === article) ? article : undefined;
   // Revue BC3 F-06 : une référence demandée mais non portée par cette Famille n'est jamais remplacée en silence.

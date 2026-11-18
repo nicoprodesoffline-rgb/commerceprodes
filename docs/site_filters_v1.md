@@ -57,3 +57,29 @@ Le calcul porte sur les familles listées sur la page d'une rubrique (sous-arbre
   - l'infobulle et le nom accessible restent le texte exact du coloris du produit ;
   - `Pastille` ne s'affiche jamais comme une caractéristique : ni sur la fiche, ni dans les textes, ni dans un autre filtre, ni dans la recherche ;
   - sans `Pastille`, il n'affiche aucune pastille.
+
+## 5. La teinte fine (`ral.json`) et la règle de sûreté — décision de l'Owner du 18/11
+
+Deux niveaux : la **nuance** (§4, 38 noms) sert au filtre, aux listes et à l'écran de l'opérateur ; la **teinte fine** ne sert qu'au dessin de la pastille sur la fiche produit.
+- **Source unique de la teinte fine** : le code RAL écrit dans le texte du coloris, partie par partie (mêmes parties qu'au §4).
+  - « RAL 7016 » est lu partout.
+  - Un code nu de 4 chiffres n'est lu que s'il figure dans `ral.json` **et** que la partie n'a pas la forme « NNNN (couleur) » : un code suivi d'une couleur entre parenthèses est une référence de fournisseur, même s'il ressemble à un RAL.
+- **Attribution, dans la Factory seulement** : à chaque nuance de « Pastille » correspond le RAL de la partie qui l'a donnée, s'il y en a un.
+  - Si l'opérateur a choisi les nuances, la teinte fine n'est gardée que si son choix a autant de nuances que la règle ; sinon, aucune teinte fine.
+  - Multicolore et Non précisé n'ont jamais de teinte fine.
+- **Transport, sans champ C0 nouveau** : la caractéristique réservée **`Teinte`**, posée au même endroit que `Pastille` (variante, ou famille si toutes la partagent).
+  - Sa valeur a autant de parties que `Pastille`, séparées par ` / `. Chaque partie est `RAL NNNN` ou, à défaut, le nom de la nuance elle-même : `RAL 7016 / Blanc`.
+  - `Teinte` est absente quand aucune partie n'a de RAL.
+  - La Factory écarte toute caractéristique source dont la clé se plie en `teinte`.
+- **SITE** :
+  - la moitié (ou la pastille) dont la partie de `Teinte` est `RAL NNNN` prend la teinte de `ral.json`, avec le **motif de sa nuance** ; les autres gardent la teinte de leur nuance ;
+  - une `Teinte` dont le nombre de parties diffère de `Pastille`, ou un code absent de `ral.json`, est ignorée en entier ;
+  - `Teinte` ne s'affiche jamais comme une caractéristique, n'entre dans aucun filtre et dans aucune recherche ; le filtre Coloris ne lit que `Pastille`.
+- **Règle de sûreté (SITE, sélecteur de variantes)** : sur une fiche, deux valeurs différentes d'un même axe ne sont jamais montrées sous deux pastilles que l'œil ne sépare pas, sans rien d'autre.
+  - On compare le **rendu final** : même motif, et teintes à moins de 10 en ΔE CIELAB 1976, partie par partie.
+  - Rendu ordinaire (décision Owner, option A) : une valeur d'axe qui a une pastille s'affiche **en pastille seule**. Le texte exact passe en infobulle et en nom accessible ; la valeur choisie reste écrite dans la légende de l'axe.
+  - Les valeurs indiscernables d'une autre du même axe affichent leur nom à côté de leur pastille ; les autres restent en pastille seule.
+  - Une valeur `Non précisé` (pastille neutre) garde **toujours** son nom écrit.
+  - Une valeur sans pastille garde le rendu texte.
+  - Le seuil est une constante unique du site.
+  - La cible tactile ne change pas (44 px) ; l'état choisi, l'état incompatible et le focus clavier restent lisibles sans le texte.
