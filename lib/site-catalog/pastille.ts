@@ -7,8 +7,14 @@ export const MULTICOLORE = "Multicolore";
 export const NON_PRECISE = "Non précisé";
 export const BICOLORE_SEPARATOR = " / ";
 
-/** « Pastille » et « Teinte » ne sont jamais des caractéristiques : ni fiche, ni recherche, ni référencement, ni filtre autre que Coloris (qui ne lit que « Pastille »). */
-export const isReservedLabel = (label: string): boolean => [PASTILLE_LABEL, TEINTE_LABEL].some((reserved) => label.trim().toLowerCase() === reserved.toLowerCase());
+/** Préfixe exact des axes DÉDUITS que la Factory publie pour le filtre seulement (« Filtre : Longueur ») : jamais affichés, la fiche garde le texte source. */
+export const DEDUCED_PREFIX = "Filtre : ";
+
+/**
+ * « Pastille », « Teinte » et tout libellé qui commence par « Filtre : » ne sont jamais des caractéristiques : ni fiche, ni recherche, ni référencement,
+ * ni filtre sous ce nom (Coloris ne lit que « Pastille » ; une dimension réunit « X » et « Filtre : X »).
+ */
+export const isReservedLabel = (label: string): boolean => label.startsWith(DEDUCED_PREFIX) || [PASTILLE_LABEL, TEINTE_LABEL].some((reserved) => label.trim().toLowerCase() === reserved.toLowerCase());
 
 type Carrier = { characteristics?: readonly { label: string; value: string }[] | undefined };
 const valueOfLabel = (carrier: Carrier, label: string): string | undefined => carrier.characteristics?.find((c) => c.label === label)?.value;

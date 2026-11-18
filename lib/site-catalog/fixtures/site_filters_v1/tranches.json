@@ -631,6 +631,97 @@
    ]
   },
   {
+   "name": "valeur déduite de l'ordre d'écriture (« Filtre : Longueur ») comptée dans le filtre Longueur",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Filtre : Longueur",
+       "value": "60 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Filtre : Longueur",
+       "value": "90 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "130 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "170 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "230 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Filtre : Largeur",
+       "value": "40 cm"
+      },
+      {
+       "label": "Longueur",
+       "value": "210 cm"
+      }
+     ],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Longueur",
+     "unit": "cm",
+     "options": [
+      {
+       "min": null,
+       "max": 80,
+       "families": 1
+      },
+      {
+       "min": 80,
+       "max": 150.0,
+       "families": 2
+      },
+      {
+       "min": 150.0,
+       "max": 200,
+       "families": 1
+      },
+      {
+       "min": 200,
+       "max": null,
+       "families": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
    "name": "seuil changé à 50 %",
    "families": [
     {

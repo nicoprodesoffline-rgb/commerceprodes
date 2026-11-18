@@ -33,11 +33,21 @@ export function readMeasure(value: string, unit: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Les valeurs lisibles qu'une famille porte pour un libellé (la sienne et celles de ses variantes), chaque valeur distincte une fois. */
+/** Le libellé d'un axe déduit, publié par la Factory pour le filtre seulement : « Filtre : Longueur ». Jamais affiché (voir `isReservedLabel`). */
+export const deducedLabel = (label: string): string => `Filtre : ${label}`;
+
+/**
+ * Les valeurs lisibles qu'une famille porte pour un libellé : celles de « X » et de « Filtre : X », sur la famille et sur ses variantes, chaque valeur
+ * distincte une fois. Un axe déduit sert au filtre seulement ; la fiche garde le texte source.
+ */
 export function measuresOf(family: Carrier, label: string, unit: string): number[] {
+  const wanted = new Set([label, deducedLabel(label)]);
   const out = new Set<number>();
-  for (const c of family.characteristics ?? []) if (c.label === label) { const n = readMeasure(c.value, unit); if (n !== null) out.add(n); }
-  for (const item of family.items) for (const c of item.characteristics ?? []) if (c.label === label) { const n = readMeasure(c.value, unit); if (n !== null) out.add(n); }
+  const read = (list: readonly { label: string; value: string }[] | undefined) => {
+    for (const c of list ?? []) if (wanted.has(c.label)) { const n = readMeasure(c.value, unit); if (n !== null) out.add(n); }
+  };
+  read(family.characteristics);
+  for (const item of family.items) read(item.characteristics);
   return [...out];
 }
 

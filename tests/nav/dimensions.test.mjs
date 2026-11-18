@@ -21,7 +21,7 @@ test("tranches : constantes du site égales à tranches.json", () => {
 });
 
 test("tranches : chaque cas du jeu d'essai commun, tel quel", () => {
-  assert.equal(tranches.cases.length, 8);
+  assert.equal(tranches.cases.length, 9);
   for (const c of tranches.cases) {
     const settings = { ...FILTER_SETTINGS, ...(c.reglages ?? {}) };
     const got = dimensionGroups(c.families, settings).map((g) => ({ label: g.label, unit: g.unit, options: g.options.map((o) => ({ min: o.min, max: o.max, families: o.families })) }));
@@ -130,4 +130,47 @@ test("fiche : une dimension s'affiche comme n'importe quelle autre caractéristi
   assert.match(html, /<dt[^>]*>Longueur<\/dt><dd[^>]*>180 cm<\/dd>/);
   assert.match(html, /<dt[^>]*>Poids<\/dt><dd[^>]*>3,5 kg<\/dd>/);
   assert.doesNotMatch(html, /Pastille/);
+});
+
+// ---- axes déduits « Filtre : X » (décision de l'Owner) : pour le filtre seulement, jamais affichés ----
+const deduced = (cm) => ({ characteristics: [{ label: "Filtre : Longueur", value: `${cm} cm` }], items: [] });
+
+test("« Filtre : X » : le filtre X réunit les valeurs de « X » et de « Filtre : X », mêmes tranches, mêmes comptes", () => {
+  const cms = [40, 55, 70, 85, 100, 120, 160, 200, 260, 320];
+  const viaX = pageFilters(cms.map((cm) => lg(cm)));
+  const viaDeduced = pageFilters(cms.map((cm) => deduced(cm)));
+  assert.deepEqual(viaDeduced, viaX, "un axe déduit se comporte exactement comme l'axe nommé");
+  const mixed = pageFilters(cms.map((cm, i) => (i % 2 === 0 ? lg(cm) : deduced(cm))));
+  assert.deepEqual(mixed, viaX, "des familles qui portent l'un ou l'autre : la réunion");
+  assert.deepEqual(viaDeduced.map((g) => g.label), ["Longueur"], "jamais un filtre sous le nom « Filtre : Longueur »");
+  assert.deepEqual(parseFilterChoice({ longueur: [viaX[0].options[0].value] }), { longueur: [viaX[0].options[0].value] }, "une ancienne adresse ne change pas");
+  const both = { characteristics: [{ label: "Longueur", value: "80 cm" }, { label: "Filtre : Longueur", value: "80 cm" }], items: [{ characteristics: [{ label: "Filtre : Longueur", value: "120 cm" }] }] };
+  assert.deepEqual(measuresOf(both, "Longueur", "cm"), [80, 120], "même valeur des deux côtés : comptée une fois ; la variante compte aussi");
+  assert.deepEqual(measuresOf(both, "Largeur", "cm"), [], "« Filtre : Longueur » ne nourrit que Longueur");
+  assert.deepEqual(measuresOf({ characteristics: [{ label: "Filtre : Poids", value: "3,5 kg" }, { label: "Filtre : Poids", value: "2 cm" }], items: [] }, "Poids", "kg"), [3.5], "seule l'unité du libellé est lue");
+});
+
+test("« Filtre : X » n'est jamais affiché : fiche, caractéristiques, recherche", async () => {
+  const { isReservedLabel } = await import("../../lib/site-catalog/pastille.ts");
+  assert.equal(isReservedLabel("Filtre : Longueur"), true);
+  assert.equal(isReservedLabel("Filtre : Poids"), true);
+  for (const ordinary of ["Filtre", "Filtre :Longueur", "filtre : Longueur", "Longueur", "Mon filtre : x", "Filtration"]) assert.equal(isReservedLabel(ordinary), false, ordinary);
+  const { characteristicsText } = await import("../../lib/site-catalog/merchandising.ts");
+  const text = characteristicsText({ characteristics: [{ label: "Filtre : Longueur", value: "Zebre 120 cm" }, { label: "Matière", value: "Acier" }], items: [{ characteristics: [{ label: "Filtre : Poids", value: "Zebre 3 kg" }] }] });
+  assert.doesNotMatch(text, /Zebre|Filtre/);
+  assert.match(text, /Acier/);
+  const require = createRequire(import.meta.url);
+  const module = { exports: {} };
+  const code = ts.transpileModule(readFileSync(new URL("../../components/product/product-sections.tsx", import.meta.url), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText;
+  new Function("require", "module", "exports", code)((name) => {
+    if (name === "next/link") return { default: "a" };
+    if (name === "@/lib/site-catalog/pastille") return { isReservedLabel };
+    if (name === "@/components/product/section-visibility") return { visibleSectionItems: (items) => (items && items.length > 0 ? items : null) };
+    if (name.startsWith("@/")) return {};
+    return require(name);
+  }, module, module.exports);
+  const html = renderToStaticMarkup(React.createElement(module.exports.ProductCharacteristics, { items: [{ label: "Dimensions", value: `120 x 60 x 40${NB}cm` }, { label: "Filtre : Longueur", value: `120${NB}cm` }, { label: "Filtre : Largeur", value: `60${NB}cm` }] }));
+  assert.match(html, /120 x 60 x 40/, "la fiche garde le texte source");
+  assert.doesNotMatch(html, /Filtre/, "aucun axe déduit sur la fiche");
+  assert.equal(renderToStaticMarkup(React.createElement(module.exports.ProductCharacteristics, { items: [{ label: "Filtre : Longueur", value: `120${NB}cm` }] })), "", "une fiche qui n'a que des axes déduits n'a pas de section Caractéristiques");
 });

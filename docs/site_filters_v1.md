@@ -97,8 +97,8 @@ Deux niveaux : la **nuance** (§4, 38 noms) sert au filtre, aux listes et à l'�
 - **Détection, dans la Factory seulement, à la projection** (`catalog/domain/dimensions.py`). Sources, de la plus sûre à la moins sûre :
   1. une mesure normalisée sous une caractéristique nommée ;
   2. un texte nommé (« lg 180 x l 80 x ht 75 cm », « d. 80 mm », « Ø 60 ») ;
-  3. un texte « A x B x C unité » sans axe nommé : longueur × largeur × hauteur, dans l'ordre d'écriture, seulement si la mesure de contrôle le confirme (plus de 90 % des familles qui ont aussi des axes nommés). Au 18/11, elle ne le confirme pas : ces textes ne donnent aucun axe ;
-  4. une mesure dans la désignation.
+  3. un texte « A x B x C unité » sans axe nommé : longueur × largeur × hauteur dans l'ordre d'écriture (« A x B » : longueur × largeur). Décision de l'Owner du 18/11, qui prend le risque ;
+  4. une mesure dans la désignation : d'abord celles qui portent leur lettre, puis un « A x B (x C) unité » lu dans l'ordre d'écriture.
   Règles :
   - une source moins sûre ne remplace jamais une plus sûre ; une contradiction lève un signalement sans rien bloquer ;
   - un nombre sans unité n'est lu que si la même famille donne l'unité ailleurs, de façon constante ; aucune unité n'est devinée ;
@@ -117,5 +117,10 @@ Deux niveaux : la **nuance** (§4, 38 noms) sert au filtre, aux listes et à l'�
   - le filtre s'affiche s'il reste au moins `valeurs_min` tranches ;
   - plusieurs tranches d'un même filtre se combinent en OU ; deux filtres entre eux, et avec les autres filtres, en ET ;
   - **adresse** : `?longueur=80-150`, `?longueur=-80`, `?longueur=300-` (bornes avec un point décimal), répétable.
-- **Fiche produit** : ces caractéristiques s'affichent comme les autres.
+- **Axe déduit (filtre seulement)** : un axe lu dans l'ordre d'écriture (source 3, ou « A x B (x C) » de la désignation) est publié sous le libellé `Filtre : Longueur` (préfixe exact `Filtre : `), même format de valeur.
+  - Le SITE ne l'affiche jamais : ni sur la fiche, ni comme caractéristique, ni comme nom de filtre.
+  - Le filtre `Longueur` réunit, pour chaque famille, les valeurs de `Longueur` et de `Filtre : Longueur`. Seuil, bornes et comptes portent sur cette réunion.
+  - La caractéristique source (« Dimensions : … ») reste publiée telle quelle : la fiche montre le texte d'origine, jamais une longueur présentée comme un fait.
+  - Un libellé source qui se plie comme `filtre` suivi d'un libellé réservé est écarté.
+- **Fiche produit** : les caractéristiques nommées (`Longueur`, …) s'affichent comme les autres.
 - `tranches.json` donne des cas et leurs tranches attendues (`min` / `max` à `null` pour une tranche ouverte), joués tels quels par les deux dépôts.
