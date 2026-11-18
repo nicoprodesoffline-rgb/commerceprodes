@@ -118,10 +118,10 @@ function indiscernible(x: Part[], y: Part[]): boolean {
 }
 
 /**
- * Règle de sûreté du sélecteur : deux valeurs d'axe DIFFÉRENTES ne s'affichent jamais sous deux pastilles que l'œil ne sépare pas sans rien d'autre.
+ * MESURE (le rendu ne l'appelle plus : décision de l'Owner, sur la fiche toute valeur peinte reste en pastille seule) : quelles valeurs d'un axe ont une pastille que l'œil ne sépare pas de celle d'une autre.
  * La clé de comparaison est le RENDU FINAL (« Pastille », avec « Teinte » si elle existe), partie par partie : même motif et ΔE < INDISCERNIBLE_DELTA_E.
- * Rend les valeurs qui gardent leur nom à côté de leur pastille : celles indiscernables d'une autre valeur de l'axe, et « Non précisé » (pastille neutre), toujours.
- * Une valeur sans pastille dessinée n'est jamais concernée (elle garde le rendu texte).
+ * Rend les valeurs dont la pastille est indiscernable de celle d'une autre valeur de l'axe, et « Non précisé » (pastille neutre).
+ * Une valeur sans pastille dessinée n'est jamais concernée.
  */
 export function namedValues(
   items: readonly { variant_axes: Record<string, string>; pastille?: string | undefined; teinte?: string | undefined }[],
