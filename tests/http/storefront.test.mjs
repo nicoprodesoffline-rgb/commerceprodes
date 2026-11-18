@@ -46,6 +46,11 @@ const SERVER_ENV = {
   SITE_DATABASE_URL: DB_URL,
   SITE_CATALOG_SOURCE: "db",
   SITE_BUSINESS_PERSISTENCE: "postgresql",
+  // Cercle 4 : ces essais modifient la base sans passer par les routes signées (activations, médias retirés ou altérés) ; ni mémoire de réglages ni cache d'images n'y masquent le changement.
+  SITE_MEMORY_MAX_AGE_SECONDS: "0",
+  SITE_MEDIA_CACHE_MB: "0",
+  // Un frontal est déclaré devant le site : l'adresse est la dernière valeur de x-forwarded-for.
+  SITE_TRUSTED_PROXY_HOPS: "1",
 };
 
 let server = null;
@@ -380,7 +385,7 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
 
     test("limite d'envois : la 121e demande d'une adresse reçoit 429 et un JSON vide", async () => {
       for (const [endpoint, key, address] of [["search", "results", "192.0.2.120"], ["families", "families", "192.0.2.121"]]) {
-        const headers = { "x-forwarded-for": ` ${address}, 198.51.100.1` };
+        const headers = { "x-forwarded-for": `198.51.100.1, ${address}` };
         const responses = await Promise.all(Array.from({ length: 121 }, () => http("GET", `/api/site/${endpoint}`, { headers })));
         assert.equal(responses.filter((r) => r.status === 200).length, 120, `${endpoint} : 120/121 demandes autorisées`);
         const refusals = responses.filter((r) => r.status === 429);

@@ -3,7 +3,7 @@
 // F_SIMPLE_READY.activate_first (s1) ; règles C0 inchangées (evaluatePublication).
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { ACTIVATE, KEYRING_PATH, STAGE, VERIFY, activateBase, body, control, deps, headersFor, http, loadCase, newPool, outcomeOf, pointer, putAllMedia, receiver, resetDb, scalar, sitePool, testDatabaseUrl } from "./helpers.mjs";
+import { ACTIVATE, KEYRING_PATH, datedHeaders, STAGE, VERIFY, activateBase, body, control, deps, headersFor, http, loadCase, newPool, outcomeOf, pointer, putAllMedia, receiver, resetDb, scalar, sitePool, testDatabaseUrl } from "./helpers.mjs";
 
 let pool;
 before(async () => { await resetDb(); pool = newPool(); });
@@ -185,7 +185,9 @@ test("F-01 : lecture bornée — Content-Length au-delà -> 413 sans lecture ; f
     }
     // (c) exactement au plafond : accepté et transmis tel quel au receiver
     const exact = countingStream(receiver.MAX_CONTROL_BYTES);
-    const reqC = new Request("http://local/x", { method: "POST", body: exact.stream, duplex: "half", headers: signed });
+    // Cercle 4 (4.4) : une requête acceptée porte aussi l'anti-rejeu daté (le flux compté est fait de zéros).
+    const dated = datedHeaders(c.transport.key_id, "POST", "/x", new Uint8Array(receiver.MAX_CONTROL_BYTES));
+    const reqC = new Request("http://local/x", { method: "POST", body: exact.stream, duplex: "half", headers: { ...signed, ...dated } });
     let got = -1;
     const resC = await http.handleWithBody("ACTIVATE", reqC, receiver.MAX_CONTROL_BYTES, async (_d, bodyBytes) => { got = bodyBytes.length; return { status: 200, headers: {}, body: new Uint8Array(0) }; });
     assert.equal(resC.status, 200);

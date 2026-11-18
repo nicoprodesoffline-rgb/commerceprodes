@@ -12,6 +12,7 @@
  * Seul ajout : le contrôle d'environnement `data_label` (C0 §15, contrôle receiver), appliqué quand
  * l'évaluation a dépassé l'étape `shape` (donc après `shape`, avant `semantic`).
  */
+import { keyKnown } from "./transport-gate";
 import type { Pool, PoolClient } from "pg";
 // Cercle 3 (3.1) : le récepteur lit `site_snapshot.v1` ET `site_snapshot.v2`. `evaluatePublication` de c0v2 envoie un document v1 au récepteur v1 gelé (c0/), inchangé, et applique
 // les règles v2 à un document v2 ; `signatureContext` et l'accusé sont ceux de la v1. Aucun fichier de c0/ n'est modifié.
@@ -44,7 +45,7 @@ export const HEADER_OUTCOME = "x-c0-outcome";
 export const MAX_CONTROL_BYTES = 256 * 1024;
 /** Plafond du corps STAGE = plafond C0 du snapshot (32 MiB, C0 §4). */
 export { MAX_BYTES };
-/** Plafond du corps PUT média = taille maximale d'un média C0 (20 MiB, C0 §8.5). */
+/** Plafond du corps PUT média : 30 Mio, voir MAX_DOCUMENT_SIZE (c0 v2 : un document PDF ; une image C0 reste à 20 Mio, C0 §8.5). */
 export const MAX_MEDIA_BYTES = Math.max(MAX_MEDIA_SIZE, MAX_DOCUMENT_SIZE);   // v2 : un document PDF peut peser 30 Mio
 const LOCK_TIMEOUT = "15s";
 
@@ -139,7 +140,9 @@ export function transportGate(config: ReceiverConfig, headers: HeaderSource, ope
   const keyId = headers.get(HEADER_KEY_ID);
   const signature = headers.get(HEADER_SIGNATURE);
   if (keyHasScope(config.keyring, keyId, SCOPE_PUBLISH) && isHex64(signature)) return null;
-  return json(401, { accepted: false, outcome: "REJECTED", operation, error_codes: ["SIGNATURE_INVALID"], stage: "transport_gate" });
+  // Cercle 4 (L10) : une clé absente ou retirée du trousseau du SITE est dite telle quelle à la Factory (« clé inconnue du site »).
+  const unknown = !keyKnown(config.keyring, keyId) ? { transport_error: "KEY_UNKNOWN" } : {};
+  return json(401, { accepted: false, outcome: "REJECTED", operation, error_codes: ["SIGNATURE_INVALID"], stage: "transport_gate", ...unknown });
 }
 
 function transportFromHeaders(headers: HeaderSource): JsonObject {

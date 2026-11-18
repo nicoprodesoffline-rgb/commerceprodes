@@ -10,10 +10,17 @@
  *   4. receiver (évaluation C0 complète, HMAC compris).
  * La porte de transport est un contrôle d'accès : elle ne remplace aucune étape C0 (le HMAC reste vérifié par
  * `evaluatePublication` à l'étape `signature`).
+ * Cercle 4, lot T (docs/contracts/c0_transport_v1.md) : après la lecture bornée, le contrôle daté (`transport-gate.ts` :
+ * clé connue, en-têtes datés, signature de transport, fenêtre de 300 s, nonce jamais vu) ; toute réponse à une requête
+ * datée est signée par la clé d'accusé du SITE.
  */
+import { guarded } from "../site-ratelimit/machine-gate";
+import { advanceEpoch } from "../site-db/epoch";
 import { SiteDbConfigError, getPool } from "../site-db/pool";
 import { ReceiverConfigError, loadReceiverConfig } from "./config";
+import { SCOPE_PUBLISH, keyHasScope } from "../../c0/ts/src/signing";
 import { transportGate, type HeaderSource, type ReceiverDeps, type ReceiverResponse } from "./receiver";
+import { checkDated, refusal, signResponse, signedPath } from "./transport-gate";
 
 export class BodyTooLarge extends Error {
   readonly code = "BODY_TOO_LARGE";
@@ -71,9 +78,13 @@ function loadDeps(operation: string): ReceiverDeps | Response {
   }
 }
 
-async function runSafely(operation: string, run: () => Promise<ReceiverResponse>): Promise<Response> {
+async function runSafely(operation: string, run: () => Promise<ReceiverResponse>, { epoch = true }: { epoch?: boolean } = {}): Promise<Response> {
   try {
-    return toResponse(await run());
+    const out = await run();
+    // Cercle 4 (4.11, 4.12) : une publication reçue par CE processus invalide ce que le site gardait en mémoire (réglages, redirections, résolution des images).
+    // La sonde et la question des médias manquants ne changent rien : elles n'avancent pas l'époque.
+    if (out.status === 200 && epoch) advanceEpoch();
+    return toResponse(out);
   } catch (error) {
     const code = typeof (error as { code?: unknown }).code === "string" ? (error as { code: string }).code : "ERROR";
     console.error(`[site-publish] ${operation} échec interne code=${code}`);
@@ -83,6 +94,12 @@ async function runSafely(operation: string, run: () => Promise<ReceiverResponse>
 
 /** Opération sans corps (STATUS) : configuration, porte de transport, receiver. */
 export async function handle(operation: string, headers: HeaderSource | null, run: (deps: ReceiverDeps) => Promise<ReceiverResponse>): Promise<Response> {
+  // Cercle 4 (4.10) : garde par adresse avant tout (liste autorisée, limite de refus, débit). `headers` null (aucune route aujourd'hui) : pas de garde.
+  if (headers === null) return handleUnguarded(operation, headers, run);
+  return guarded(headers, () => handleUnguarded(operation, headers, run));
+}
+
+async function handleUnguarded(operation: string, headers: HeaderSource | null, run: (deps: ReceiverDeps) => Promise<ReceiverResponse>): Promise<Response> {
   const deps = loadDeps(operation);
   if (deps instanceof Response) return deps;
   if (headers !== null) {
@@ -99,18 +116,72 @@ export async function handleWithBody(
   maxBytes: number,
   run: (deps: ReceiverDeps, body: Uint8Array) => Promise<ReceiverResponse>,
 ): Promise<Response> {
+  return guarded(request.headers, () => handleWithBodyUnguarded(operation, request, maxBytes, run));
+}
+
+async function handleWithBodyUnguarded(
+  operation: string,
+  request: Request,
+  maxBytes: number,
+  run: (deps: ReceiverDeps, body: Uint8Array) => Promise<ReceiverResponse>,
+): Promise<Response> {
+  return signedUnguarded(operation, request, maxBytes, (deps, body) => run(deps, body));
+}
+
+/** Cercle 4 (4.4) : une route de la Factory sans corps (STATUS) avec l'anti-rejeu daté et la réponse signée. */
+export async function handleGet(operation: string, request: Request, run: (deps: ReceiverDeps) => Promise<ReceiverResponse>): Promise<Response> {
+  return guarded(request.headers, () => signedUnguarded(operation, request, 0, (deps) => run(deps)));
+}
+
+/**
+ * Cercle 4 (4.3, 4.5) : les routes de transport sans signature C0 (`media/missing`, `link/probe`) : clé de publication connue,
+ * anti-rejeu daté, réponse signée ; `answerStale` laisse la sonde répondre hors fenêtre (elle dit alors l'écart, sans garder le nonce).
+ */
+export async function handleTransport(
+  operation: string,
+  request: Request,
+  maxBytes: number,
+  run: (deps: ReceiverDeps, body: Uint8Array, stale: boolean) => Promise<ReceiverResponse>,
+  { answerStale = false }: { answerStale?: boolean } = {},
+): Promise<Response> {
+  return guarded(request.headers, () => signedUnguarded(operation, request, maxBytes, run, { c0Gate: false, answerStale, epoch: false }));
+}
+
+async function signedUnguarded(
+  operation: string,
+  request: Request,
+  maxBytes: number,
+  run: (deps: ReceiverDeps, body: Uint8Array, stale: boolean) => Promise<ReceiverResponse>,
+  { c0Gate = true, answerStale = false, epoch = true }: { c0Gate?: boolean; answerStale?: boolean; epoch?: boolean } = {},
+): Promise<Response> {
   const deps = loadDeps(operation);
   if (deps instanceof Response) return deps;
-  const refused = transportGate(deps.config, request.headers, operation);
-  if (refused !== null) return toResponse(refused);
+  const sign = (response: Response) => signResponse(deps.config.keyring, deps.config.ackKeyId, request.headers, response);
+  if (c0Gate) {
+    const refused = transportGate(deps.config, request.headers, operation);
+    if (refused !== null) return sign(toResponse(refused));
+  } else if (!keyHasScope(deps.config.keyring, request.headers.get("x-c0-key-id"), SCOPE_PUBLISH)) {
+    return sign(refusal("KEY_UNKNOWN", operation));
+  }
   let body: Uint8Array;
   try {
     body = await readBoundedBody(request, maxBytes);
   } catch (error) {
     if (error instanceof BodyTooLarge) {
-      return jsonResponse(413, { accepted: false, outcome: "TRANSPORT_ERROR", operation, transport_error: "BODY_TOO_LARGE", max_bytes: maxBytes, error_codes: [] });
+      return sign(jsonResponse(413, { accepted: false, outcome: "TRANSPORT_ERROR", operation, transport_error: "BODY_TOO_LARGE", max_bytes: maxBytes, error_codes: [] }));
     }
     throw error;
   }
-  return runSafely(operation, () => run(deps, body));
+  const now = new Date();
+  let dated;
+  try {
+    dated = await checkDated(deps.config.keyring, deps.pool, request.headers, request.method, signedPath(request), body, now);
+  } catch (error) {
+    const code = typeof (error as { code?: unknown }).code === "string" ? (error as { code: string }).code : "ERROR";
+    console.error(`[site-publish] ${operation} contrôle daté indisponible code=${code}`);
+    return sign(jsonResponse(503, { accepted: false, outcome: "TRANSPORT_ERROR", operation, transport_error: "RECEIVER_UNAVAILABLE", error_codes: [] }));
+  }
+  const stale = answerStale && dated === "REQUEST_STALE";
+  if (dated !== null && !stale) return sign(refusal(dated, operation, now));
+  return sign(await runSafely(operation, () => run(deps, body, stale), { epoch }));
 }

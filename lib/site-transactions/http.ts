@@ -11,6 +11,8 @@ import { submitBusiness, type BusinessKind } from "./business";
 import { json, type TxResponse } from "./common";
 import { TransactionsConfigError, businessMode, loadEventsKeyring } from "./config";
 import { ackEvents, pollEvents } from "./events";
+import type { Json } from "@/c0/ts/src/jsonc";
+import { checkDated, instant, signResponse, signedPath } from "@/lib/site-publish/transport-gate";
 import { getReceipt } from "./receipt";
 
 function toResponse(r: TxResponse, route?: BusinessRoute): Response {
@@ -41,6 +43,21 @@ export function useBc4Persistence(): boolean {
   return businessMode() === "postgresql";
 }
 
+/** Cercle 4, 4.15 : enregistrement éteint — réponse 503 claire, avant toute lecture du corps et toute écriture. `null` si la demande en ligne est ouverte (ou en mode A2). */
+export function closedRefusal(): Response | null {
+  let mode;
+  try {
+    mode = businessMode();
+  } catch {
+    return null;   // configuration invalide : les routes la signalent elles-mêmes
+  }
+  if (mode !== "closed") return null;
+  return new Response(JSON.stringify({ site_status: "ONLINE_REQUEST_CLOSED", message: "La demande en ligne n'est pas encore ouverte. Rien n'a été enregistré.", persistence: "NONE", durable: false, verdict: null }), {
+    status: 503,
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+  });
+}
+
 export function businessConfigError(error: unknown, route: BusinessRoute): Response | null {
   return configError(error, route);
 }
@@ -62,9 +79,20 @@ export async function pollHttp(req: Request): Promise<Response> {
 }
 
 export async function ackHttp(req: Request): Promise<Response> {
-  return guarded(async () => {
-    const keyring = loadEventsKeyring();
+  let keyring: Json | null = null;
+  const response = await guarded(async () => {
+    keyring = loadEventsKeyring();
+    const pool = getPool();
     const bytes = await readBoundedBytes(req, EVENTS_MAX_BYTES);
-    return ackEvents({ pool: getPool(), keyring }, req.headers, bytes);
+    // Cercle 4 (4.4) : l'accusé des événements porte l'anti-rejeu daté du transport (docs/contracts/c0_transport_v1.md §3).
+    const now = new Date();
+    const dated = await checkDated(keyring, pool, req.headers, req.method, signedPath(req), bytes, now);
+    if (dated !== null) {
+      return json(401, { accepted: false, outcome: "TRANSPORT_ERROR", operation: "EVENTS_ACK", transport_error: dated, error_codes: [], server_time_utc: instant(now) });
+    }
+    return ackEvents({ pool, keyring }, req.headers, bytes);
   });
+  // 4.5 : la réponse est signée par la clé d'accusé du SITE quand elle est réglée (SITE_ACK_KEY_ID).
+  const ackKeyId = process.env["SITE_ACK_KEY_ID"];
+  return keyring !== null && ackKeyId ? signResponse(keyring, ackKeyId, req.headers, response) : response;
 }

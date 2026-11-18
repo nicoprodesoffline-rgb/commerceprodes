@@ -19,6 +19,8 @@ export const http = require(join(BUILD, "lib/site-publish/http.js"));
 export const siteDb = require(join(BUILD, "lib/site-db/generation.js"));
 export const sitePool = require(join(BUILD, "lib/site-db/pool.js"));
 export const jsonc = require(join(BUILD, "c0/ts/src/jsonc.js"));
+export const gate = require(join(BUILD, "lib/site-publish/transport-gate.js"));
+export const link = require(join(BUILD, "lib/site-link/link.js"));
 export const signing = require(join(BUILD, "c0/ts/src/signing.js"));
 export const activation = require(join(BUILD, "c0/ts/src/activation.js"));
 export const snapshot = require(join(BUILD, "c0/ts/src/snapshot.js"));
@@ -161,4 +163,17 @@ export async function activateBase(pool) {
   const flow = await fullFlow(pool, base);
   if (flow.activated.headers["x-c0-outcome"] !== "ACTIVATED") throw new Error(`activation de la base échouée : ${Buffer.from(flow.activated.body)}`);
   return { base, ...flow };
+}
+
+/**
+ * Cercle 4 (c0_transport_v1 §3) : les en-têtes datés d'une requête de la Factory, signés par `keyId` dans sa portée.
+ * `issuedAt` (Date) et `nonce` (32 hex) sont choisis par le test quand il veut rejouer ou dater autrement.
+ */
+let nonceSerial = 0;
+export function datedHeaders(keyId, method, path, bodyBytes = new Uint8Array(0), { keyring = KEYRING, issuedAt = new Date(), nonce } = {}) {
+  const entry = keyring.keys.find((k) => k.key_id === keyId);
+  const at = issuedAt.toISOString().replace(/\.\d{3}Z$/, "Z");
+  const n = nonce ?? (Date.now().toString(16) + (nonceSerial++).toString(16)).padStart(32, "0").slice(-32);
+  const context = { method, path, body_sha256: gate.sha256Hex(bodyBytes), issued_at_utc: at, nonce: n };
+  return { "x-c0-key-id": keyId, "x-c0-issued-at": at, "x-c0-nonce": n, "x-c0-request-signature": signing.sign(keyring, keyId, entry.scope, gate.REQUEST_DOMAIN, context) };
 }

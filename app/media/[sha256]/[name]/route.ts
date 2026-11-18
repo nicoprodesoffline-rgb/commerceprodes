@@ -7,5 +7,5 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request, ctx: { params: Promise<{ sha256: string; name: string }> }) {
   const { sha256, name } = await ctx.params;
   if (!readableNameOk(name)) return new Response("Not found", { status: 404 });
-  return serveMedia(sha256, new URL(req.url).searchParams.get("w"));
+  return serveMedia(sha256, new URL(req.url).searchParams.get("w"), req.headers.get("if-none-match"));
 }

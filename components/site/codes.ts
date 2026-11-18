@@ -24,6 +24,7 @@ const TEXT: Record<string, string> = {
   NOT_FOUND: "Aucun reçu ne correspond à cette référence et à ce code.",
   // Statuts SITE (hors C0)
   CATALOG_UNAVAILABLE: "Le catalogue est momentanément indisponible.",
+  ONLINE_REQUEST_CLOSED: "La demande en ligne n'est pas encore ouverte. Rien n'a été enregistré.",
   CONFIG_INVALID: "La boutique est momentanément indisponible (maintenance en cours).",
   CONTENT_TYPE_REFUSED: "Requête refusée (format non accepté).",
   ORIGIN_REFUSED: "Requête refusée (origine non autorisée).",

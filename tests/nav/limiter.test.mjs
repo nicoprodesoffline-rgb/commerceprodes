@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createLimiter, requestKey } from "../../lib/site-ratelimit/limiter.ts";
+import { clientAddress, createLimiter } from "../../lib/site-ratelimit/limiter.ts";
 
 const options = { limit: 2, windowMs: 1000, maxKeys: 2 };
 test("fenêtre glissante : seuls les envois acceptés comptent, expiration exacte et délai arrondi", () => {
@@ -63,8 +63,15 @@ test("les paramètres invalides sont refusés", () => {
   }
 });
 
-test("la clé est la première adresse nettoyée, sinon local", () => {
-  assert.equal(requestKey(" 192.0.2.1 , 198.51.100.1"), "192.0.2.1");
-  assert.equal(requestKey(" 2001:DB8::1 "), "2001:db8::1");
-  for (const raw of [null, "", " , 192.0.2.1", "<script>", "a".repeat(129)]) assert.equal(requestKey(raw), "local");
+test("cercle 4 (S05) : l'adresse est celle que le frontal a posée (n-ième en partant de la droite), jamais celle que le visiteur écrit", () => {
+  const h = (value) => ({ get: () => value });
+  const one = { SITE_TRUSTED_PROXY_HOPS: "1" };
+  assert.equal(clientAddress(h("1.1.1.1, 198.51.100.7"), one), "198.51.100.7", "valeur forgée à gauche ignorée");
+  assert.equal(clientAddress(h(" 2001:DB8::1 "), one), "2001:db8::1");
+  assert.equal(clientAddress(h("9.9.9.9, 10.0.0.1, 198.51.100.7"), { SITE_TRUSTED_PROXY_HOPS: "2" }), "10.0.0.1");
+  assert.equal(clientAddress(h("1.1.1.1, 198.51.100.7"), {}), "direct", "aucun frontal déclaré : l'en-tête n'est jamais lu");
+  assert.equal(clientAddress(h("1.1.1.1"), { SITE_TRUSTED_PROXY_HOPS: "0" }), "direct");
+  for (const raw of [null, "", "<script>", "a".repeat(129)]) assert.equal(clientAddress(h(raw), one), "inconnue");
+  assert.equal(clientAddress(h("1.1.1.1"), { SITE_TRUSTED_PROXY_HOPS: "2" }), "inconnue", "moins de valeurs que de frontaux : rien de deviné");
+  assert.equal(clientAddress({ get: (n) => (n === "x-real-ip" ? "203.0.113.5" : null) }, { SITE_TRUSTED_PROXY_HOPS: "1", SITE_CLIENT_ADDRESS_HEADER: "X-Real-IP" }), "203.0.113.5");
 });

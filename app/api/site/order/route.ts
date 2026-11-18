@@ -1,6 +1,6 @@
 import { withCatalog } from "@/lib/site-business/http";
 import { validateOrder } from "@/lib/site-business/validate";
-import { businessConfigError, submitHttp, useBc4Persistence } from "@/lib/site-transactions/http";
+import { businessConfigError, closedRefusal, submitHttp, useBc4Persistence } from "@/lib/site-transactions/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +11,8 @@ export const dynamic = "force-dynamic";
  * - absente : verdict C0 A2 sans persistance (`NONE_UNTIL_BC4`, jamais durable).
  */
 export async function POST(req: Request) {
+  const closed = closedRefusal();
+  if (closed) return closed;
   let bc4: boolean;
   try {
     bc4 = useBc4Persistence();

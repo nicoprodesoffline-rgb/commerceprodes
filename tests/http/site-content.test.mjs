@@ -29,7 +29,7 @@ async function withServer(dir, fn, { fixture = FIXTURE, origin = "https://demo.i
   assert.equal(await portAnswers(), false, `port ${PORT} occupé`);
   const child = spawn(process.execPath, [path.join(ROOT, "node_modules/next/dist/bin/next"), "start", "-H", "127.0.0.1", "-p", String(PORT)], {
     cwd: ROOT,
-    env: { PATH: process.env.PATH, HOME: process.env.HOME, NEXT_TELEMETRY_DISABLED: "1", SITE_ENV: "staging", SITE_NOW_UTC: "2026-10-19T06:00:00Z", SITE_CATALOG_SOURCE: "fixture", SITE_CATALOG_FIXTURE: fixture, ...(dir === undefined ? {} : { SITE_CONTENT_DIR: dir }), SITE_PUBLIC_ORIGIN: origin },
+    env: { PATH: process.env.PATH, HOME: process.env.HOME, NEXT_TELEMETRY_DISABLED: "1", SITE_ENV: "staging", SITE_NOW_UTC: "2026-10-19T06:00:00Z", SITE_CATALOG_SOURCE: "fixture", SITE_CATALOG_FIXTURE: fixture, ...(dir === undefined ? {} : { SITE_CONTENT_DIR: dir }), SITE_PUBLIC_ORIGIN: origin, SITE_MEMORY_MAX_AGE_SECONDS: "0" },
     stdio: ["ignore", "ignore", "pipe"],
   });
   let exited = false;
@@ -96,7 +96,8 @@ test("pages publiées : 4 sections, échappement, vrais 404, accueil, retrait et
       const nested = await get("/p/saison/noel"); assert.equal(nested.status, 200);
       assert.match(nested.text, /<h1[^>]*>Saison démo<\/h1>/);
       assert.match(nested.text, /aria-label="Fil d(?:&#x27;|')Ariane"/);
-      assert.doesNotMatch(nested.text, /rel="canonical"/);
+      // Cercle 3, 3.19 (c848b767, postérieur à ed4d69a5) : une page sans canonique explicite porte une canonique vers elle-même (adresse absolue de la page).
+      assert.match(nested.text, /<link rel="canonical" href="https:\/\/demo.invalid\/p\/saison\/noel"/);
       for (const route of ["/p/inconnu", "/p/saison/inconnue", "/p/MAJUSCULE", "/p/demo%2fautre"]) assert.equal((await get(route)).status, 404, route);
       const historical = await get("/"); assert.equal(historical.status, 200); assert.match(historical.text, /Nos univers produits/);
       await publish(dir, 2, [page("/", [blocks[3]], { title: "Accueil éditorial démo", seo_title: "Accueil SEO démo" }), page("/demo", blocks), page("/saison/noel", [blocks[3]])]);

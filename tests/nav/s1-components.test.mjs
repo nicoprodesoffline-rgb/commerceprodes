@@ -189,6 +189,8 @@ test("routes de lecture appelées directement : 120 autorisées, 429 échappé e
     "@/lib/site-catalog/page": { catalogOrNull: async () => ({ familyBySlug: () => null }) },
     "@/lib/site-catalog/suggest": { SUGGEST_MIN: 2, suggestionsOf: () => [] },
   };
+  // Cercle 4 (S05) : un frontal est déclaré devant le site ; l'adresse est la dernière valeur de l'en-tête (celle que le frontal a posée), plus la première (celle du visiteur).
+  process.env.SITE_TRUSTED_PROXY_HOPS = "1";
   for (const [endpoint, key] of [["search", "results"], ["families", "families"]]) {
     const { GET } = load(`app/api/site/${endpoint}/route.ts`, stubs);
     const req = () => new Request(`http://example.test/api/site/${endpoint}`, { headers: { "x-forwarded-for": " 192.0.2.1 , 198.51.100.2" } });
@@ -202,6 +204,7 @@ test("routes de lecture appelées directement : 120 autorisées, 429 échappé e
     assert.doesNotMatch(body, /[<>&]/);
     assert.equal((await GET(new Request(`http://example.test/api/site/${endpoint}`, { headers: { "x-forwarded-for": "192.0.2.2" } }))).status, 200);
   }
+  delete process.env.SITE_TRUSTED_PROXY_HOPS;
 });
 
 test("icône déclarée et route favicon existante toujours sans contenu (204)", () => {

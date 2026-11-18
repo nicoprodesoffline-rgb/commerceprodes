@@ -9,6 +9,7 @@ import { evaluateContent, type ActiveContent } from "../../c0v2/ts/src/content";
 import { isHex64 } from "../../c0/ts/src/formats";
 import { canonicalBytes, isCanonical, isObject, parseBytes, utf8, type Json } from "../../c0/ts/src/jsonc";
 import { SCOPE_PUBLISH, keyHasScope } from "../../c0/ts/src/signing";
+import { currentEpoch, stillValid } from "../site-db/epoch";
 import { getActiveGeneration } from "../site-db/generation";
 import { HEADER_KEY_ID, HEADER_OUTCOME, HEADER_SIGNATURE, MAX_CONTROL_BYTES, serverNowUtc, type HeaderSource, type ReceiverDeps, type ReceiverResponse } from "./receiver";
 
@@ -41,16 +42,27 @@ export async function readActiveContent(q: Pool | PoolClient): Promise<StoredCon
   }
 }
 
-let memo: { sha: string; value: StoredContent | null } | null = null;
+interface Memo { sha: string | null; value: StoredContent | null; epoch: number; at: number }
+// Sur `globalThis` : le proxy et les pages sont empaquetés séparément, deux exemplaires de cette variable feraient deux lectures au lieu d'une.
+const MEMO_KEY = Symbol.for("prodes.site.active-content-memo");
+type MemoHolder = typeof globalThis & { [MEMO_KEY]?: Memo | null };
+const getMemo = (): Memo | null => (globalThis as MemoHolder)[MEMO_KEY] ?? null;
+const setMemo = (value: Memo | null): void => { (globalThis as MemoHolder)[MEMO_KEY] = value; };
 
-/** Lecture du SITE à chaque requête : un sondage de l'empreinte, et la relecture complète seulement quand elle a changé. */
+/**
+ * Lecture du SITE à chaque requête (proxy : réglages, redirections). Cercle 4 (4.12) : tant qu'aucune publication n'est arrivée dans CE processus (compteur d'époque) et que la dernière
+ * lecture a moins de 30 s, la mémoire répond SANS requête ; sinon un sondage de l'empreinte, et la relecture complète seulement si elle a changé. « Aucun contenu actif » se garde aussi.
+ */
 export async function readActiveContentCached(q: Pool | PoolClient): Promise<StoredContent | null> {
+  const memo = getMemo();
+  if (memo !== null && stillValid(memo)) return memo.value;
+  const epoch = currentEpoch();
   const probe = await q.query("SELECT payload_sha256 FROM site_content_active WHERE singleton = 1");
-  if (probe.rows.length !== 1) { memo = null; return null; }
+  if (probe.rows.length !== 1) { setMemo({ sha: null, value: null, epoch, at: Date.now() }); return null; }
   const sha = probe.rows[0].payload_sha256 as string;
-  if (memo !== null && memo.sha === sha) return memo.value;
+  if (memo !== null && memo.sha === sha) { setMemo({ ...memo, epoch, at: Date.now() }); return memo.value; }
   const value = await readActiveContent(q);
-  memo = { sha, value };
+  setMemo({ sha, value, epoch, at: Date.now() });
   return value;
 }
 
