@@ -20,7 +20,11 @@ const PORT = Number(process.env.SITE_TEST_PORT ?? 3361);
 const BASE = `http://127.0.0.1:${PORT}`;
 const DB_URL = process.env.SITE_TEST_DATABASE_URL ?? "postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc3_test";
 process.env.SITE_TEST_DATABASE_URL = DB_URL; // lu par tests/bc2/helpers.mjs (resetDb)
-const { loadCase, mediaHeaders, resetDb } = await import("../bc2/helpers.mjs");
+const { datedHeaders, loadCase, mediaHeaders, resetDb } = await import("../bc2/helpers.mjs");
+const { createRequire } = await import("node:module");
+const requireBuild = createRequire(import.meta.url);
+const commerceDocument = requireBuild(path.join(ROOT, ".bc2-build", "lib/site-commerce/document.js"));
+const { canonicalBytes: canonicalJson } = requireBuild(path.join(ROOT, ".bc2-build", "c0/ts/src/jsonc.js"));
 const { MiB, bigMedia, bigSnapshot, jsonOfSize } = await import("./machine-payloads.mjs");
 const C0 = path.join(ROOT, "c0", "fixtures");
 const ORACLE = JSON.parse(readFileSync(path.join(C0, "VERDICTS.json"), "utf8")).cases;
@@ -46,6 +50,8 @@ const SERVER_ENV = {
   SITE_DATABASE_URL: DB_URL,
   SITE_CATALOG_SOURCE: "db",
   SITE_BUSINESS_PERSISTENCE: "postgresql",
+  // Cercle 5 (5.23) : ces essais envoient bien plus de cinq devis ou commandes par minute depuis la même adresse ; la limite de débit a son propre essai (tests/bc4/http.e2e.mjs, D).
+  SITE_REQUEST_LIMIT: "1000",
   // Cercle 4 : ces essais modifient la base sans passer par les routes signées (activations, médias retirés ou altérés) ; ni mémoire de réglages ni cache d'images n'y masquent le changement.
   SITE_MEMORY_MAX_AGE_SECONDS: "0",
   SITE_MEDIA_CACHE_MB: "0",
@@ -114,7 +120,21 @@ async function http(method, p, { body, headers = {}, json = true } = {}) {
   return { status: res.status, headers: res.headers, bytes, text, json: parsed };
 }
 const get = (p, o) => http("GET", p, o);
-const post = (p, body, o = {}) => http("POST", p, { ...o, body });
+/**
+ * Cercle 5 : devis et commande reçoivent `{ request: <corps C0>, extras }` (docs/site_events_v2.md). Un corps C0 lisible est enveloppé ici ; un corps illisible part tel quel (le serveur le refuse).
+ * Les extras de la commande sont ceux d'une commande valide ; les cas de refus du C0 gardent leur verdict, car le C0 juge en premier.
+ */
+const ADDRESS = { name: "Mairie de Val-Fictif", line1: "7 allée Fictive", line2: "", postal_code: "00000", city: "Val-Fictif" };
+const EXTRAS = {
+  "/api/site/quote": { commerce_sequence: 1, privacy_notice: "m1" },
+  "/api/site/order": { commerce_sequence: 1, privacy_notice: "m1", addresses: { delivery: ADDRESS, billing: null }, customer_refs: {}, payment_method: "virement", terms: { accepted: true, cgv_version: "c1" } },
+};
+function wrapV2(p, body) {
+  if (!(p in EXTRAS)) return body;
+  const text = typeof body === "string" ? body : body instanceof Uint8Array ? Buffer.from(body).toString("utf8") : JSON.stringify(body);
+  try { return JSON.stringify({ request: JSON.parse(text), extras: EXTRAS[p] }); } catch { return text; }
+}
+const post = (p, body, o = {}) => http("POST", p, { ...o, body: wrapV2(p, body) });
 const preview = (lines, o) => post("/api/site/cart/preview", { lines }, o);
 
 // ── Base et receiver BC2 ─────────────────────────────────────────────────────
@@ -125,18 +145,29 @@ const scalar = async (sql, params = []) => Object.values((await db.query(sql, pa
 /** Pose la génération d'un cas C0 `evaluate_publication` par le receiver BC2, en HTTP, sur le serveur testé. */
 async function activateOverHttp(caseId) {
   const c = loadCase(caseId);
-  const sig = { "x-c0-key-id": c.transport.key_id, "x-c0-signature": c.transport.signature, "content-type": "application/json" };
+  const sig = (route, bytes) => ({ "x-c0-key-id": c.transport.key_id, "x-c0-signature": c.transport.signature, "content-type": "application/json", ...datedHeaders(c.transport.key_id, "POST", route, new Uint8Array(bytes)) });
   const ctl = JSON.stringify({ publication_id: c.doc.publication_id, catalogue_sequence: c.doc.catalogue_sequence, payload_sha256: c.doc.payload_sha256 });
-  const st = await http("POST", "/api/site/publish/stage", { body: c.bytes, headers: sig });
+  const st = await http("POST", "/api/site/publish/stage", { body: c.bytes, headers: sig("/api/site/publish/stage", c.bytes) });
   assert.equal(st.status, 200, `${caseId} STAGE : ${st.text.slice(0, 300)}`);
   for (const m of c.media) {
-    const r = await http("PUT", `/api/site/publish/media/${m.sha256}`, { body: m.bytes, headers: { ...Object.fromEntries(mediaHeaders(m.sha256, m.bytes.length)), "content-type": "image/png" } });
+    const r = await http("PUT", `/api/site/publish/media/${m.sha256}`, { body: m.bytes, headers: { ...Object.fromEntries(mediaHeaders(m.sha256, m.bytes.length)), ...datedHeaders(c.transport.key_id, "PUT", `/api/site/publish/media/${m.sha256}`, new Uint8Array(m.bytes)), "content-type": "image/png" } });
     assert.ok([200, 201].includes(r.status), `${caseId} PUT média ${m.sha256} : ${r.status} ${r.text.slice(0, 200)}`);
   }
-  const v = await http("POST", "/api/site/publish/verify-media", { body: ctl, headers: sig });
+  const v = await http("POST", "/api/site/publish/verify-media", { body: ctl, headers: sig("/api/site/publish/verify-media", Buffer.from(ctl)) });
   assert.equal(v.status, 200, `${caseId} VERIFY : ${v.text.slice(0, 300)}`);
-  const a = await http("POST", "/api/site/publish/activate", { body: ctl, headers: sig });
+  const a = await http("POST", "/api/site/publish/activate", { body: ctl, headers: sig("/api/site/publish/activate", Buffer.from(ctl)) });
   assert.equal(a.headers.get("x-c0-outcome"), "ACTIVATED", `${caseId} ACTIVATE : ${a.status} ${a.text.slice(0, 300)}`);
+  // Cercle 5 : les réglages de vente d'essai (taux, marches à suivre, mention, CGV) : sans eux, « la boutique n'est pas prête ».
+  const d = {
+    contract_version: "site_commerce.v1", publication_id: "pub-0001", commerce_sequence: 1, generated_at_utc: "2026-10-20T08:00:00Z", tax_rate: "20.00",
+    delivery_rendez_vous: { label: "Livraison sur rendez-vous", amount_ht: "20.00" },
+    payment: { cheque: { label: "Chèque", instructions: "Texte d'attente." }, virement: { label: "Virement", instructions: "Texte d'attente." }, mandat_administratif: { label: "Mandat", instructions: "Texte d'attente." } },
+    privacy_notice: { version: "m1", text: "Texte d'attente." }, cgv_version: "c1",
+    acknowledgement: { quote: { subject: "S", body: "{numero}" }, order: { subject: "S", body: "{numero}" }, message: { subject: "S", body: "{numero}" } }, sender: null,
+  };
+  const doc = { ...d, payload_sha256: commerceDocument.documentDigest(d) };
+  await db.query("DELETE FROM site_commerce_active");
+  await db.query("INSERT INTO site_commerce_active (singleton, commerce_sequence, publication_id, payload_sha256, document_bytes, ack_bytes) VALUES (1, 1, $1, $2, $3, $4)", [doc.publication_id, doc.payload_sha256, Buffer.from(canonicalJson(doc)), Buffer.from("{}")]);
   return c;
 }
 
@@ -541,8 +572,8 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.equal((await get(`/api/site/receipt?ref=${o.json.receipt_ref}&access_token=faux`)).status, 404);
       assert.equal((await get(`/api/site/receipt?ref=${o.json.receipt_ref}`)).status, 401);
       // Rejeu à l'identique (réessai réseau) : même reçu, AUCUN jeton redonné, aucun doublon.
-      const again = await http("POST", "/api/site/order", { body: JSON.stringify({ ...orderFrom(pv), idempotency_key: "order-bc3-replay-0001" }) });
-      const again2 = await http("POST", "/api/site/order", { body: JSON.stringify({ ...orderFrom(pv), idempotency_key: "order-bc3-replay-0001" }) });
+      const again = await http("POST", "/api/site/order", { body: wrapV2("/api/site/order", { ...orderFrom(pv), idempotency_key: "order-bc3-replay-0001" }) });
+      const again2 = await http("POST", "/api/site/order", { body: wrapV2("/api/site/order", { ...orderFrom(pv), idempotency_key: "order-bc3-replay-0001" }) });
       assert.equal(again2.json.outcome, "REPLAY_SAME_RECEIPT");
       assert.equal(again2.json.receipt_ref, again.json.receipt_ref);
       assert.equal(again2.json.access_token, undefined, "jeton jamais redonné au rejeu");

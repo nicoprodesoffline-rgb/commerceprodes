@@ -3,7 +3,10 @@
 // Aucune règle métier ici : les octets sont produits par les fonctions C0 vendorisées (`jsonc`, `snapshot`, `signing`,
 // `activation`) compilées par `npm run bc2:build`, à partir d'un cas C0 nommé.
 import { createHash, randomBytes } from "node:crypto";
-import { activation, jsonc, KEYRING, loadCase, mediaHeaders, signing, snapshot } from "../bc2/helpers.mjs";
+import { activation, datedHeaders, jsonc, KEYRING, loadCase, mediaHeaders, signing, snapshot } from "../bc2/helpers.mjs";
+
+// Cercle 4 (4.4) : toute requête signée de la Factory porte l'anti-rejeu daté (`x-c0-issued-at`, `x-c0-nonce`, `x-c0-request-signature`) ; une requête sans eux reçoit REQUEST_UNDATED (401).
+const PUBLISH_KEY = "c0-test-publish-02";
 
 export const MiB = 1 << 20;
 
@@ -11,7 +14,7 @@ export const MiB = 1 << 20;
 export function bigMedia(size) {
   const bytes = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), randomBytes(size - 8)]);
   const sha256 = createHash("sha256").update(bytes).digest("hex");
-  return { bytes, sha256, headers: { ...Object.fromEntries(mediaHeaders(sha256, size)), "content-type": "image/png" } };
+  return { bytes, sha256, headers: { ...Object.fromEntries(mediaHeaders(sha256, size)), ...datedHeaders(PUBLISH_KEY, "PUT", `/api/site/publish/media/${sha256}`, new Uint8Array(bytes)), "content-type": "image/png" } };
 }
 
 /**
@@ -32,7 +35,7 @@ export function bigSnapshot(targetBytes, caseId = "F_SIMPLE_READY.activate_first
   doc.payload_sha256 = snapshot.payloadSha256(doc);
   const bytes = Buffer.from(jsonc.canonicalBytes(doc));
   const signature = signing.sign(KEYRING, c.transport.key_id, signing.SCOPE_PUBLISH, signing.DOMAIN_SIG_SNAPSHOT, activation.signatureContext(doc));
-  return { bytes, doc, headers: { "x-c0-key-id": c.transport.key_id, "x-c0-signature": signature, "content-type": "application/json" } };
+  return { bytes, doc, headers: { "x-c0-key-id": c.transport.key_id, "x-c0-signature": signature, ...datedHeaders(c.transport.key_id, "POST", "/api/site/publish/stage", new Uint8Array(bytes)), "content-type": "application/json" } };
 }
 
 /** JSON valide mais hors contrat (`{"x":"aaa…"}`) de `size` octets exacts, en-têtes signés du cas : entier → refus de
@@ -40,5 +43,5 @@ export function bigSnapshot(targetBytes, caseId = "F_SIMPLE_READY.activate_first
 export function jsonOfSize(size, caseId = "F_SIMPLE_READY.activate_first") {
   const c = loadCase(caseId);
   const bytes = Buffer.from(`{"x":"${"a".repeat(size - 8)}"}`);
-  return { bytes, headers: { "x-c0-key-id": c.transport.key_id, "x-c0-signature": c.transport.signature, "content-type": "application/json" } };
+  return { bytes, headers: { "x-c0-key-id": c.transport.key_id, "x-c0-signature": c.transport.signature, ...datedHeaders(c.transport.key_id, "POST", "/api/site/publish/stage", new Uint8Array(bytes)), "content-type": "application/json" } };
 }
