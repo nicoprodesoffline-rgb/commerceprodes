@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ListingQuery } from "@/lib/site-catalog/listing";
 import { money } from "@/components/site/format";
-import { swatchFor, swatchStyle } from "@/lib/site-catalog/color-swatch";
+import { pastilleStyle } from "@/lib/site-catalog/color-swatch";
 import type { FilterChoice, FilterGroup } from "@/lib/site-catalog/filters";
 
 /**
@@ -24,12 +24,12 @@ export function ListingControls({ formId, action, query, hidden, filters, choice
             <legend className="mb-2 text-sm font-medium text-ink-2">{g.label}</legend>
             <ul className="space-y-1">
               {g.options.map((o) => {
-                const tint = g.param === "coloris" ? swatchFor(o.value) : null;
+                const tint = g.param === "coloris" ? pastilleStyle(o.value) : null;
                 return (
                   <li key={o.value}>
                     <label className="flex min-h-[44px] cursor-pointer items-center gap-2 text-sm has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink">
                       <input type="checkbox" name={g.param} value={o.value} defaultChecked={(choice?.[g.param] ?? []).includes(o.value)} className="h-5 w-5 shrink-0" />
-                      {tint && <span aria-hidden="true" className="h-4 w-4 shrink-0 rounded-full border border-line-strong" style={swatchStyle(tint)} />}
+                      {tint && <span aria-hidden="true" className="h-4 w-4 shrink-0 rounded-full border border-line-strong" style={tint} />}
                       <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{o.value}</span>
                       <span className="text-ink-3">({o.families})</span>
                     </label>

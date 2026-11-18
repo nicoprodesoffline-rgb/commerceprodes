@@ -6,6 +6,9 @@
   "Matière",
   "Type"
  ],
+ "source_coloris": "Pastille",
+ "separateur_bicolore": " / ",
+ "non_precise": "Non précisé",
  "reglages_par_defaut": {
   "seuil_pct": 30,
   "valeurs_min": 2,
@@ -18,7 +21,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Bleu"
       }
      ],
@@ -27,7 +30,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Rouge"
       }
      ],
@@ -36,7 +39,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Bleu"
       }
      ],
@@ -93,7 +96,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Bleu"
       }
      ],
@@ -102,7 +105,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Rouge"
       }
      ],
@@ -149,7 +152,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Bleu"
       }
      ],
@@ -158,7 +161,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Rouge"
       }
      ],
@@ -246,7 +249,7 @@
    "expected": []
   },
   {
-   "name": "valeurs portées par les variantes : la famille compte une fois, dans chaque option",
+   "name": "nuances portées par les variantes : la famille compte une fois, dans chaque option",
    "families": [
     {
      "characteristics": [],
@@ -254,7 +257,7 @@
       {
        "characteristics": [
         {
-         "label": "Coloris",
+         "label": "Pastille",
          "value": "Rouge"
         }
        ]
@@ -262,7 +265,7 @@
       {
        "characteristics": [
         {
-         "label": "Coloris",
+         "label": "Pastille",
          "value": "Bleu"
         }
        ]
@@ -272,7 +275,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Bleu"
       }
      ],
@@ -435,7 +438,7 @@
     {
      "characteristics": [
       {
-       "label": "coloris",
+       "label": "pastille",
        "value": "Bleu"
       }
      ],
@@ -444,7 +447,7 @@
     {
      "characteristics": [
       {
-       "label": "coloris",
+       "label": "pastille",
        "value": "Vert"
       }
      ],
@@ -454,7 +457,7 @@
    "expected": []
   },
   {
-   "name": "le site ne plie pas : Bleu et bleu sont deux options",
+   "name": "le texte de coloris ne fait jamais le filtre Coloris : seule la Pastille compte",
    "families": [
     {
      "characteristics": [
@@ -469,7 +472,231 @@
      "characteristics": [
       {
        "label": "Coloris",
-       "value": "bleu"
+       "value": "bleu ciel"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Rouge"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": []
+  },
+  {
+   "name": "catalogue publié avant les nuances : aucun filtre Coloris, sans erreur",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Bleu"
+      },
+      {
+       "label": "Matière",
+       "value": "Bois"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Coloris",
+       "value": "Rouge"
+      },
+      {
+       "label": "Matière",
+       "value": "Acier"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Matière",
+     "options": [
+      {
+       "value": "Acier",
+       "families": 1
+      },
+      {
+       "value": "Bois",
+       "families": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "bicolore : compté dans ses deux nuances",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Pastille",
+       "value": "Blanc / Gris clair"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Pastille",
+       "value": "Blanc"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Pastille",
+       "value": "Noir"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Coloris",
+     "options": [
+      {
+       "value": "Blanc",
+       "families": 2
+      },
+      {
+       "value": "Gris clair",
+       "families": 1
+      },
+      {
+       "value": "Noir",
+       "families": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Non précisé n'est jamais une option et ne remplit pas",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Pastille",
+       "value": "Non précisé"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Pastille",
+       "value": "Non précisé"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Pastille",
+       "value": "Bleu"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Pastille",
+       "value": "Rouge"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": []
+  },
+  {
+   "name": "Multicolore est une option",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Pastille",
+       "value": "Multicolore"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Pastille",
+       "value": "Vert"
       }
      ],
      "items": []
@@ -492,11 +719,11 @@
      "label": "Coloris",
      "options": [
       {
-       "value": "Bleu",
+       "value": "Multicolore",
        "families": 1
       },
       {
-       "value": "bleu",
+       "value": "Vert",
        "families": 1
       }
      ]
@@ -517,7 +744,7 @@
        "value": "Bois"
       },
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Vert"
       }
      ],
@@ -534,7 +761,7 @@
        "value": "Acier"
       },
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Gris"
       }
      ],
@@ -601,7 +828,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Bleu"
       }
      ],
@@ -610,7 +837,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Rouge"
       }
      ],
@@ -619,7 +846,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Bleu"
       }
      ],
@@ -665,7 +892,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Bleu"
       }
      ],
@@ -674,7 +901,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Rouge"
       }
      ],
@@ -701,12 +928,12 @@
    }
   },
   {
-   "name": "même valeur sur la famille et sa variante : comptée une fois",
+   "name": "même nuance sur la famille et sa variante : comptée une fois",
    "families": [
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Bleu"
       }
      ],
@@ -714,7 +941,7 @@
       {
        "characteristics": [
         {
-         "label": "Coloris",
+         "label": "Pastille",
          "value": "Bleu"
         }
        ]
@@ -724,7 +951,7 @@
     {
      "characteristics": [
       {
-       "label": "Coloris",
+       "label": "Pastille",
        "value": "Rouge"
       }
      ],
