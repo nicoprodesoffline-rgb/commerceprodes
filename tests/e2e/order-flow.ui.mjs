@@ -51,7 +51,7 @@ before(async () => {
   pool = newPool(2);
   server = spawn(process.execPath, [path.join(ROOT, "node_modules/next/dist/bin/next"), "start", "-H", "127.0.0.1", "-p", String(PORT)], {
     cwd: ROOT,
-    env: { PATH: process.env.PATH, HOME: process.env.HOME, NEXT_TELEMETRY_DISABLED: "1", SITE_ENV: "staging", SITE_NOW_UTC: "2026-10-20T09:00:00Z", SITE_DATABASE_URL: dbUrl.toString(), SITE_CATALOG_SOURCE: "db", SITE_BUSINESS_PERSISTENCE: "postgresql", SITE_REQUEST_LIMIT: "1000" },
+    env: { PATH: process.env.PATH, HOME: process.env.HOME, NEXT_TELEMETRY_DISABLED: "1", SITE_ENV: "staging", SITE_NOW_UTC: "2026-10-20T09:00:00Z", SITE_DATABASE_URL: dbUrl.toString(), SITE_CATALOG_SOURCE: "db", SITE_BUSINESS_PERSISTENCE: "postgresql", SITE_REQUEST_LIMIT: "1000", SITE_RECEIPT_LIMIT: "1000" },
     stdio: "ignore",
   });
   server.on("exit", () => { exited = true; });

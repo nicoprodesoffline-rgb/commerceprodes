@@ -110,7 +110,7 @@ function pollHeaders(cursor, limit, keyId = "c0-test-events-01") {
   };
 }
 
-const ENV = () => ({ SITE_BUSINESS_PERSISTENCE: "postgresql", SITE_DATABASE_URL: DB_URL(), SITE_KEYRING_PATH: KEYRING_PATH, SITE_NOW_UTC: NOW, SITE_REQUEST_LIMIT: "1000" });
+const ENV = () => ({ SITE_BUSINESS_PERSISTENCE: "postgresql", SITE_DATABASE_URL: DB_URL(), SITE_KEYRING_PATH: KEYRING_PATH, SITE_NOW_UTC: NOW, SITE_REQUEST_LIMIT: "1000", SITE_RECEIPT_LIMIT: "1000" });
 
 describe("A — serveur BC4 (SITE_BUSINESS_PERSISTENCE=postgresql) sur prodes_site_bc4_test", () => {
   let server;
@@ -164,16 +164,22 @@ describe("A — serveur BC4 (SITE_BUSINESS_PERSISTENCE=postgresql) sur prodes_si
     assert.deepEqual(f.json.error_codes, ["PRICE_CHANGED"]);
   });
 
-  test("GET /api/site/receipt : bon jeton 200 ; absent 401 ; faux 404 = réf inconnue 404 (F_QUOTE_ORDER.lookup_*)", async () => {
-    const ok = await http("GET", `/api/site/receipt?ref=${created.receipt_ref}&access_token=${encodeURIComponent(created.access_token)}`);
-    assert.equal(ok.status, 200);
+  test("POST /api/site/receipt {ref, code} : bon code 200 ; absent 401 ; faux 404 = réf inconnue 404 ; un GET ne sert plus une demande v2 (F_QUOTE_ORDER.lookup_*)", async () => {
+    // Cercle 5 (P03) : le code voyage dans le CORPS, jamais dans l'adresse ; le GET d'avant ne reste que pour les demandes d'avant le cercle (C0 §10.5).
+    const read = (body) => http("POST", "/api/site/receipt", { body: JSON.stringify(body) });
+    const ok = await read({ ref: created.receipt_ref, code: created.access_token });
+    assert.equal(ok.status, 200, ok.text);
     assert.deepEqual(ok.json.receipt, created.receipt);
-    assert.equal((await http("GET", `/api/site/receipt?ref=${created.receipt_ref}`)).status, 401);
-    const wrong = await http("GET", `/api/site/receipt?ref=${created.receipt_ref}&access_token=faux`);
-    const unknown = await http("GET", `/api/site/receipt?ref=ORD-00000000000000000000000000000000&access_token=faux`);
+    assert.equal(ok.json.number, created.number);
+    assert.equal(ok.json.transmission, "recue");
+    assert.equal((await read({ ref: created.receipt_ref })).status, 401);
+    const wrong = await read({ ref: created.receipt_ref, code: "faux" });
+    const unknown = await read({ ref: "ORD-00000000000000000000000000000000", code: "faux" });
     assert.equal(wrong.status, 404);
     assert.equal(unknown.status, 404);
     assert.equal(wrong.text, unknown.text);
+    const old = await http("GET", `/api/site/receipt?ref=${created.receipt_ref}&access_token=${encodeURIComponent(created.access_token)}`);
+    assert.equal(old.status, 404, "le GET ne sert plus une demande v2 (même bon code)");
   });
 
   test("GET /api/site/events + POST /api/site/events/ack : client Factory simulé (c0-test-events-01), re-service sans ACK, scopes", async () => {

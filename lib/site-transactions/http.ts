@@ -16,7 +16,7 @@ import { ackEvents, pollEvents } from "./events";
 import type { Json } from "@/c0/ts/src/jsonc";
 import { checkDated, instant, signResponse, signedPath } from "@/lib/site-publish/transport-gate";
 import { RECEIPT_POST_MAX_BYTES, getReceipt, postReceipt, postReceiptDocument } from "./receipt";
-import { clientAddress, createLimiter } from "@/lib/site-ratelimit/limiter";
+import { receiptLimitRefusal } from "../site-ratelimit/receipt";
 
 function toResponse(r: TxResponse, route?: BusinessRoute): Response {
   if (route && r.status >= 400) logRefusal(route, r.status, JSON.parse(Buffer.from(r.body).toString("utf8")));
@@ -81,17 +81,8 @@ export async function receiptHttp(req: Request): Promise<Response> {
   return guarded(async () => getReceipt({ pool: getPool() }, new URL(req.url).searchParams), "/api/site/receipt");
 }
 
-/** Cercle 5 (5.22, 5.23) : cinq consultations de reçu par minute et par adresse ; la sixième reçoit 429 (attendu P04). */
-const receiptLimiter = createLimiter({ limit: 5, windowMs: 60_000, maxKeys: 10_000 });
-
-function receiptLimited(req: Request): Response | null {
-  const taken = receiptLimiter.take(clientAddress(req.headers), Date.now());
-  if (taken.ok) return null;
-  return new Response(JSON.stringify({ accepted: false, outcome: "REJECTED", error_codes: ["TOO_MANY_REQUESTS"], message: "Trop de demandes, réessayez dans une minute." }), {
-    status: 429,
-    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "retry-after": String(taken.retryAfterSeconds) },
-  });
-}
+/** Cercle 5 (5.22, 5.23) : la limite de consultation du reçu (5 par minute et par adresse par défaut ; `SITE_RECEIPT_LIMIT`) est dans lib/site-ratelimit/receipt.ts. */
+const receiptLimited = (req: Request): Response | null => receiptLimitRefusal(req.headers);
 
 /** `POST /api/site/receipt` {ref, code} : le code voyage dans le corps, jamais dans l'adresse (P03). */
 export async function receiptPostHttp(req: Request): Promise<Response> {
