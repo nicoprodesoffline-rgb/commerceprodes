@@ -1,0 +1,118 @@
+import Link from "next/link";
+import { CategoryGrid } from "@/components/home/category-grid";
+import { FamilyCard } from "@/components/home/family-card";
+import { CarouselRow } from "@/components/site/carousel-row";
+import { familyCard, navigationOf } from "@/components/site/catalog-views";
+import { uniformBasis } from "@/components/site/format";
+import { MediaImage } from "@/components/site/media-image";
+import type { Catalog } from "@/lib/site-catalog/catalog";
+import { serverNowUtc } from "@/lib/site-catalog/clock";
+import { familyPrice } from "@/lib/site-catalog/listing-price";
+import type { EditorialPage, Section } from "@/lib/site-content/model";
+import { isLocalLink } from "@/lib/site-content/validate";
+
+type Data<T extends Section["type"]> = Extract<Section, { type: T }>["data"];
+const heading = "commerce-section-title mb-6 whitespace-pre-line";
+
+export function HeroSection({ data, first }: { data: Data<"hero">; first: boolean }) {
+  const Heading = first ? "h1" : "h2";
+  return (
+    <section data-testid="section-hero" className="min-w-0 bg-brand-subtle p-6 text-ink md:p-10">
+      <Heading className="max-w-[30ch] whitespace-pre-line text-4xl font-extrabold text-brand [overflow-wrap:anywhere]">{data.title}</Heading>
+      {data.text && <p className="mt-4 max-w-[70ch] whitespace-pre-line [overflow-wrap:anywhere]">{data.text}</p>}
+      {data.link && isLocalLink(data.link) && <Link href={data.link} className="mt-5 inline-flex min-h-[48px] items-center rounded-sm bg-brand px-5 font-semibold text-white hover:bg-brand-dark">{data.linkLabel ?? "Découvrir"}</Link>}
+    </section>
+  );
+}
+
+export function CategoryGridSection({ data, catalog }: { data: Data<"category_grid">; catalog: Catalog }) {
+  const nav = navigationOf(catalog);
+  const byKey = new Map(catalog.categories.map(c => [c.category_key, c]));
+  const categories = data.categories.flatMap(key => {
+    const category = byKey.get(key);
+    const slugs = new Set(nav.familySlugs(key));
+    const families = nav.node(key) ? catalog.families.filter(f => slugs.has(f.slug)) : catalog.familiesInCategory(key);
+    return category ? [{ key, name: category.name, familyCount: families.length, imageSha: families.find(f => f.image_main_sha256)?.image_main_sha256 ?? null, children: [] }] : [];
+  });
+  if (categories.length !== data.categories.length || categories.length === 0) return null;
+  return (
+    <section data-testid="section-category-grid" className="min-w-0 [overflow-wrap:anywhere]">
+      {data.title && <h2 className={heading}>{data.title}</h2>}
+      <CategoryGrid categories={categories} />
+    </section>
+  );
+}
+
+export function FamilyCarouselSection({ data, catalog }: { data: Data<"product_carousel">; catalog: Catalog }) {
+  const byKey = new Map(catalog.families.map(f => [f.public_family_key, f]));
+  const families = data.families.flatMap(key => { const family = byKey.get(key); return family ? [family] : []; });
+  if (families.length !== data.families.length || families.length === 0) return null;
+  const now = serverNowUtc();
+  const cards = families.map(f => ({ key: f.public_family_key, data: familyCard(f), from: familyPrice(catalog, f, now) }));
+  // Même affichage de base fiscale que FamilyGrid prices, sans constante fiscale éditoriale.
+  const basis = uniformBasis(cards.map(f => f.from?.basis).filter(b => b !== undefined));
+  return (
+    <section data-testid="section-product-carousel" className="min-w-0">
+      {data.title && <h2 className={heading}>{data.title}</h2>}
+      <CarouselRow label={data.title || "Produits à découvrir"}>
+        {cards.map(card => <FamilyCard key={card.key} data={card.data} from={card.from} showBasis={!basis.uniform} />)}
+      </CarouselRow>
+    </section>
+  );
+}
+
+export function TextImageSection({ data }: { data: Data<"text_image"> }) {
+  return (
+    <section data-testid="section-text-image" className="grid min-w-0 items-center gap-6 md:grid-cols-2">
+      <div className="min-w-0">
+        {data.title && <h2 className={heading}>{data.title}</h2>}
+        <p className="max-w-[70ch] whitespace-pre-line text-ink-2 [overflow-wrap:anywhere]">{data.text}</p>
+      </div>
+      <div aria-hidden={data.imageAlt ? undefined : true} className="min-w-0"><MediaImage sha256={data.media_sha} alt={data.imageAlt ?? ""} className="aspect-[4/3] w-full rounded-[14px] border border-line" /></div>
+    </section>
+  );
+}
+
+/** Cercle 3, 3.24 : une FAQ éditable — questions et réponses publiées par la Factory, affichées comme du texte (jamais comme du code). Accordéon natif, sans script. */
+export function FaqSection({ data }: { data: Data<"faq"> }) {
+  return (
+    <section data-testid="section-faq" className="min-w-0">
+      {data.title && <h2 className={heading}>{data.title}</h2>}
+      <div className="divide-y divide-line rounded-[14px] border border-line bg-white">
+        {data.questions.map((item, index) => (
+          <details key={index} name="faq" className="group px-4">
+            <summary className="flex min-h-[48px] cursor-pointer items-center justify-between gap-3 font-medium">{item.question}<span aria-hidden="true" className="text-ink-3 group-open:rotate-180">▾</span></summary>
+            <p className="whitespace-pre-line pb-4 text-ink-2 [overflow-wrap:anywhere]">{item.answer}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** Cercle 3, 3.24 : un texte libre (contact, mentions légales, livraison). */
+export function RichTextSection({ data }: { data: Data<"rich_text"> }) {
+  return (
+    <section data-testid="section-rich-text" className="min-w-0">
+      {data.title && <h2 className={heading}>{data.title}</h2>}
+      <p className="max-w-[70ch] whitespace-pre-line text-ink-2 [overflow-wrap:anywhere]">{data.text}</p>
+    </section>
+  );
+}
+
+export function PageSections({ page, catalog }: { page: EditorialPage; catalog: Catalog }) {
+  return (
+    <div className="w-full min-w-0 space-y-10">
+      {page.sections.map((section, index) => {
+        switch (section.type) {
+          case "hero": return <HeroSection key={index} data={section.data} first={index === 0} />;
+          case "category_grid": return <CategoryGridSection key={index} data={section.data} catalog={catalog} />;
+          case "product_carousel": return <FamilyCarouselSection key={index} data={section.data} catalog={catalog} />;
+          case "text_image": return <TextImageSection key={index} data={section.data} />;
+          case "faq": return <FaqSection key={index} data={section.data} />;
+          case "rich_text": return <RichTextSection key={index} data={section.data} />;
+        }
+      })}
+    </div>
+  );
+}

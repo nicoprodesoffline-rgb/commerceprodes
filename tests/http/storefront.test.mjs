@@ -165,7 +165,7 @@ function quoteFrom(pv, overrides = {}) {
   };
 }
 
-const PAGES_STORE = ["/", "/panier", "/recherche?q=chaise", "/devis", "/commande"];
+const PAGES_STORE = ["/", "/panier", "/recherche?q=chaise", "/devis", "/commande", "/favoris", "/comparer", "/gamme-pro-intens"];
 const LEGACY = [
   "/admin", "/admin/login", "/admin/devis", "/admin/devis/1", "/admin/produits", "/admin/catalogue", "/admin/import",
   "/api/admin/auth", "/api/admin/export-products", "/api/admin/products-list", "/api/admin/ia/categories-list",
@@ -213,6 +213,16 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
     assert.equal(pv.json.site_status, "CATALOG_UNAVAILABLE");
     assert.equal(pv.json.reason, "NO_ACTIVE_GENERATION");
     assert.equal((await get("/media/ed9aaaaa1debb1f00870b9b41636dc75b64eb0437ed9c58dcbb18047b73b41ec")).status, 503);
+    // Familles par adresse (S1-A I3) : même règle que la recherche instantanée, catalogue indisponible = 503 explicite.
+    const lookup = await get("/api/site/families?slugs=chaise-demo");
+    assert.equal(lookup.status, 503);
+    assert.equal(JSON.parse(lookup.text).unavailable, true);
+    // Recherche instantanée (S1-A I2) : catalogue indisponible = 503 explicite, jamais une liste vide qui laisserait croire à « aucun résultat ».
+    const suggest = await get("/api/site/search?q=chaise");
+    assert.equal(suggest.status, 503);
+    assert.match(suggest.headers.get("content-type") ?? "", /^application\/json/);
+    assert.equal(JSON.parse(suggest.text).unavailable, true);
+    assert.deepEqual(JSON.parse(suggest.text).results, []);
     assert.equal((await get("/article/PI-00000001R")).status, 503);
     assert.equal((await get("/panier/abc")).status, 404, "chemin legacy : 404, pas la page d'indisponibilité");
     assert.match(logs.join(""), /\[site-catalog\] indisponible : NO_ACTIVE_GENERATION/);
@@ -231,21 +241,55 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
         assert.match(r.text, /<html lang="fr">/, p);
       }
       const home = await get("/");
-      assert.match(home.text, /data-testid="catalogue-sequence">1</);
-      assert.match(home.text, />db</, "source db affichée dans le détail technique");
+      assert.doesNotMatch(home.text, /data-testid="catalogue-sequence"/, "le détail technique de la publication n'est plus public");
+      assert.doesNotMatch(home.text, />db</, "la source des données n'est plus affichée au public");
       assert.match(home.text, /href="\/famille\/chaise-demo"/);
       const parent = await get("/categorie/mobilier");
       assert.match(parent.text, /href="\/categorie\/mobilier-chaises"/, "sous-catégorie (parent_category_key)");
       const fiche = await get("/famille/chaise-demo");
       assert.match(fiche.text, /aria-label="Fil d&#x27;Ariane"|aria-label="Fil d'Ariane"/);
       assert.match(fiche.text, /href="\/categorie\/mobilier"[^>]*>[^<]*</, "fil d'Ariane : catégorie racine");
-      assert.match(fiche.text, /data-testid="item-ref">PI-00000001R</, "référence PI affichée telle quelle (C0 §16.3)");
+      assert.match(fiche.text, /data-testid="item-ref" data-key="PI-00000001R">PI-000001</, "référence courte affichée (D6), clé longue en donnée");
+      assert.doesNotMatch(fiche.text, />PI-00000001R</, "la clé longue n'est plus un texte affiché");
       assert.match(fiche.text, /data-rate-id="R-SIMPLE-1" data-tier="1"/, "palier publié sélectionné par selectPrice");
       assert.match(fiche.text, /38,50/);
       for (const p of ["/famille/inconnue", "/categorie/inconnue", "/article/PI-000000JW3", "/article/n-importe-quoi"]) assert.equal((await get(p)).status, 404, p);
       const art = await get("/article/PI-00000001R");
       assert.equal(art.status, 307);
       assert.equal(art.headers.get("location"), "/famille/chaise-demo?article=PI-00000001R", "Location relative");
+      const artShort = await get("/article/PI-000001");
+      assert.equal(artShort.status, 307, "forme courte acceptée");
+      assert.equal(artShort.headers.get("location"), "/famille/chaise-demo?article=PI-00000001R", "l'adresse garde la clé longue");
+    });
+
+    test("langage public : aucune page publique ne rend un terme interne (texte visible, aria-label, title, alt, placeholder) ni une image de test", async () => {
+      // Les noms de la fixture contiennent eux-mêmes « STAGING_FIXTURE » (données, pas interface) : seuls les textes de l'interface sont scannés.
+      const FORBIDDEN = [
+        /boutique de démonstration/i, /image de démonstration/i, /staging-banner/, /fictiv/i, /\bde test\b/i, /\(code [A-Z_]{4,}\)/, /donn[ée]es? de test/i, /enregistr[ée]es? localement/i, /trait[ée]es? par personne/i,
+        /base fiscale/i, /taxes, port et remises/i, /prix de vente PRODES/i, /en vigueur maintenant/i, /provenance/i, /\bhash\b/i,
+        /g[ée]n[ée]ration/i, /s[ée]quence/i, /\bcontrat\b/i, /\bC0\b/, /\bFactory\b/i, /calculateur/i, /catalogue servable/i, /instant serveur/i,
+      ];
+      const visible = (html) => {
+        const body = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ");
+        const attrs = [...body.matchAll(/\s(?:aria-label|title|alt|placeholder)="([^"]*)"/g)].map((m) => m[1]);
+        const text = body.replace(/<[^>]*>/g, " ");
+        return `${text} ${attrs.join(" ")}`.replace(/&#x27;|&#39;/g, "'").replace(/&amp;/g, "&").replace(/\s+/g, " ");
+      };
+      const pages = ["/", "/recherche", "/categorie/mobilier", "/categorie/mobilier-chaises", "/famille/chaise-demo", "/faq", "/contact", "/mentions-legales",
+        "/panier", "/devis", "/commande", "/comparer", "/favoris", "/gamme-pro-intens", "/recu", "/page-qui-nexiste-pas"];
+      const found = [];
+      for (const p of pages) {
+        const r = await get(p);
+        assert.ok(r.status === 200 || r.status === 404, `${p} : ${r.status}`);
+        const text = visible(r.text);
+        for (const re of FORBIDDEN) {
+          const m = re.exec(text);
+          if (m) found.push(`${p} : « ${text.slice(Math.max(0, m.index - 40), m.index + 60)} »`);
+        }
+        // Une génération de test ne montre jamais d'image : aucun <img> vers /media/ dans le HTML rendu.
+        assert.doesNotMatch(r.text, /<img[^>]+src="\/media\//, `${p} : image de test montrée`);
+      }
+      assert.deepEqual(found, [], `termes internes visibles :\n${found.join("\n")}`);
     });
 
     test("médias servis depuis site_media : octets = SHA-256 et taille déclarés, Content-Type déclaré ; non déclaré → 404", async () => {
@@ -281,12 +325,98 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.equal(r.headers.get("set-cookie"), null);
     });
 
+    test("base fiscale : la génération déclare HT, le site peut le dire (pied de page, accueil) ; la règle inverse est dans basis.ui", async () => {
+      const home = await get("/");
+      assert.doesNotMatch(home.text, /data-testid="footer-basis"|Montant indicatif/, "le pied de page ne répète plus de mention fiscale");
+      assert.match(home.text, /Prix HT/);
+      assert.doesNotMatch(home.text, /Les prix et la base fiscale sont précisés sur le devis/);
+      assert.doesNotMatch(home.text, /data-testid="universe-bar"/, "aucune page publiée : la barre d'univers n'affiche rien (pas même un cadre vide)");
+      const faq = await get("/faq");
+      assert.equal(faq.status, 200);
+      assert.match(faq.text, /Les prix sont hors taxes ; la TVA apparaît sur le devis et la facture/);
+    });
+
+    test("pages fixes provisoires : FAQ, contact, mentions légales, gamme PRO-INTENS sans catégorie — dites telles quelles, sans coordonnée ni garantie inventée", async () => {
+      for (const p of ["/faq", "/contact", "/mentions-legales", "/gamme-pro-intens"]) {
+        const r = await get(p);
+        assert.equal(r.status, 200, p);
+        assert.doesNotMatch(r.text, /tel:|mailto:|\b0\d(?:[ .]?\d{2}){4}\b/, `${p} : aucune coordonnée écrite en dur`);
+        assert.doesNotMatch(r.text, /10 ans|garantie structure/i, `${p} : aucune garantie générale (C7)`);
+      }
+      assert.match((await get("/mentions-legales")).text, /data-testid="legal-provisional"/);
+      assert.match((await get("/mentions-legales")).text, /noindex/);
+      const gamme = (await get("/gamme-pro-intens")).text;
+      assert.match(gamme, /Aucun produit de la gamme n&#x27;est publié pour le moment\.|Aucun produit de la gamme n'est publié pour le moment\./);
+      assert.doesNotMatch(gamme, /prochainement|bientôt|très vite/i, "aucune promesse de date");
+    });
+
+    test("recherche instantanée : requête vide ou trop courte, trop longue, JSON échappé, au plus 8 familles publiées", async () => {
+      for (const q of ["", "c", "  "]) {
+        const r = await get(`/api/site/search?q=${encodeURIComponent(q)}`);
+        assert.equal(r.status, 200, JSON.stringify(q));
+        assert.deepEqual(JSON.parse(r.text).results, [], JSON.stringify(q));
+      }
+      const found = await get("/api/site/search?q=CHAISE");
+      assert.equal(found.status, 200);
+      assert.match(found.headers.get("content-type") ?? "", /^application\/json/);
+      assert.match(found.headers.get("cache-control") ?? "", /no-store/);
+      const body = JSON.parse(found.text);
+      assert.ok(body.results.length >= 1 && body.results.length <= 8);
+      assert.equal(body.results[0].slug, "chaise-demo");
+      assert.deepEqual(Object.keys(body.results[0]).sort(), ["category", "imageSha", "name", "priceText", "slug"], "rien d'autre que ce qui est publié et affiché");
+      const ref = await get("/api/site/search?q=PI-00000001R");
+      assert.equal(JSON.parse(ref.text).results[0].slug, "chaise-demo");
+      for (const q of ["PI-000001", "pi-000001", "PI-1"]) assert.equal(JSON.parse((await get(`/api/site/search?q=${q}`)).text).results[0]?.slug, "chaise-demo", `forme courte ${q}`);
+      assert.equal(JSON.parse((await get("/api/site/search?q=PI-999999")).text).results.length, 0, "forme courte inconnue : aucun résultat");
+      const evil = await get(`/api/site/search?q=${encodeURIComponent('<script>alert(1)</script>"><img src=x onerror=alert(2)>')}`);
+      assert.equal(evil.status, 200);
+      assert.match(evil.headers.get("content-type") ?? "", /^application\/json/, "jamais interprété comme du HTML");
+      assert.doesNotMatch(evil.text, /[<>&]/, "chevrons et esperluette sont échappés (\\u003c…) dans le JSON");
+      assert.equal(JSON.parse(evil.text).query, '<script>alert(1)</script>"><img src=x onerror=alert(2)>', "et le terme est restitué à l'identique une fois le JSON lu");
+      const long = await get(`/api/site/search?q=${"a".repeat(5000)}`);
+      assert.equal(long.status, 200);
+      assert.ok(JSON.parse(long.text).query.length <= 100, "requête bornée à 100 caractères");
+    });
+
+    test("limite d'envois : la 121e demande d'une adresse reçoit 429 et un JSON vide", async () => {
+      for (const [endpoint, key, address] of [["search", "results", "192.0.2.120"], ["families", "families", "192.0.2.121"]]) {
+        const headers = { "x-forwarded-for": ` ${address}, 198.51.100.1` };
+        const responses = await Promise.all(Array.from({ length: 121 }, () => http("GET", `/api/site/${endpoint}`, { headers })));
+        assert.equal(responses.filter((r) => r.status === 200).length, 120, `${endpoint} : 120/121 demandes autorisées`);
+        const refusals = responses.filter((r) => r.status === 429);
+        assert.equal(refusals.length, 1, `${endpoint} : 1/121 demande limitée`);
+        const limited = refusals[0];
+        assert.deepEqual(limited.json, { [key]: [], limited: true });
+        assert.match(limited.headers.get("retry-after") ?? "", /^[1-9]\d*$/);
+        assert.match(limited.headers.get("content-type") ?? "", /^application\/json/);
+        assert.match(limited.headers.get("cache-control") ?? "", /no-store/);
+        assert.doesNotMatch(limited.text, /[<>&]/);
+      }
+    });
+
+    test("familles par adresse : ordre gardé, inconnu rendu à part, adresses invalides écartées, 20 au plus, JSON échappé", async () => {
+      const r = await get("/api/site/families?slugs=zzz-inconnu,chaise-demo,chaise-demo,../etc/passwd,%3Cscript%3E");
+      assert.equal(r.status, 200);
+      assert.match(r.headers.get("content-type") ?? "", /^application\/json/);
+      assert.match(r.headers.get("cache-control") ?? "", /no-store/);
+      const body = JSON.parse(r.text);
+      assert.deepEqual(body.families.map((f) => f.slug), ["chaise-demo"]);
+      assert.deepEqual(body.missing, ["zzz-inconnu"], "une adresse invalide n'est jamais relue ni renvoyée");
+      assert.deepEqual(Object.keys(body.families[0]).sort(), ["axes", "best", "category", "description", "imageSha", "name", "priceText", "reference", "single", "slug", "variantCount"]);
+      assert.doesNotMatch(r.text, /[<>&]/);
+      const many = await get(`/api/site/families?slugs=${Array.from({ length: 60 }, (_, i) => `zz${i}`).join(",")}`);
+      assert.equal(JSON.parse(many.text).missing.length, 20, "20 adresses au plus par appel");
+      const none = await get("/api/site/families");
+      assert.deepEqual(JSON.parse(none.text).families, []);
+    });
+
     test("recherche serveur : nom, référence PI, requête HTML échappée, longueur bornée", async () => {
       const ok = await get("/recherche?q=CHAISE");
       assert.match(ok.text, /data-testid="search-count">1 famille/);
       assert.match(ok.text, /href="\/famille\/chaise-demo"/);
       const ref = await get("/recherche?q=PI-00000001R");
       assert.match(ref.text, /href="\/famille\/chaise-demo"/);
+      assert.match((await get("/recherche?q=PI-000001")).text, /href="\/famille\/chaise-demo"/, "recherche par la référence courte");
       const evil = await get(`/recherche?q=${encodeURIComponent('<script>alert(1)</script>"><img src=x onerror=alert(2)>')}`);
       assert.equal(evil.status, 200);
       assert.doesNotMatch(evil.text, /<script>alert\(1\)/);
@@ -471,13 +601,15 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.equal(Number(await scalar("SELECT count(*) FROM site_order")), 0);
       const fiche = await get("/famille/esunny-demo?article=PI-0000006BC");
       assert.equal(fiche.status, 200);
-      assert.match(fiche.text, /data-testid="item-ref">PI-0000006BC</, "variante présélectionnée");
-      // Blanc choisi : « sol » est désactivé et expliqué ; aucune 4e combinaison n'a de référence.
-      assert.match(fiche.text, /value="sol"[^>]*disabled=""|disabled=""[^>]*value="sol"/, "sol non sélectionnable avec blanc");
-      assert.match(fiche.text, /Non proposé avec Coloris « Blanc »/);
-      assert.equal([...fiche.text.matchAll(/<td class="py-1 pr-2 font-mono text-xs whitespace-nowrap">(PI-[0-9A-Z]{9})<\/td>/g)].length, 3, "3 variantes listées, pas 4");
+      assert.match(fiche.text, /data-testid="item-ref" data-key="PI-0000006BC">PI-000203</, "variante présélectionnée");
+      // La variante présélectionnée n'est PAS un choix : tant que l'acheteur n'a rien choisi, toute valeur qui existe est disponible, aucune n'est désactivée.
+      assert.doesNotMatch(fiche.text, /value="sol"[^>]*disabled=""|disabled=""[^>]*value="sol"/, "sol reste cliquable (recalage au clic)");
+      assert.match(fiche.text, /value="sol"[^>]*data-compatible="true"|data-compatible="true"[^>]*value="sol"/, "sol disponible tant qu'aucun choix n'est épinglé");
+      assert.doesNotMatch(fiche.text, /Grisé :|Non proposé avec/);
+      assert.ok(new Set(fiche.text.match(/PI-[0-9A-Z]{9}/g)).size <= 3, "au plus 3 références dans la page : aucune 4e combinaison");
       const noir = await get("/famille/esunny-demo?article=PI-00000069X");
       assert.doesNotMatch(noir.text, /value="sol"[^>]*disabled=""|disabled=""[^>]*value="sol"/, "noir : sol proposé");
+      assert.doesNotMatch(noir.text, /data-compatible="false"/, "noir : aucune valeur grisée sans choix");
     });
   });
 
@@ -510,7 +642,7 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       // Revue F-06 : référence d'une autre Famille → avertissement explicite, jamais une autre variante en silence.
       const other = await get("/famille/chaise-pliante?article=PI-000000JSY");
       assert.equal(other.status, 200);
-      assert.match(other.text, /data-testid="article-notice"[^]*appartient à une autre famille/);
+      assert.match(other.text, /data-testid="article-notice"[^]*correspond à un autre produit/);
       assert.match(other.text, /href="\/article\/PI-000000JSY"/);
       // Slug changé en génération 2 (chaise-coque → chaise-coque-v2) : l'ancienne adresse n'existe plus.
       assert.equal((await get("/famille/chaise-coque")).status, 404);
@@ -536,9 +668,9 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.deepEqual(pv.json.lines.map((l) => l.error_codes), [["ITEM_SUPERSEDED"], ["ITEM_RETIRED"]]);
       // Revue F-06 : ?article= retirée / remplacée / inconnue / mal formée → message explicite, jamais silencieux.
       const cases = [
-        ["PI-000000JSY", /La référence PI-000000JSY a été retirée du catalogue/],
-        ["PI-000000JW3", /La référence PI-000000JW3 a été remplacée\.[^]*href="\/article\/PI-000000JVF"/],
-        ["PI-00000001R", /La référence PI-00000001R est inconnue du catalogue actuel/],
+        ["PI-000000JSY", /La référence PI-000601 a été retirée du catalogue/],
+        ["PI-000000JW3", /La référence PI-000604 a été remplacée\.[^]*href="\/article\/PI-000000JVF"/],
+        ["PI-00000001R", /La référence PI-000001 est inconnue du catalogue actuel/],
         ["<script>alert(1)</script>", /La référence &lt;script&gt;alert\(1\)&lt;\/script&gt; est inconnue/],
       ];
       for (const [ref, re] of cases) {
@@ -562,7 +694,7 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.match(logs.join(""), /média altéré refusé/);
       const fiche = await get("/famille/chaise-pliante");
       assert.equal(fiche.status, 200);
-      assert.match(fiche.text, new RegExp(`/media/${sha}`), "la fiche référence le média ; le client affiche « Image indisponible » (test navigateur)");
+      assert.match(fiche.text, /Visuel non disponible/, "génération de test : jamais d'image, état neutre à la place (média altéré refusé par /media, vérifié ci-dessus)");
     });
 
     test("génération ACTIVE devenue UNSAFE (pointeur ≠ ligne) → pages 503, aperçu 503 CATALOG_UNSAFE, commande refusée, 0 ligne", async () => {

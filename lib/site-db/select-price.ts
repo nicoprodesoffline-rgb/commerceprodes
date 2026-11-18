@@ -5,6 +5,7 @@
  * - tout autre document (fixture, test) : `selectPrice` de C0 (construction à chaque appel, comportement d'origine).
  * Aucune persistance entre processus, aucune clé de valeur : l'identité d'objet d'un document vérifié est la seule clé.
  */
+import { asV1 } from "../site-catalog/v1-view";
 import { Generation, selectPrice, selectPriceIn, type SelectResult } from "../../c0/ts/src/business";
 import type { Json } from "../../c0/ts/src/jsonc";
 import { isVerified } from "./verified";
@@ -22,7 +23,7 @@ export function selectPriceOnServed(
   if (generation.status === "ACTIVE" && isVerified(doc)) {
     let built = generations.get(doc);
     if (built === undefined) {
-      built = new Generation({ snapshot: doc as Json, status: "ACTIVE" });
+      built = new Generation({ snapshot: asV1(doc as Json), status: "ACTIVE" });
       generations.set(doc, built);
     }
     return selectPriceIn(built, publicItemKey, variantAxes, quantity, instantUtc);

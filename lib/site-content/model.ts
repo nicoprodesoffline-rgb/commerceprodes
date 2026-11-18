@@ -1,0 +1,35 @@
+export type Section =
+  | { type: "hero"; data: { title: string; text?: string; link?: string; linkLabel?: string; imageSha?: string } }
+  | { type: "category_grid"; data: { categories: string[]; title?: string } }
+  | { type: "product_carousel"; data: { families: string[]; title?: string } }
+  | { type: "text_image"; data: { text: string; media_sha: string; title?: string; imageAlt?: string } }
+  | { type: "faq"; data: { title?: string; questions: { question: string; answer: string }[] } }
+  | { type: "rich_text"; data: { title?: string; text: string } };
+
+export type EditorialPage = {
+  key: string;
+  slug: string;
+  title: string;
+  nav: { showInBar: boolean; order: number };
+  revision: number;
+  seo_title: string;
+  seo_description: string;
+  canonical: string;
+  sections: Section[];
+};
+
+export type MerchandisingRelation = {
+  source: string;
+  target: string;
+  kind: "LIE" | "COMPLEMENTAIRE" | "UPSELL";
+  order: number;
+};
+
+export type EditorialSet = { generation: number; publicationId: string; pages: EditorialPage[]; merchandising: MerchandisingRelation[] };
+export type CatalogRefs = {
+  categoryKeys: ReadonlySet<string>;
+  familyKeys: ReadonlySet<string>;
+  mediaShas: ReadonlySet<string>;
+  /** Empreinte du catalogue servi, incluse dans la clé du cache de transport. */
+  catalogSha256?: string;
+};

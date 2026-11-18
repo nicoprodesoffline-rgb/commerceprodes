@@ -1,50 +1,51 @@
+import Image from "next/image";
 import Link from "next/link";
+import type { CatalogBasis } from "@/lib/site-catalog/basis";
 import type { CatalogMeta } from "@/lib/site-catalog/catalog";
+import { DEFAULT_SHOP, type ShopSettings } from "@/lib/site-shop/settings";
 
-/**
- * Pied de page : liens utiles et, en second niveau (`<details>`), le détail technique de la génération servie
- * (DA §7 : « Détail technique » en disclosure). Aucune coordonnée commerciale : non vérifiées (DA §2.2,
- * PENDING_ASSET_VERIFICATION) — le prototype portait un numéro et une adresse non qualifiés.
- */
-export function SiteFooter({ meta, instantUtc, forcedNow }: { meta: CatalogMeta | null; instantUtc: string | null; forcedNow: boolean }) {
+export function SiteFooter({ meta, shop = DEFAULT_SHOP }: { meta: CatalogMeta | null; basis: CatalogBasis; shop?: ShopSettings }) {
   return (
-    <footer className="mt-12 border-t border-line bg-surface text-sm text-ink-2">
-      <div className="mx-auto grid max-w-[1280px] gap-6 px-4 py-8 md:grid-cols-3 lg:px-8">
+    <footer className="mt-16 bg-ink text-sm text-white print:hidden">
+      <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-12 md:grid-cols-3 lg:px-8">
         <div>
-          <p className="font-bold tracking-[0.08em] text-ink">PRODES</p>
-          <p className="mt-1">Prix de vente PRODES publiés par le catalogue. Taxes et frais de port : non calculés sur ce site.</p>
+          <Link href="/" aria-label="PRODES — accueil du catalogue" className="inline-flex min-h-12 items-center gap-3 text-[28px] font-extrabold tracking-tight">
+            <Image src="/logo-prodes.png" alt="" width={48} height={48} className="h-12 w-12 object-contain" />
+            <span>PRODES</span>
+          </Link>
+          <p className="mt-5 max-w-xs text-white/80">Mobilier, signalisation et équipements pour les collectivités.</p>
+          {!meta && <p className="mt-4" data-testid="unavailable-banner">Catalogue momentanément indisponible.</p>}
         </div>
         <nav aria-label="Liens du pied de page">
-          <ul className="space-y-1">
-            <li><Link href="/" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Catalogue</Link></li>
-            <li><Link href="/panier" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Panier</Link></li>
-            <li><Link href="/recu" className="inline-flex min-h-[34px] items-center underline-offset-2 hover:underline">Consulter un reçu</Link></li>
+          <h2 className="mb-3 text-base font-bold uppercase">Votre catalogue</h2>
+          <ul className="grid grid-cols-2 gap-x-4">
+            <li><Link href="/recherche" className="inline-flex min-h-11 items-center hover:underline">Catalogue</Link></li>
+            <li><Link href="/panier" className="inline-flex min-h-11 items-center hover:underline">Panier</Link></li>
+            <li><Link href="/favoris" className="inline-flex min-h-11 items-center hover:underline">Ma sélection</Link></li>
+            <li><Link href="/comparer" className="inline-flex min-h-11 items-center hover:underline">Comparateur</Link></li>
+            <li><Link href="/devis" className="inline-flex min-h-11 items-center hover:underline">Demande de devis</Link></li>
+            <li><Link href="/recu" className="inline-flex min-h-11 items-center hover:underline">Consulter un reçu</Link></li>
           </ul>
         </nav>
-        <details className="text-xs">
-          <summary className="inline-flex min-h-[34px] cursor-pointer items-center font-medium text-ink">Détail technique</summary>
-          {meta ? (
-            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-              <dt>Données</dt>
-              <dd className="font-mono">{meta.data_label}</dd>
-              <dt>Publication</dt>
-              <dd className="break-all font-mono">{meta.publication_id}</dd>
-              <dt>Version du catalogue</dt>
-              <dd className="font-mono" data-testid="catalogue-sequence">{meta.catalogue_sequence}</dd>
-              <dt>Source</dt>
-              <dd className="font-mono">{meta.source}</dd>
-              <dt>Empreinte</dt>
-              <dd className="font-mono">{meta.payload_sha256.slice(0, 12)}…</dd>
-              <dt>Instant serveur</dt>
-              <dd className="font-mono">
-                {forcedNow ? "instant figé " : ""}
-                {instantUtc ?? "indisponible"}
-              </dd>
-            </dl>
-          ) : (
-            <p className="mt-2" data-testid="unavailable-banner">Aucune génération de catalogue servable.</p>
-          )}
-        </details>
+        <div>
+          <h2 className="mb-3 text-base font-bold uppercase">À votre écoute</h2>
+          <p>{shop.openingHours}</p>
+          <p className="mt-3 text-white/80">{shop.deliveryNotice}</p>
+          {shop.phone && <p className="mt-3" data-testid="shop-phone">{shop.phone}</p>}
+          {shop.email && <p data-testid="shop-email">{shop.email}</p>}
+          {shop.address && <p className="mt-3 whitespace-pre-line text-white/80" data-testid="shop-address">{shop.address}</p>}
+          <Link href="/contact" className="mt-3 inline-flex min-h-11 items-center underline underline-offset-4">Nous contacter</Link>
+        </div>
+      </div>
+      <div className="border-t border-white/20">
+        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-6 px-4 py-3 text-xs lg:px-8">
+          <p>© PRODES — Tous droits réservés</p>
+          <nav aria-label="Informations pratiques" className="flex flex-wrap gap-x-6">
+            <Link href="/faq" className="inline-flex min-h-11 items-center px-2 hover:underline">FAQ</Link>
+            <Link href="/mentions-legales" className="inline-flex min-h-11 items-center hover:underline">Mentions légales</Link>
+            {shop.footerLinks.map(l => <Link key={l.url + l.label} href={l.url} className="inline-flex min-h-11 items-center hover:underline">{l.label}</Link>)}
+          </nav>
+        </div>
       </div>
     </footer>
   );

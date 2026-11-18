@@ -24,6 +24,6 @@ export function formatAxisName(name: string): string {
 }
 
 export function axesLabel(axes: Record<string, string>): string {
-  const parts = Object.entries(axes).map(([k, v]) => `${formatAxisName(k)} : ${v}`);
+  const parts = Object.entries(axes).filter(([, v]) => v !== "" && v !== "rv-none").map(([k, v]) => `${formatAxisName(k)} : ${v}`);
   return parts.length ? parts.join(" · ") : "Variante unique";
 }

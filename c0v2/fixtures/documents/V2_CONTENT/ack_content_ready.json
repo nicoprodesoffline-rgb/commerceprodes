@@ -1,0 +1,11 @@
+{
+  "activated_at_utc": "2026-11-17T06:30:00Z",
+  "active_digest": "edb916aa7f32a017c0680230a6c80b3518493501f543f44ffe42112ac97781ac",
+  "content_sequence": 3,
+  "contract_version": "site_content_activation.v2",
+  "key_id": "c0-test-ack-01",
+  "outcome": "ACTIVATED",
+  "payload_sha256": "d30773e6578a03181f2b4b2762d3e1bb800915b5150567043941ef5cb99c0fb7",
+  "publication_id": "CNT-0003",
+  "signature": "526eaa2c94f5c927be7adb8c0e9ecf74d5379fc338bbf2850463f3cdc98d88d6"
+}

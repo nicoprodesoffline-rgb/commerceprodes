@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useCart, type DraftLine } from "@/components/cart/cart-provider";
 import { previewCart } from "@/components/site/api";
 import type { PreviewJson } from "@/lib/site-business/client-types";
+import { isUnpricedOnly } from "@/lib/site-catalog/quote-only";
 
 export type PreviewState =
   | { kind: "empty" }
@@ -62,5 +63,6 @@ export function bases(preview: PreviewJson): Set<string> {
 
 /** Devis possible : toute ligne est chiffrée ou seulement sans prix maintenant (devis non chiffré, C0 §10.2). */
 export function quoteAllowed(preview: PreviewJson): boolean {
-  return preview.lines.every((l) => l.accepted || (l.error_codes.length === 1 && l.error_codes[0] === "PRICE_WINDOW_UNAVAILABLE"));
+  return preview.lines.every((l) => l.accepted || isUnpricedOnly(l.error_codes));
 }
+

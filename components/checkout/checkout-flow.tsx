@@ -11,12 +11,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
-import { CartLines, PreviewProblem, StaleBanner, totalsNote } from "@/components/cart/cart-summary";
-import { bases, quoteAllowed, useCartPreview } from "@/components/cart/use-cart-preview";
+import { CartLines, PreviewProblem, StaleBanner, totalWithBasis } from "@/components/cart/cart-summary";
+import { quoteAllowed, useCartPreview } from "@/components/cart/use-cart-preview";
 import { ContactFields, EMPTY_CONTACT, ErrorSummary, contactBody, validateContact, type Contact } from "@/components/checkout/contact-fields";
 import { ResultPanel } from "@/components/checkout/result-panel";
 import { RECONFIRM, Submitter, type Outcome } from "@/components/checkout/submit";
-import { basisLabel, money } from "@/components/site/format";
 
 export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
   const { ready, ackSequence, acknowledge, clear } = useCart();
@@ -26,6 +25,8 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
   const [confirmedFor, setConfirmedFor] = useState<string | null>(null);
   const [tried, setTried] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [requiresReview, setRequiresReview] = useState(false);
+  const sendLock = useRef(false);
   const [sending, setSending] = useState(false);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const submitter = useRef(new Submitter()).current;
@@ -33,19 +34,20 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
   const preview = state.kind === "ready" ? state.preview : null;
   // Empreinte de ce qui est confirmé : toute variation de l'aperçu (prix, lignes, génération) annule la confirmation.
   const fingerprint = useMemo(() => (preview ? JSON.stringify([preview.catalogue_sequence, preview.total_amount, preview.lines.map((l) => [l.public_item_key, l.quantity, l.selection?.rate_id, l.selection?.unit_amount])]) : null), [preview]);
+  const needsReview = stale || requiresReview;
   const confirmed = confirmedFor !== null && confirmedFor === fingerprint;
   // Envoi refusé par le contrôle de saisie : le résumé des erreurs reçoit le focus APRÈS son rendu.
   useEffect(() => {
     if (attempt > 0) document.getElementById("error-summary")?.focus();
   }, [attempt]);
 
-  if (outcome?.kind === "received") return <ResultPanel outcome={outcome} />;
-  if (!ready || state.kind === "loading") return <p role="status" className="text-ink-3">Vérification du panier auprès du serveur…</p>;
+  if (outcome?.kind === "received") return <ResultPanel outcome={outcome} cartKept={mode === "quote"} cartOrderable={preview?.accepted === true} />;
+  if (!ready || state.kind === "loading") return <p role="status" className="text-ink-3">Vérification du panier…</p>;
   if (state.kind === "empty") {
     return (
       <div className="rounded-[14px] border border-line bg-white p-6" data-testid="cart-empty">
         <p>Votre panier est vide : ajoutez d&apos;abord des articles depuis le catalogue.</p>
-        <Link href="/" className="mt-3 inline-flex h-[42px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Parcourir le catalogue</Link>
+        <Link href="/" className="mt-3 inline-flex h-[44px] items-center rounded-[9px] bg-brand hover:bg-brand-dark px-4 font-medium text-white">Parcourir le catalogue</Link>
       </div>
     );
   }
@@ -55,17 +57,18 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
 
   if (!preview) return null;
   const allowed = mode === "order" ? preview.accepted : quoteAllowed(preview);
-  const b = bases(preview);
-  const total = preview.total_amount ? `${money(preview.total_amount)}${b.size === 1 ? ` ${basisLabel([...b][0])}` : ""}` : null;
+  const total = preview.total_amount ? totalWithBasis(preview) : null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (sendLock.current) return;
     setTried(true);
     if (Object.keys(errors).length > 0) {
       setAttempt((n) => n + 1);
       return;
     }
-    if (!preview || stale || !allowed || (mode === "order" && !confirmed)) return;
+    if (!preview || needsReview || !allowed || (mode === "order" && !confirmed)) return;
+    sendLock.current = true;
     setSending(true);
     try {
       const common = { contract_version: "site_business.v1" as const, catalogue_sequence: ackSequence ?? preview.catalogue_sequence, contact: contactBody(contact) };
@@ -90,12 +93,15 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
               })),
             });
       setOutcome(result);
-      if (result.kind === "received") clear();
+      // Une COMMANDE reçue vide le panier ; une demande de DEVIS le conserve (friction 9) : on peut ensuite commander ces mêmes lignes, validées de nouveau par le serveur.
+      if (result.kind === "received" && mode === "order") clear();
       else if (result.kind === "refused" && result.codes.some((c) => RECONFIRM.has(c))) {
         setConfirmedFor(null);
+        setRequiresReview(true);
         refresh();
       }
     } finally {
+      sendLock.current = false;
       setSending(false);
     }
   }
@@ -104,16 +110,16 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
     <form onSubmit={submit} noValidate className="space-y-8" aria-describedby="flow-intro">
       <p id="flow-intro" className="text-ink-2">
         {mode === "order"
-          ? "Vérifiez le récapitulatif, indiquez vos coordonnées puis confirmez. La commande est enregistrée au prix affiché, revalidé par le serveur au moment de l'envoi."
-          : "Indiquez vos coordonnées : votre demande de devis est enregistrée avec les prix affichés (ou sans prix pour les lignes qui n'en ont pas)."}
+          ? "Vérifiez le récapitulatif, indiquez vos coordonnées puis confirmez. Les prix sont vérifiés au moment de l’envoi."
+          : "Indiquez vos coordonnées et les précisions utiles à votre demande de devis."}
       </p>
       {outcome && <ResultPanel outcome={outcome} onRetry={outcome.kind === "network" ? undefined : () => setOutcome(null)} />}
-      {stale && ackSequence !== null && <StaleBanner from={ackSequence} to={preview.catalogue_sequence} onAck={() => acknowledge(preview.catalogue_sequence)} />}
+      {needsReview && <StaleBanner from={ackSequence ?? preview.catalogue_sequence} to={preview.catalogue_sequence} onAck={() => { acknowledge(preview.catalogue_sequence); setRequiresReview(false); setOutcome(null); }} />}
 
       <section aria-labelledby="recap-h" className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="recap-h" className="text-lg font-semibold">Récapitulatif</h2>
-          <Link href="/panier" className="inline-flex min-h-[34px] items-center text-sm underline">Modifier le panier</Link>
+          <Link href="/panier" className="inline-flex min-h-[44px] items-center text-sm underline">Modifier le panier</Link>
         </div>
         <CartLines lines={lines} preview={preview} loading={false} editable={false} />
         {!allowed && (
@@ -131,7 +137,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
       {mode === "quote" && (
         <div>
           <label htmlFor="f-message" className="block text-sm font-medium">Message (facultatif)</label>
-          <p id="f-message-hint" className="text-xs text-ink-3">Précisions utiles : délais, conditions de livraison… 2 000 caractères au maximum.</p>
+          <p id="f-message-hint" className="text-xs text-ink-3">Précisez votre besoin. 2 000 caractères au maximum.</p>
           <textarea
             id="f-message"
             rows={4}
@@ -148,18 +154,17 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
 
       {mode === "order" && (
         <div className="rounded-[14px] border border-line bg-white p-4">
-          <label className="flex min-h-[42px] cursor-pointer items-start gap-3">
+          <label className="flex min-h-[44px] cursor-pointer items-start gap-3">
             <input
               type="checkbox"
               checked={confirmed}
-              disabled={!allowed || stale}
+              disabled={!allowed || needsReview}
               onChange={(e) => setConfirmedFor(e.target.checked ? fingerprint : null)}
               className="mt-1 h-5 w-5 shrink-0 accent-[#1a1a18]"
               data-testid="order-confirm"
             />
             <span>
               Je confirme la commande de {lines.length} ligne{lines.length > 1 ? "s" : ""} pour un total de <strong className="tabular">{total ?? "—"}</strong>.
-              <span className="block text-sm text-ink-2">{totalsNote(preview)} La commande n&apos;est ni facturée ni payée en ligne.</span>
             </span>
           </label>
         </div>
@@ -168,14 +173,14 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
-          disabled={sending || stale || !allowed || (mode === "order" && !confirmed)}
-          className="h-[42px] rounded-[9px] bg-ink px-6 font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={sending || needsReview || !allowed || (mode === "order" && !confirmed)}
+          className="min-h-[44px] rounded-[9px] bg-brand hover:bg-brand-dark px-6 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           data-testid="submit"
         >
           {sending ? "Envoi en cours…" : mode === "order" ? "Confirmer la commande" : "Envoyer la demande de devis"}
         </button>
-        <p className="text-sm text-ink-2" aria-live="polite">
-          {stale ? "Envoi bloqué : vérifiez d'abord les nouveaux prix." : mode === "order" && allowed && !confirmed ? "Cochez la confirmation pour activer l'envoi." : ""}
+        <p role="status" className="text-sm text-ink-2" aria-live="polite" data-testid="submit-status">
+          {sending ? "Envoi en cours…" : needsReview ? "Envoi bloqué : vérifiez d'abord les nouveaux prix." : mode === "order" && allowed && !confirmed ? "Cochez la confirmation pour activer l'envoi." : ""}
         </p>
       </div>
     </form>

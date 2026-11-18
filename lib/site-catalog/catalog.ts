@@ -5,6 +5,7 @@
  */
 import type { JsonObject } from "@/c0/ts/src/jsonc";
 import { deepFreeze } from "@/lib/site-db/generation";
+import { displayName } from "./display-name";
 import { CatalogUnavailable, getCatalogSource, type CatalogSource, type ServedGeneration } from "./source";
 
 export type VariantAxes = Record<string, string>;
@@ -19,9 +20,23 @@ export type PriceWindow = {
   currency: string;
   tax_basis_or_status: string;
   offer_price_version_public: string;
+  /** Catalogue v2 seulement (cercle 3, paquet B) : « PROMOTION » pour une promotion ; `reference_unit_amount` = prix barré fourni par le Calculateur, jamais calculé ici. */
+  price_nature?: string | null;
+  reference_unit_amount?: string | null;
 };
 
-export type Category = { category_key: string; name: string; parent_category_key: string | null };
+/** Cercle 3 (3.22) : les champs `position`, `intro_text`, `image_sha256`, `seo_*` et `hidden` n'existent que dans un catalogue v2 ; absents (v1), le SITE se comporte comme avant. */
+export type Category = {
+  category_key: string;
+  name: string;
+  parent_category_key: string | null;
+  position?: number;
+  intro_text?: string | null;
+  image_sha256?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  hidden?: boolean;
+};
 
 export type Item = {
   public_item_key: string;
@@ -29,7 +44,12 @@ export type Item = {
   variant_axes: VariantAxes;
   public_media_refs: string[];
   windows: PriceWindow[];
+  /** Catalogue v2 seulement : cherchées par la recherche, jamais affichées en tableau (C01/C02). */
+  characteristics?: Characteristic[];
 };
+
+export type Characteristic = { label: string; value: string };
+export type FamilyDocument = { label: string; kind: string; sha256: string; mime: string; size: number };
 
 export type Axis = { axis_key: string; label: string };
 
@@ -44,6 +64,15 @@ export type Family = {
   image_main_sha256: string;
   axes: Axis[];
   items: Item[];
+  /** Catalogue v2 seulement (cercle 3). */
+  category_positions?: { category_key: string; position: number }[];
+  seo_title?: string | null;
+  seo_description?: string | null;
+  slug_aliases?: string[];
+  /** Date de première publication sur le SITE (paquet A : `first_published_at_utc`, sans repli). */
+  first_published_at_utc?: string;
+  characteristics?: Characteristic[];
+  documents?: FamilyDocument[];
 };
 
 export type CatalogMeta = {
@@ -75,6 +104,19 @@ export type Catalog = {
   childCategories(categoryKey: string): Category[];
 };
 
+/** Les champs de famille que seule la v2 porte, quand ils existent (le SITE ne les invente jamais). */
+function v2Family(f: Record<string, unknown>): Partial<Family> {
+  const out: Partial<Family> = {};
+  if (Array.isArray(f["category_positions"])) out.category_positions = f["category_positions"] as Family["category_positions"] & object;
+  if ("seo_title" in f) out.seo_title = f["seo_title"] as string | null;
+  if ("seo_description" in f) out.seo_description = f["seo_description"] as string | null;
+  if (Array.isArray(f["slug_aliases"])) out.slug_aliases = f["slug_aliases"] as string[];
+  if (typeof f["first_published_at_utc"] === "string") out.first_published_at_utc = f["first_published_at_utc"];   // jamais la date de création : une famille jamais publiée n'est pas une nouveauté (N01, N02)
+  if (Array.isArray(f["characteristics"])) out.characteristics = f["characteristics"] as Characteristic[];
+  if (Array.isArray(f["documents"])) out.documents = f["documents"] as FamilyDocument[];
+  return out;
+}
+
 /* Le document a passé la forme C0 (validateSnapshotBytes + Generation) : les champs existent. */
 function build(served: ServedGeneration, source: CatalogSource["kind"]): Catalog {
   const doc = served.snapshot as JsonObject;
@@ -83,13 +125,14 @@ function build(served: ServedGeneration, source: CatalogSource["kind"]): Catalog
     (f) => ({
       public_family_key: f.public_family_key,
       slug: f.slug,
-      name: f.name,
+      name: displayName(f.name), // affichage seulement : la donnée du DTO (c0Generation) reste intacte
       description_short: f.description_short,
       description_long: f.description_long,
       primary_category_key: f.primary_category_key,
       secondary_category_keys: f.secondary_category_keys,
       image_main_sha256: f.image_main_sha256,
       axes: f.axes,
+      ...v2Family(f as unknown as Record<string, unknown>),
       items: f.items.map((i) => ({
         public_item_key: i.public_item_key,
         public_family_key: f.public_family_key,
@@ -97,6 +140,7 @@ function build(served: ServedGeneration, source: CatalogSource["kind"]): Catalog
         variant_axes: { ...i.variant_axes },
         public_media_refs: i.public_media_refs,
         windows: i.public_sell_price_windows,
+        ...(Array.isArray((i as Record<string, unknown>)["characteristics"]) ? { characteristics: (i as Record<string, unknown>)["characteristics"] as Characteristic[] } : {}),
       })),
     }),
   );

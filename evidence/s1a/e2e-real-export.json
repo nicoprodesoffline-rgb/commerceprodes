@@ -1,0 +1,55 @@
+{
+ "steps": {
+  "category_available": true,
+  "family_available": true,
+  "save_diagnostic": {
+   "saved_on_edit_page": true,
+   "invalid_fields": [],
+   "errors": [],
+   "total_forms": "4"
+  },
+  "page_saved": true,
+  "export_diagnostic": {
+   "errors": [],
+   "notice": [
+    "Export local enregistré — en attente du lecteur Commerce.",
+    "4 types de sections, dans l'ordre choisi. Catégories, familles et images sont choisies dans le dernier catalogue acquitté ; aucun lien fourn",
+    "En attente du lecteur Commerce : cet export ne prouve aucune activation du SITE. Seule la version enregistrée sera exportée."
+   ]
+  },
+  "export_files_appeared": true,
+  "document_and_receipt_pair": true,
+  "site_serves_the_page": true,
+  "page_1440": {
+   "status": 200,
+   "hero": true,
+   "category_grid": true,
+   "product_carousel": true,
+   "text_escaped": true,
+   "universe_bar_lists_it": true,
+   "global_overflow_px": 0
+  },
+  "page_390": {
+   "status": 200,
+   "hero": true,
+   "category_grid": true,
+   "product_carousel": true,
+   "text_escaped": true,
+   "universe_bar_lists_it": true,
+   "global_overflow_px": 0
+  },
+  "second_generation_written": true,
+  "site_returns_404_after_unpublish": true,
+  "retired_1440": {
+   "status": 404,
+   "universe_bar_no_longer_lists_it": true,
+   "global_overflow_px": 0
+  },
+  "retired_390": {
+   "status": 404,
+   "universe_bar_no_longer_lists_it": true,
+   "global_overflow_px": 0
+  }
+ },
+ "screens": []
+}

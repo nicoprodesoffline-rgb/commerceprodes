@@ -1,0 +1,25 @@
+{
+  "case_id": "V2_CONTENT.content_accepted",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_ready.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "6fa93920989cfa91dd8e25ad37ae3b185217ceec466979e3664d6afcac66bcdd"
+    }
+  },
+  "notes": "V07, V08: pages, settings, redirects and relations arrive by the signed channel, with no shared folder; the SITE acknowledges.",
+  "scenario": "V2_CONTENT"
+}

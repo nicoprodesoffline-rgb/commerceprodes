@@ -176,7 +176,11 @@ scenario(`A — ${S7} @ ${S7_NOW}`, { SITE_CATALOG_SOURCE: "fixture", SITE_CATAL
       assert.match(r.text, /STAGING_FIXTURE/, p);
     }
     const parent = await get("/categorie/mobilier");
-    assert.match(parent.text, /href="\/categorie\/mobilier-chaises"/, "sous-catégorie issue de parent_category_key");
+    // CAT-07 : snapshot_s7 ne classe aucune famille sous mobilier ni mobilier-chaises (toutes sous signaletique) : la
+    // sous-catégorie vide n'est plus proposée (menus lisibles), sa page répond encore. Le lien issu de
+    // parent_category_key avec des familles est couvert par tests/nav (F_NAV_L2) et tests/http/storefront.test.mjs.
+    assert.doesNotMatch(parent.text, /href="\/categorie\/mobilier-chaises"/, "sous-catégorie vide masquée");
+    assert.equal((await get("/categorie/mobilier-chaises")).status, 200, "sa page répond (lien externe non cassé)");
     for (const p of ["/famille/inconnue", "/categorie/inconnue"]) assert.equal((await get(p)).status, 404, p);
   });
 

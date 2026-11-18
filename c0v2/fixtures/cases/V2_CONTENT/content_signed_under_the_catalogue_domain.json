@@ -1,0 +1,25 @@
+{
+  "case_id": "V2_CONTENT.content_signed_under_the_catalogue_domain",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_ready.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "d41d0e681e5bc21d25ab3f52100ed2412a24c247295f03c99f1590272fa3de29"
+    }
+  },
+  "notes": "A catalogue signature never covers a content.",
+  "scenario": "V2_CONTENT"
+}

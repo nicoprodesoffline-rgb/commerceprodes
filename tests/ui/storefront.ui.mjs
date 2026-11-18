@@ -1,17 +1,20 @@
 // Recette navigateur BC3 (Playwright, Chromium) sur la génération ACTIVE réelle posée par le receiver BC2.
 //   PLAYWRIGHT_DIR=<dossier node_modules contenant playwright> CHROMIUM=<exécutable> \
-//   UI_OUT=evidence/W1/BC3/raw/ui/<sha> AXE=<axe.min.js> node --test --test-concurrency=1 tests/ui/storefront.ui.mjs
+//   UI_OUT=evidence/W1/BC3/raw/ui/<sha> AXE=<axe.min.js> npm run test:ui
+// Prérequis : build Next déjà disponible ; test:ui compile C0 et BC2 avant de lancer la suite.
 // Aucun téléchargement : Playwright et Chromium déjà présents localement sont réutilisés (chemins en paramètres).
 // Serveur `next start` lancé/tué par CE script sur $SITE_TEST_PORT (défaut 3361), base $SITE_TEST_DATABASE_URL
-// (défaut prodes_site_bc3_test ; toute base locale `prodes_site_*`, revue BC3 F-13).
+// (test:ui utilise prodes_site_order_flow_test par défaut ; appel direct : prodes_site_bc3_test ; base locale `prodes_site_*`).
 import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
-import { mkdirSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import pg from "pg";
-import { activateOverHttp, dbUrl, resetSiteDb } from "./site-setup.mjs";
+import { activateOverHttp, addCloneFamilies, assertImmutabilityGuardEnabled, addRootCategories, dbUrl, makeGmceMixed, makeGmcePacks, makePoteletQuoteOnly, resetSiteDb } from "./site-setup.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const PORT = Number(process.env.SITE_TEST_PORT ?? 3361);
@@ -44,6 +47,8 @@ async function portAnswers() {
   }
 }
 
+const CONTENT_DIR = mkdtempSync(path.join(tmpdir(), "prodes-ui-content-"));
+
 async function startServer() {
   assert.equal(await portAnswers(), false, `port ${PORT} occupé`);
   const child = spawn(process.execPath, [path.join(ROOT, "node_modules/next/dist/bin/next"), "start", "-H", "127.0.0.1", "-p", String(PORT)], {
@@ -59,6 +64,7 @@ async function startServer() {
       SITE_DATABASE_URL: dbUrl(DB),
       SITE_CATALOG_SOURCE: "db",
       SITE_BUSINESS_PERSISTENCE: "postgresql",
+      SITE_CONTENT_DIR: CONTENT_DIR,
     },
     stdio: ["ignore", "ignore", "pipe"],
   });
@@ -213,35 +219,41 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     const page = await newPage();
     await page.goto(BASE + "/famille/gmce-demo");
     await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
-    // Famille-first : la première image de la galerie est l'image principale de la Famille.
-    assert.equal(await page.getByTestId("family-image").getAttribute("src"), "/media/bdc052e346fa8f7813cf76228e472d5e0e91ac3901ddc71069214f1d99cdaec5");
+    // Génération de test : la galerie présente un état neutre, aucun média synthétique n'est affiché.
+    const gallery = page.getByRole("group", { name: /^Photos de / });
+    await gallery.getByTestId("media-missing").getByText("Visuel non disponible", { exact: true }).waitFor();
+    assert.equal(await page.locator('img[src^="/media/"]').count(), 0, "aucune image de la génération de test");
     // Clavier : de « Aller au contenu » jusqu'au groupe « Taille », puis flèche → M.
     const seq = await tabTo(page, (i) => i.tag === "input" && i.type === "radio" && /^S$/.test(i.label));
     assertFocusVisible(seq, "radio taille");
     writeFileSync(path.join(OUT, "U2-ordre-tab-fiche.json"), JSON.stringify(seq, null, 1));
     note(`fiche : ${seq.length} Tab jusqu'au radio « Taille S » ; focus visible (${seq.at(-1).outline} ${seq.at(-1).outlineWidth})`);
     await page.keyboard.press("ArrowRight");
-    await page.getByTestId("item-ref").getByText("PI-000000363").waitFor();
+    await page.getByTestId("item-ref").getByText("PI-000102").waitFor();
     assert.match(page.url(), /\?article=PI-000000363$/, "adresse de la variante mise à jour");
-    // Bleu + M n'existe pas : « Bleu » est désactivé et expliqué.
-    assert.equal(await page.locator('input[type=radio][value="bleu"]').isDisabled(), true);
-    await page.getByText(/Non proposé avec Taille « M » : Bleu/).waitFor();
+    // Taille M choisie (flèche) : « Bleu + M » n'existe pas → « Bleu » est grisé et expliqué, mais reste cliquable (il ajusterait la taille).
+    assert.equal(await page.locator('input[type=radio][value="bleu"]').isDisabled(), false);
+    assert.equal(await page.locator('input[type=radio][value="bleu"]').getAttribute("data-compatible"), "false");
+    await page.getByText(/Grisé : aucune variante publiée avec Taille « M » : Bleu/).waitFor();
     await shot(page, "U2-fiche-gmce-rouge-M-bleu-desactive");
     // Quantité au clavier puis Entrée sur « Ajouter au panier ».
     await page.getByLabel("Quantité", { exact: true }).fill("3");
     await page.getByTestId("qty-price").getByText(/^Pour 3 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).focus();
     await page.keyboard.press("Enter");
-    await page.getByRole("status").getByText(/Ajouté au panier — 3 × Couleur : Rouge · Taille : M/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier — 3 × Couleur : Rouge · Taille : M/).waitFor();
+    // Le tiroir du panier s'ouvre après un ajout : on le referme (Échap) avant de réutiliser le bouton d'ajout.
+    await page.keyboard.press("Escape");
+    await page.getByTestId("cart-drawer").waitFor({ state: "hidden" }).catch(() => {});
     // Même variante ajoutée de nouveau : incrément de la ligne, pas de seconde ligne (C0 R-01).
-    await page.getByLabel("Quantité", { exact: true }).fill("2");
-    await page.getByTestId("qty-price").getByText(/^Pour 2 : /).waitFor();
+    // La quantité minimale de cette variante est 3 (plus petit palier publié) : on rajoute 3, jamais moins.
+    await page.getByLabel("Quantité", { exact: true }).fill("3");
+    await page.getByTestId("qty-price").getByText(/^Pour 3 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier — 2 ×/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier — 3 ×/).waitFor();
     await page.goto(BASE + "/panier");
-    await page.getByTestId("cart-total").getByText(/65,00/).waitFor(); // 5 × 13,00 (sélection serveur R-GMCE-102)
+    await page.getByTestId("cart-total").getByText(/78,00/).waitFor(); // 6 × 13,00 (sélection serveur R-GMCE-102)
     assert.equal(await page.getByTestId("cart-line").count(), 1);
-    await page.getByText("Base fiscale non précisée par la publication").waitFor();
     for (const [vp, size] of Object.entries(VIEWPORTS)) {
       await page.setViewportSize(size);
       await assertNoHScroll(page, `panier ${vp}`);
@@ -255,7 +267,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.goto(BASE + "/famille/gmce-demo?article=PI-00000037S");
     await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
     await page.goto(BASE + "/panier");
     await page.getByTestId("go-order").waitFor();
     await page.getByTestId("go-quote").click();
@@ -289,7 +301,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     const row = (await db.query("SELECT status, (SELECT count(*)::int FROM site_quote_line l WHERE l.quote_id = q.id) AS n, message FROM site_quote_request q WHERE quote_ref = $1", [ref])).rows[0];
     assert.deepEqual(row, { status: "RECEIVED", n: 1, message: "Délai souhaité : fin novembre." });
     note(`devis ${ref} persisté (1 ligne, message conservé)`);
-    // Panier vidé après réception ; le jeton n'est stocké nulle part dans le navigateur.
+    // Le devis conserve le panier ; le jeton n'est stocké nulle part dans le navigateur.
     const storage = await page.evaluate(() => JSON.stringify(window.localStorage));
     assert.ok(!storage.includes(link.split("code=")[1]), "jeton absent du stockage local");
     // Consultation par le lien (fragment, jamais envoyé au serveur dans l'adresse de la page).
@@ -315,7 +327,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     assert.ok(!(await page.evaluate(() => window.location.href)).includes("code="), "aucun code dans l'adresse après retour");
     note("reçu : fragment retiré, champ vidé, « Retour » n'affiche plus le reçu (F-04)");
     await page.goto(BASE + "/recu#ref=" + ref + "&code=faux");
-    await page.getByTestId("receipt-refused").getByText(/code NOT_FOUND/).waitFor();
+    await page.locator('[data-testid="receipt-refused"][data-code="NOT_FOUND"]').waitFor();
     await page.context().close();
   });
 
@@ -327,7 +339,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.getByRole("button", { name: "Augmenter la quantité" }).click();
     await page.getByTestId("qty-price").getByText(/Pour 2 : 38,50 € HT l’unité|Pour 2 : 38,50\s€ HT/).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
     await page.goto(BASE + "/commande");
     await page.getByTestId("order-confirm").waitFor();
     await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Collège Exemple");
@@ -339,7 +351,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await shot(page, "U4-commande-avant-confirmation-mobile");
     await page.getByTestId("order-confirm").check();
     await page.getByTestId("submit").click();
-    await page.getByTestId("result-received").getByText("Commande reçue — en attente de traitement").waitFor();
+    await page.getByTestId("result-received").getByRole("heading", { name: "Commande reçue", exact: true }).waitFor();
     const ref = await page.getByTestId("receipt-ref").textContent();
     const row = (await db.query("SELECT status, total_amount FROM site_order WHERE order_ref = $1", [ref])).rows[0];
     assert.deepEqual(row, { status: "RECEIVED", total_amount: "77.00" });
@@ -354,7 +366,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.goto(BASE + "/famille/chaise-pliante?article=PI-000000JVF");
     await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
     await page.goto(BASE + "/commande");
     await page.getByTestId("order-confirm").waitFor();
     await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie");
@@ -366,7 +378,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     const before = Number((await db.query("SELECT count(*) FROM site_order")).rows[0].count);
     await page.getByTestId("submit").click();
     await page.getByTestId("result-refused").waitFor();
-    await page.getByTestId("refusal-codes").getByText(/code CART_STALE/).waitFor();
+    await page.getByTestId("refusal-codes").locator('[data-code="CART_STALE"]').waitFor();
     await page.getByTestId("cart-generation-changed").waitFor();
     assert.equal(await page.getByTestId("submit").isDisabled(), true, "envoi bloqué tant que les nouveaux prix ne sont pas vérifiés");
     assert.equal(Number((await db.query("SELECT count(*) FROM site_order")).rows[0].count), before, "aucune commande écrite");
@@ -394,13 +406,13 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.goto(BASE + "/famille/chaise-pliante?article=PI-000000JW3");
     await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
     await activateOverHttp(BASE, "F_IDENTITY.activate_gen_c_tombstones");
     await page.goto(BASE + "/panier");
-    await page.getByTestId("line-problem").getByText(/code ITEM_SUPERSEDED/).waitFor();
-    await page.getByRole("link", { name: /Voir la nouvelle référence PI-000000JVF/ }).waitFor();
+    await page.locator('[data-testid="line-problem"][data-codes~="ITEM_SUPERSEDED"]').waitFor();
+    await page.getByRole("link", { name: /Voir la nouvelle référence PI-000603/ }).waitFor();
     await shot(page, "U6-panier-article-supplante");
-    // Média altéré : remplacement neutre « Image indisponible ».
+    // Média altéré : état neutre « Visuel non disponible » (également imposé par la génération de test).
     const sha = "ac403e49";
     await db.query("UPDATE site_media SET bytes = set_byte(bytes, 29, get_byte(bytes, 29) # 255) WHERE sha256 LIKE $1", [`${sha}%`]);
     // Contexte neuf : le navigateur a gardé en cache (immutable, adressage par contenu) les octets vérifiés plus tôt.
@@ -425,7 +437,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await scene("F_GMCE_VARIANTS.activate");
     const page = await newPage();
     await page.goto(BASE + "/");
-    const seq = await tabTo(page, (i) => i.tag === "button" && /Catégories/.test(i.label), 10);
+    const seq = await tabTo(page, (i) => i.tag === "button" && /Catégories/.test(i.label), 16);
     assertFocusVisible(seq, "menu Catégories");
     await page.keyboard.press("Enter");
     await page.getByRole("link", { name: "STAGING_FIXTURE Signalétique" }).first().waitFor({ state: "visible" });
@@ -460,7 +472,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     results.fiche = await runAxe(audit, "fiche");
     sizes.fiche = await targetSizes(audit);
     await audit.getByRole("button", { name: "Ajouter au panier" }).click();
-    await audit.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await audit.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
     await audit.goto(BASE + "/panier");
     await audit.getByTestId("cart-total").getByText(/12,00/).waitFor();
     results.panier = await runAxe(audit, "panier");
@@ -487,7 +499,10 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     for (const [vp, size] of Object.entries(VIEWPORTS)) {
       const page = await newPage(size);
       await page.goto(BASE + "/recherche?q=chaise");
-      await page.getByTestId("search-count").waitFor();
+      await page.waitForLoadState("networkidle");
+      await page.getByRole("heading", { name: "Résultats pour « chaise »", exact: true }).waitFor();
+      // Ne viser que le résultat visible, pas une copie masquée pendant le rendu de la route.
+      await page.locator('main [data-testid="search-count"]:visible').waitFor();
       await assertNoHScroll(page, `recherche ${vp}`);
       await shot(page, `U9-recherche-${vp}`);
       await page.context().close();
@@ -503,7 +518,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.goto(BASE + "/famille/chaise-pliante?article=PI-000000JVF");
     await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
     await page.getByRole("button", { name: "Ajouter au panier" }).click();
-    await page.getByRole("status").getByText(/Ajouté au panier/).waitFor();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
     await page.goto(BASE + "/devis");
     await page.getByRole("heading", { name: "Récapitulatif" }).waitFor();
     await assertNoHScroll(page, "devis 1024");
@@ -571,12 +586,14 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     let priced = 0;
     let checking = 0;
     const incoherent = [];
-    const PRICED = /^Pour (\d+) : ([\d\s\u00a0\u202f,]+)\s?€.*soit ([\d\s\u00a0\u202f,]+)\s?€ pour la ligne/;
+    const PRICED = /^Pour (\d+) : ([\d\s,]+)\s€(?: HT)? l['’]unité, soit ([\d\s,]+)\s€(?: HT)? pour la ligne\.$/;
+    const CHECKING = /^Prix pour (\d+) : vérification…$/;
     // 1. Ce que voit et entend l'utilisateur. Oracle de TEST seulement (aucun calcul de ce genre côté boutique) :
     //    quantité affichée = quantité saisie, et total de ligne = quantité × prix unitaire affiché.
     for (const r of trace) {
       const m = PRICED.exec(r.text);
-      if (/vérification auprès du serveur/.test(r.text)) checking += 1;
+      if (CHECKING.test(r.text)) checking += 1;
+      if (r.text.includes("€")) assert.match(r.text, PRICED, `prix non vérifié : ${JSON.stringify(r)}`);
       if (!m) continue;
       priced += 1;
       const n = Number(m[1]);
@@ -585,12 +602,299 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     assert.deepEqual(incoherent, [], "prix ou total d'une autre quantité affiché dans la région aria-live");
     // 2. Marquage : tout prix affiché provient de la réponse à la quantité courante ; « vérification… » est aria-busy.
     for (const r of trace) {
-      if (PRICED.test(r.text)) assert.equal(r.quote_quantity, r.input, `réponse serveur d'une autre quantité : ${JSON.stringify(r)}`);
-      if (/vérification auprès du serveur/.test(r.text)) assert.equal(r.busy, "true", `aria-busy pendant la vérification : ${JSON.stringify(r)}`);
+      if (PRICED.test(r.text)) {
+        assert.equal(r.state, "line", `prix sans réponse serveur : ${JSON.stringify(r)}`);
+        assert.equal(r.quote_quantity, r.input, `réponse serveur d'une autre quantité : ${JSON.stringify(r)}`);
+      }
+      const pending = CHECKING.exec(r.text);
+      if (pending) {
+        assert.equal(pending[1], r.input, `vérification d'une autre quantité : ${JSON.stringify(r)}`);
+        assert.equal(r.busy, "true", `aria-busy pendant la vérification : ${JSON.stringify(r)}`);
+      }
     }
     note(`U10 : ${trace.length} états de la région aria-live, ${priced} prix affichés tous cohérents, ${checking} états « vérification… », ${calls} aperçus demandés`);
     assert.ok(priced >= 3 && checking >= 3, `trace insuffisante : ${priced} prix, ${checking} vérifications`);
     await page.context().close();
+  });
+
+  // U11 et U13 : les invariants de base fiscale vivent désormais dans tests/basis/basis.ui.mjs.
+
+  test("U12 — friction 9 : après un DEVIS le panier est conservé et on peut commander ces mêmes lignes (prix revalidés par le serveur) ; la commande, elle, vide le panier", async () => {
+    await scene("F_GMCE_VARIANTS.activate");
+    const page = await newPage();
+    await page.goto(BASE + "/famille/gmce-demo?article=PI-00000037S");
+    await page.getByTestId("qty-price").getByText(/^Pour 1 : /).waitFor();
+    await page.getByRole("button", { name: "Ajouter au panier" }).click();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier/).waitFor();
+    await page.goto(BASE + "/devis");
+    await page.getByRole("heading", { name: "Récapitulatif" }).waitFor();
+    await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie de Test");
+    await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
+    await page.locator("#f-email").fill("achats@example.invalid");
+    await page.getByTestId("submit").click();
+    await page.getByTestId("result-received").waitFor();
+    const quoteRef = await page.getByTestId("receipt-ref").textContent();
+    assert.match(quoteRef, /^QR-[0-9a-f]{32}$/);
+    await page.getByTestId("cart-kept").waitFor();
+    assert.match(await page.getByTestId("cart-kept").innerText(), /Cette demande de devis n'est pas une commande/);
+    assert.match(await page.getByTestId("cart-kept").innerText(), /prix seront vérifiés de nouveau au moment de l'envoi/);
+    await shot(page, "U12-devis-recu-panier-conserve");
+    const stored = await page.evaluate(() => window.localStorage.length ? JSON.stringify(window.localStorage) : "");
+    assert.match(stored, /PI-00000037S/, "la ligne est toujours dans le panier du navigateur");
+    assert.ok(!stored.includes(quoteRef), "ni référence ni jeton du devis dans le stockage local");
+    await page.getByTestId("order-with-this-cart").click();
+    await page.waitForURL(/\/commande$/);
+    await page.getByTestId("order-confirm").waitFor();
+    assert.equal(await page.getByTestId("cart-line").count(), 1, "la commande reprend la ligne du devis");
+    await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie de Test");
+    await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
+    await page.locator("#f-email").fill("achats@example.invalid");
+    await page.getByTestId("order-confirm").check();
+    await page.getByTestId("submit").click();
+    await page.getByTestId("result-received").getByRole("heading", { name: "Commande reçue", exact: true }).waitFor();
+    const orderRef = await page.getByTestId("receipt-ref").textContent();
+    assert.match(orderRef, /^ORD-[0-9a-f]{32}$/);
+    assert.equal(await page.getByTestId("cart-kept").count(), 0, "une commande ne propose pas de garder le panier");
+    const order = (await db.query("SELECT status, total_amount FROM site_order WHERE order_ref = $1", [orderRef])).rows[0];
+    const quote = (await db.query("SELECT status FROM site_quote_request WHERE quote_ref = $1", [quoteRef])).rows[0];
+    assert.equal(order.status, "RECEIVED");
+    assert.equal(quote.status, "RECEIVED");
+    assert.equal((await db.query("SELECT count(*)::int AS n FROM site_order")).rows[0].n, 1, "une seule commande");
+    assert.equal((await db.query("SELECT count(*)::int AS n FROM site_quote_request")).rows[0].n, 1, "un seul devis");
+    await page.goto(BASE + "/panier");
+    await page.getByText(/panier est vide/i).waitFor();
+    await page.context().close();
+  });
+
+  test("U13 — Prix sur devis (fenêtre rq-) : aucun montant, pas d'« Ajouter au panier », devis demandé directement depuis la fiche, jamais dans les filtres de prix", async () => {
+    await scene("F_SELL_WINDOWS.activate");
+    await makePoteletQuoteOnly(DB);
+    const page = await newPage();
+    // Fiche : « Prix sur devis », aucune action d'achat, aucun montant de convention.
+    await page.goto(BASE + "/famille/potelet-paliers");
+    await page.getByTestId("product-price-quote").getByText("Prix sur devis", { exact: true }).waitFor();
+    await page.getByTestId("qty-price").getByText(/Indiquez la quantité et demandez un devis/).waitFor();
+    assert.equal(await page.getByTestId("price-quote-only").count(), 0, "une seule formulation : l'étiquette et une phrase");
+    assert.equal(await page.getByRole("button", { name: "Ajouter au panier" }).count(), 0, "pas d'ajout au panier");
+    assert.doesNotMatch(await page.locator("body").innerText(), /0[,.]01\s*€|\b0[,.]01\b/, "le montant de convention n'est jamais affiché");
+    await shot(page, "U13-fiche-prix-sur-devis");
+    // Recherche : la carte dit « Sur devis » ; le filtre 0 → 1 € ne la trouve pas.
+    await page.goto(BASE + "/recherche?q=potelet");
+    await page.getByText("Sur devis", { exact: false }).first().waitFor();
+    assert.doesNotMatch(await page.locator("main").innerText(), /0[,.]01/);
+    await page.goto(BASE + "/recherche?q=potelet&prix_min=0&prix_max=1");
+    await page.getByTestId("search-count").getByText(/^Aucune famille ne correspond/).waitFor();
+    // Devis directement depuis la fiche (sans passer par la page panier) : ligne non chiffrée, envoi, ligne priced=false en base.
+    await page.goto(BASE + "/famille/potelet-paliers");
+    await page.getByTestId("quote-from-family").click();
+    await page.waitForURL(/\/devis$/);
+    await page.getByRole("heading", { name: "Récapitulatif" }).waitFor();
+    await page.getByTestId("cart-line").getByText("sur devis", { exact: true }).waitFor();
+    await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie de Test");
+    await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
+    await page.locator("#f-email").fill("achats@example.invalid");
+    await page.getByTestId("submit").click();
+    await page.getByTestId("result-received").waitFor();
+    const ref = await page.getByTestId("receipt-ref").textContent();
+    await page.getByTestId("cart-kept").waitFor();
+    assert.equal(await page.getByTestId("order-with-this-cart").count(), 0, "pas de « Commander avec ce panier » : une ligne est sur devis");
+    const row = (await db.query("SELECT l.priced, l.rate_id, l.unit_amount FROM site_quote_line l JOIN site_quote_request q ON q.id = l.quote_id WHERE q.quote_ref = $1", [ref])).rows[0];
+    assert.deepEqual(row, { priced: false, rate_id: null, unit_amount: null });
+    // Le panier conservé après le devis : la commande reste impossible (pas de bouton « Passer commande »).
+    await page.goto(BASE + "/panier");
+    await page.getByTestId("go-quote").waitFor();
+    assert.equal(await page.getByTestId("go-order").count(), 0, "commande impossible avec une ligne sur devis");
+    await page.goto(BASE + "/commande");
+    await page.getByTestId("flow-blocked").waitFor();
+    await shot(page, "U13-commande-bloquee");
+    await page.context().close();
+  });
+
+  test("U14 — aucune fiche ne défile en largeur : 8 produits complémentaires, 8 de montée en gamme et 8 similaires (1440 et 390 px)", async () => {
+    await scene("F_SELL_WINDOWS.activate");
+    const clones = await addCloneFamilies(DB, 32);
+    const source = "PF-000000CHM"; // « panneau-paliers »
+    const binary = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+    const relations = [
+      ...clones.slice(0, 4).map((c, n) => ({ source, target: c.key, kind: "LIE", order: n + 1 })),
+      ...clones.slice(4, 8).map((c, n) => ({ source, target: c.key, kind: "COMPLEMENTAIRE", order: n + 1 })),
+      ...clones.slice(8, 16).map((c, n) => ({ source, target: c.key, kind: "UPSELL", order: n + 1 })),
+    ].sort((a, b) => binary(a.source, b.source) || binary(a.kind, b.kind) || a.order - b.order || binary(a.target, b.target)); // ordre canonique exigé par le lecteur
+    const publicationId = "77777777-7777-4777-8777-777777777777";
+    const file = `${String(1).padStart(12, "0")}-${publicationId}.json`;
+    const bytes = Buffer.from(JSON.stringify({ contract_version: "site_content.v1", generation: 1, publication_id: publicationId, catalogue_sequence: null, pages: [], merchandising: relations }, null, 2) + "\n");
+    writeFileSync(path.join(CONTENT_DIR, file), bytes);
+    writeFileSync(path.join(CONTENT_DIR, file.replace(/\.json$/, ".ready.json")), JSON.stringify({ contract_version: "site_content.v1", generation: 1, publication_id: publicationId, file, sha256: createHash("sha256").update(bytes).digest("hex") }));
+    for (const [vp, size] of [["desktop", VIEWPORTS.desktop], ["mobile", VIEWPORTS.mobile]]) {
+      const page = await newPage(size);
+      await page.goto(BASE + "/famille/panneau-paliers");
+      for (const [heading, id] of [["Produits complémentaires", "related-h"], ["Montée en gamme", "upsell-h"], ["Produits similaires", "similar-h"]]) {
+        const sectionOf = page.locator(`section[aria-labelledby="${id}"]`);
+        await sectionOf.waitFor();
+        assert.equal(await sectionOf.getByRole("heading", { name: heading }).count(), 1, `${heading} (${vp})`);
+        assert.equal(await sectionOf.locator("[role=region] ul > li").count(), 8, `${heading} : 8 cartes (${vp})`);
+        const inner = await sectionOf.locator("[role=region]").evaluate((e) => ({ scroll: e.scrollWidth, client: e.clientWidth }));
+        assert.ok(inner.scroll > inner.client, `${heading} : la rangée défile DANS son cadre (${inner.scroll} > ${inner.client}) (${vp})`);
+      }
+      const widths = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth, inner: window.innerWidth }));
+      assert.ok(widths.doc <= widths.inner, `la page ne défile pas en largeur (${widths.doc} px pour ${widths.inner}) (${vp})`);
+      await shot(page, `U14-fiche-8-cartes-${vp}`);
+      await page.context().close();
+    }
+  });
+
+  test("U15 — sélecteur de variantes à choix épinglés : valeur grisée mais cliquable, recalage dit à voix haute, re-clic qui retire le choix", async () => {
+    await scene("F_GMCE_VARIANTS.activate");
+    const page = await newPage();
+    await page.goto(BASE + "/famille/gmce-demo?article=PI-000000363"); // rouge · M, présélectionnée = pas un choix
+    const compat = async (value) => page.locator(`input[type=radio][value="${value}"]`).getAttribute("data-compatible");
+    await page.getByTestId("variant-selector").waitFor();
+    for (const value of ["rouge", "bleu", "S", "M"]) assert.equal(await compat(value), "true", `${value} disponible tant qu'aucun choix n'est épinglé`);
+    // Choix explicite : Taille M. Bleu (qui n'existe pas en M) est grisé.
+    await page.locator('label:has(input[value="M"])').click();
+    assert.equal(await compat("bleu"), "false");
+    assert.equal(await page.locator('input[type=radio][value="bleu"]').isDisabled(), false, "grisé mais cliquable");
+    // Clic sur Bleu : recalage sur la variante publiée réelle (bleu · S), dit à voix haute, adresse mise à jour.
+    await page.locator('label:has(input[value="bleu"])').click();
+    await page.getByTestId("variant-adjusted").getByText(/Autres choix ajustés.*Taille « M » → « S »/).waitFor();
+    assert.match(page.url(), /\?article=PI-00000037S$/);
+    await page.getByTestId("item-ref").getByText("PI-000103").waitFor();
+    assert.equal(await page.locator('input[type=radio][value="bleu"]').isChecked(), true);
+    assert.equal(await compat("M"), "false", "Bleu est maintenant le choix : M (absent en bleu) est grisé");
+    await shot(page, "U15-selecteur-recale");
+    // Re-clic sur le choix : il est retiré, la variante ne bouge pas, tout ce qui existe redevient disponible.
+    await page.locator('label:has(input[value="bleu"])').click();
+    assert.equal(await compat("M"), "true");
+    assert.match(page.url(), /\?article=PI-00000037S$/);
+    assert.equal(await page.getByTestId("variant-adjusted").innerText(), "" , "aucune phrase quand rien n'est ajusté");
+    await page.context().close();
+  });
+
+  test("U17 — famille mixte : « Type » en premier, accessoire sans dimension (« rv-none » jamais affiché), recalage vers un produit, ajout au panier de l'accessoire", async () => {
+    await scene("F_GMCE_VARIANTS.activate");
+    const accessory = await makeGmceMixed(DB);
+    const page = await newPage();
+    await page.goto(BASE + `/famille/gmce-demo?article=${accessory}`); // l'accessoire est la sélection initiale (pas un choix)
+    await page.getByTestId("variant-selector").waitFor();
+    assert.deepEqual(await page.locator("[data-testid=variant-selector] fieldset").evaluateAll((els) => els.map((e) => e.getAttribute("data-axis"))), ["type", "couleur", "taille"], "Type en premier");
+    assert.equal(await page.locator('input[type=radio][value="rv-none"]').count(), 0, "aucune pastille pour « pas de valeur »");
+    assert.equal(((await page.locator("main").innerText()).toLowerCase()).includes("rv-none"), false, "« rv-none » n'est écrit nulle part sur la fiche");
+    assert.equal(await page.locator('input[type=radio][value="Accessoire"]').isChecked(), true);
+    assert.equal(await page.locator('fieldset[data-axis="taille"] input:checked').count(), 0, "aucune taille cochée sur l'accessoire");
+    await page.getByTestId("selected-variant").getByText("Couleur : Rouge · Type : Accessoire").waitFor();
+    await shot(page, "U17-accessoire-sans-dimension");
+    // Ajout de l'accessoire : la ligne ne montre pas la taille, le serveur chiffre la ligne avec les axes exacts (« rv-none » compris).
+    await page.getByRole("button", { name: "Ajouter au panier" }).click();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier — \d+ × Couleur : Rouge · Type : Accessoire/).waitFor();
+    const line = page.getByTestId("drawer-line").first();
+    await line.waitFor();
+    const lineText = await line.innerText();
+    assert.match(lineText, /Type : Accessoire/);
+    assert.equal(/taille/i.test(lineText), false, "la ligne du panier ne montre pas la taille de l'accessoire");
+    assert.equal(lineText.toLowerCase().includes("rv-none"), false, "le panier n'écrit pas l'axe sans valeur");
+    await page.keyboard.press("Escape");
+    await page.getByTestId("cart-drawer").waitFor({ state: "hidden" }).catch(() => {});
+    // Clic sur une taille : on quitte l'accessoire vers un produit publié réel ; l'ajustement est dit sans « rv-none ».
+    await page.locator('label:has(input[value="M"])').click();
+    await page.getByTestId("variant-adjusted").getByText(/Autres choix ajustés.*Type « Accessoire » → « Produit »/).waitFor();
+    assert.equal((await page.getByTestId("variant-adjusted").innerText()).toLowerCase().includes("rv-none"), false);
+    assert.match(page.url(), /\?article=PI-000000363$/);
+    await page.locator('input[type=radio][value="Produit"]').waitFor();
+    assert.equal(await page.locator('input[type=radio][value="Produit"]').isChecked(), true);
+    // Retour à l'accessoire par l'axe Type : la taille disparaît de la ligne choisie, rien d'écrit en « rv-none ».
+    await page.locator('label:has(input[value="Accessoire"])').click();
+    await page.getByTestId("selected-variant").getByText("Couleur : Rouge · Type : Accessoire").waitFor();
+    assert.equal(((await page.locator("main").innerText()).toLowerCase()).includes("rv-none"), false);
+    await page.context().close();
+  });
+
+  test("U19 — conditionnements (lots) : valeurs rangées par la vitrine, Unitaire présélectionné, jamais « l'unité » pour un lot, total = prix du lot × quantité, « À partir de » d'une famille à lots seuls", async () => {
+    await scene("F_GMCE_VARIANTS.activate");
+    const keys = await makeGmcePacks(DB);
+    const flat = (s) => s.replace(/\s+/g, " ");
+    const page = await newPage();
+    await page.goto(BASE + "/famille/gmce-demo");
+    await page.getByTestId("variant-selector").waitFor();
+    assert.deepEqual(await page.locator("[data-testid=variant-selector] fieldset").evaluateAll((els) => els.map((e) => e.getAttribute("data-axis"))), ["couleur", "taille", "conditionnement"], "l'axe vient en dernier");
+    assert.deepEqual(await page.locator('fieldset[data-axis="conditionnement"] input[type=radio]').evaluateAll((els) => els.map((e) => e.value)), ["Unitaire", "Lot de 11", "Lot de 20"], "ordre proposé : sans chiffre, puis le premier entier croissant");
+    assert.equal(await page.locator('fieldset[data-axis="conditionnement"] input[value="Unitaire"]').isChecked(), true, "Unitaire présélectionné");
+    assert.equal(flat(await page.locator("main").innerText()).toLowerCase().includes("l'unité"), false, "un article de conditionnement ne se dit pas « l'unité »");
+    assert.equal(flat(await page.locator("main").innerText()).includes("Prix unitaire"), false);
+    await shot(page, "U19-unitaire-presélectionné");
+    await page.locator('label:has(input[value="Lot de 11"])').click();
+    assert.match(page.url(), new RegExp(`\\?article=${keys.lot10}$`));
+    await page.getByTestId("product-price").getByText("110,00").waitFor();
+    assert.equal(flat(await page.getByTestId("product-price").innerText()).includes("Lot de 11"), true, "le prix est dit pour le « Lot de 11 »");
+    await page.locator("input[id^=qty-]").fill("2");
+    await page.getByTestId("qty-price").getByText(/Pour 2 × Lot de 11/).waitFor();
+    assert.match(flat(await page.getByTestId("qty-price").innerText()), /Pour 2 × Lot de 11 : 110,00 €.* chacun, soit 220,00 €.* pour la ligne/);
+    assert.equal(flat(await page.locator("main").innerText()).includes("Prix unitaire"), false, "la grille ne dit pas « Prix unitaire »");
+    await shot(page, "U19-lot-de-10-quantite-2");
+    await page.getByRole("button", { name: "Ajouter au panier" }).click();
+    await page.locator('[role="status"]').getByText(/Ajouté au panier — 2 × .*Conditionnement : Lot de 11, 110,00.*chacun\./).waitFor();
+    await page.goto(BASE + "/panier");
+    const cart = page.getByTestId("cart-line").first();
+    await cart.waitFor();
+    await cart.getByText(/220,00/).first().waitFor();
+    const cartText = flat(await cart.innerText());
+    assert.match(cartText, /Conditionnement : Lot de 11/);
+    assert.match(cartText, /220,00 €/, "total de ligne = prix du lot × 2");
+    assert.equal(flat(await page.locator("main").innerText()).includes("Prix unitaire"), false, "le panier ne dit pas « Prix unitaire » pour un lot");
+    await shot(page, "U19-panier-lot");
+    // Famille à lots seuls : le plus petit lot présélectionné, et le « à partir de » dit que c'est le prix d'un lot.
+    await page.goto(BASE + "/famille/lots-seuls");
+    await page.getByTestId("variant-selector").waitFor();
+    assert.equal(await page.locator('fieldset[data-axis="conditionnement"] input[value="Lot de 7"]').isChecked(), true);
+    const found = await (await page.request.get(BASE + "/api/site/search?q=lots")).json();
+    assert.match(JSON.stringify(found), /À partir de 50,00\s€[^"]*·\sLot de 7/);
+    await page.context().close();
+  });
+
+  test("U16 — barre des catégories du haut défilable avec indicateurs (1440 px) ; mobile : UNE seule rangée de navigation avant les produits d'une catégorie", async () => {
+    await scene("F_SELL_WINDOWS.activate");
+    await addRootCategories(DB, 14);
+    const page = await newPage(VIEWPORTS.desktop);
+    await page.goto(BASE + "/");
+    const bar = page.getByTestId("top-categories");
+    await bar.waitFor();
+    await page.waitForFunction(() => document.querySelector("[data-testid=top-categories]")?.getAttribute("data-more-right") === "true");
+    assert.equal(await bar.getAttribute("data-more-left"), "false");
+    assert.equal(await page.getByTestId("top-categories-prev").count(), 0, "rien à gauche au départ");
+    const next = page.getByTestId("top-categories-next");
+    await next.waitFor();
+    assert.equal((await next.boundingBox()) !== null, true);
+    await shot(page, "U16-barre-categories-debordement");
+    await next.click();
+    await page.waitForFunction(() => document.querySelector("[data-testid=top-categories]")?.getAttribute("data-more-left") === "true");
+    assert.ok((await bar.locator("ul").evaluate((e) => e.scrollLeft)) > 0, "la barre a défilé");
+    await page.getByTestId("top-categories-prev").waitFor();
+    assert.ok((await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)), "la page ne défile pas en largeur");
+    // Aller jusqu'au bout : la flèche de droite disparaît.
+    await bar.locator("ul").evaluate((e) => e.scrollTo({ left: e.scrollWidth }));
+    await page.waitForFunction(() => document.querySelector("[data-testid=top-categories]")?.getAttribute("data-more-right") === "false");
+    await page.context().close();
+
+    // Mobile : la catégorie « Mobilier » a une sous-catégorie ; une seule rangée de pastilles (Tout · courante · sous-catégories · autres), pas de seconde rangée.
+    await scene("F_SIMPLE_READY.activate_first");
+    const mobile = await newPage(VIEWPORTS.mobile);
+    await mobile.goto(BASE + "/categorie/mobilier");
+    const pills = mobile.getByTestId("category-pills");
+    await pills.waitFor();
+    const labels = await pills.locator("a").allInnerTexts();
+    assert.equal(labels[0], "Tout");
+    assert.match(labels[1] ?? "", /Mobilier/, "la catégorie courante vient juste après « Tout »");
+    assert.match(labels[2] ?? "", /Chaises/, "puis sa sous-catégorie");
+    assert.equal(await mobile.getByTestId("subcategory-pill").count(), 1);
+    assert.equal(await mobile.locator('nav[aria-label="Sous-catégories"]').isVisible(), false, "plus de seconde rangée de sous-catégories sur mobile");
+    assert.equal(await mobile.getByTestId("category-sidebar").isVisible(), false);
+    await shot(mobile, "U16-categorie-mobile-une-rangee");
+    assert.ok((await mobile.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)));
+    await mobile.context().close();
+    // Ordinateur : les sous-catégories restent affichées en pastilles sous le titre.
+    const desktop = await newPage(VIEWPORTS.desktop);
+    await desktop.goto(BASE + "/categorie/mobilier");
+    assert.equal(await desktop.locator('nav[aria-label="Sous-catégories"]').isVisible(), true);
+    await desktop.context().close();
   });
 
   test("U8 — aucune erreur console (dont violations CSP) sur l'ensemble du parcours", async () => {
@@ -598,5 +902,9 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     writeFileSync(path.join(OUT, "console_errors_filtered.txt"), filtered.join("\n") + "\n");
     note(`console : ${consoleErrors.length} erreur(s) brute(s), ${filtered.length} hors ressources 404/503 attendues`);
     assert.deepEqual(filtered, []);
+  });
+
+  test("U18 — tous les préparatifs de base ont réactivé le garde d'immutabilité des générations (tgenabled = 'O')", async () => {
+    await assertImmutabilityGuardEnabled(DB);
   });
 });

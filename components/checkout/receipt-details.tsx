@@ -1,0 +1,53 @@
+"use client";
+
+import { NO_AXIS_VALUE, axisValue, money, parisDate, price, totalBasisLabel, uniformBasis } from "@/components/site/format";
+import { packValue } from "@/lib/site-catalog/conditionnement";
+import { shortRef } from "@/lib/site-catalog/short-ref";
+
+type ReceiptLine = { public_item_key: string; variant_axes: Record<string, string>; quantity: number; priced?: boolean; unit_amount?: string | null; tax_basis_or_status?: string | null; line_total?: string | null };
+export type ReceiptData = { lines?: ReceiptLine[]; total_amount?: string | null; created_at_utc?: string; catalogue_sequence?: number | null };
+
+/** Données figées renvoyées par le serveur, communes à l'envoi et à la consultation. Aucun total recalculé. */
+export function ReceiptDetails({ receipt, isOrder }: { receipt: ReceiptData; isOrder: boolean }) {
+  const lines = receipt.lines ?? [];
+  const bases = lines.filter((l) => l.unit_amount).map((l) => l.tax_basis_or_status);
+  const common = uniformBasis(bases);
+  const anyPack = lines.some((l) => packValue(l.variant_axes) !== null); // conditionnement : montant de l'article entier, pas un prix unitaire
+  return (
+    <div className="min-w-0 space-y-3" data-testid="receipt-details">
+      {receipt.created_at_utc && (
+        <p className="text-sm text-ink-2">Reçue le <time dateTime={receipt.created_at_utc}>{parisDate(receipt.created_at_utc)}</time>.</p>
+      )}
+      <div role="region" aria-label="Lignes enregistrées, tableau défilant" tabIndex={0} className="relative max-w-full overflow-x-auto">
+        <table className="tabular w-full text-sm">
+          <caption className="sr-only">Articles de votre demande</caption>
+          <thead>
+            <tr className="border-b border-line-strong text-left text-xs text-ink-3">
+              <th scope="col" className="py-2 pr-2 font-medium">Référence</th>
+              <th scope="col" className="py-2 pr-2 font-medium">Variante</th>
+              <th scope="col" className="py-2 pr-2 text-right font-medium">Quantité</th>
+              <th scope="col" className="py-2 pr-2 text-right font-medium">{anyPack ? "Prix" : "Prix unitaire"}</th>
+              {isOrder && <th scope="col" className="py-2 text-right font-medium">Total ligne</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {lines.map((l) => (
+              <tr key={`${l.public_item_key}${JSON.stringify(l.variant_axes)}`} className="h-[34px] border-b border-line" data-testid="receipt-line">
+                <td className="py-1 pr-2 font-mono text-xs" data-key={l.public_item_key}>{shortRef(l.public_item_key)}</td>
+                <td className="py-1 pr-2">{Object.entries(l.variant_axes).filter(([, v]) => v !== "" && v !== NO_AXIS_VALUE).map(([k, v]) => `${axisValue(k.replace(/_/g, " "))} : ${axisValue(v)}`).join(" · ") || "Modèle unique"}</td>
+                <td className="py-1 pr-2 text-right">{l.quantity}</td>
+                <td className="py-1 pr-2 text-right">{l.unit_amount ? (common.uniform ? money(l.unit_amount) : price(l.unit_amount, l.tax_basis_or_status)) : "sans prix (à chiffrer)"}</td>
+                {isOrder && <td className="py-1 text-right">{l.line_total ? (common.uniform ? money(l.line_total) : price(l.line_total, l.tax_basis_or_status)) : "—"}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {receipt.total_amount ? (
+        <p className="text-right font-semibold" data-testid="receipt-total">
+          Total {money(receipt.total_amount)} {totalBasisLabel(bases)}
+        </p>
+      ) : <p className="text-sm text-ink-2">Le montant de cette demande sera précisé sur le devis.</p>}
+    </div>
+  );
+}

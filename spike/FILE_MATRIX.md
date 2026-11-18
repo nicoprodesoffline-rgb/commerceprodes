@@ -68,7 +68,7 @@ Pour D, le mandat §5 réserve les verdicts à KEEP / ADAPT / DELETE ; REPLACE n
 | `app/api/admin/trigger-webhook/route.ts` | DELETE | 36 | API admin legacy (Bearer mot de passe / sans auth) — E6 |
 | `app/api/cart/abandon/route.ts` | DELETE | 53 | second panier serveur (partage/abandon Supabase) — E4 |
 | `app/api/cart/share/route.ts` | DELETE | 34 | second panier serveur (partage/abandon Supabase) — E4 |
-| `app/api/checkout/route.ts` | DELETE | 206 | checkout legacy (TVA 20 %, port 20 €, devis_requests) — E6 ; remplacé par /api/site/order (simulateur) |
+| `app/api/checkout/route.ts` | DELETE | 206 | checkout legacy (checkout historique (TVA et port de l'ancien site), devis_requests) — E6 ; remplacé par /api/site/order (simulateur) |
 | `app/api/contact/route.ts` | DELETE | 70 | API publique adossée à Supabase, hors S01–S10 |
 | `app/api/devis-express/route.ts` | DELETE | 100 | devis legacy (success:true après échec DB) — E6 ; remplacé par /api/site/quote (simulateur) |
 | `app/api/devis-status/[orderId]/route.ts` | DELETE | 24 | devis legacy (success:true après échec DB) — E6 ; remplacé par /api/site/quote (simulateur) |
@@ -81,10 +81,10 @@ Pour D, le mandat §5 réserve les verdicts à KEEP / ADAPT / DELETE ; REPLACE n
 | `app/api/track/route.ts` | DELETE | 46 | route stub/télémétrie Supabase — E6 |
 | `app/cart/cart-actions.tsx` | DELETE | 41 | page panier legacy ; remplacée par app/panier |
 | `app/cart/page.tsx` | DELETE | 208 | page panier legacy ; remplacée par app/panier |
-| `app/checkout/checkout-form.tsx` | DELETE | 321 | checkout legacy (TVA 20 %, port 20 €, devis_requests) — E6 ; remplacé par /api/site/order (simulateur) |
-| `app/checkout/confirmation/clear-cart.tsx` | DELETE | 12 | checkout legacy (TVA 20 %, port 20 €, devis_requests) — E6 ; remplacé par /api/site/order (simulateur) |
-| `app/checkout/confirmation/page.tsx` | DELETE | 93 | checkout legacy (TVA 20 %, port 20 €, devis_requests) — E6 ; remplacé par /api/site/order (simulateur) |
-| `app/checkout/page.tsx` | DELETE | 64 | checkout legacy (TVA 20 %, port 20 €, devis_requests) — E6 ; remplacé par /api/site/order (simulateur) |
+| `app/checkout/checkout-form.tsx` | DELETE | 321 | checkout legacy (checkout historique (TVA et port de l'ancien site), devis_requests) — E6 ; remplacé par /api/site/order (simulateur) |
+| `app/checkout/confirmation/clear-cart.tsx` | DELETE | 12 | checkout legacy (checkout historique (TVA et port de l'ancien site), devis_requests) — E6 ; remplacé par /api/site/order (simulateur) |
+| `app/checkout/confirmation/page.tsx` | DELETE | 93 | checkout legacy (checkout historique (TVA et port de l'ancien site), devis_requests) — E6 ; remplacé par /api/site/order (simulateur) |
+| `app/checkout/page.tsx` | DELETE | 64 | checkout legacy (checkout historique (TVA et port de l'ancien site), devis_requests) — E6 ; remplacé par /api/site/order (simulateur) |
 | `app/compare/compare-client.tsx` | DELETE | 221 | page/route hors S01–S05 ou adossée à Supabase |
 | `app/compare/page.tsx` | DELETE | 35 | page/route hors S01–S05 ou adossée à Supabase |
 | `app/contact/page.tsx` | DELETE | 211 | page/route hors S01–S05 ou adossée à Supabase |

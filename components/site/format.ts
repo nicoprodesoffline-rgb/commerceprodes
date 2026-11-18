@@ -1,7 +1,7 @@
 /**
  * Formatage d'affichage pur (client et serveur), sans arithmétique : les montants restent les chaînes Money
- * C0 (`^\d+\.\d{2}$`) reformatées en français. Base fiscale toujours explicite (DA §3 : « jamais mélange HT/TTC
- * implicite ») : `HT` → « € HT », `UNQUALIFIED` → « € (base fiscale non précisée) ».
+ * C0 (`^\d+\.\d{2}$`) reformatées en français. Le public ne voit jamais de jargon : « HT » n'est écrit que lorsque la génération
+ * le DÉCLARE ; une base non déclarée n'est ni affirmée ni commentée (aucun suffixe), jamais un faux HT ni un faux TTC.
  */
 export function money(amount: string): string {
   const m = /^(\d+)\.(\d{2})$/.exec(amount);
@@ -11,12 +11,44 @@ export function money(amount: string): string {
 
 export function basisLabel(basis: string | null | undefined): string {
   if (basis === "HT") return "HT";
-  if (basis === "UNQUALIFIED") return "(base fiscale non précisée)";
-  return "(base inconnue)";
+  return "";
+}
+
+/**
+ * Friction 14 (V5.1) : la mention LOURDE « (base fiscale non précisée) » n'est plus répétée à chaque ligne quand TOUTES les lignes affichées d'un écran la partagent : elle est
+ * dite UNE fois par le bandeau de l'écran (`BasisNotice`) et sur chaque total. Dès qu'une ligne a une autre base (HT, inconnue) ou qu'aucune ligne n'est chiffrée, CHAQUE ligne garde
+ * sa propre mention. Une base qualifiée (« HT ») reste, elle, toujours écrite sur la ligne (courte et sans ambiguïté). La base fiscale n'est donc jamais masquée : elle est soit sur la
+ * ligne, soit dans le bandeau de l'écran qui contient la ligne, et toujours sur le total.
+ */
+export type UniformBasis = { uniform: true; basis: "UNQUALIFIED" } | { uniform: false };
+
+export function uniformBasis(bases: Iterable<string | null | undefined>): UniformBasis {
+  const seen = new Set<string | null | undefined>(bases);
+  if (seen.size === 1 && seen.has("UNQUALIFIED")) return { uniform: true, basis: "UNQUALIFIED" };
+  return { uniform: false };
+}
+
+/** Le texte du bandeau d'écran. */
+export function basisNoticeText(): string {
+  return "";
+}
+
+/**
+ * La base fiscale d'un TOTAL, toujours dite (réserve de revue f1) : celle des lignes chiffrées si elle est unique ; « non précisée » si aucune ligne chiffrée ne porte de base ;
+ * sinon les bases RÉELLEMENT présentes, nommées (« HT et non précisée », « HT et inconnue »…). Aucune arithmétique, aucune interprétation.
+ */
+export function totalBasisLabel(bases: Iterable<string | null | undefined>): string {
+  let all = 0;
+  let ht = 0;
+  for (const b of bases) {
+    all += 1;
+    if (b === "HT") ht += 1;
+  }
+  return all > 0 && ht === all ? "HT" : "";
 }
 
 export function price(amount: string, basis: string | null | undefined): string {
-  return `${money(amount)} ${basisLabel(basis)}`;
+  return `${money(amount)} ${basisLabel(basis)}`.trimEnd();
 }
 
 export function quantityRange(min: number, max: number | null): string {
@@ -32,8 +64,17 @@ export function axisValue(v: string): string {
 
 export type AxisDisplay = { label: string; value: string };
 
+/** Valeur réservée publiée pour « pas de valeur sur cet axe » (option, accessoire) : jamais montrée à l'acheteur. */
+export const NO_AXIS_VALUE = "rv-none";
+
+/** Les axes qui ont une valeur à montrer : ni vide, ni la valeur réservée « pas de valeur ». */
+export function shownAxes(axes: AxisDisplay[]): AxisDisplay[] {
+  return axes.filter((a) => a.value !== "" && a.value !== NO_AXIS_VALUE);
+}
+
 export function axesText(axes: AxisDisplay[]): string {
-  return axes.length === 0 ? "Modèle unique" : axes.map((a) => `${a.label} : ${axisValue(a.value)}`).join(" · ");
+  const shown = shownAxes(axes);
+  return shown.length === 0 ? "Modèle unique" : shown.map((a) => `${a.label} : ${axisValue(a.value)}`).join(" · ");
 }
 
 const PARIS = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", dateStyle: "long", timeStyle: "short" });
@@ -41,4 +82,11 @@ const PARIS = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", dateS
 export function parisDate(utc: string): string {
   const d = new Date(utc);
   return Number.isNaN(d.getTime()) ? utc : `${PARIS.format(d)} (heure de Paris)`;
+}
+
+const COUNT = new Intl.NumberFormat("fr-FR");
+
+/** Nombre entier affiché (références, familles, résultats) : séparateur de milliers fr-FR (« 8 329 », espace fine insécable). */
+export function count(n: number): string {
+  return COUNT.format(n);
 }

@@ -9,6 +9,9 @@ export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   const { enforceStartupPolicy } = await import("@/lib/site-publish/config");
   if (!enforceStartupPolicy()) return;
+  const { originWarning } = await import("@/lib/seo/seo");
+  const origin = originWarning(process.env.SITE_PUBLIC_ORIGIN);
+  if (origin !== null) console.warn(`[site-seo] AVERTISSEMENT : ${origin}`);
   const { clockConfig, ConfigInvalid } = await import("@/lib/site-catalog/clock");
   try {
     const c = clockConfig();

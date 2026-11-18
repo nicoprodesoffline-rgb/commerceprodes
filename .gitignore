@@ -55,6 +55,7 @@ docs/screenshots/
 
 # C0 vendu (docs/C0_VENDORING.md) : sorties régénérables et zone de transit de scripts/c0/sync.mjs
 /c0/ts/dist/
+/c0v2/ts/dist/
 /c0/ts/node_modules/
 /.c0-sync-*/
 

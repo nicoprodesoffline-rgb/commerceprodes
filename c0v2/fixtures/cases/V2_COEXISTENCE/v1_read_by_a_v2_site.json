@@ -1,0 +1,34 @@
+{
+  "case_id": "V2_COEXISTENCE.v1_read_by_a_v2_site",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/f2_family.png"
+        },
+        "sha256": "20992dad3fef3b12baee2cd2761d6481399b50a1d4b21cfcb778309c05416a3b"
+      }
+    ],
+    "now_utc": "2026-11-17T07:00:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/V2_COEXISTENCE/snapshot_v1_ready.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "00615c8d7a4721ffd05c771027c44160c2fe6f6a3dc8bf38fba86993c0b1d64e"
+    }
+  },
+  "notes": "V03: a SITE that reads v2 still activates a v1 catalogue (the frozen v1 receiver).",
+  "scenario": "V2_COEXISTENCE"
+}

@@ -7,6 +7,10 @@ import type { SelectorAxis } from "@/components/product/variant-selector";
 import { selectPriceOnServed } from "@/lib/site-db/select-price";
 import type { C0Generation } from "@/lib/site-business/validate";
 import type { Family, Item, PriceWindow } from "./catalog";
+import { QUOTE_ONLY_CODE, isQuoteOnlyRate } from "./quote-only";
+import { PACK_AXIS, sortPackValues } from "./conditionnement";
+import { isShown } from "./variant-choice";
+import { economy, isPromotionWindow } from "./merchandising";
 
 const PARIS = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", dateStyle: "short", timeStyle: "short" });
 
@@ -38,6 +42,11 @@ export function priceRows(generation: C0Generation, item: Item, nowUtc: string):
       if (seen.has(rateId)) continue;
       seen.add(rateId);
       const w = item.windows.find((x) => x.rate_id === rateId) as PriceWindow;
+      if (isQuoteOnlyRate(w.rate_id)) {
+        // « Prix sur devis » : le montant de convention n'est jamais exposé (ni fiche, ni cartes, ni recherche, ni tri).
+        rows.push({ tier_quantity: tier, selected: false, error_codes: [QUOTE_ONLY_CODE], rate_id: null, unit_amount: null, currency: null, tax_basis_or_status: null, quantity_min: w.quantity_min, quantity_max: w.quantity_max, validity_label: null });
+        continue;
+      }
       rows.push({
         tier_quantity: tier,
         selected: true,
@@ -48,7 +57,11 @@ export function priceRows(generation: C0Generation, item: Item, nowUtc: string):
         tax_basis_or_status: w.tax_basis_or_status,
         quantity_min: w.quantity_min,
         quantity_max: w.quantity_max,
-        validity_label: validityLabel(w),
+        // Une promotion ne montre jamais sa date de fin (M05) ; le prix barré vient du fichier du Calculateur, sur toute nature de fenêtre, ou n'existe pas (M01, M02, M03).
+        validity_label: isPromotionWindow(w, nowUtc) ? null : validityLabel(w),
+        promo: isPromotionWindow(w, nowUtc),
+        reference_amount: w.reference_unit_amount ? w.reference_unit_amount : null,
+        economy: w.reference_unit_amount ? economy(w.reference_unit_amount, w.unit_amount) : null,
       });
     } else {
       rows.push({
@@ -78,8 +91,8 @@ export function selectorAxes(f: Family): SelectorAxis[] {
     const values: string[] = [];
     for (const i of f.items) {
       const v = i.variant_axes[a.axis_key];
-      if (v !== undefined && !values.includes(v)) values.push(v);
+      if (isShown(v) && !values.includes(v)) values.push(v); // la valeur réservée « pas de valeur » n'est jamais une pastille
     }
-    return { axis: a.axis_key, label: a.label, values };
+    return { axis: a.axis_key, label: a.label, values: a.axis_key === PACK_AXIS ? sortPackValues(values) : values };
   });
 }

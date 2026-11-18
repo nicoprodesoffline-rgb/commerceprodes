@@ -25,8 +25,8 @@ export function validateContact(c: Contact, message: string | null): FieldErrors
   };
   e.organisation_name = text(c.organisation_name, 200, "Organisation");
   e.contact_name = text(c.contact_name, 200, "Nom du contact");
-  if (!EMAIL.test(c.email) || c.email.length > 254) e.email = "E-mail : adresse invalide (exemple : achats@mairie-exemple.fr).";
-  if (c.phone.trim() !== "" && !PHONE.test(c.phone)) e.phone = "Téléphone : 6 à 20 chiffres, espaces, points ou tirets (exemple : 04 00 00 00 00).";
+  if (!EMAIL.test(c.email) || c.email.length > 254) e.email = "E-mail : saisissez une adresse valide avec un nom, le signe @ et un domaine.";
+  if (c.phone.trim() !== "" && !PHONE.test(c.phone)) e.phone = "Téléphone : saisissez 6 à 20 chiffres, avec éventuellement des espaces, points ou tirets.";
   if (message !== null && message.trim() !== "") e.message = len(message) > 2000 ? `Message : 2 000 caractères au maximum (actuellement ${len(message)}).` : CONTROL.test(message) ? "Message : caractères non admis." : undefined;
   for (const k of Object.keys(e) as (keyof FieldErrors)[]) if (e[k] === undefined) delete e[k];
   return e;
@@ -68,7 +68,7 @@ export function ContactFields({ value, onChange, errors, showErrors }: { value: 
               aria-invalid={err ? true : undefined}
               aria-describedby={[hint ? `f-${f}-hint` : "", err ? `f-${f}-err` : ""].filter(Boolean).join(" ") || undefined}
               onChange={(e) => onChange({ ...value, [f]: e.target.value })}
-              className={`mt-1 block h-[42px] w-full rounded-[9px] border bg-white px-3 ${err ? "border-signal" : "border-line-strong"}`}
+              className={`mt-1 block h-[44px] w-full rounded-[9px] border bg-white px-3 ${err ? "border-signal" : "border-line-strong"}`}
             />
             {err && <p id={`f-${f}-err`} className="mt-1 text-sm text-signal">{err}</p>}
           </div>
@@ -87,7 +87,7 @@ export function ErrorSummary({ errors, id }: { errors: FieldErrors; id: string }
       <p className="font-semibold">Corrigez {list.length === 1 ? "le champ suivant" : `les ${list.length} champs suivants`} :</p>
       <ul className="mt-1 list-disc pl-5 text-sm">
         {list.map(([k, msg]) => (
-          <li key={k}><a href={`#f-${k}`} className="inline-flex min-h-[34px] items-center underline">{msg}</a></li>
+          <li key={k}><a href={`#f-${k}`} className="inline-flex min-h-[44px] items-center underline">{msg}</a></li>
         ))}
       </ul>
     </div>

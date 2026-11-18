@@ -6,8 +6,13 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "test:nav:unit": "node --test tests/nav/*.test.mjs",
+    "test:nav": "npm run c0:build && next build && node --test --test-concurrency=1 tests/nav/*.test.mjs tests/nav/navigation.http.mjs tests/nav/seo.http.mjs",
+    "test:content": "npm run c0:build && next build && node --test --test-concurrency=1 tests/nav/*.test.mjs tests/http/site-content.test.mjs tests/http/site-merchandising.test.mjs",
+    "test:nav:ui": "node --test --test-concurrency=1 tests/nav/menu.ui.mjs",
     "test:http": "node --test tests/http/site.test.mjs",
     "test:storefront": "npm run bc2:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc3_test} SITE_TEST_PORT=${SITE_TEST_PORT:-3361} node --test --test-concurrency=1 tests/http/storefront.test.mjs",
+    "test:ui": "npm run c0:build && npm run bc2:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_order_flow_test} node --test --test-concurrency=1 tests/ui/storefront.ui.mjs",
     "agent-ops:test": "node --test tests/agent-ops/*.test.mjs",
     "agent-ops:quality": "node scripts/agent_ops/quality-gate.mjs",
     "agent-ops:review": "node scripts/agent_ops/review-pack.mjs",
@@ -16,6 +21,8 @@
     "c0:check": "node scripts/c0/check.mjs",
     "c0:build": "node -e \"require('node:fs').rmSync('c0/ts/dist',{recursive:true,force:true})\" && tsc -p c0/ts/tsconfig.json",
     "c0:test": "node --test \"c0/ts/dist/test/*.test.js\"",
+    "c0v2:build": "node -e \"require('node:fs').rmSync('c0v2/ts/dist',{recursive:true,force:true})\" && tsc -p c0v2/ts/tsconfig.json",
+    "c0v2:test": "node --test \"c0v2/ts/dist/c0v2/ts/test/*.test.js\"",
     "c0:vendor-test": "node --test \"tests/c0/*.test.mjs\"",
     "bc2:build": "node -e \"require('node:fs').rmSync('.bc2-build',{recursive:true,force:true})\" && tsc -p tsconfig.bc2.json",
     "test:bc2": "npm run bc2:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc2_test} node --test --test-concurrency=1 \"tests/bc2/*.test.mjs\"",
@@ -23,13 +30,16 @@
     "test:bc4": "npm run bc2:build && npm run bc4:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc4_test} node --test --test-concurrency=1 \"tests/bc4/*.test.mjs\"",
     "test:bc4:http": "npm run bc2:build && npm run bc4:build && SITE_TEST_DATABASE_URL=${SITE_TEST_DATABASE_URL:-postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc4_test} SITE_TEST_PORT=${SITE_TEST_PORT:-3351} node --test --test-concurrency=1 tests/bc4/http.e2e.mjs",
     "db:create-local": "scripts/db/create-local.sh",
-    "db:migrate": "node scripts/db/migrate.mjs"
+    "db:migrate": "node scripts/db/migrate.mjs",
+    "test:basis:unit": "node --test tests/basis/*.test.mjs",
+    "test:e2e:flow": "npm run c0:build && npm run bc2:build && node --test --test-concurrency=1 tests/e2e/order-flow.ui.mjs",
+    "test:basis:ui": "npm run c0:build && node --test --test-concurrency=1 tests/basis/basis.ui.mjs tests/basis/escape.ui.mjs"
   },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
-    "next": "16.4.2",
+    "next": "16.4.5",
     "pg": "8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0"

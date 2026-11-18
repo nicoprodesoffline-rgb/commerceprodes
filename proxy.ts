@@ -31,13 +31,17 @@
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { catalogAvailability } from "@/lib/site-catalog/page";
+import { escapeHtml } from "@/lib/site-shop/settings";
+import { getShopSettings } from "@/lib/site-shop/source";
+import { resolveRedirect } from "@/lib/site-content/redirects";
+import { getActiveContentV2 } from "@/lib/site-content/v2-source";
 
 const CSRF_ROUTES = new Set(["/api/site/cart/preview", "/api/site/quote", "/api/site/order"]);
-const PAGE_EXACT = new Set(["/", "/panier", "/recherche", "/devis", "/commande"]);
+const PAGE_EXACT = new Set(["/", "/panier", "/recherche", "/devis", "/commande", "/favoris", "/comparer", "/gamme-pro-intens"]);
 const PAGE_PREFIXES = ["/categorie/", "/famille/"];
 
 function isStorePage(pathname: string): boolean {
-  return PAGE_EXACT.has(pathname) || PAGE_PREFIXES.some((p) => pathname.startsWith(p) && pathname.length > p.length && !pathname.slice(p.length).includes("/"));
+  return (pathname.startsWith("/p/") && pathname.length > 3) || PAGE_EXACT.has(pathname) || PAGE_PREFIXES.some((p) => pathname.startsWith(p) && pathname.length > p.length && !pathname.slice(p.length).includes("/"));
 }
 
 function csp(nonce: string): string {
@@ -99,6 +103,8 @@ const UNAVAILABLE_HTML = (nonce: string, title: string, text: string) => `<!doct
 <style nonce="${nonce}">body{margin:0;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#FBFBFA;color:#1A1A18}main{max-width:40rem;margin:0 auto;padding:4rem 1rem}h1{font-size:1.5rem;font-weight:600;margin:0 0 .75rem}p{color:#55554F}a{color:#1A1A18;display:inline-flex;align-items:center;min-height:42px;padding:0 1rem;border:1px solid #D6D6D1;border-radius:9px;text-decoration:none;margin-top:1rem}a:focus-visible{outline:2px solid #1A1A18;outline-offset:2px}.mark{font-weight:700;letter-spacing:.08em}</style></head>
 <body><main data-testid="catalog-unavailable"><p class="mark">PRODES</p><h1>${title}</h1><p>${text}</p><p>Votre panier est conservé sur cet appareil. Nous préférons ne rien afficher plutôt qu'un catalogue incomplet ou des prix non vérifiés.</p><a href="">Réessayer</a></main></body></html>`;
 
+const MAINTENANCE_HTML = (nonce: string, message: string) => UNAVAILABLE_HTML(nonce, "Site en maintenance", escapeHtml(message)).replace(/<p>Votre panier est conserv[^<]*<\/p><a href="">Réessayer<\/a>/, '<a href="">Réessayer</a>').replace('data-testid="catalog-unavailable"', 'data-testid="maintenance"');
+
 export async function proxy(req: NextRequest) {
   const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString("base64");
   const { pathname } = req.nextUrl;
@@ -106,6 +112,29 @@ export async function proxy(req: NextRequest) {
   if (req.method === "POST" && CSRF_ROUTES.has(pathname)) {
     const refused = csrfRefusal(req);
     if (refused) return secure(refused, req, nonce);
+  }
+
+  // Cercle 3, 3.23 : mode maintenance de la boutique — TOUTES les pages publiques répondent 503 avec le message de la Factory ; désactivé, le SITE revient. Le message est échappé.
+  if (req.method === "GET" || req.method === "HEAD") {
+    const maintenance = (await getShopSettings()).maintenance;
+    if (maintenance.active) {
+      const res = new NextResponse(req.method === "HEAD" ? null : MAINTENANCE_HTML(nonce, maintenance.message), {
+        status: 503,
+        headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "retry-after": "600" },
+      });
+      return secure(res, req, nonce);
+    }
+  }
+
+  // Cercle 3, 3.17 : anciennes adresses du site actuel. Contenus ACTIFS vérifiés seulement (jamais un aperçu) ; cible locale ; une vraie page n'est jamais redirigée. Location relative : jamais l'hôte interne.
+  if ((req.method === "GET" || req.method === "HEAD") && pathname !== "/") {
+    const hit = resolveRedirect(await getActiveContentV2(), pathname);
+    if (hit !== null) {
+      // L'adaptateur de Next fait `new NextURL(location)` sans base pour toute réponse qui porte une Location : une Location relative donne HTTP 500 (vu au rejeu sur le poste, relu par 8f en 16.4.2 et 16.4.5).
+      // On donne donc une adresse absolue ; Next renvoie lui-même `Location: /categorie/…` en relatif, l'hôte interne ne sort pas. Défense : jamais une autre origine.
+      const target = new URL(hit.to, req.nextUrl);
+      if (target.origin === req.nextUrl.origin) return secure(new NextResponse(null, { status: hit.status, headers: { location: target.toString(), "cache-control": "public, max-age=3600" } }), req, nonce);
+    }
   }
 
   if ((req.method === "GET" || req.method === "HEAD") && isStorePage(pathname)) {
@@ -132,5 +161,5 @@ export async function proxy(req: NextRequest) {
 export const config = {
   // Next exige un littéral analysable statiquement : l'exclusion des routes machine est donc écrite en dur ici.
   // `(?:/|$)` : seul le préfixe exact (`/api/site/publish`, `/api/site/publish/…`) est exclu, pas `/api/site/publishX`.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/site/publish(?:/|$)|api/site/events(?:/|$)).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/site/publish(?:/|$)|api/site/content(?:/|$)|api/site/events(?:/|$)).*)"],
 };

@@ -15,12 +15,14 @@
  *
  * Interdits ici : prix du navigateur comme autorité, `Number` pour un montant, TVA, port, statut client, paiement.
  */
+import { asV1 } from "../site-catalog/v1-view";
 import type { Pool, PoolClient } from "pg";
 import { Generation, MAX_BYTES, selectPrice, validateOrderSubmit, validateQuoteRequest, type BusinessResult } from "../../c0/ts/src/business";
 import { payloadDigest, validateEvent } from "../../c0/ts/src/events";
 import { moneyCents } from "../../c0/ts/src/formats";
 import { canonicalBytes, isObject, parseBytes, type Json, type JsonObject } from "../../c0/ts/src/jsonc";
 import { readActiveForUpdate } from "../site-db/generation";
+import { QUOTE_ONLY_CODE, isQuoteOnlyRate } from "../site-catalog/quote-only";
 import { PERSISTENCE, appendLog, checkout, errorReason, httpStatusFor, json, jsonWithRaw, newAccessToken, opaqueRef, sha256OfBytes, type TxResponse } from "./common";
 
 export type BusinessKind = "quote_request" | "order";
@@ -184,6 +186,22 @@ export function buildEvent(kind: BusinessKind, ref: string, receipt: JsonObject,
   return { event, bytes };
 }
 
+/**
+ * « Prix sur devis » dans une DEMANDE DE DEVIS : une ligne chiffrée par une fenêtre `rq-` (montant de convention 0.01, ex. `displayed` forgé) est enregistrée
+ * NON chiffrée (`priced: false`, aucun montant ni rate_id), comme une ligne sans prix : le devis reste possible, aucun prix de convention n'est mémorisé.
+ * Sans ligne chiffrée, la séquence de catalogue du reçu est nulle (convention C0 des devis non chiffrés). Sans fenêtre `rq-`, le reçu C0 est rendu tel quel.
+ */
+function neutralizeQuoteOnlyLines(receipt: JsonObject): JsonObject {
+  const lines = receipt["lines"] as JsonObject[];
+  if (!lines.some((l) => l["priced"] === true && isQuoteOnlyRate(l["rate_id"]))) return receipt;
+  const out = lines.map((l): JsonObject =>
+    l["priced"] === true && isQuoteOnlyRate(l["rate_id"])
+      ? { ...l, priced: false, rate_id: null, unit_amount: null, currency: null, tax_basis_or_status: null }
+      : l);
+  const anyPriced = out.some((l) => l["priced"] === true);
+  return { ...receipt, lines: out, catalogue_sequence: anyPriced ? (receipt["catalogue_sequence"] as Json) : null };
+}
+
 function cents(value: Json | undefined): bigint {
   const c = moneyCents(value);
   if (c === null) throw Object.assign(new Error("montant hors format C0"), { code: "MONEY_FORMAT" });
@@ -307,7 +325,7 @@ export async function submitBusiness(deps: BusinessDeps, kind: BusinessKind, byt
       outcome = { response: unavailable(base, "NO_ACTIVE_GENERATION"), log: { operation, outcome: "CATALOG_UNAVAILABLE", detail: { reason: "NO_ACTIVE_GENERATION" } } };
       return outcome.response;
     }
-    const generation: Json = { snapshot: active.snapshot as unknown as Json, status: active.status };
+    const generation: Json = { snapshot: asV1(active.snapshot as unknown as Json), status: active.status };
     try {
       new Generation(generation);
     } catch {
@@ -324,7 +342,17 @@ export async function submitBusiness(deps: BusinessDeps, kind: BusinessKind, byt
     if (verdict.accepted && verdict.outcome === "RECEIVED") {
       if (deps.hooks?.afterValidate) await deps.hooks.afterValidate(client);
       const request = parseBytes(bytes, MAX_BYTES) as JsonObject; // déjà accepté par C0 : relecture NFC du même document
-      const receiptC0 = verdict.receipt as JsonObject;
+      const receiptC0 = kind === "quote_request" ? neutralizeQuoteOnlyLines(verdict.receipt as JsonObject) : (verdict.receipt as JsonObject);
+      // « Prix sur devis » (fenêtre `rq-`, montant de convention 0.01) : jamais commandable en ligne. C0 valide ce montant (une commande forgée à 0,01 € passerait), donc le refus est ICI,
+      // sur les lignes retenues par le serveur ; seule la demande de devis reste. Aucune écriture, rien d'enregistré.
+      if (kind === "order" && (receiptC0["lines"] as JsonObject[]).some((l) => isQuoteOnlyRate(l["rate_id"]))) {
+        await client.query("ROLLBACK");
+        outcome = {
+          response: json(httpStatusFor([QUOTE_ONLY_CODE]), { ...base, durable: false, catalogue_sequence: active.catalogue_sequence, accepted: false, outcome: "REJECTED", error_codes: [QUOTE_ONLY_CODE], superseded_by: {}, verdict: null }),
+          log: { operation, outcome: "REJECTED", error_codes: [QUOTE_ONLY_CODE] },
+        };
+        return outcome.response;
+      }
       const ref = opaqueRef(kind === "order" ? "ORD" : "QR");
       const access = newAccessToken();
       const receipt: JsonObject = { ...receiptC0, receipt_ref: ref, created_at_utc: nowUtc };

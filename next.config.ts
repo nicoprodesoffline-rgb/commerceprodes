@@ -8,6 +8,8 @@ const config: NextConfig = {
   images: { unoptimized: true },
   async headers() {
     return [
+      // Cercle 3 (B14) : un aperçu de page ne se met jamais en cache et ne s'indexe jamais.
+      { source: "/apercu/:id", headers: [{ key: "Cache-Control", value: "no-store" }, { key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       {
         source: "/(.*)",
         headers: [

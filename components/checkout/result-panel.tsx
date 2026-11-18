@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { codeMessage } from "@/components/site/codes";
+import { codeMessage, reportCodes } from "@/components/site/codes";
+import { ReceiptDetails } from "@/components/checkout/receipt-details";
 import type { Outcome } from "@/components/checkout/submit";
 
 /**
@@ -10,31 +11,38 @@ import type { Outcome } from "@/components/checkout/submit";
  * — le code n'est conservé nulle part par le site, ni dans le panier ni dans le stockage du navigateur. Le lien
  * place le code après `#` : il n'est jamais transmis au serveur dans l'adresse de la page.
  */
-export function ResultPanel({ outcome, onRetry }: { outcome: Outcome; onRetry?: () => void }) {
+export function ResultPanel({ outcome, onRetry, cartKept = false, cartOrderable = true }: { outcome: Outcome; onRetry?: () => void; cartKept?: boolean; cartOrderable?: boolean }) {
   const heading = useRef<HTMLHeadingElement>(null);
   const [copied, setCopied] = useState(false);
   useEffect(() => heading.current?.focus(), [outcome]);
+  useEffect(() => {
+    if (outcome.kind === "network") reportCodes("checkout-result", ["NETWORK"]);
+    else if (outcome.kind === "refused") reportCodes("checkout-result", outcome.codes);
+  }, [outcome]);
 
   if (outcome.kind === "received") {
     const quote = outcome.objectKind === "quote_request";
     const link = outcome.token ? `${window.location.origin}/recu#ref=${encodeURIComponent(outcome.ref)}&code=${encodeURIComponent(outcome.token)}` : null;
     return (
-      <section aria-labelledby="res-h" className="rounded-[14px] border-2 border-positive bg-white p-5" data-testid="result-received">
+      <section aria-labelledby="res-h" className="min-w-0 rounded-[14px] border-2 border-positive bg-white p-5" data-testid="result-received">
         <h2 id="res-h" ref={heading} tabIndex={-1} className="text-xl font-semibold">
-          {quote ? "Demande de devis reçue" : "Commande reçue — en attente de traitement"}
+          {quote ? "Demande de devis reçue" : "Commande reçue"}
         </h2>
         <p className="mt-2">
-          Référence : <span className="font-mono font-semibold" data-testid="receipt-ref">{outcome.ref}</span>
+          Référence : <span className="break-all font-mono font-semibold" data-testid="receipt-ref">{outcome.ref}</span>
         </p>
         <p className="mt-1 text-sm text-ink-2">
           {quote
-            ? "Votre demande est enregistrée. Elle n'engage aucun prix tant qu'un devis ne vous a pas été adressé."
-            : "Votre commande est enregistrée au prix affiché. Elle n'est ni facturée ni payée en ligne ; taxes et port ne sont pas calculés ici."}
+            ? "Votre demande est enregistrée ; nous vous répondons rapidement."
+            : "Commande enregistrée ; nous vous recontactons pour la confirmer."}
           {outcome.replay ? " (Demande déjà reçue : même référence, rien n'a été enregistré deux fois.)" : ""}
         </p>
+        {outcome.receipt && <div className="mt-4"><ReceiptDetails receipt={outcome.receipt} isOrder={!quote} /></div>}
+        <p className="mt-3 text-sm text-ink-2">Pour retrouver ce reçu, ouvrez la page <Link href="/recu" className="inline-flex min-h-11 items-center underline">Consulter un reçu</Link> et saisissez sa référence et son code d’accès. Conservez-les maintenant.</p>
         {link ? (
           <div className="mt-4 rounded-[9px] border border-caution p-3">
-            <p className="text-sm font-semibold">Lien de consultation — conservez-le maintenant, il ne sera plus affiché</p>
+            <p className="text-sm">Code d’accès : <span className="break-all font-mono font-semibold" data-testid="receipt-code">{outcome.token}</span></p>
+            <p className="mt-2 text-sm font-semibold">Lien de consultation — conservez-le maintenant, il ne sera plus affiché</p>
             <p className="mt-1 break-all font-mono text-xs" data-testid="receipt-link">{link}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button
@@ -47,18 +55,33 @@ export function ResultPanel({ outcome, onRetry }: { outcome: Outcome; onRetry?: 
                     setCopied(false);
                   }
                 }}
-                className="h-[42px] rounded-[9px] border border-line-strong bg-white px-4 font-medium hover:bg-surface"
+                className="h-[44px] rounded-[9px] border border-line-strong bg-white px-4 font-medium hover:bg-surface"
               >
                 Copier le lien
               </button>
-              <a href={link} className="inline-flex h-[42px] items-center rounded-[9px] px-3 underline">Consulter le reçu</a>
+              <a href={link} className="inline-flex h-[44px] items-center rounded-[9px] px-3 underline">Consulter le reçu</a>
             </div>
             <p aria-live="polite" className="mt-1 text-xs text-positive">{copied ? "Lien copié." : ""}</p>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-ink-2">Le code d&apos;accès n&apos;est remis qu&apos;au premier envoi : utilisez le lien reçu à ce moment-là.</p>
+          <p className="mt-3 text-sm text-ink-2">Le code d&apos;accès n&apos;est remis qu&apos;au premier envoi : utilisez le code ou le lien conservé à ce moment-là. Si la première réponse a été perdue, ce code ne peut pas être récupéré ici.</p>
         )}
-        <Link href="/" className="mt-4 inline-flex h-[42px] items-center rounded-[9px] bg-ink px-4 font-medium text-white">Retour au catalogue</Link>
+        {quote && cartKept && (
+          <div className="mt-4 rounded-[9px] border border-line p-3" data-testid="cart-kept">
+            <p className="text-sm font-semibold">Votre panier est conservé</p>
+            <p className="mt-1 text-sm text-ink-2">
+              {cartOrderable
+                ? <>Cette demande de devis n&apos;est pas une commande. Vous pouvez commander ces mêmes articles avec ce panier : les prix seront vérifiés de nouveau au moment de l&apos;envoi.
+              La commande ne remplace pas votre demande de devis.</>
+                : <>Cette demande de devis n&apos;est pas une commande. Certains articles de ce panier se commandent sur devis : ils ne peuvent pas être commandés en ligne.</>}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {cartOrderable && <Link href="/commande" className="inline-flex min-h-[44px] items-center rounded-[9px] bg-brand hover:bg-brand-dark px-4 py-2 font-medium text-white" data-testid="order-with-this-cart">Commander avec ce panier</Link>}
+              <Link href="/panier" className="inline-flex h-[44px] items-center rounded-[9px] border border-line-strong px-4 font-medium hover:bg-surface">Revoir le panier</Link>
+            </div>
+          </div>
+        )}
+        <Link href="/" className={`mt-4 inline-flex h-[44px] items-center rounded-[9px] px-4 font-medium ${quote && cartKept ? "border border-line-strong hover:bg-surface" : "bg-brand text-white hover:bg-brand-dark"}`}>Retour au catalogue</Link>
       </section>
     );
   }
@@ -66,7 +89,7 @@ export function ResultPanel({ outcome, onRetry }: { outcome: Outcome; onRetry?: 
     return (
       <section aria-labelledby="res-h" role="alert" className="rounded-[14px] border-2 border-caution bg-white p-5" data-testid="result-not-durable">
         <h2 id="res-h" ref={heading} tabIndex={-1} className="text-lg font-semibold">Demande validée mais NON enregistrée</h2>
-        <p className="mt-1 text-sm text-ink-2">Ce serveur fonctionne sans enregistrement (persistance {outcome.persistence}) : rien n&apos;a été transmis.</p>
+        <p className="mt-1 text-sm text-ink-2">Votre demande n&apos;a pas été enregistrée. Réessayez ultérieurement.</p>
       </section>
     );
   }
@@ -76,8 +99,8 @@ export function ResultPanel({ outcome, onRetry }: { outcome: Outcome; onRetry?: 
       <h2 id="res-h" ref={heading} tabIndex={-1} className="text-lg font-semibold">
         {outcome.kind === "network" ? "Envoi incertain" : "Envoi refusé — rien n'a été enregistré"}
       </h2>
-      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm" data-testid="refusal-codes">
-        {codes.map((c) => <li key={c}>{codeMessage(c)}</li>)}
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm" data-testid="refusal-codes" data-codes={codes.join(" ")}>
+        {codes.map((c) => <li key={c} data-code={c}>{codeMessage(c)}</li>)}
       </ul>
       {outcome.kind === "refused" && Object.entries(outcome.superseded).map(([old, canon]) => (
         <p key={old} className="mt-1 text-sm">
@@ -85,7 +108,7 @@ export function ResultPanel({ outcome, onRetry }: { outcome: Outcome; onRetry?: 
         </p>
       ))}
       {onRetry && (
-        <button type="button" onClick={onRetry} className="mt-3 h-[42px] rounded-[9px] border border-ink bg-white px-4 font-medium hover:bg-surface">
+        <button type="button" onClick={onRetry} className="mt-3 h-[44px] rounded-[9px] border border-ink bg-white px-4 font-medium hover:bg-surface">
           {outcome.kind === "network" ? "Réessayer à l'identique" : "Revoir et réessayer"}
         </button>
       )}

@@ -1,0 +1,32 @@
+{
+  "case_id": "V2_CONTENT.redirect_chain",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/V2_CONTENT/ack_content_ready.json"
+      },
+      "content": {
+        "$doc": "documents/V2_CONTENT/content_ready.json"
+      }
+    },
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_redirect_chain.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "7cdbf137ac40d35c59bb223f9b625b2d2a30bc6e3a8d6d5271bede5483c3c7e2"
+    }
+  },
+  "notes": "S07: one hop only; a redirect target is never itself redirected.",
+  "scenario": "V2_CONTENT"
+}

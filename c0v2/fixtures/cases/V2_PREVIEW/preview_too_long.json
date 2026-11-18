@@ -1,0 +1,23 @@
+{
+  "case_id": "V2_PREVIEW.preview_too_long",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_preview",
+  "input": {
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "preview": {
+      "$bytes": "documents/V2_PREVIEW/content_preview_too_long.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "485840d2d1615d53374ea7b68bfb9fe57eda8b92248f0df5d40ad433ee128956"
+    }
+  },
+  "notes": "The SITE never keeps a preview more than 30 minutes.",
+  "scenario": "V2_PREVIEW"
+}

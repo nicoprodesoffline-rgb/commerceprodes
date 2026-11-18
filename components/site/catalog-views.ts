@@ -2,23 +2,29 @@
  * Projections d'affichage côté serveur sur le catalogue servi (aucune donnée hors DTO, aucun prix calculé,
  * aucun ordre inventé : l'ordre est celui du DTO, déjà normatif — C0 §8.1).
  */
-import type { Catalog, Category, Family } from "@/lib/site-catalog/catalog";
+import type { Catalog, Family } from "@/lib/site-catalog/catalog";
+import { buildNavigation, type Navigation } from "@/lib/site-catalog/navigation";
+import { characteristicsText } from "@/lib/site-catalog/merchandising";
+import { itemKeyFromInput } from "@/lib/site-catalog/short-ref";
 import type { Crumb } from "@/components/layout/breadcrumbs";
 
-/** Chaîne des catégories de la racine à `key` (C0 interdit les cycles : `categories.cycle`). */
-export function categoryChain(catalog: Catalog, key: string): Category[] {
-  const chain: Category[] = [];
-  let cur = catalog.categories.find((c) => c.category_key === key);
-  while (cur && chain.length < 64) {
-    chain.unshift(cur);
-    const parent = cur.parent_category_key;
-    cur = parent === null ? undefined : catalog.categories.find((c) => c.category_key === parent);
+const navigations = new WeakMap<Catalog, Navigation>();
+
+/** Navigation (3 niveaux max, rubriques vides masquées) du catalogue servi, construite une fois par catalogue. */
+export function navigationOf(catalog: Catalog): Navigation {
+  let nav = navigations.get(catalog);
+  if (!nav) {
+    nav = buildNavigation(catalog.categories, catalog.families);
+    navigations.set(catalog, nav);
   }
-  return chain;
+  return nav;
 }
 
+/** Fil d'Ariane de la catégorie `key` (ou de son ancêtre de niveau 3 si elle est plus profonde). Jamais plus de 3 maillons. */
 export function categoryCrumbs(catalog: Catalog, key: string): Crumb[] {
-  return categoryChain(catalog, key).map((c) => ({ label: c.name, href: `/categorie/${c.category_key}` }));
+  const nav = navigationOf(catalog);
+  const anchor = nav.anchor(key);
+  return anchor === null ? [] : nav.chain(anchor).map((c) => ({ label: c.name, href: `/categorie/${c.key}` }));
 }
 
 export type FamilyCardData = { slug: string; name: string; description: string; imageSha: string; variantCount: number };
@@ -35,20 +41,20 @@ export const SEARCH_MAX = 100;
 
 /**
  * Recherche simple côté serveur (aucun index externe) : chaque mot de la requête doit figurer dans le nom ou le
- * slug de la Famille (insensible à la casse et aux accents) ; une référence `PI-…` publiée trouve sa Famille.
+ * slug de la Famille (insensible à la casse et aux accents) ; une référence `PI-…` publiée, en clé longue ou en forme courte (`PI-000401`), trouve sa Famille.
  * Ordre du DTO.
  */
 export function searchFamilies(catalog: Catalog, raw: string): Family[] {
   const q = fold(raw.slice(0, SEARCH_MAX));
   if (q === "") return [];
-  const ref = raw.trim().toUpperCase();
-  if (/^PI-[0-9A-Z]{9}$/.test(ref)) {
+  const ref = itemKeyFromInput(raw);
+  if (ref !== null) {
     const r = catalog.resolveItem(ref);
     return r.kind === "PUBLISHED" ? [r.family] : [];
   }
   const words = q.split(" ");
   return catalog.families.filter((f) => {
-    const hay = `${fold(f.name)} ${f.slug.replace(/-/g, " ")}`;
+    const hay = `${fold(f.name)} ${f.slug.replace(/-/g, " ")} ${fold(characteristicsText(f))}`;   // C02 : les caractéristiques se cherchent, sans s'afficher en tableau
     return words.every((w) => hay.includes(w));
   });
 }

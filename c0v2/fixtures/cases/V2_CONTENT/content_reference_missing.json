@@ -1,0 +1,32 @@
+{
+  "case_id": "V2_CONTENT.content_reference_missing",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/V2_CONTENT/ack_content_ready.json"
+      },
+      "content": {
+        "$doc": "documents/V2_CONTENT/content_ready.json"
+      }
+    },
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_content_reference_missing.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "880100ae60faa0cd1f4399ad85a2c5f1b1656a5cd766b5c55e5b5ae04e68467e"
+    }
+  },
+  "notes": "V09: a content naming a family the SITE does not serve is refused whole; the previous content stays served.",
+  "scenario": "V2_CONTENT"
+}

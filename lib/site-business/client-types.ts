@@ -46,6 +46,7 @@ export type BusinessJson = {
 
 /** Libellés français des codes C0 (§13) affichés au client. */
 export const CODE_TEXT: Record<string, string> = {
+  QUOTE_ONLY: "Prix sur devis",
   PRICE_WINDOW_UNAVAILABLE: "Prix indisponible pour cette quantité à cet instant (devis non chiffré possible)",
   INVALID_VARIANT: "Variante non proposée",
   INVALID_DATA: "Données invalides",

@@ -1,0 +1,113 @@
+{
+ "screens": [
+  {
+   "screen": "accueil",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "catalogue",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "recherche-tri-prix",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "recherche-vide",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "categorie",
+   "width": 1440,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "accueil",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "catalogue",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "recherche-tri-prix",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "recherche-vide",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "categorie",
+   "width": 1024,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "accueil",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "catalogue",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "recherche-tri-prix",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "recherche-vide",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  },
+  {
+   "screen": "categorie",
+   "width": 390,
+   "status": 200,
+   "global_overflow_px": 0
+  }
+ ],
+ "checks": {
+  "sort_ascending_ok": true,
+  "sort_descending_ok": true,
+  "price_filter_keeps_only_the_range": true,
+  "refused_price_is_said": true,
+  "active_filter_chip_shown": true,
+  "clear_resets_filters": true,
+  "live_options": 3,
+  "live_arrow_selects_one": true,
+  "live_escape_closes_keeps_text": true,
+  "live_clear_empties": true,
+  "live_enter_goes_to_results_page": true,
+  "sidebar_visible_1440": true,
+  "sidebar_visible_1024": true,
+  "mobile_category_pills_visible": true,
+  "mobile_sidebar_hidden": true,
+  "without_script_filters_apply": true,
+  "without_script_search_goes_to_results": true
+ }
+}

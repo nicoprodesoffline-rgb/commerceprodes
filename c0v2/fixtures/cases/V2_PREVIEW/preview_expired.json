@@ -1,0 +1,23 @@
+{
+  "case_id": "V2_PREVIEW.preview_expired",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_preview",
+  "input": {
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "preview": {
+      "$bytes": "documents/V2_PREVIEW/content_preview_expired.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "f4230a45629055695d661911fbc2dc37e3f33d9abacd4e33c59b8319cca0ed28"
+    }
+  },
+  "notes": "An expired preview is refused; so is one expiring more than 30 minutes after the SITE clock.",
+  "scenario": "V2_PREVIEW"
+}

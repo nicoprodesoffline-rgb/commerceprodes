@@ -1,0 +1,76 @@
+{
+  "case_id": "V2_CATALOGUE.v2_accepted",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_publication",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "media_store": [
+      {
+        "file": {
+          "$media": "media/f1_w320.webp"
+        },
+        "sha256": "09c0a8d5cccfb7ffa37cf373010f510495b2386432d291c60751278f081d5154"
+      },
+      {
+        "file": {
+          "$media": "media/f1_w640.webp"
+        },
+        "sha256": "b7130d1fc8bd9859626080b588e429948b0d49353df328cf8ca1dd6847d9d515"
+      },
+      {
+        "file": {
+          "$media": "media/f2_family.png"
+        },
+        "sha256": "20992dad3fef3b12baee2cd2761d6481399b50a1d4b21cfcb778309c05416a3b"
+      },
+      {
+        "file": {
+          "$media": "media/f2_item_rouge.png"
+        },
+        "sha256": "968cf0335e1f9bd5f3885afb790f09699aa319c28cea0d9082b9176f40c91530"
+      },
+      {
+        "file": {
+          "$media": "media/f3_w320.webp"
+        },
+        "sha256": "494dd0d25012e3d6024edd4e3865f4ca4d5498366985bf29f1e95a3d8a0de59c"
+      },
+      {
+        "file": {
+          "$media": "media/f4_family.png"
+        },
+        "sha256": "f63047c1fbf5d423cf1e8b85e504ce802364065c3a178f5db0144f11a9e25843"
+      },
+      {
+        "file": {
+          "$media": "media/f5_family.png"
+        },
+        "sha256": "1d04532fd276cd1cc55d1b7b5949b3f85ee57f84482e5b0550b3ebaa22d53aa6"
+      },
+      {
+        "file": {
+          "$media": "media/f4_fiche.pdf"
+        },
+        "sha256": "d477ca760f16a2d4ab5a8d9a94b11e9738945d70d5a59453170e81c1c4956c48"
+      }
+    ],
+    "now_utc": "2026-11-17T07:00:00Z",
+    "policy": {
+      "max_withdrawals_without_release": null,
+      "released_expected_withdrawals_digest": null
+    },
+    "snapshot": {
+      "$bytes": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "4985fa786e1b001babf7852f7e393ce24d0f4df85898f0167a50488f8416fac2"
+    }
+  },
+  "notes": "V01, I09: a v2 catalogue is activated; the SITE holds the derivatives and the document, never the JPEG and TIFF originals.",
+  "scenario": "V2_CATALOGUE"
+}

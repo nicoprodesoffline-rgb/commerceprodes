@@ -1,0 +1,15 @@
+{
+  "case_id": "V2_CATALOGUE.v2_coverage_proven",
+  "data_label": "STAGING_FIXTURE",
+  "function": "check_source_coverage",
+  "input": {
+    "manifest": {
+      "$doc": "documents/V2_CATALOGUE/manifest_v2_ready.json"
+    },
+    "snapshot": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    }
+  },
+  "notes": "The private manifest proves the v2 FULL catalogue, as in v1.",
+  "scenario": "V2_CATALOGUE"
+}
