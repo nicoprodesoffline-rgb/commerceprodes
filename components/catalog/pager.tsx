@@ -1,10 +1,11 @@
 import Link from "next/link";
 
 /** Pagination d'une liste : liens ordinaires qui gardent la recherche, les filtres et le tri (aucun état caché). */
-export function Pager({ action, params, page, pages }: { action: string; params: Record<string, string>; page: number; pages: number }) {
+export function Pager({ action, params, page, pages }: { action: string; params: Record<string, string | string[]>; page: number; pages: number }) {
   if (pages <= 1) return null;
   const href = (n: number) => {
-    const p = new URLSearchParams(params);
+    const p = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) for (const one of Array.isArray(v) ? v : [v]) p.append(k, one);
     if (n > 1) p.set("page", String(n));
     const s = p.toString();
     return s ? `${action}?${s}` : action;

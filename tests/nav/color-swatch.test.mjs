@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
-import { normalizeColorName, swatchFor, SWATCH_KEYWORDS, RAL_SWATCHES, isColorAxis } from "../../lib/site-catalog/color-swatch.ts";
+import { normalizeColorName, swatchFor, swatchStyle, SWATCH_KEYWORDS, RAL_SWATCHES, isColorAxis } from "../../lib/site-catalog/color-swatch.ts";
 import * as variantChoice from "../../lib/site-catalog/variant-choice.ts";
 
 // Noms génériques fournis dans la consigne, sans lecture du catalogue.
@@ -58,7 +58,9 @@ test("frontières : aucune sous-chaîne de mot ni expression coupée", () => {
   assert.equal(swatchFor("Corde"), null);
   assert.equal(swatchFor("Orange"), "#e07820");
   assert.equal(swatchFor("Bordeaux"), "#5e1a1a");
-  assert.equal(swatchFor("blanche argenté coloration"), null);
+  // 4.27 : « blanche » est désormais au nuancier (féminins) ; une sous-chaîne de mot n'en trouve toujours pas.
+  assert.equal(swatchFor("blanche argenté coloration"), "#f5f5f5");
+  assert.equal(swatchFor("coloration"), null);
   assert.equal(swatchFor("gris très clair"), "#606060");
 });
 
@@ -98,7 +100,7 @@ new Function("require", "module", "exports", code)((name) => {
   if (name === "react") return { ...React, useId: () => "test-color", useState: (initial) => [initial, () => {}] };
   if (name === "@/lib/site-catalog/variant-choice") return variantChoice;
   if (name === "@/components/site/format") return { axisValue: (value) => value };
-  if (name === "@/lib/site-catalog/color-swatch") return { isColorAxis, swatchFor };
+  if (name === "@/lib/site-catalog/color-swatch") return { isColorAxis, swatchFor, swatchStyle };
   return require(name);
 }, module, module.exports);
 const { VariantSelector } = module.exports;
@@ -178,4 +180,60 @@ test("sélecteur : valeur unique colorée ; autre axe et inconnus sans pastille"
   for (const tree of [render("matiere", "Matière", ["Rouge", "Bleu"]), render("coloris", "Coloris", ["Inconnu"])]) {
     assert.equal(nodes(tree, (n) => n.props?.style?.backgroundColor).length, 0);
   }
+});
+
+// ---- 4.27 : nuancier élargi, recherche sur la clé de pli, bicolore, jamais de teinte devinée ----
+import { RAL_CLASSIC, EXTRA_SWATCH_KEYWORDS } from "../../lib/site-catalog/color-swatch.ts";
+
+test("4.27 : féminins, pluriels et accents trouvent la même teinte que le nom de base", () => {
+  for (const [value, like] of [
+    ["noire", "noir"], ["Noires", "noir"], ["BLANCHE", "blanc"], ["blanches", "blanc"], ["verte", "vert"], ["bleue", "bleu"], ["grise", "gris"], ["Grises", "gris"],
+    ["Chêne", "chene"], ["Doré", "or"],
+  ]) assert.notEqual(swatchFor(value), null, value);
+  assert.equal(swatchFor("noire"), swatchFor("noir"));
+  assert.equal(swatchFor("Verte"), swatchFor("vert"));
+  assert.equal(swatchFor("Noirs"), swatchFor("noir"));
+});
+
+test("4.27 : noms courants, finitions métal et bois ont une teinte", () => {
+  for (const value of ["taupe", "brun", "crème", "sable", "turquoise", "violet", "terracotta", "doré", "platine",
+    "inox", "galvanisé", "aluminium", "zingué", "chrome", "laiton", "bronze", "cuivre",
+    "chêne", "hêtre", "pin", "teck", "noyer", "bambou", "bois", "Inox brossé 304", "Chêne clair"]) assert.match(swatchFor(value) ?? "", /^#[0-9a-f]{6}$/, value);
+  assert.equal(new Set(EXTRA_SWATCH_KEYWORDS.map(([n]) => n)).size, EXTRA_SWATCH_KEYWORDS.length, "aucun nom en double");
+});
+
+test("4.27 : RAL classique complet, un code à quatre chiffres sans « RAL » reste écrit", () => {
+  const codes = new Set([...Object.keys(RAL_SWATCHES), ...Object.keys(RAL_CLASSIC)]);
+  assert.ok(codes.size >= 190, `${codes.size} codes`);
+  for (const code of [1000, 2004, 3020, 4005, 5015, 6018, 7021, 8017, 9005, 9010]) assert.ok(codes.has(String(code)), String(code));
+  for (const code of Object.keys(RAL_CLASSIC)) assert.match(RAL_CLASSIC[code], /^#[0-9a-f]{6}$/, code);
+  for (const code of Object.keys(RAL_SWATCHES)) assert.equal(RAL_CLASSIC[code], undefined, "les dix teintes existantes ne sont pas redéfinies");
+  assert.equal(swatchFor("RAL 5015"), RAL_CLASSIC["5015"]);
+  assert.equal(swatchFor("ral 9006"), RAL_CLASSIC["9006"]);
+  for (const value of ["7016", "9005", "5015", "standard", "transparent", "Non précisée", "selon nuancier", "Selon nuancier RAL", "RAL 7016x", "RAL 9999"]) assert.equal(swatchFor(value), null, value);
+});
+
+test("4.27 : bicolore « A/B » ou « A et B » : pastille coupée en deux ; une partie sans teinte : la valeur reste écrite", () => {
+  const rouge = swatchFor("rouge"), blanc = swatchFor("blanc");
+  assert.equal(swatchFor("Rouge/Blanc"), `linear-gradient(90deg, ${rouge} 50%, ${blanc} 50%)`);
+  assert.equal(swatchFor("rouge / blanc"), swatchFor("Rouge/Blanc"));
+  assert.equal(swatchFor("Rouge et blanc"), swatchFor("Rouge/Blanc"));
+  assert.equal(swatchFor("Noire et Verte"), `linear-gradient(90deg, ${swatchFor("noir")} 50%, ${swatchFor("vert")} 50%)`);
+  assert.equal(swatchFor("RAL 9005/RAL 9010"), `linear-gradient(90deg, ${RAL_SWATCHES["9005"]} 50%, ${RAL_SWATCHES["9010"]} 50%)`);
+  assert.equal(swatchFor("Rouge/Transparent"), null);
+  assert.equal(swatchFor("Standard et Rouge"), null);
+  assert.equal(swatchFor("Rouge/Blanc/Bleu"), null, "trois parties : rien n'est deviné");
+  assert.equal(swatchFor("Rouge/rouge"), rouge, "deux fois la même teinte : un aplat");
+  assert.equal(swatchStyle(swatchFor("Rouge/Blanc")).backgroundImage, swatchFor("Rouge/Blanc"));
+  assert.deepEqual(swatchStyle("#cc0000"), { backgroundColor: "#cc0000" });
+});
+
+test("4.27 : abréviations « galva » et « alu » ; « standard/galva », transparent, brut, nature, naturel et 4 chiffres sans RAL restent écrits", () => {
+  assert.equal(swatchFor("Galva"), swatchFor("galvanisé"));
+  assert.equal(swatchFor("galva"), swatchFor("Galva"));
+  assert.equal(swatchFor("Alu"), swatchFor("aluminium"));
+  assert.notEqual(swatchFor("alu"), null);
+  assert.equal(swatchFor("Alu/Noir"), `linear-gradient(90deg, ${swatchFor("aluminium")} 50%, ${swatchFor("noir")} 50%)`);
+  assert.equal(swatchFor("standard/galva"), null, "« standard » n'a pas de teinte : la valeur reste écrite");
+  for (const value of ["transparent", "brut", "nature", "naturel", "1234", "7016", "aluminerie", "valu"]) assert.equal(swatchFor(value), null, value);
 });
