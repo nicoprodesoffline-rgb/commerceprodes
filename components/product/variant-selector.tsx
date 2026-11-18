@@ -9,7 +9,7 @@
  */
 import { useId, useState } from "react";
 import { axisValue } from "@/components/site/format";
-import { isColorAxis, swatchFor } from "@/lib/site-catalog/color-swatch";
+import { isColorAxis, swatchFor, swatchStyle } from "@/lib/site-catalog/color-swatch";
 import { adjustments, click, compatible, isShown, orderAxes, type Adjustment, type Pinned } from "@/lib/site-catalog/variant-choice";
 
 export type SelectorAxis = { axis: string; label: string; values: string[] };
@@ -55,7 +55,7 @@ export function VariantSelector({
           return (
             <p key={option.axis} className="text-sm">
               <span className="font-medium">{option.label}</span> : {backgroundColor && (
-                <span aria-hidden="true" className="mr-2 inline-block h-4 w-4 rounded-full border border-line-strong align-middle" style={{ backgroundColor }} />
+                <span aria-hidden="true" className="mr-2 inline-block h-4 w-4 rounded-full border border-line-strong align-middle" style={swatchStyle(backgroundColor)} />
               )}{axisValue(values[0]!)} <span className="text-ink-3">(seule option)</span>
             </p>
           );
@@ -103,7 +103,7 @@ export function VariantSelector({
                       className="sr-only"
                     />
                     {backgroundColor && (
-                      <span aria-hidden="true" className="mr-2 h-4 w-4 shrink-0 rounded-full border border-line-strong" style={{ backgroundColor }} />
+                      <span aria-hidden="true" className="mr-2 h-4 w-4 shrink-0 rounded-full border border-line-strong" style={swatchStyle(backgroundColor)} />
                     )}
                     {axisValue(value)}
                     {!ok && <span className="sr-only"> (aucune variante avec vos choix : un clic ajuste les autres choix)</span>}
