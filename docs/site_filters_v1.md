@@ -75,11 +75,12 @@ Deux niveaux : la **nuance** (§4, 38 noms) sert au filtre, aux listes et à l'�
   - la moitié (ou la pastille) dont la partie de `Teinte` est `RAL NNNN` prend la teinte de `ral.json`, avec le **motif de sa nuance** ; les autres gardent la teinte de leur nuance ;
   - une `Teinte` dont le nombre de parties diffère de `Pastille`, ou un code absent de `ral.json`, est ignorée en entier ;
   - `Teinte` ne s'affiche jamais comme une caractéristique, n'entre dans aucun filtre et dans aucune recherche ; le filtre Coloris ne lit que `Pastille`.
-- **Règle de sûreté (SITE, sélecteur de variantes)** : sur une fiche, deux valeurs différentes d'un même axe ne sont jamais montrées sous deux pastilles que l'œil ne sépare pas, sans rien d'autre.
-  - On compare le **rendu final** : même motif, et teintes à moins de 10 en ΔE CIELAB 1976, partie par partie.
-  - Rendu ordinaire (décision Owner, option A) : une valeur d'axe qui a une pastille s'affiche **en pastille seule**. Le texte exact passe en infobulle et en nom accessible ; la valeur choisie reste écrite dans la légende de l'axe.
-  - Les valeurs indiscernables d'une autre du même axe affichent leur nom à côté de leur pastille ; les autres restent en pastille seule.
-  - Une valeur `Non précisé` (pastille neutre) garde **toujours** son nom écrit.
-  - Une valeur sans pastille garde le rendu texte.
-  - Le seuil est une constante unique du site.
+- **Fiche produit : pastilles seules (décision de l'Owner du 18/11, après la règle de sûreté)**
+  - Toute valeur d'axe coloris qui a une pastille, `Non précisé` compris (pastille neutre), s'affiche **en pastille seule**, jamais avec son nom à côté.
+  - Le texte exact passe en infobulle et en nom accessible ; la valeur choisie est écrite dans la légende de l'axe.
+  - Seule une valeur sans `Pastille` publiée (catalogue publié avant les nuances) reste écrite en texte.
   - La cible tactile ne change pas (44 px) ; l'état choisi, l'état incompatible et le focus clavier restent lisibles sans le texte.
+- **Comparaison du rendu (mesure seulement)** : deux rendus sont **confondus** s'ils ont le même motif (l'aplat neutre de `Non précisé` compte comme `uni`) et des teintes à moins de 10 en ΔE CIELAB 1976, partie par partie.
+  - Ce seuil est une constante unique du site.
+  - La comparaison ne pilote plus l'affichage : elle sert aux tests et à compter les fiches où deux coloris différents restent confondus.
+  - Les nuances fines qui réduiront ce reste (qualificatifs, noms fins, choix de l'opérateur) font l'objet d'une livraison suivante, sur cette même règle.
