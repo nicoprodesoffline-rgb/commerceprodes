@@ -97,7 +97,7 @@ Deux niveaux : la **nuance** (§4, 38 noms) sert au filtre, aux listes et à l'�
 - **Détection, dans la Factory seulement, à la projection** (`catalog/domain/dimensions.py`). Sources, de la plus sûre à la moins sûre :
   1. une mesure normalisée sous une caractéristique nommée ;
   2. un texte nommé (« lg 180 x l 80 x ht 75 cm », « d. 80 mm », « Ø 60 ») ;
-  3. un texte « A x B x C unité » sans axe nommé : longueur × largeur × hauteur, dans l'ordre d'écriture, seulement si la mesure de contrôle le confirme ;
+  3. un texte « A x B x C unité » sans axe nommé : longueur × largeur × hauteur, dans l'ordre d'écriture, seulement si la mesure de contrôle le confirme (plus de 90 % des familles qui ont aussi des axes nommés). Au 18/11, elle ne le confirme pas : ces textes ne donnent aucun axe ;
   4. une mesure dans la désignation.
   Règles :
   - une source moins sûre ne remplace jamais une plus sûre ; une contradiction lève un signalement sans rien bloquer ;
@@ -111,7 +111,7 @@ Deux niveaux : la **nuance** (§4, 38 noms) sert au filtre, aux listes et à l'�
   - **bornes** :
     - L = toutes les valeurs des familles porteuses (chaque valeur distincte d'une famille une fois), triées ;
     - pour i = 1 à 4 : brute = L[⌊i·n/5⌋] ;
-    - borne = l'arrondi « rond » de brute : mantisse la plus proche dans `bornes_rondes` (1, 1,5, 2, 2,5, 3, 4, 5, 6, 7,5, 8, 10) × la puissance de dix, à égalité la plus petite ; une puissance négative se calcule en divisant par 10^|e| ;
+    - borne = l'arrondi « rond » de brute : mantisse la plus proche dans la liste `bornes_rondes` de `tranches.json` × la puissance de dix, à égalité la plus petite ; une puissance négative se calcule en divisant par 10^|e| ;
     - on garde les bornes b telles que L[0] < b ≤ L[n−1], sans doublon, triées ;
   - **tranches** : « moins de b1 », « b1 à b2 », …, « bk et plus », demi-ouvertes [bas, haut) ; une famille compte dans chaque tranche où tombe au moins une de ses valeurs ; une tranche vide n'est pas proposée ;
   - le filtre s'affiche s'il reste au moins `valeurs_min` tranches ;
