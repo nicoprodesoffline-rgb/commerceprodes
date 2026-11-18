@@ -34,6 +34,7 @@ Mêmes dix clés, même lecture stricte et mêmes octets canoniques que le v1 (`
 - `idempotency_key = "<event_type>:<object_ref>"`.
 - Plafond : 256 KiB, comme le v1.
 - Ordre de validation : celui du v1 (§11.2), avec `contract_version = "site_events.v2"` ; la déduplication contre `consumed` est identique (`EVENT_DUPLICATE_NOOP`, `EVENT_IDEMPOTENCY_CONFLICT`).
+- Règles de forme ajoutées par le validateur (le jeu d'essai les reproduit à l'identique des deux côtés) : `envelope_shape`, `payload_shape`, `line_shape`, `delivery_shape`, `amounts_shape`, `customer_refs_shape`, `product_shape`, `order_status`.
 - Codes de refus : ceux du v1 (`PAYLOAD_MALFORMED`, `INTEGRITY_MISMATCH`, `SCHEMA_UNSUPPORTED`, `EVENT_PAYLOAD_INVALID`, `EVENT_TYPE_UNKNOWN`, `DUPLICATE_LINE`, `EVENT_IDEMPOTENCY_CONFLICT`). Un refus `EVENT_PAYLOAD_INVALID` porte `detail.rules`, la liste des règles nommées ci-dessous qui ont échoué.
 
 ## 3. Payload
@@ -97,15 +98,20 @@ amounts: { currency:"EUR", tax_rate:"20.00", total_ht, total_tva, total_ttc, exc
 
 ## 5. Routes de la Factory vers le site
 
-Toutes signées comme le poll v1 (horodatage et nonce neufs à chaque essai, domaine propre à chaque route), HTTPS obligatoire hors boucle locale, une portée de clé par route. Le site n'appelle jamais la Factory.
+Le site n'appelle jamais la Factory. HTTPS obligatoire hors boucle locale.
+
+**Clés : un trousseau à part, hors C0.** La liste des portées du C0 est fermée (`c0_contracts/signing.py`, `SCOPES`) et le C0 est gelé : ces routes n'utilisent donc ni le module de signature du C0 ni son trousseau. Elles ont leur propre trousseau (un fichier passé par chemin, jamais dans Git, même forme d'entrée que le C0, `{key_id, scope, status, secret_utf8}`, secret d'au moins 32 octets ; côté site, son chemin est la variable `SITE_REQUESTS_KEYRING_PATH`) et leur propre module de signature, dans la Factory et dans le site, avec une portée par route. Une clé de lecture des événements ne peut ni effacer, ni déposer, ni mettre de côté.
+
+**Signature de la requête** : en-têtes `x-c0-key-id`, `x-c0-issued-at` (UTC `YYYY-MM-DDTHH:MM:SSZ`, horloge réelle), `x-c0-nonce` (32 hexadécimaux neufs à chaque essai), `x-c0-request-signature` = HMAC-SHA256 du secret sur `utf8(DOMAINE) || 0x00 || canonical_bytes({method, path, body_sha256, issued_at_utc, nonce})`, avec le domaine propre à la route (ci-dessous). Même fenêtre anti-rejeu que le poll ; un nonce déjà vu est refusé. La réponse du site reste signée comme toutes ses réponses du cercle 4 (`x-c0-response-signature`).
 
 | Route | Portée | Corps | Effet sur le site |
 |---|---|---|---|
 | 5.1 `POST /api/site/requests/erase` | `site_requests.erase` | `{object_ref}` | Efface coordonnées, adresses, message, références du client et PDF de la demande ; les déclencheurs de la base autorisent **ce seul** effacement (attendu D08 inchangé pour le reste). Idempotente : `{erased_at}` |
 | 5.2 `POST /api/site/requests/document` | `site_requests.documents` | `{object_ref, kind:"demande_de_devis"|"bon_de_commande", sha256, pdf_base64}`, ≤ 2 MiB | Range le PDF de la Factory ; le reçu le propose une fois la demande transmise |
 | 5.3 `POST /api/site/events/set-aside` | `site_events.set_aside` | `{event_id, code}` | Sort l'événement du flux non acquitté et le marque « mis de côté », visible ; les suivants passent |
+| 5.4 `POST /api/site/requests/mail-status` | `site_requests.mail_status` | `{object_refs:[…]}`, 1 à 500 références | Lecture seule. Répond `{items:[{object_ref, number, state, attempts, last_attempt_at_utc, next_attempt_at_utc}]}` pour l'accusé au client de chaque demande, sans aucune coordonnée ; une référence inconnue est absente de la liste. Le poll v1 et les octets d'un événement ne changent pas |
 
-Domaines de signature : `prodes.site.transport.requests_erase.v1`, `prodes.site.transport.requests_document.v1`, `prodes.site.transport.events_set_aside.v1`.
+Domaines de signature : `prodes.site.transport.requests_erase.v1`, `prodes.site.transport.requests_document.v1`, `prodes.site.transport.events_set_aside.v1`, `prodes.site.transport.requests_mail_status.v1`. Refus du site : `SIGNATURE_INVALID` (clé inconnue, hors portée ou retirée, signature fausse, nonce rejoué, horodatage hors fenêtre), `NOT_FOUND` (référence inconnue), `PAYLOAD_MALFORMED`, `INTEGRITY_MISMATCH` (`sha256` du PDF faux), `HTTPS_REQUIRED` (403, appel en clair hors boucle locale), `ERASED` (409, dépôt d'un PDF sur une demande effacée : le PDF porte des coordonnées), `ALREADY_ACKED` (409, mise de côté d'un événement déjà acquitté). Chaque réponse acceptée a la forme `{operation, accepted, outcome, …}`.
 
 ## 6. Ce que fait le site
 
@@ -129,6 +135,7 @@ Domaines de signature : `prodes.site.transport.requests_erase.v1`, `prodes.site.
 - **Mode « gardés »** : le message est fabriqué, rangé et lisible à l'écran, et **rien ne sort**. C'est le seul mode actif livré dans ce mandat, et un test le prouve de chaque côté : aucune connexion réseau n'est ouverte.
 - **Protocole SMTP standard**, sans fournisseur nommé dans le code (B3 sera décidé le 19/11) :
   - dans la Factory, le protocole SMTP de Django, sans librairie nouvelle ;
+  - dans le site, aucune librairie d'envoi dans ce mandat : l'interface du transport, la lecture des réglages du serveur et le mode « gardés » ; un mode « smtp » demandé refuse de démarrer (« non livré ») jusqu'au paquet B ;
   - les accès d'envoi sont des réglages du serveur, jamais une valeur dans Git.
 
 ## 8. Jeu d'essai commun (`docs/contracts/site_events_v2/`)
