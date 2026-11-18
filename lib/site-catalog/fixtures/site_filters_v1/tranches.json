@@ -1,0 +1,797 @@
+{
+ "version": "site_filters.v1",
+ "rule": "tranches",
+ "libelles": [
+  "Longueur",
+  "Largeur",
+  "Hauteur",
+  "Profondeur",
+  "Diamètre",
+  "Épaisseur",
+  "Poids"
+ ],
+ "tranches_max": 5,
+ "bornes_rondes": [
+  1,
+  1.5,
+  2,
+  2.5,
+  3,
+  4,
+  5,
+  6,
+  7.5,
+  8,
+  10
+ ],
+ "reglages_par_defaut": {
+  "seuil_pct": 30,
+  "valeurs_min": 2,
+  "familles_min": 5
+ },
+ "cases": [
+  {
+   "name": "longueurs étalées : tranches aux bornes rondes",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "40 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "55 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "80 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "120 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "150 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "180 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "200 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "240 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "300 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "410 cm"
+      }
+     ],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Longueur",
+     "unit": "cm",
+     "options": [
+      {
+       "min": null,
+       "max": 80,
+       "families": 2
+      },
+      {
+       "min": 80,
+       "max": 150.0,
+       "families": 2
+      },
+      {
+       "min": 150.0,
+       "max": 200,
+       "families": 2
+      },
+      {
+       "min": 200,
+       "max": 300,
+       "families": 2
+      },
+      {
+       "min": 300,
+       "max": null,
+       "families": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "poids en kg avec décimales",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Poids",
+       "value": "0,5 kg"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Poids",
+       "value": "1,2 kg"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Poids",
+       "value": "3,5 kg"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Poids",
+       "value": "7 kg"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Poids",
+       "value": "12 kg"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Poids",
+       "value": "18 kg"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Poids",
+       "value": "25 kg"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Poids",
+       "value": "40 kg"
+      }
+     ],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Poids",
+     "unit": "kg",
+     "options": [
+      {
+       "min": null,
+       "max": 1,
+       "families": 1
+      },
+      {
+       "min": 1,
+       "max": 7.5,
+       "families": 3
+      },
+      {
+       "min": 10,
+       "max": 25.0,
+       "families": 2
+      },
+      {
+       "min": 25.0,
+       "max": null,
+       "families": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "moins de 30 % porteurs : rien",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Hauteur",
+       "value": "50 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Hauteur",
+       "value": "90 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": []
+  },
+  {
+   "name": "une seule valeur : rien",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Hauteur",
+       "value": "75 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Hauteur",
+       "value": "75 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Hauteur",
+       "value": "75 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Hauteur",
+       "value": "75 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Hauteur",
+       "value": "75 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Hauteur",
+       "value": "75 cm"
+      }
+     ],
+     "items": []
+    }
+   ],
+   "expected": []
+  },
+  {
+   "name": "valeur illisible ignorée (pas cm ni kg, texte libre)",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Largeur",
+       "value": "env. 60"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Largeur",
+       "value": "60 mm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Largeur",
+       "value": "45 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Largeur",
+       "value": "90 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Largeur",
+       "value": "120 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Largeur",
+     "unit": "cm",
+     "options": [
+      {
+       "min": null,
+       "max": 80,
+       "families": 1
+      },
+      {
+       "min": 80,
+       "max": 100,
+       "families": 1
+      },
+      {
+       "min": 100,
+       "max": null,
+       "families": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "variantes : une famille compte une fois par tranche, dans chaque tranche touchée",
+   "families": [
+    {
+     "characteristics": [],
+     "items": [
+      {
+       "characteristics": [
+        {
+         "label": "Diamètre",
+         "value": "30 cm"
+        }
+       ]
+      },
+      {
+       "characteristics": [
+        {
+         "label": "Diamètre",
+         "value": "60 cm"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Diamètre",
+       "value": "35 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Diamètre",
+       "value": "80 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Diamètre",
+       "value": "100 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Diamètre",
+       "value": "45 cm"
+      }
+     ],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Diamètre",
+     "unit": "cm",
+     "options": [
+      {
+       "min": null,
+       "max": 40,
+       "families": 2
+      },
+      {
+       "min": 40,
+       "max": 60,
+       "families": 1
+      },
+      {
+       "min": 60,
+       "max": 80,
+       "families": 1
+      },
+      {
+       "min": 80,
+       "max": null,
+       "families": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "milliers avec espace insécable",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "80 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "250 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "600 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "1 200 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "2 400 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "3 000 cm"
+      }
+     ],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Longueur",
+     "unit": "cm",
+     "options": [
+      {
+       "min": null,
+       "max": 250.0,
+       "families": 1
+      },
+      {
+       "min": 250.0,
+       "max": 600,
+       "families": 1
+      },
+      {
+       "min": 600,
+       "max": 1000,
+       "families": 1
+      },
+      {
+       "min": 1000,
+       "max": 2500.0,
+       "families": 2
+      },
+      {
+       "min": 2500.0,
+       "max": null,
+       "families": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "valeur déduite de l'ordre d'écriture (« Filtre : Longueur ») comptée dans le filtre Longueur",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Filtre : Longueur",
+       "value": "60 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Filtre : Longueur",
+       "value": "90 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "130 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "170 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Longueur",
+       "value": "230 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Filtre : Largeur",
+       "value": "40 cm"
+      },
+      {
+       "label": "Longueur",
+       "value": "210 cm"
+      }
+     ],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Longueur",
+     "unit": "cm",
+     "options": [
+      {
+       "min": null,
+       "max": 80,
+       "families": 1
+      },
+      {
+       "min": 80,
+       "max": 150.0,
+       "families": 2
+      },
+      {
+       "min": 150.0,
+       "max": 200,
+       "families": 1
+      },
+      {
+       "min": 200,
+       "max": null,
+       "families": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "seuil changé à 50 %",
+   "families": [
+    {
+     "characteristics": [
+      {
+       "label": "Épaisseur",
+       "value": "0,8 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Épaisseur",
+       "value": "2 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [
+      {
+       "label": "Épaisseur",
+       "value": "4 cm"
+      }
+     ],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    },
+    {
+     "characteristics": [],
+     "items": []
+    }
+   ],
+   "expected": [
+    {
+     "label": "Épaisseur",
+     "unit": "cm",
+     "options": [
+      {
+       "min": null,
+       "max": 2,
+       "families": 1
+      },
+      {
+       "min": 2,
+       "max": 4,
+       "families": 1
+      },
+      {
+       "min": 4,
+       "max": null,
+       "families": 1
+      }
+     ]
+    }
+   ],
+   "reglages": {
+    "seuil_pct": 50,
+    "valeurs_min": 2,
+    "familles_min": 5
+   }
+  }
+ ]
+}

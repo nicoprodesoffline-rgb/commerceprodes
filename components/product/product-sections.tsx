@@ -3,6 +3,7 @@ import { FamilyCard } from "@/components/home/family-card";
 import { CarouselRow } from "@/components/site/carousel-row";
 import type { FamilyCardData } from "@/components/site/catalog-views";
 import type { FamilyPrice } from "@/lib/site-catalog/listing";
+import { isReservedLabel } from "@/lib/site-catalog/pastille";
 import { visibleSectionItems } from "@/components/product/section-visibility";
 
 export type ProductCharacteristic = { label: string; value: string };
@@ -14,7 +15,7 @@ const sectionClass = "mt-12 min-w-0 border-t border-line pt-8";
 const headingClass = "mb-6 text-xl font-semibold text-ink sm:text-2xl";
 
 export function ProductCharacteristics({ items }: SectionItems<ProductCharacteristic>) {
-  const visible = visibleSectionItems(items);
+  const visible = visibleSectionItems(items?.filter((item) => !isReservedLabel(item.label))); // « Pastille » et « Teinte » dessinent la pastille : jamais une ligne de la fiche
   if (!visible) return null;
   return (
     <section aria-labelledby="characteristics-h" className={sectionClass}>

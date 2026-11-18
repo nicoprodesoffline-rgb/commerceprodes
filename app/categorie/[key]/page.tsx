@@ -10,6 +10,7 @@ import { FamilyGrid } from "@/components/home/family-card";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { categoryCrumbs, familyCard, navigationOf } from "@/components/site/catalog-views";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
+import { applyFilters, pageFilters as filtersOf, parseFilterChoice } from "@/lib/site-catalog/filters";
 import { listFamilies, parseListingQuery } from "@/lib/site-catalog/listing";
 import { count } from "@/components/site/format";
 import { isPromoNow } from "@/lib/site-catalog/merchandising";
@@ -41,7 +42,9 @@ export async function generateMetadata({ params }: { params: Promise<{ key: stri
 /** Catégorie : familles de tout le sous-arbre, classées en principal ou en secondaire (ordre du DTO). */
 export default async function CategoryPage({ params, searchParams }: { params: Promise<{ key: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { key } = await params;
-  const query = parseListingQuery(await searchParams);
+  const sp = await searchParams;
+  const query = parseListingQuery(sp);
+  const choice = parseFilterChoice(sp);
   const catalog = await catalogForPage();
   const nav = navigationOf(catalog);
   const cat = nav.node(key);
@@ -50,16 +53,24 @@ export default async function CategoryPage({ params, searchParams }: { params: P
   const slugs = new Set(nav.familySlugs(cat.key));
   // Ordre par défaut = celui que la Factory a donné à la rubrique (cercle 3, 3.21) ; le tri choisi par le visiteur reste possible.
   const bySlug = new Map(catalog.families.map((f) => [f.slug, f]));
-  const families = nav.familySlugs(cat.key).flatMap((slug) => { const f = bySlug.get(slug); return f && slugs.has(slug) ? [f] : []; });
+  const allFamilies = nav.familySlugs(cat.key).flatMap((slug) => { const f = bySlug.get(slug); return f && slugs.has(slug) ? [f] : []; });
   const record = catalog.categories.find((c) => c.category_key === key);
   const now = serverNowUtc();
+  // 4.27 : les filtres se calculent sur toutes les familles listées (sous-arbre) ; OU dans un filtre, ET entre filtres et avec le prix.
+  const groups = filtersOf(allFamilies);
+  const families = applyFilters(allFamilies, groups, choice);
   const listing = listFamilies(families, query, (f) => familyPrice(catalog, f, now));
   const pageParams: Record<string, string> = {};
   if (query.minRaw.trim() !== "") pageParams["prix_min"] = query.minRaw;
   if (query.maxRaw.trim() !== "") pageParams["prix_max"] = query.maxRaw;
   if (query.sort !== "pertinence") pageParams["tri"] = query.sort;
+  const pageFilters: Record<string, string[]> = {};
+  for (const g of groups) {
+    const chosen = (choice[g.param] ?? []).filter((v) => g.options.some((o) => o.value === v));
+    if (chosen.length > 0) pageFilters[g.param] = chosen;
+  }
   const notes: Record<string, string> = {};
-  for (const f of families) {
+  for (const f of allFamilies) {
     const anchor = nav.anchor(f.primary_category_key);
     if (anchor === null || !nav.chain(anchor).some((n) => n.key === key)) notes[f.slug] = "classée aussi ici";
   }
@@ -76,7 +87,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
         )}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <p role="status" className="min-w-0 text-sm text-ink-2" data-testid="category-count">{count(listing.total)} famille{listing.total > 1 ? "s" : ""} dans cette catégorie.</p>
-          {families.length > 0 && <ListingSort formId="category-filters" sort={query.sort} />}
+          {allFamilies.length > 0 && <ListingSort formId="category-filters" sort={query.sort} />}
         </div>
       </div>
       {children.length > 0 && (
@@ -95,11 +106,11 @@ export default async function CategoryPage({ params, searchParams }: { params: P
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="min-w-0 space-y-4 lg:w-60 lg:shrink-0">
           <CategorySidebar roots={nav.menu} current={key} subcategories={children.map((c) => ({ key: c.key, name: c.name }))} />
-          {families.length > 0 && <ListingControls formId="category-filters" action={`/categorie/${key}`} query={query} />}
+          {allFamilies.length > 0 && <ListingControls formId="category-filters" action={`/categorie/${key}`} query={query} filters={groups} choice={choice} />}
           <div className="hidden lg:block"><QuickOrder /></div>
         </div>
         <div className="min-w-0 flex-1 space-y-4">
-          {families.length === 0 ? (
+          {allFamilies.length === 0 ? (
             <p className="rounded-[14px] border border-line bg-white p-4 text-ink-2">
               Aucune famille dans cette catégorie pour le moment.
             </p>
@@ -108,7 +119,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
           ) : (
             <FamilyGrid prices families={listing.rows.map((r) => ({ ...familyCard(r.family), from: r.price, promo: isPromoNow(r.family, now) }))} label={`Familles de la catégorie ${cat.name}`} notes={notes} />
           )}
-          <Pager action={`/categorie/${key}`} params={pageParams} page={listing.page} pages={listing.pages} />
+          <Pager action={`/categorie/${key}`} params={{ ...pageParams, ...pageFilters }} page={listing.page} pages={listing.pages} />
           {/* Sur mobile, la commande rapide passe après les produits (elle gardait trois blocs avant la liste) */}
           <div className="lg:hidden"><QuickOrder /></div>
         </div>

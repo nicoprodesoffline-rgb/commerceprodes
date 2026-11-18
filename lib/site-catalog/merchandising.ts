@@ -52,8 +52,9 @@ export function novelFamilies(families: readonly Family[], nowUtc: string, days:
 
 /** Texte des caractéristiques d'une famille et de ses variantes, pour la recherche seulement (C02) : jamais affiché. */
 export function characteristicsText(family: Family): string {
-  const own = (family.characteristics ?? []).map((c) => `${c.label} ${c.value}`);
-  const items = family.items.flatMap((i) => (i.characteristics ?? []).map((c) => `${c.label} ${c.value}`));
+  const text = (list: readonly { label: string; value: string }[] | undefined) => (list ?? []).filter((c) => !(c.label.startsWith("Filtre : ") || ["pastille", "teinte"].includes(c.label.trim().toLowerCase()))).map((c) => `${c.label} ${c.value}`); // « Pastille » et « Teinte » ne sont jamais une caractéristique
+  const own = text(family.characteristics);
+  const items = family.items.flatMap((i) => text(i.characteristics));
   return [...own, ...items].join(" ");
 }
 
