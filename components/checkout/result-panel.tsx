@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { codeMessage, reportCodes } from "@/components/site/codes";
 import { ReceiptDetails } from "@/components/checkout/receipt-details";
+import { money } from "@/components/site/format";
 import type { Outcome } from "@/components/checkout/submit";
 
 /**
@@ -21,23 +22,39 @@ export function ResultPanel({ outcome, onRetry, cartKept = false, cartOrderable 
   }, [outcome]);
 
   if (outcome.kind === "received") {
-    const quote = outcome.objectKind === "quote_request";
+    const message = outcome.objectKind === "message";
+    const quote = outcome.objectKind === "quote_request" || message;
     const link = outcome.token ? `${window.location.origin}/recu#ref=${encodeURIComponent(outcome.ref)}&code=${encodeURIComponent(outcome.token)}` : null;
     return (
       <section aria-labelledby="res-h" className="min-w-0 rounded-[14px] border-2 border-positive bg-white p-5" data-testid="result-received">
         <h2 id="res-h" ref={heading} tabIndex={-1} className="text-xl font-semibold">
-          {quote ? "Demande de devis reçue" : "Commande reçue"}
+          {message ? "Message reçu" : quote ? "Demande de devis reçue" : "Commande reçue"}
         </h2>
         <p className="mt-2">
           Référence : <span className="break-all font-mono font-semibold" data-testid="receipt-ref">{outcome.ref}</span>
         </p>
+        {outcome.number && <p className="mt-1">Numéro : <span className="font-mono font-semibold" data-testid="receipt-number">{outcome.number}</span></p>}
+        {outcome.amounts && (
+          <p className="mt-1 text-sm" data-testid="receipt-amounts">
+            Total hors taxes {money(outcome.amounts.total_ht)} · TVA {money(outcome.amounts.total_tva)} · <strong>Total toutes taxes comprises {money(outcome.amounts.total_ttc)}</strong>
+            {outcome.amounts.excludes_quote_lines ? " (hors lignes sur devis)" : ""}
+          </p>
+        )}
+        {outcome.delivery && outcome.delivery.option === "rendez_vous" && <p className="mt-1 text-sm" data-testid="receipt-delivery">{outcome.delivery.label} : {money(outcome.delivery.amount_ht)} HT.</p>}
         <p className="mt-1 text-sm text-ink-2">
-          {quote
+          {message ? "Votre message est enregistré ; nous vous répondons rapidement."
+            : quote
             ? "Votre demande est enregistrée ; nous vous répondons rapidement."
             : "Commande enregistrée ; nous vous recontactons pour la confirmer."}
           {outcome.replay ? " (Demande déjà reçue : même référence, rien n'a été enregistré deux fois.)" : ""}
         </p>
-        {outcome.receipt && <div className="mt-4"><ReceiptDetails receipt={outcome.receipt} isOrder={!quote} /></div>}
+        {outcome.payment && (
+          <div className="mt-3 rounded-[9px] border border-line bg-surface p-3" data-testid="receipt-payment">
+            <p className="text-sm font-semibold">Pour régler votre commande</p>
+            <p className="mt-1 whitespace-pre-line text-sm text-ink-2">{outcome.payment.instructions}</p>
+          </div>
+        )}
+        {outcome.receipt && !message && <div className="mt-4"><ReceiptDetails receipt={outcome.receipt} isOrder={!quote} hideTotal={outcome.amounts !== null} /></div>}
         <p className="mt-3 text-sm text-ink-2">Pour retrouver ce reçu, ouvrez la page <Link href="/recu" className="inline-flex min-h-11 items-center underline">Consulter un reçu</Link> et saisissez sa référence et son code d’accès. Conservez-les maintenant.</p>
         {link ? (
           <div className="mt-4 rounded-[9px] border border-caution p-3">

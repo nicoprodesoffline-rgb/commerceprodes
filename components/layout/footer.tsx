@@ -43,6 +43,8 @@ export function SiteFooter({ meta, shop = DEFAULT_SHOP }: { meta: CatalogMeta | 
           <nav aria-label="Informations pratiques" className="flex flex-wrap gap-x-6">
             <Link href="/faq" className="inline-flex min-h-11 items-center px-2 hover:underline">FAQ</Link>
             <Link href="/mentions-legales" className="inline-flex min-h-11 items-center hover:underline">Mentions légales</Link>
+            <Link href="/conditions-generales-de-vente" className="inline-flex min-h-11 items-center hover:underline">Conditions générales de vente</Link>
+            <Link href="/confidentialite" className="inline-flex min-h-11 items-center hover:underline">Confidentialité</Link>
             {shop.footerLinks.map(l => <Link key={l.url + l.label} href={l.url} className="inline-flex min-h-11 items-center hover:underline">{l.label}</Link>)}
           </nav>
         </div>

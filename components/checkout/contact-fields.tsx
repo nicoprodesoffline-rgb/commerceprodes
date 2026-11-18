@@ -79,8 +79,8 @@ export function ContactFields({ value, onChange, errors, showErrors }: { value: 
   );
 }
 
-export function ErrorSummary({ errors, id }: { errors: FieldErrors; id: string }) {
-  const list = Object.entries(errors) as [string, string][];
+export function ErrorSummary({ errors, id }: { errors: Partial<Record<string, string>>; id: string }) {
+  const list = Object.entries(errors).filter((entry): entry is [string, string] => typeof entry[1] === "string");
   if (list.length === 0) return null;
   return (
     <div id={id} tabIndex={-1} role="alert" className="rounded-[14px] border-2 border-signal bg-white p-4" data-testid="error-summary">

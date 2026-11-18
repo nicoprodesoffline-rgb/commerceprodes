@@ -1,0 +1,10 @@
+{
+  "case_id": "valid_without_sender",
+  "document_text": "{\"acknowledgement\":{\"message\":{\"body\":\"Message {numero} reçu.\\n\\nReçu : {lien_recu}\",\"subject\":\"Votre message {numero}\"},\"order\":{\"body\":\"Commande {numero} enregistrée.\\n\\n{recapitulatif}\\n\\nReçu : {lien_recu}\",\"subject\":\"Votre commande {numero}\"},\"quote\":{\"body\":\"Demande {numero} reçue.\\n\\n{recapitulatif}\\n\\nReçu : {lien_recu}\",\"subject\":\"Votre demande de devis {numero}\"}},\"cgv_version\":\"attente-1\",\"commerce_sequence\":2,\"contract_version\":\"site_commerce.v1\",\"delivery_rendez_vous\":{\"amount_ht\":\"20.00\",\"label\":\"Livraison sur rendez-vous\"},\"generated_at_utc\":\"2026-11-18T10:00:00Z\",\"payload_sha256\":\"fd7ea10d98c66d5180888b42d93acc626b58767e39397ba4857ca7d7901ee821\",\"payment\":{\"cheque\":{\"instructions\":\"Texte d'attente : ordre et adresse d'envoi du chèque.\",\"label\":\"Chèque\"},\"mandat_administratif\":{\"instructions\":\"Texte d'attente : bon de commande signé.\",\"label\":\"Mandat administratif\"},\"virement\":{\"instructions\":\"Texte d'attente : coordonnées bancaires.\\nRéférence : le numéro de commande.\",\"label\":\"Virement\"}},\"privacy_notice\":{\"text\":\"Texte d'attente : vos coordonnées servent à répondre à votre demande.\",\"version\":\"attente-1\"},\"publication_id\":\"00000000-0000-4000-8000-000000000001\",\"sender\":null,\"tax_rate\":\"20.00\"}",
+  "expected": {
+    "accepted": true,
+    "error_codes": [],
+    "rules": []
+  },
+  "note": "Valide sans expéditeur (décision B3 attendue) : sender vaut null."
+}

@@ -98,7 +98,9 @@ test("aucune donnée de contact dans event_bytes ni dans le payload (devis avec 
 test("schéma : aucune colonne taxe / port / paiement / statut client dans les tables BC4", async () => {
   const { rows } = await pool.query(`SELECT table_name, column_name FROM information_schema.columns
     WHERE table_schema = 'public' AND table_name IN ('site_quote_request','site_quote_line','site_order','site_order_line','site_idempotency','site_outbox_event','site_event_cursor','site_transaction_log')`);
-  const bad = rows.filter((r) => /tax_amount|vat|tva|ttc|shipping|port|freight|payment|paid|invoice|customer_status|client_status/i.test(r.column_name));
+  // Cercle 5 (décisions de l'Owner du 16/11 : TVA et TTC au panier, règlement par chèque, virement ou mandat) : seules ces TROIS colonnes sont admises ; ni « payé », ni facture, ni statut client, ni flottant.
+  const CERCLE_5 = new Set(["site_quote_line.line_tva", "site_order_line.line_tva", "site_order.payment"]);
+  const bad = rows.filter((r) => /tax_amount|vat|tva|ttc|shipping|port|freight|payment|paid|invoice|customer_status|client_status/i.test(r.column_name) && !CERCLE_5.has(`${r.table_name}.${r.column_name}`));
   assert.deepEqual(bad, []);
   const numeric = (await pool.query(`SELECT table_name, column_name, data_type FROM information_schema.columns
     WHERE table_schema = 'public' AND table_name LIKE 'site_%' AND data_type IN ('real','double precision','numeric')`)).rows;

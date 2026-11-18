@@ -16,6 +16,8 @@ export type PreviewLineJson = {
   superseded_by: Record<string, string>;
   selection: PreviewSelection | null;
   line_total: string | null;
+  /** Cercle 5, 5.7 : le lot de cette ligne (« 10 achetés + 2 offerts »), absent hors lot. */
+  lot?: { bought: number; free: number } | null;
 };
 
 export type PreviewJson = {

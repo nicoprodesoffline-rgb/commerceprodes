@@ -7,7 +7,9 @@ import { logRefusal, type BusinessRoute } from "@/lib/site-business/refusal-log"
 import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { SiteDbConfigError, getPool } from "@/lib/site-db/pool";
 import { MAX_BYTES as EVENTS_MAX_BYTES } from "@/c0/ts/src/events";
-import { submitBusiness, type BusinessKind } from "./business";
+import { requestLimitRefusal } from "../site-ratelimit/requests";
+import { submitRequest } from "../site-requests/submit";
+import type { RequestKind } from "../site-requests/numbers";
 import { json, type TxResponse } from "./common";
 import { TransactionsConfigError, businessMode, loadEventsKeyring } from "./config";
 import { ackEvents, pollEvents } from "./events";
@@ -62,12 +64,16 @@ export function businessConfigError(error: unknown, route: BusinessRoute): Respo
   return configError(error, route);
 }
 
-export async function submitHttp(kind: BusinessKind, req: Request): Promise<Response> {
+/** Cercle 5 : devis, commande et demande libre avec coordonnées (docs/site_events_v2.md) : une transaction, un événement v2. */
+export async function submitHttp(kind: RequestKind, req: Request): Promise<Response> {
+  // 5.23 : la limite par adresse passe AVANT toute lecture du corps et toute écriture.
+  const limited = requestLimitRefusal(req.headers);
+  if (limited !== null) return limited;
   return guarded(async () => {
     const pool = getPool();
     const bytes = await readBoundedBytes(req);
-    return submitBusiness({ pool, now: serverNowUtc }, kind, bytes);
-  }, kind === "quote_request" ? "/api/site/quote" : "/api/site/order");
+    return submitRequest({ pool, now: serverNowUtc }, kind, bytes);
+  }, kind === "quote_request" ? "/api/site/quote" : kind === "order" ? "/api/site/order" : "/api/site/message");
 }
 
 export async function receiptHttp(req: Request): Promise<Response> {

@@ -26,7 +26,7 @@ export function json(status: number, value: unknown): TxResponse {
  * Référence opaque non prévisible (C0 §6 jeton opaque, §10.5 : aucune fuite sur une référence prévisible).
  * 128 bits aléatoires en hexadécimal : `ORD-…`, `QR-…`, `EVT-…`, `CUR-…` (≤ 64 caractères).
  */
-export function opaqueRef(prefix: "ORD" | "QR" | "EVT" | "CUR"): string {
+export function opaqueRef(prefix: "ORD" | "QR" | "MSG" | "EVT" | "CUR"): string {
   return `${prefix}-${randomBytes(16).toString("hex")}`;
 }
 
@@ -59,6 +59,10 @@ const HTTP_BY_CODE: Record<string, number> = {
   NOT_FOUND: 404,
   CURSOR_INVALID: 400,
   EVENT_UNAUTHORIZED: 401,
+  REQUEST_INVALID: 422,
+  SHOP_NOT_READY: 503,
+  COMMERCE_CHANGED: 409,
+  RATE_LIMITED: 429,
 };
 
 export function httpStatusFor(codes: readonly string[]): number {
@@ -66,7 +70,7 @@ export function httpStatusFor(codes: readonly string[]): number {
   return statuses.size === 1 ? [...statuses][0]! : 409;
 }
 
-export type LogOperation = "QUOTE" | "ORDER" | "RECEIPT" | "EVENTS_POLL" | "EVENTS_ACK";
+export type LogOperation = "QUOTE" | "ORDER" | "MESSAGE" | "RECEIPT" | "EVENTS_POLL" | "EVENTS_ACK";
 
 export interface LogEntry {
   operation: LogOperation;

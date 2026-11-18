@@ -63,7 +63,7 @@ export async function checkDated(
   path: string,
   body: Uint8Array,
   now: Date = new Date(),
-  { remember = true }: { remember?: boolean } = {},
+  { remember = true, domain = REQUEST_DOMAIN }: { remember?: boolean; domain?: string } = {},
 ): Promise<DatedRefusal | null> {
   const keyId = headers.get("x-c0-key-id");
   if (!keyKnown(keyring, keyId)) return "KEY_UNKNOWN";
@@ -75,7 +75,7 @@ export async function checkDated(
   }
   const scope = findKey(keyring, keyId)?.["scope"] as string;
   const context = { method, path, body_sha256: sha256Hex(body), issued_at_utc: issuedAt, nonce };
-  if (!verify(keyring, keyId, signature, scope, REQUEST_DOMAIN, context)) return "REQUEST_SIGNATURE_INVALID";
+  if (!verify(keyring, keyId, signature, scope, domain, context)) return "REQUEST_SIGNATURE_INVALID";
   if (Math.abs(now.getTime() - Date.parse(issuedAt)) > WINDOW_SECONDS * 1000) return "REQUEST_STALE";
   if (!remember) return null;
   // Insertion atomique : de deux requêtes concurrentes au même nonce, une seule passe. Les nonces anciens partent au passage.
