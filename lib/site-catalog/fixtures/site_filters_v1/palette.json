@@ -19,7 +19,7 @@
   },
   {
    "name": "Taupe",
-   "hex": "#86735e",
+   "hex": "#8b8178",
    "motif": "uni"
   },
   {
@@ -29,7 +29,7 @@
   },
   {
    "name": "Bordeaux",
-   "hex": "#6d1a2a",
+   "hex": "#571620",
    "motif": "uni"
   },
   {
@@ -84,7 +84,7 @@
   },
   {
    "name": "Kaki",
-   "hex": "#74723a",
+   "hex": "#63683a",
    "motif": "uni"
   },
   {
@@ -123,6 +123,11 @@
    "motif": "uni"
   },
   {
+   "name": "Gris manganèse",
+   "hex": "#5f5a55",
+   "motif": "uni"
+  },
+  {
    "name": "Anthracite",
    "hex": "#3c3f42",
    "motif": "uni"
@@ -156,6 +161,11 @@
    "name": "Galvanisé",
    "hex": "#9aa2a5",
    "motif": "galva"
+  },
+  {
+   "name": "Zinc",
+   "hex": "#9ea7ad",
+   "motif": "metal"
   },
   {
    "name": "Cuivre",

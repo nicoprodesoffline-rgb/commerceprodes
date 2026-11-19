@@ -8,7 +8,7 @@
 import type { CSSProperties } from "react";
 import palette from "./fixtures/site_filters_v1/palette.json" with { type: "json" };
 import ral from "./fixtures/site_filters_v1/ral.json" with { type: "json" };
-import { BICOLORE_SEPARATOR, MULTICOLORE, NON_PRECISE } from "./pastille.ts";
+import { BICOLORE_SEPARATOR, BRILLANT, MAT, MULTICOLORE, NON_PRECISE } from "./pastille.ts";
 
 export type Motif = "uni" | "metal" | "brosse" | "galva" | "bois" | "transparent";
 /** [nom, teinte, motif] : les nuances de la palette, lues dans `fixtures/site_filters_v1/palette.json` (recopié à l'octet de la Factory). */
@@ -82,17 +82,35 @@ function partsOf(pastille: string | null | undefined, teinte?: string | null): P
   return refined.some((part) => part === null) ? parts : (refined as Part[]);
 }
 
+/** Le reflet d'une pastille brillante : un éclat blanc en dégradé, en haut à gauche, qui s'éteint avant le centre (discret, visible sur fond clair comme sombre grâce à son cœur plus dense). Dessiné PAR-DESSUS le motif. */
+const GLOSS = "radial-gradient(ellipse 60% 45% at 30% 24%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.4) 45%, rgba(255, 255, 255, 0) 100%)";
+
+/** Les parties brillantes (une case par partie) : `null` si « Reflet » est absent ou mal formé (nombre de parties différent, valeur autre que « brillant » / « mat ») — alors il est ignoré en entier. */
+function glossOf(reflet: string | null | undefined, count: number): boolean[] | null {
+  if (typeof reflet !== "string" || reflet === "") return null;
+  const fine = reflet.split(BICOLORE_SEPARATOR);
+  if (fine.length !== count || fine.some((x) => x !== BRILLANT && x !== MAT)) return null;
+  return fine.map((x) => x === BRILLANT);
+}
+
 const image = (part: Part): string => (part.hex === null ? RAINBOW : paint(part.hex, part.motif === "rainbow" || part.motif === "neutral" ? "uni" : part.motif));
 
 /**
- * Le style CSS de la pastille d'une valeur de « Pastille » (avec sa « Teinte » fine si elle est bien formée), ou `null` : alors aucune pastille.
+ * Le style CSS de la pastille d'une valeur de « Pastille » (avec sa « Teinte » fine et son « Reflet » s'ils sont bien formés), ou `null` : alors aucune pastille.
+ * Une partie « brillant » reçoit un éclat blanc dessiné par-dessus son motif ; « mat » ne change rien ; un Reflet au nombre de parties différent, ou à valeur inconnue, est ignoré en entier.
  * « A / B » = deux moitiés, A puis B ; si l'une des deux parties est inconnue, aucune pastille (jamais une moitié devinée). Aucun visuel « bicolore » générique.
  */
-export function pastilleStyle(value: string | null | undefined, teinte?: string | null): CSSProperties | null {
+export function pastilleStyle(value: string | null | undefined, teinte?: string | null, reflet?: string | null): CSSProperties | null {
   const parts = partsOf(value, teinte);
   if (parts === null) return null;
-  if (parts.length === 1) return { backgroundImage: image(parts[0]!) };
-  return { backgroundImage: `${image(parts[0]!)}, ${image(parts[1]!)}`, backgroundSize: "50% 100%, 50% 100%", backgroundPosition: "left top, right top", backgroundRepeat: "no-repeat" };
+  const gloss = glossOf(reflet, parts.length) ?? parts.map(() => false);
+  if (parts.length === 1) return { backgroundImage: gloss[0] ? `${GLOSS}, ${image(parts[0]!)}` : image(parts[0]!) };
+  // Chaque moitié porte son éclat par-dessus son propre motif : [éclat A], [éclat B], A, B ; les tailles et positions suivent les couches.
+  const layers = [
+    ...parts.flatMap((_, i) => (gloss[i] ? [{ image: GLOSS, at: i === 0 ? "left top" : "right top" }] : [])),
+    ...parts.map((part, i) => ({ image: image(part), at: i === 0 ? "left top" : "right top" })),
+  ];
+  return { backgroundImage: layers.map((l) => l.image).join(", "), backgroundSize: layers.map(() => "50% 100%").join(", "), backgroundPosition: layers.map((l) => l.at).join(", "), backgroundRepeat: "no-repeat" };
 }
 
 function lab(hex: string): [number, number, number] {

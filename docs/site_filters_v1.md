@@ -43,11 +43,15 @@ Le calcul porte sur les familles listées sur la page d'une rubrique (sous-arbre
 - Un test de chaque dépôt vérifie que sa constante est égale à `reglages_par_defaut`.
 - Pour changer un réglage : modifier ce fichier, puis les deux constantes.
 
-## 4. La nuance (`palette.json`) : décision de l'Owner du 18/11
+## 4. La nuance (`palette.json`) : décisions de l'Owner du 18/11 (matin, puis page d'arbitrage de l'après-midi)
 
-- **Palette** : 38 nuances nommées, chacune avec une teinte d'affichage et un motif. Les motifs sont `uni`, `metal`, `brosse` (inox), `galva`, `bois` et `transparent`, et c'est le motif qui distingue à l'œil une finition d'une teinte unie voisine. S'y ajoutent `Multicolore` (pastille arc-en-ciel), `Non précisé` (pastille neutre) et le bicolore : deux nuances séparées par ` / `, dessinées en deux moitiés.
+- **Palette** : 40 nuances nommées (dont `Gris manganèse` et `Zinc`, nuances propres depuis l'arbitrage de l'après-midi), chacune avec une teinte d'affichage et un motif. Les motifs sont `uni`, `metal`, `brosse` (inox), `galva`, `bois` et `transparent`, et c'est le motif qui distingue à l'œil une finition d'une teinte unie voisine. S'y ajoutent `Multicolore` (pastille arc-en-ciel), `Non précisé` (pastille neutre) et le bicolore : deux nuances séparées par ` / `, dessinées en deux moitiés.
 - **Attribution, dans la Factory seulement** (`catalog/domain/color_shades.py`) :
   - texte du coloris → nuance(s), au plus proche ;
+  - **parties** : le texte se coupe sur ` / `, `+`, `,`, `et` et `avec` ; deux teintes nommées font un bicolore (« A avec B » → `A / B`), trois ou plus font `Multicolore` ;
+  - **dans une partie, le premier mot de couleur écrit l'emporte** (« bleu vert » → Bleu) ;
+  - **le code RAL décide de la nuance générale** : une partie où un code RAL est lu (mêmes conditions qu'au §5) prend la nuance unie la plus proche de la teinte de ce RAL, quel que soit le mot de couleur écrit à côté ; un RAL métallisé ou nacré (liste déclarée dans la Factory) donne `Argent` ;
+  - un texte qui dit l'absence de teinte (« non précisé », « standard », « selon nuancier », « nature », « naturel », « brut »…) et aucune couleur est publié `Non précisé`, sans passer par l'écran de l'opérateur ;
   - le choix de l'opérateur (écran « Coloris sans nuance »), enregistré sur le pli du texte, l'emporte sur la règle, partout et pour les imports suivants ;
   - un texte que la règle ne place pas est publié `Non précisé` et apparaît dans l'écran ; rien n'est bloqué ;
   - le fait source n'est jamais réécrit.
@@ -60,12 +64,12 @@ Le calcul porte sur les familles listées sur la page d'une rubrique (sous-arbre
 
 ## 5. La teinte fine (`ral.json`) et la règle de sûreté — décision de l'Owner du 18/11
 
-Deux niveaux : la **nuance** (§4, 38 noms) sert au filtre, aux listes et à l'écran de l'opérateur ; la **teinte fine** ne sert qu'au dessin de la pastille sur la fiche produit.
+Deux niveaux : la **nuance** (§4, 40 noms) sert au filtre, aux listes et à l'écran de l'opérateur ; la **teinte fine** ne sert qu'au dessin de la pastille sur la fiche produit.
 - **Sources de la teinte fine**, par partie (mêmes parties qu'au §4), la première trouvée gagne :
   1. la teinte fixée par l'opérateur pour ce texte (écran « Coloris sans nuance », facultative) ;
   2. le code RAL écrit dans le texte ;
   3. un nom fin de couleur présent dans le texte, pris dans une liste publique de noms de couleurs avec leurs teintes (Factory seulement) ;
-  4. un qualificatif présent dans le texte (clair, foncé, pastel, vif, mat, brillant), appliqué par une règle à la teinte de la nuance : éclaircir, assombrir, désaturer, saturer. Aucune teinte n'est choisie à la main.
+  4. un qualificatif présent dans le texte (clair, foncé, pastel, vif), appliqué par une règle à la teinte de la nuance : éclaircir, assombrir, désaturer, saturer. Aucune teinte n'est choisie à la main. « mat » et « brillant » ne changent pas la teinte : ils décident du reflet (ci-dessous).
   Les sources 1, 3 et 4 sont publiées en `#rrggbb`, la source 2 en `RAL NNNN`.
   - « RAL 7016 » est lu partout.
   - Un code nu de 4 chiffres n'est lu que s'il figure dans `ral.json` **et** que la partie n'a pas la forme « NNNN (couleur) » : un code suivi d'une couleur entre parenthèses est une référence de fournisseur, même s'il ressemble à un RAL.
@@ -80,6 +84,10 @@ Deux niveaux : la **nuance** (§4, 38 noms) sert au filtre, aux listes et à l'�
   - la moitié (ou la pastille) dont la partie de `Teinte` est `RAL NNNN` prend la teinte de `ral.json`, et celle dont la partie est `#rrggbb` prend cette teinte, toujours avec le **motif de sa nuance** ; les autres gardent la teinte de leur nuance ;
   - une `Teinte` dont le nombre de parties diffère de `Pastille`, un code absent de `ral.json` ou une teinte mal écrite est ignorée en entier ;
   - `Teinte` ne s'affiche jamais comme une caractéristique, n'entre dans aucun filtre et dans aucune recherche ; le filtre Coloris ne lit que `Pastille`.
+- **Reflet : pastille mate, ou brillante marquée d'un reflet (Owner, 18/11 après-midi)**
+  - Attribution, dans la Factory seulement : une partie dont le texte dit « brillant » (brillante, brillants, brillantes) est `brillant` ; toute autre partie est `mat`. Multicolore et Non précisé n'ont jamais de reflet ; si l'opérateur a choisi un nombre de nuances différent de la règle, aucun reflet.
+  - Transport, sans champ C0 nouveau : la caractéristique réservée **`Reflet`**, au même endroit que `Pastille`, autant de parties séparées par ` / `, chacune `brillant` ou `mat` (`brillant / mat`). Elle est absente quand aucune partie n'est brillante. La Factory écarte toute caractéristique source dont la clé se plie en `reflet`. Le libellé `Finition` n'est pas réservé : c'est une caractéristique du catalogue.
+  - SITE : une partie `brillant` reçoit un reflet dessiné par-dessus le motif de sa nuance ; `mat` ne change rien. Un `Reflet` dont le nombre de parties diffère de `Pastille` est ignoré en entier. `Reflet` ne s'affiche jamais comme une caractéristique, n'entre dans aucun filtre et dans aucune recherche.
 - **Fiche produit : pastilles seules (décision de l'Owner du 18/11, après la règle de sûreté)**
   - Toute valeur d'axe coloris qui a une pastille, `Non précisé` compris (pastille neutre), s'affiche **en pastille seule**, jamais avec son nom à côté.
   - Le texte exact passe en infobulle et en nom accessible ; la valeur choisie est écrite dans la légende de l'axe.

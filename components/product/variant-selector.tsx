@@ -13,8 +13,8 @@ import { isColorAxis, pastilleStyle } from "@/lib/site-catalog/color-swatch";
 import { adjustments, click, compatible, isShown, orderAxes, type Adjustment, type Pinned } from "@/lib/site-catalog/variant-choice";
 
 export type SelectorAxis = { axis: string; label: string; values: string[] };
-/** `pastille` : la valeur de « Pastille » de la variante, sinon de la famille (résolue par la fiche) ; absente = aucune pastille. `teinte` : la « Teinte » fine posée au même endroit. */
-export type SelectorItem = { public_item_key: string; variant_axes: Record<string, string>; pastille?: string | undefined; teinte?: string | undefined };
+/** `pastille` : la valeur de « Pastille » de la variante, sinon de la famille (résolue par la fiche) ; absente = aucune pastille. `teinte`, `reflet` : la « Teinte » fine et le « Reflet » posés au même endroit. */
+export type SelectorItem = { public_item_key: string; variant_axes: Record<string, string>; pastille?: string | undefined; teinte?: string | undefined; reflet?: string | undefined };
 
 export function VariantSelector({
   options,
@@ -36,7 +36,7 @@ export function VariantSelector({
   /** La pastille d'une valeur de l'axe coloris : celle de la première variante qui la porte. Jamais déduite du texte. */
   const tintOf = (axis: string, value: string) => {
     const carrier = items.find((i) => i.variant_axes[axis] === value);
-    return pastilleStyle(carrier?.pastille, carrier?.teinte);
+    return pastilleStyle(carrier?.pastille, carrier?.teinte, carrier?.reflet);
   };
   const labelOf = (axis: string) => options.find((o) => o.axis === axis)?.label ?? axis;
 

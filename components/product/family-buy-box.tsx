@@ -31,6 +31,8 @@ export type BuyBoxItem = {
   pastille?: string | undefined;
   /** La « Teinte » fine posée au même endroit que la Pastille. */
   teinte?: string | undefined;
+  /** Le « Reflet » (brillant / mat) posé au même endroit que la Pastille. */
+  reflet?: string | undefined;
   rows: PriceGridRow[];
 };
 
