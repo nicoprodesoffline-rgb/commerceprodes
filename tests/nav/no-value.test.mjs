@@ -60,7 +60,8 @@ test("fiche : aucune pastille « rv-none » parmi les valeurs de l'axe ; les axe
   ]);
 });
 
-test("sélecteur : sur un accessoire, l'axe Dimensions n'affiche aucune valeur « rv-none », ni dans l'intitulé ni en pastille ; ses valeurs restent cliquables et recalent", () => {
+test("sélecteur : sur un accessoire, l'axe Dimensions (« rv-none » pour lui) n'est pas montré ; on revient aux produits par l'axe Type", () => {
+  // Décision du mastermind (famille hybride à axe « type ») : un axe où l'article affiché porte « rv-none » disparaît de la fiche (avant : titre seul et pastilles grisées).
   const calls = [];
   const tree = VariantSelector({
     options: [...selectorAxes(FAMILY)].reverse(), items: FAMILY.items, selectedKey: "A1", onSelect: (key) => calls.push(key),
@@ -68,14 +69,18 @@ test("sélecteur : sur un accessoire, l'axe Dimensions n'affiche aucune valeur �
   const html = renderToStaticMarkup(tree);
   assert.equal(html.includes("rv-none"), false);
   assert.equal(html.toLowerCase().includes("rv-none"), false);
+  assert.equal(html.includes("Dimensions"), false);
   const groups = nodes(tree, (n) => n.type === "fieldset").map((n) => n.props["data-axis"]);
-  assert.deepEqual(groups, ["type", "dimension"], "Type en premier");
+  assert.deepEqual(groups, ["type"], "seul l'axe Type reste sur l'accessoire");
   const radios = nodes(tree, (n) => n.type === "input");
-  assert.deepEqual(radios.map((n) => n.props.value), ["Produit", "Accessoire", "120 cm", "140 cm"]);
-  assert.deepEqual(radios.filter((n) => n.props.checked).map((n) => n.props.value), ["Accessoire"], "aucune dimension n'est cochée sur l'accessoire");
-  assert.deepEqual(radios.map((n) => n.props.disabled), [undefined, undefined, undefined, undefined]);
-  radios.find((n) => n.props.value === "140 cm").props.onChange(); // clic sur une dimension : on quitte l'accessoire
-  assert.deepEqual(calls, ["P2"]);
+  assert.deepEqual(radios.map((n) => n.props.value), ["Produit", "Accessoire"]);
+  assert.deepEqual(radios.filter((n) => n.props.checked).map((n) => n.props.value), ["Accessoire"]);
+  assert.deepEqual(radios.map((n) => n.props.disabled), [undefined, undefined]);
+  radios.find((n) => n.props.value === "Produit").props.onChange(); // retour aux produits : une variante publiée réelle
+  assert.deepEqual(calls, ["P1"]);
+  // Sur un produit, l'axe Dimensions est bien là.
+  const onProduct = VariantSelector({ options: selectorAxes(FAMILY), items: FAMILY.items, selectedKey: "P2", onSelect() {} });
+  assert.deepEqual(nodes(onProduct, (n) => n.type === "fieldset").map((n) => n.props["data-axis"]), ["type", "dimension"], "Type en premier");
 });
 
 test("sélecteur : un axe qui n'a qu'une valeur pour les produits mais pas pour l'accessoire n'est pas « seule option » (le clic recale)", () => {
