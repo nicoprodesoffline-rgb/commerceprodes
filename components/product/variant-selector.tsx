@@ -4,13 +4,14 @@
  * Sélecteur de variante : un groupe de boutons radio par axe (`axes[]` du DTO, libellés du DTO), axes « type » en premier. Sélecteur à choix épinglés
  * (`lib/site-catalog/variant-choice.ts`) : seuls les clics de l'acheteur sont des choix ; une valeur sans variante publiée avec ces
  * choix est GRISÉE mais reste cliquable — le clic ajuste les autres axes sur une variante publiée réelle (aucune combinaison construite, C0 §8.3) et le dit ;
- * recliquer un choix le retire. La valeur réservée « pas de valeur » (option, accessoire sur un axe qui ne le concerne pas) n'est jamais montrée : aucune pastille, l'axe se lit alors
+ * recliquer un choix le retire. La valeur réservée « pas de valeur » (option, accessoire sur un axe qui ne le concerne pas) n'est jamais montrée : aucune pastille. Famille à axe
+ * « type » : un axe où l'article affiché porte cette valeur n'est pas montré du tout, on change de nature par l'axe « type ». Famille sans axe « type » : l'axe se lit
  * seulement par son titre ; ses autres valeurs restent cliquables et recalent. Clavier : flèches dans un groupe (radio natif), Tab entre groupes.
  */
 import { useId, useState } from "react";
 import { axisValue } from "@/components/site/format";
 import { isColorAxis, pastilleStyle } from "@/lib/site-catalog/color-swatch";
-import { adjustments, click, compatible, isShown, orderAxes, type Adjustment, type Pinned } from "@/lib/site-catalog/variant-choice";
+import { adjustments, click, compatible, isShown, visibleAxes, type Adjustment, type Pinned } from "@/lib/site-catalog/variant-choice";
 
 export type SelectorAxis = { axis: string; label: string; values: string[] };
 /** `pastille` : la valeur de « Pastille » de la variante, sinon de la famille (résolue par la fiche) ; absente = aucune pastille. `teinte`, `reflet` : la « Teinte » fine et le « Reflet » posés au même endroit. */
@@ -32,7 +33,7 @@ export function VariantSelector({
   const [adjusted, setAdjusted] = useState<Adjustment[]>([]);
   const selected = items.find((i) => i.public_item_key === selectedKey)?.variant_axes ?? {};
   if (options.length === 0) return null;
-  const ordered = orderAxes(options);
+  const ordered = visibleAxes(options, selected); // famille hybride : un axe sans valeur pour l'article affiché (« rv-none ») n'est pas montré
   /** La pastille d'une valeur de l'axe coloris : celle de la première variante qui la porte. Jamais déduite du texte. */
   const tintOf = (axis: string, value: string) => {
     const carrier = items.find((i) => i.variant_axes[axis] === value);

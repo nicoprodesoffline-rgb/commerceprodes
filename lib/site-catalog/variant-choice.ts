@@ -23,10 +23,23 @@ const axesOf = (items: readonly ChoiceItem[]): string[] => {
 const valueOf = (item: ChoiceItem, axis: string): string => item.variant_axes[axis] ?? "";
 const fold = (s: string): string => s.normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
 
+/** Axe dont le nom (ou l'identifiant) commence par « type » : il dit la nature du produit (variante, option, accessoire). */
+const isTypeAxis = (o: { axis: string; label: string }): boolean => fold(o.label).startsWith("type") || fold(o.axis).startsWith("type");
+
 /** Axes dont le nom (ou l'identifiant) commence par « type » : ils disent la nature du produit et passent en premier ; partition STABLE. */
 export function orderAxes<T extends { axis: string; label: string }>(options: readonly T[]): T[] {
-  const isType = (o: T) => fold(o.label).startsWith("type") || fold(o.axis).startsWith("type");
-  return [...options.filter(isType), ...options.filter((o) => !isType(o))];
+  return [...options.filter(isTypeAxis), ...options.filter((o) => !isTypeAxis(o))];
+}
+
+/**
+ * Axes à montrer pour l'article affiché, axes « type » en premier. Famille à axe « type » (hybride : variantes, options, accessoires) : un autre axe sur
+ * lequel l'article porte « rv-none » ne le concerne pas et n'est pas montré (« Type : Option » → le seul axe « Option ») ; on change de nature par l'axe
+ * « type ». Famille sans axe « type » : tous les axes, comme avant.
+ */
+export function visibleAxes<T extends { axis: string; label: string }>(options: readonly T[], selected: Readonly<Record<string, string>>): T[] {
+  const ordered = orderAxes(options);
+  if (!ordered.some(isTypeAxis)) return ordered;
+  return ordered.filter((o) => isTypeAxis(o) || selected[o.axis] !== NO_VALUE);
 }
 
 /** Oui s'il existe un Item publié qui porte `value` sur `axis` ET tous les choix épinglés des AUTRES axes. Aucun choix : toute valeur qui existe l'est. */
