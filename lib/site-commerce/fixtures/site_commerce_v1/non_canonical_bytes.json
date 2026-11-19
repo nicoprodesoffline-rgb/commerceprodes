@@ -1,0 +1,14 @@
+{
+  "case_id": "non_canonical_bytes",
+  "document_text": "{\n \"acknowledgement\": {\n  \"message\": {\n   \"body\": \"Message {numero} reçu.\\n\\nReçu : {lien_recu}\",\n   \"subject\": \"Votre message {numero}\"\n  },\n  \"order\": {\n   \"body\": \"Commande {numero} enregistrée.\\n\\n{recapitulatif}\\n\\nReçu : {lien_recu}\",\n   \"subject\": \"Votre commande {numero}\"\n  },\n  \"quote\": {\n   \"body\": \"Demande {numero} reçue.\\n\\n{recapitulatif}\\n\\nReçu : {lien_recu}\",\n   \"subject\": \"Votre demande de devis {numero}\"\n  }\n },\n \"cgv_version\": \"attente-1\",\n \"commerce_sequence\": 2,\n \"contract_version\": \"site_commerce.v1\",\n \"delivery_rendez_vous\": {\n  \"amount_ht\": \"20.00\",\n  \"label\": \"Livraison sur rendez-vous\"\n },\n \"generated_at_utc\": \"2026-11-18T10:00:00Z\",\n \"payload_sha256\": \"c01766080690ad6bb09f06f47c3ac378ff124488c0aefac2fdb5397b3ff63c68\",\n \"payment\": {\n  \"cheque\": {\n   \"instructions\": \"Texte d'attente : ordre et adresse d'envoi du chèque.\",\n   \"label\": \"Chèque\"\n  },\n  \"mandat_administratif\": {\n   \"instructions\": \"Texte d'attente : bon de commande signé.\",\n   \"label\": \"Mandat administratif\"\n  },\n  \"virement\": {\n   \"instructions\": \"Texte d'attente : coordonnées bancaires.\\nRéférence : le numéro de commande.\",\n   \"label\": \"Virement\"\n  }\n },\n \"privacy_notice\": {\n  \"text\": \"Texte d'attente : vos coordonnées servent à répondre à votre demande.\",\n  \"version\": \"attente-1\"\n },\n \"publication_id\": \"00000000-0000-4000-8000-000000000001\",\n \"sender\": {\n  \"address\": \"ne-pas-repondre@val-fictif.example\",\n  \"name\": \"Boutique d'essai\"\n },\n \"tax_rate\": \"20.00\"\n}",
+  "expected": {
+    "accepted": false,
+    "error_codes": [
+      "INTEGRITY_MISMATCH"
+    ],
+    "rules": [
+      "canonical"
+    ]
+  },
+  "note": "Le document valide, mais indenté : octets non canoniques."
+}

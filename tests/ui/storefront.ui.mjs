@@ -16,6 +16,13 @@ import path from "node:path";
 import pg from "pg";
 import { activateOverHttp, addCloneFamilies, assertImmutabilityGuardEnabled, addRootCategories, dbUrl, makeGmceMixed, makeGmcePacks, makePoteletQuoteOnly, resetSiteDb } from "./site-setup.mjs";
 
+// Cercle 5 : une commande demande l'adresse de livraison, un mode de règlement et l'acceptation des conditions de vente avant la confirmation.
+async function fillOrder(page) {
+  for (const [field, value] of Object.entries({ name: "STAGING_FIXTURE Service", line1: "7 allée Fictive", postal_code: "00000", city: "Val-Fictif" })) await page.locator(`#f-delivery-${field}`).fill(value);
+  await page.locator("#f-payment-cheque").check();
+  await page.locator("#f-terms").check();
+}
+
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const PORT = Number(process.env.SITE_TEST_PORT ?? 3361);
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -64,6 +71,7 @@ async function startServer() {
       SITE_DATABASE_URL: dbUrl(DB),
       SITE_CATALOG_SOURCE: "db",
       SITE_BUSINESS_PERSISTENCE: "postgresql",
+      SITE_REQUEST_LIMIT: "1000",   // cercle 5 (5.23) : bien plus de cinq envois par minute ici ; la limite a son propre essai (tests/bc4/http.e2e.mjs, D)
       SITE_CONTENT_DIR: CONTENT_DIR,
     },
     stdio: ["ignore", "ignore", "pipe"],
@@ -349,6 +357,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     assert.equal(await page.getByTestId("submit").isDisabled(), true, "envoi désactivé sans confirmation explicite");
     await assertNoHScroll(page, "commande 390");
     await shot(page, "U4-commande-avant-confirmation-mobile");
+    await fillOrder(page);
     await page.getByTestId("order-confirm").check();
     await page.getByTestId("submit").click();
     await page.getByTestId("result-received").getByRole("heading", { name: "Commande reçue", exact: true }).waitFor();
@@ -372,6 +381,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie");
     await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
     await page.locator("#f-email").fill("achats@example.invalid");
+    await fillOrder(page);
     await page.getByTestId("order-confirm").check();
     // Nouvelle génération activée par BC2 PENDANT que la page affiche les prix de la génération 1.
     await activateOverHttp(BASE, "F_IDENTITY.activate_gen_b_same_keys");
@@ -392,6 +402,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie");
     await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
     await page.locator("#f-email").fill("achats@example.invalid");
+    await fillOrder(page);
     await page.getByTestId("order-confirm").check();
     await page.getByTestId("submit").click();
     await page.getByTestId("result-received").waitFor();
@@ -528,6 +539,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie");
     await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
     await page.locator("#f-email").fill("achats@example.invalid");
+    await fillOrder(page);
     await page.getByTestId("order-confirm").check();
     await assertNoHScroll(page, "commande 1024");
     await shot(page, "U9-commande-laptop");
@@ -649,6 +661,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     await page.locator("#f-organisation_name").fill("STAGING_FIXTURE Mairie de Test");
     await page.locator("#f-contact_name").fill("STAGING_FIXTURE Contact");
     await page.locator("#f-email").fill("achats@example.invalid");
+    await fillOrder(page);
     await page.getByTestId("order-confirm").check();
     await page.getByTestId("submit").click();
     await page.getByTestId("result-received").getByRole("heading", { name: "Commande reçue", exact: true }).waitFor();

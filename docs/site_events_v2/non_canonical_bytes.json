@@ -1,0 +1,14 @@
+{
+ "case_id": "site_events_v2.non_canonical_bytes",
+ "note": "octets non canoniques (espaces)",
+ "event_text": "{\n \"contract_version\": \"site_events.v2\",\n \"event_id\": \"EV-QR-0001\",\n \"event_type\": \"quote.requested\",\n \"event_version\": 1,\n \"created_at_utc\": \"2026-11-18T10:00:00Z\",\n \"object_ref\": \"QR-0001\",\n \"idempotency_key\": \"quote.requested:QR-0001\",\n \"catalogue_sequence\": 3,\n \"payload\": {\n  \"number\": \"DEV-2026-000001\",\n  \"contact\": {\n   \"organisation\": \"Mairie de Val-Fictif\",\n   \"name\": \"Camille Exemple\",\n   \"email\": \"achats@val-fictif.example\",\n   \"phone\": \"+33 1 00 00 00 00\"\n  },\n  \"message\": \"Pouvez-vous confirmer le délai ?\",\n  \"privacy_notice\": \"2026-11\",\n  \"lines\": [\n   {\n    \"public_item_key\": \"PI-00000001R\",\n    \"variant_axes\": {},\n    \"item_label\": \"Banc d'essai\",\n    \"quantity\": 4,\n    \"rate_id\": \"R-1\",\n    \"unit_amount_ht\": \"25.00\",\n    \"line_total_ht\": \"100.00\",\n    \"line_tva\": \"20.00\",\n    \"lot\": null\n   }\n  ],\n  \"delivery\": {\n   \"option\": \"incluse\",\n   \"label\": \"Livraison incluse\",\n   \"amount_ht\": \"0.00\",\n   \"amount_tva\": \"0.00\"\n  },\n  \"amounts\": {\n   \"currency\": \"EUR\",\n   \"tax_rate\": \"20.00\",\n   \"total_ht\": \"100.00\",\n   \"total_tva\": \"20.00\",\n   \"total_ttc\": \"120.00\",\n   \"excludes_quote_lines\": false\n  }\n },\n \"payload_digest\": \"887f82cfbf798dd57ec6906eb4c3f5a926ef194f4ed34e86cc191e63096c9d49\"\n}",
+ "consumed": [],
+ "expected": {
+  "accepted": false,
+  "outcome": "REJECTED",
+  "error_codes": [
+   "INTEGRITY_MISMATCH"
+  ],
+  "rules": []
+ }
+}

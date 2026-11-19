@@ -1,0 +1,12 @@
+{
+ "case_id": "site_events_v2.message_received",
+ "note": "Q05 : une demande libre depuis une fiche",
+ "event_text": "{\"catalogue_sequence\":3,\"contract_version\":\"site_events.v2\",\"created_at_utc\":\"2026-11-18T10:00:00Z\",\"event_id\":\"EV-MSG-0001\",\"event_type\":\"message.received\",\"event_version\":1,\"idempotency_key\":\"message.received:MSG-0001\",\"object_ref\":\"MSG-0001\",\"payload\":{\"contact\":{\"email\":\"achats@val-fictif.example\",\"name\":\"Camille Exemple\",\"organisation\":\"Mairie de Val-Fictif\",\"phone\":\"+33 1 00 00 00 00\"},\"message\":\"Ce banc existe-t-il en plus long ?\",\"number\":\"MSG-2026-000001\",\"privacy_notice\":\"2026-11\",\"product\":{\"label\":\"Banc d'essai\",\"public_item_key\":\"PI-00000001R\",\"url\":\"/produit/banc-d-essai\"}},\"payload_digest\":\"1f503a79d4f596da464a975004707282db7d2345e823c382e74f14da1fc5196c\"}",
+ "consumed": [],
+ "expected": {
+  "accepted": true,
+  "outcome": "APPLY",
+  "error_codes": [],
+  "rules": []
+ }
+}

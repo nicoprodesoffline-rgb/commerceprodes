@@ -46,6 +46,8 @@ export type Item = {
   windows: PriceWindow[];
   /** Catalogue v2 seulement : cherchées par la recherche, jamais affichées en tableau (C01/C02). */
   characteristics?: Characteristic[];
+  /** Catalogue v2 seulement : un lot avec unités offertes (« 10 achetés + 2 offerts »), prix = celui du lot ; la quantité d'une ligne compte des lots. */
+  pack?: { paid_units: number; free_units: number };
 };
 
 export type Characteristic = { label: string; value: string };
@@ -117,6 +119,11 @@ function v2Family(f: Record<string, unknown>): Partial<Family> {
   return out;
 }
 
+const packOf = (raw: unknown): { pack?: { paid_units: number; free_units: number } } => {
+  const p = raw as { paid_units?: unknown; free_units?: unknown } | null | undefined;
+  return p && Number.isInteger(p.paid_units) && Number.isInteger(p.free_units) ? { pack: { paid_units: p.paid_units as number, free_units: p.free_units as number } } : {};
+};
+
 /* Le document a passé la forme C0 (validateSnapshotBytes + Generation) : les champs existent. */
 function build(served: ServedGeneration, source: CatalogSource["kind"]): Catalog {
   const doc = served.snapshot as JsonObject;
@@ -141,6 +148,7 @@ function build(served: ServedGeneration, source: CatalogSource["kind"]): Catalog
         public_media_refs: i.public_media_refs,
         windows: i.public_sell_price_windows,
         ...(Array.isArray((i as Record<string, unknown>)["characteristics"]) ? { characteristics: (i as Record<string, unknown>)["characteristics"] as Characteristic[] } : {}),
+        ...packOf((i as Record<string, unknown>)["pack"]),
       })),
     }),
   );

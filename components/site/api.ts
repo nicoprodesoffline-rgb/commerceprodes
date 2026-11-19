@@ -36,7 +36,7 @@ export function previewCart(lines: PreviewLineInput[], signal?: AbortSignal): Pr
 }
 
 /** Clé d'idempotence C0 §6 (`^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$`). */
-export function newIdempotencyKey(prefix: "quote" | "order"): string {
+export function newIdempotencyKey(prefix: "quote" | "order" | "message"): string {
   const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return `${prefix}-${id}`;
 }

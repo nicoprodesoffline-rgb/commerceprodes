@@ -230,26 +230,53 @@ async function addClones(nameOrUrl, count, ownCategory) {
   }
 }
 
+/** Cercle 5 : les réglages de vente d'essai (taux 20 %, textes d'attente) ; sans eux, « la boutique n'est pas prête ». Idempotent (une seule ligne). */
+export async function installCommerce() {
+  const { createRequire } = await import("node:module");
+  const requireBuild = createRequire(import.meta.url);
+  const root = new URL("../../", import.meta.url).pathname;
+  const commerce = requireBuild(`${root}.bc2-build/lib/site-commerce/document.js`);
+  const { canonicalBytes } = requireBuild(`${root}.bc2-build/c0/ts/src/jsonc.js`);
+  const d = {
+    contract_version: "site_commerce.v1", publication_id: "pub-0001", commerce_sequence: 1, generated_at_utc: "2026-10-20T08:00:00Z", tax_rate: "20.00",
+    delivery_rendez_vous: { label: "Livraison sur rendez-vous", amount_ht: "20.00" },
+    payment: { cheque: { label: "Chèque", instructions: "Texte d'attente." }, virement: { label: "Virement", instructions: "Texte d'attente." }, mandat_administratif: { label: "Mandat", instructions: "Texte d'attente." } },
+    privacy_notice: { version: "m1", text: "Texte d'attente." }, cgv_version: "c1",
+    acknowledgement: { quote: { subject: "S", body: "{numero}" }, order: { subject: "S", body: "{numero}" }, message: { subject: "S", body: "{numero}" } }, sender: null,
+  };
+  const doc = { ...d, payload_sha256: commerce.documentDigest(d) };
+  const client = new pg.Client({ connectionString: dbUrl(process.env.SITE_TEST_DATABASE_URL) });
+  await client.connect();
+  try {
+    await client.query("DELETE FROM site_commerce_active");
+    await client.query("INSERT INTO site_commerce_active (singleton, commerce_sequence, publication_id, payload_sha256, document_bytes, ack_bytes) VALUES (1, 1, $1, $2, $3, $4)", [doc.publication_id, doc.payload_sha256, Buffer.from(canonicalBytes(doc)), Buffer.from("{}")]);
+  } finally {
+    await client.end();
+  }
+}
+
 export async function activateOverHttp(base, caseId) {
   process.env.SITE_TEST_DATABASE_URL ??= dbUrl("prodes_site_bc3_test"); // lu par tests/bc2/helpers.mjs à l'import
-  const { loadCase, mediaHeaders } = await import("../bc2/helpers.mjs");
+  const { datedHeaders, loadCase, mediaHeaders } = await import("../bc2/helpers.mjs");
   const c = loadCase(caseId);
-  const sig = { "x-c0-key-id": c.transport.key_id, "x-c0-signature": c.transport.signature, "content-type": "application/json" };
+  // Cercle 4 (4.4) : chaque requête signée porte l'anti-rejeu daté (sinon REQUEST_UNDATED, 401).
+  const sig = (route, bytes) => ({ "x-c0-key-id": c.transport.key_id, "x-c0-signature": c.transport.signature, "content-type": "application/json", ...datedHeaders(c.transport.key_id, "POST", route, new Uint8Array(bytes)) });
   const ctl = JSON.stringify({ publication_id: c.doc.publication_id, catalogue_sequence: c.doc.catalogue_sequence, payload_sha256: c.doc.payload_sha256 });
   const call = async (method, p, body, headers) => {
     const r = await fetch(base + p, { method, body, headers });
     return { status: r.status, outcome: r.headers.get("x-c0-outcome"), text: await r.text() };
   };
-  const st = await call("POST", "/api/site/publish/stage", c.bytes, sig);
+  const st = await call("POST", "/api/site/publish/stage", c.bytes, sig("/api/site/publish/stage", c.bytes));
   if (st.status !== 200) throw new Error(`${caseId} STAGE ${st.status} ${st.text.slice(0, 200)}`);
   for (const m of c.media) {
-    const r = await call("PUT", `/api/site/publish/media/${m.sha256}`, m.bytes, { ...Object.fromEntries(mediaHeaders(m.sha256, m.bytes.length)), "content-type": "image/png" });
+    const r = await call("PUT", `/api/site/publish/media/${m.sha256}`, m.bytes, { ...Object.fromEntries(mediaHeaders(m.sha256, m.bytes.length)), ...datedHeaders(c.transport.key_id, "PUT", `/api/site/publish/media/${m.sha256}`, new Uint8Array(m.bytes)), "content-type": "image/png" });
     if (![200, 201].includes(r.status)) throw new Error(`${caseId} PUT ${r.status}`);
   }
-  const v = await call("POST", "/api/site/publish/verify-media", ctl, sig);
+  const v = await call("POST", "/api/site/publish/verify-media", ctl, sig("/api/site/publish/verify-media", Buffer.from(ctl)));
   if (v.status !== 200) throw new Error(`${caseId} VERIFY ${v.status} ${v.text.slice(0, 200)}`);
-  const a = await call("POST", "/api/site/publish/activate", ctl, sig);
+  const a = await call("POST", "/api/site/publish/activate", ctl, sig("/api/site/publish/activate", Buffer.from(ctl)));
   if (a.outcome !== "ACTIVATED") throw new Error(`${caseId} ACTIVATE ${a.status} ${a.text.slice(0, 200)}`);
+  await installCommerce();
   return c;
 }
 

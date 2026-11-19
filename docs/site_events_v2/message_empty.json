@@ -1,0 +1,16 @@
+{
+ "case_id": "site_events_v2.message_empty",
+ "note": "Q06 : demande libre sans message",
+ "event_text": "{\"catalogue_sequence\":3,\"contract_version\":\"site_events.v2\",\"created_at_utc\":\"2026-11-18T10:00:00Z\",\"event_id\":\"EV-QR-0001\",\"event_type\":\"message.received\",\"event_version\":1,\"idempotency_key\":\"message.received:QR-0001\",\"object_ref\":\"QR-0001\",\"payload\":{\"contact\":{\"email\":\"achats@val-fictif.example\",\"name\":\"Camille Exemple\",\"organisation\":\"Mairie de Val-Fictif\",\"phone\":\"+33 1 00 00 00 00\"},\"message\":null,\"number\":\"MSG-2026-000001\",\"privacy_notice\":\"2026-11\",\"product\":{\"label\":\"Banc d'essai\",\"public_item_key\":\"PI-00000001R\",\"url\":\"/produit/banc-d-essai\"}},\"payload_digest\":\"df9d98474782b65bd40f05d3f11c40593110cca867144d7f7f7a57742b9cae2b\"}",
+ "consumed": [],
+ "expected": {
+  "accepted": false,
+  "outcome": "REJECTED",
+  "error_codes": [
+   "EVENT_PAYLOAD_INVALID"
+  ],
+  "rules": [
+   "message_required"
+  ]
+ }
+}

@@ -142,9 +142,9 @@ export async function handleTransport(
   request: Request,
   maxBytes: number,
   run: (deps: ReceiverDeps, body: Uint8Array, stale: boolean) => Promise<ReceiverResponse>,
-  { answerStale = false }: { answerStale?: boolean } = {},
+  { answerStale = false, requestDomain }: { answerStale?: boolean; requestDomain?: string } = {},
 ): Promise<Response> {
-  return guarded(request.headers, () => signedUnguarded(operation, request, maxBytes, run, { c0Gate: false, answerStale, epoch: false }));
+  return guarded(request.headers, () => signedUnguarded(operation, request, maxBytes, run, { c0Gate: false, answerStale, epoch: false, ...(requestDomain !== undefined ? { requestDomain } : {}) }));
 }
 
 async function signedUnguarded(
@@ -152,7 +152,7 @@ async function signedUnguarded(
   request: Request,
   maxBytes: number,
   run: (deps: ReceiverDeps, body: Uint8Array, stale: boolean) => Promise<ReceiverResponse>,
-  { c0Gate = true, answerStale = false, epoch = true }: { c0Gate?: boolean; answerStale?: boolean; epoch?: boolean } = {},
+  { c0Gate = true, answerStale = false, epoch = true, requestDomain }: { c0Gate?: boolean; answerStale?: boolean; epoch?: boolean; requestDomain?: string } = {},
 ): Promise<Response> {
   const deps = loadDeps(operation);
   if (deps instanceof Response) return deps;
@@ -175,7 +175,7 @@ async function signedUnguarded(
   const now = new Date();
   let dated;
   try {
-    dated = await checkDated(deps.config.keyring, deps.pool, request.headers, request.method, signedPath(request), body, now);
+    dated = await checkDated(deps.config.keyring, deps.pool, request.headers, request.method, signedPath(request), body, now, requestDomain === undefined ? {} : { domain: requestDomain });
   } catch (error) {
     const code = typeof (error as { code?: unknown }).code === "string" ? (error as { code: string }).code : "ERROR";
     console.error(`[site-publish] ${operation} contrôle daté indisponible code=${code}`);

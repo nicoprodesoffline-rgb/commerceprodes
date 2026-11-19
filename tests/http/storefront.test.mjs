@@ -9,8 +9,9 @@
 import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { createHash, createHmac, randomBytes } from "node:crypto";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { request as httpRequest } from "node:http";
 import path from "node:path";
 import pg from "pg";
@@ -20,12 +21,21 @@ const PORT = Number(process.env.SITE_TEST_PORT ?? 3361);
 const BASE = `http://127.0.0.1:${PORT}`;
 const DB_URL = process.env.SITE_TEST_DATABASE_URL ?? "postgres://prodes_site:local-dev-only@localhost:54318/prodes_site_bc3_test";
 process.env.SITE_TEST_DATABASE_URL = DB_URL; // lu par tests/bc2/helpers.mjs (resetDb)
-const { loadCase, mediaHeaders, resetDb } = await import("../bc2/helpers.mjs");
+const { datedHeaders, loadCase, mediaHeaders, resetDb } = await import("../bc2/helpers.mjs");
+const { createRequire } = await import("node:module");
+const requireBuild = createRequire(import.meta.url);
+const commerceDocument = requireBuild(path.join(ROOT, ".bc2-build", "lib/site-commerce/document.js"));
+const { canonicalBytes: canonicalJson } = requireBuild(path.join(ROOT, ".bc2-build", "c0/ts/src/jsonc.js"));
 const { MiB, bigMedia, bigSnapshot, jsonOfSize } = await import("./machine-payloads.mjs");
 const C0 = path.join(ROOT, "c0", "fixtures");
 const ORACLE = JSON.parse(readFileSync(path.join(C0, "VERDICTS.json"), "utf8")).cases;
 const KEYRING_PATH = path.join(C0, "keys", "test_keyring.json");
 const sha256 = (b) => createHash("sha256").update(b).digest("hex");
+// Cercle 5 : trousseau des routes de la Factory vers le site (hors C0), écrit pour ce test dans un dossier temporaire, jamais dans Git.
+const ROUTES_KEYRING_DIR = mkdtempSync(path.join(tmpdir(), "site-routes-keyring-"));
+const ROUTES_KEYRING_PATH = path.join(ROUTES_KEYRING_DIR, "routes.json");
+const ROUTES_SECRET = "secret-d-essai-des-routes-du-cercle-5-x";
+writeFileSync(ROUTES_KEYRING_PATH, JSON.stringify({ keys: [{ key_id: "essai-effacer", scope: "site_requests.erase", status: "ACTIVE", secret_utf8: ROUTES_SECRET }] }));
 
 // ── Serveur ──────────────────────────────────────────────────────────────────
 
@@ -46,11 +56,14 @@ const SERVER_ENV = {
   SITE_DATABASE_URL: DB_URL,
   SITE_CATALOG_SOURCE: "db",
   SITE_BUSINESS_PERSISTENCE: "postgresql",
+  // Cercle 5 (5.23) : ces essais envoient bien plus de cinq devis ou commandes par minute depuis la même adresse ; la limite de débit a son propre essai (tests/bc4/http.e2e.mjs, D).
+  SITE_REQUEST_LIMIT: "1000",
   // Cercle 4 : ces essais modifient la base sans passer par les routes signées (activations, médias retirés ou altérés) ; ni mémoire de réglages ni cache d'images n'y masquent le changement.
   SITE_MEMORY_MAX_AGE_SECONDS: "0",
   SITE_MEDIA_CACHE_MB: "0",
   // Un frontal est déclaré devant le site : l'adresse est la dernière valeur de x-forwarded-for.
   SITE_TRUSTED_PROXY_HOPS: "1",
+  SITE_REQUESTS_KEYRING_PATH: ROUTES_KEYRING_PATH,
 };
 
 let server = null;
@@ -114,7 +127,21 @@ async function http(method, p, { body, headers = {}, json = true } = {}) {
   return { status: res.status, headers: res.headers, bytes, text, json: parsed };
 }
 const get = (p, o) => http("GET", p, o);
-const post = (p, body, o = {}) => http("POST", p, { ...o, body });
+/**
+ * Cercle 5 : devis et commande reçoivent `{ request: <corps C0>, extras }` (docs/site_events_v2.md). Un corps C0 lisible est enveloppé ici ; un corps illisible part tel quel (le serveur le refuse).
+ * Les extras de la commande sont ceux d'une commande valide ; les cas de refus du C0 gardent leur verdict, car le C0 juge en premier.
+ */
+const ADDRESS = { name: "Mairie de Val-Fictif", line1: "7 allée Fictive", line2: "", postal_code: "00000", city: "Val-Fictif" };
+const EXTRAS = {
+  "/api/site/quote": { commerce_sequence: 1, privacy_notice: "m1" },
+  "/api/site/order": { commerce_sequence: 1, privacy_notice: "m1", addresses: { delivery: ADDRESS, billing: null }, customer_refs: {}, payment_method: "virement", terms: { accepted: true, cgv_version: "c1" } },
+};
+function wrapV2(p, body) {
+  if (!(p in EXTRAS)) return body;
+  const text = typeof body === "string" ? body : body instanceof Uint8Array ? Buffer.from(body).toString("utf8") : JSON.stringify(body);
+  try { return JSON.stringify({ request: JSON.parse(text), extras: EXTRAS[p] }); } catch { return text; }
+}
+const post = (p, body, o = {}) => http("POST", p, { ...o, body: wrapV2(p, body) });
 const preview = (lines, o) => post("/api/site/cart/preview", { lines }, o);
 
 // ── Base et receiver BC2 ─────────────────────────────────────────────────────
@@ -125,18 +152,29 @@ const scalar = async (sql, params = []) => Object.values((await db.query(sql, pa
 /** Pose la génération d'un cas C0 `evaluate_publication` par le receiver BC2, en HTTP, sur le serveur testé. */
 async function activateOverHttp(caseId) {
   const c = loadCase(caseId);
-  const sig = { "x-c0-key-id": c.transport.key_id, "x-c0-signature": c.transport.signature, "content-type": "application/json" };
+  const sig = (route, bytes) => ({ "x-c0-key-id": c.transport.key_id, "x-c0-signature": c.transport.signature, "content-type": "application/json", ...datedHeaders(c.transport.key_id, "POST", route, new Uint8Array(bytes)) });
   const ctl = JSON.stringify({ publication_id: c.doc.publication_id, catalogue_sequence: c.doc.catalogue_sequence, payload_sha256: c.doc.payload_sha256 });
-  const st = await http("POST", "/api/site/publish/stage", { body: c.bytes, headers: sig });
+  const st = await http("POST", "/api/site/publish/stage", { body: c.bytes, headers: sig("/api/site/publish/stage", c.bytes) });
   assert.equal(st.status, 200, `${caseId} STAGE : ${st.text.slice(0, 300)}`);
   for (const m of c.media) {
-    const r = await http("PUT", `/api/site/publish/media/${m.sha256}`, { body: m.bytes, headers: { ...Object.fromEntries(mediaHeaders(m.sha256, m.bytes.length)), "content-type": "image/png" } });
+    const r = await http("PUT", `/api/site/publish/media/${m.sha256}`, { body: m.bytes, headers: { ...Object.fromEntries(mediaHeaders(m.sha256, m.bytes.length)), ...datedHeaders(c.transport.key_id, "PUT", `/api/site/publish/media/${m.sha256}`, new Uint8Array(m.bytes)), "content-type": "image/png" } });
     assert.ok([200, 201].includes(r.status), `${caseId} PUT média ${m.sha256} : ${r.status} ${r.text.slice(0, 200)}`);
   }
-  const v = await http("POST", "/api/site/publish/verify-media", { body: ctl, headers: sig });
+  const v = await http("POST", "/api/site/publish/verify-media", { body: ctl, headers: sig("/api/site/publish/verify-media", Buffer.from(ctl)) });
   assert.equal(v.status, 200, `${caseId} VERIFY : ${v.text.slice(0, 300)}`);
-  const a = await http("POST", "/api/site/publish/activate", { body: ctl, headers: sig });
+  const a = await http("POST", "/api/site/publish/activate", { body: ctl, headers: sig("/api/site/publish/activate", Buffer.from(ctl)) });
   assert.equal(a.headers.get("x-c0-outcome"), "ACTIVATED", `${caseId} ACTIVATE : ${a.status} ${a.text.slice(0, 300)}`);
+  // Cercle 5 : les réglages de vente d'essai (taux, marches à suivre, mention, CGV) : sans eux, « la boutique n'est pas prête ».
+  const d = {
+    contract_version: "site_commerce.v1", publication_id: "pub-0001", commerce_sequence: 1, generated_at_utc: "2026-10-20T08:00:00Z", tax_rate: "20.00",
+    delivery_rendez_vous: { label: "Livraison sur rendez-vous", amount_ht: "20.00" },
+    payment: { cheque: { label: "Chèque", instructions: "Texte d'attente." }, virement: { label: "Virement", instructions: "Texte d'attente." }, mandat_administratif: { label: "Mandat", instructions: "Texte d'attente." } },
+    privacy_notice: { version: "m1", text: "Texte d'attente." }, cgv_version: "c1",
+    acknowledgement: { quote: { subject: "S", body: "{numero}" }, order: { subject: "S", body: "{numero}" }, message: { subject: "S", body: "{numero}" } }, sender: null,
+  };
+  const doc = { ...d, payload_sha256: commerceDocument.documentDigest(d) };
+  await db.query("DELETE FROM site_commerce_active");
+  await db.query("INSERT INTO site_commerce_active (singleton, commerce_sequence, publication_id, payload_sha256, document_bytes, ack_bytes) VALUES (1, 1, $1, $2, $3, $4)", [doc.publication_id, doc.payload_sha256, Buffer.from(canonicalJson(doc)), Buffer.from("{}")]);
   return c;
 }
 
@@ -534,15 +572,18 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.deepEqual(oRow, { status: "RECEIVED", total_amount: "77.00", cents: 7700, seq: 1 }, "commande persistée en base");
       assert.equal(Number(await scalar("SELECT count(*) FROM site_order_line l JOIN site_order o ON o.id = l.order_id WHERE o.order_ref = $1 AND l.rate_id = 'R-SIMPLE-1' AND l.quantity = 2", [o.json.receipt_ref])), 1);
 
-      const found = await get(`/api/site/receipt?ref=${o.json.receipt_ref}&access_token=${encodeURIComponent(o.json.access_token)}`);
+      // Cercle 5 (P03) : une demande v2 se consulte par POST, le code dans le corps ; le GET (code dans l'adresse) ne la sert pas.
+      const receiptHeaders = { "x-forwarded-for": "198.51.100.14" };
+      const found = await post("/api/site/receipt", { ref: o.json.receipt_ref, code: o.json.access_token }, { headers: receiptHeaders });
       assert.equal(found.status, 200);
       assert.equal(found.json.outcome, "FOUND");
       assert.equal(found.json.receipt.total_amount, "77.00");
-      assert.equal((await get(`/api/site/receipt?ref=${o.json.receipt_ref}&access_token=faux`)).status, 404);
-      assert.equal((await get(`/api/site/receipt?ref=${o.json.receipt_ref}`)).status, 401);
+      assert.equal((await post("/api/site/receipt", { ref: o.json.receipt_ref, code: "faux" }, { headers: receiptHeaders })).status, 404);
+      assert.equal((await post("/api/site/receipt", { ref: o.json.receipt_ref }, { headers: receiptHeaders })).status, 401);
+      assert.equal((await get(`/api/site/receipt?ref=${o.json.receipt_ref}&access_token=${encodeURIComponent(o.json.access_token)}`)).status, 404);
       // Rejeu à l'identique (réessai réseau) : même reçu, AUCUN jeton redonné, aucun doublon.
-      const again = await http("POST", "/api/site/order", { body: JSON.stringify({ ...orderFrom(pv), idempotency_key: "order-bc3-replay-0001" }) });
-      const again2 = await http("POST", "/api/site/order", { body: JSON.stringify({ ...orderFrom(pv), idempotency_key: "order-bc3-replay-0001" }) });
+      const again = await http("POST", "/api/site/order", { body: wrapV2("/api/site/order", { ...orderFrom(pv), idempotency_key: "order-bc3-replay-0001" }) });
+      const again2 = await http("POST", "/api/site/order", { body: wrapV2("/api/site/order", { ...orderFrom(pv), idempotency_key: "order-bc3-replay-0001" }) });
       assert.equal(again2.json.outcome, "REPLAY_SAME_RECEIPT");
       assert.equal(again2.json.receipt_ref, again.json.receipt_ref);
       assert.equal(again2.json.access_token, undefined, "jeton jamais redonné au rejeu");
@@ -787,6 +828,55 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
         assert.match(r.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/, `${p} reste sous le proxy`);
       }
     });
+  });
+
+  // ── 5. Cercle 5 : routes de la Factory vers le site et reçu en POST ──────────
+  describe("5 — cercle 5 : routes signées hors proxy, reçu en POST", () => {
+  after(() => rmSync(ROUTES_KEYRING_DIR, { recursive: true, force: true }));
+
+  /** Une requête signée comme la Factory : domaine de la route, {method, path, body_sha256, issued_at_utc, nonce} en octets canoniques (clés triées). */
+  function routeHeaders(p, body, domain = "prodes.site.transport.requests_erase.v1") {
+    const issued = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+    const nonce = randomBytes(16).toString("hex");
+    const context = { body_sha256: sha256(Buffer.from(body)), issued_at_utc: issued, method: "POST", nonce, path: p };
+    const mac = createHmac("sha256", ROUTES_SECRET).update(Buffer.concat([Buffer.from(domain), Buffer.from([0]), Buffer.from(JSON.stringify(context))])).digest("hex");
+    return { "x-c0-key-id": "essai-effacer", "x-c0-issued-at": issued, "x-c0-nonce": nonce, "x-c0-request-signature": mac, "content-type": "application/json" };
+  }
+
+  test("5.1 effacement signé : traverse jusqu'à la route (404 pour une référence inconnue), réponse signée, sans CSP du proxy ; non signé : 401", async () => {
+    const body = JSON.stringify({ object_ref: "QR-inconnu-http" });
+    const ok = await http("POST", "/api/site/requests/erase", { body, json: false, headers: routeHeaders("/api/site/requests/erase", body) });
+    assert.equal(ok.status, 404, JSON.stringify(ok.json));
+    assert.deepEqual([ok.json.operation, ok.json.error_codes], ["REQUESTS_ERASE", ["NOT_FOUND"]]);
+    assert.ok(ok.headers.get("x-c0-response-signature"), "réponse signée par la clé d'accusé du site");
+    assert.equal(ok.headers.get("content-security-policy"), null);
+    const unsigned = await http("POST", "/api/site/requests/erase", { body, json: false, headers: { "content-type": "text/plain" } });
+    assert.notEqual(unsigned.json?.site_status, "CONTENT_TYPE_REFUSED");
+    assert.deepEqual([unsigned.status, unsigned.json.error_codes], [401, ["SIGNATURE_INVALID"]]);
+    const wrongDomain = await http("POST", "/api/site/requests/erase", { body, json: false, headers: routeHeaders("/api/site/requests/erase", body, "prodes.site.transport.requests_document.v1") });
+    assert.equal(wrongDomain.status, 401);
+  });
+
+  test("5.2 les autres routes du cercle 5 sont hors proxy et refusent une clé d'une autre portée", async () => {
+    for (const p of ["/api/site/requests/document", "/api/site/requests/mail-status", "/api/site/events/set-aside"]) {
+      const body = "{}";
+      const r = await http("POST", p, { body, json: false, headers: routeHeaders(p, body) });
+      assert.equal(r.status, 401, p);
+      assert.deepEqual(r.json.error_codes, ["SIGNATURE_INVALID"], p);
+      assert.equal(r.headers.get("content-security-policy"), null, p);
+    }
+  });
+
+  test("5.3 reçu : POST {ref, code} sous le proxy ; référence inconnue 404 ; la sixième consultation en une minute reçoit 429", async () => {
+    const headers = { "x-forwarded-for": "198.51.100.77" };
+    const statuses = [];
+    for (let i = 0; i < 6; i += 1) {
+      const r = await http("POST", "/api/site/receipt", { body: { ref: "QR-inconnu-http", code: "c".repeat(43) }, headers });
+      statuses.push(r.status);
+      if (i === 5) assert.match(r.json.message, /réessayez dans une minute/);
+    }
+    assert.deepEqual(statuses, [404, 404, 404, 404, 404, 429]);
+  });
   });
 });
 

@@ -14,5 +14,5 @@
     "sourceMap": false,
     "declaration": false
   },
-  "include": ["lib/site-db/**/*.ts", "lib/site-publish/**/*.ts", "lib/site-ratelimit/**/*.ts", "lib/site-health/**/*.ts", "lib/site-link/**/*.ts"]
+  "include": ["lib/site-db/**/*.ts", "lib/site-publish/**/*.ts", "lib/site-ratelimit/**/*.ts", "lib/site-health/**/*.ts", "lib/site-link/**/*.ts", "lib/site-commerce/**/*.ts"]
 }

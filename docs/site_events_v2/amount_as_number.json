@@ -1,0 +1,16 @@
+{
+ "case_id": "site_events_v2.amount_as_number",
+ "note": "M05 : un montant écrit comme un nombre",
+ "event_text": "{\"catalogue_sequence\":3,\"contract_version\":\"site_events.v2\",\"created_at_utc\":\"2026-11-18T10:00:00Z\",\"event_id\":\"EV-QR-0001\",\"event_type\":\"quote.requested\",\"event_version\":1,\"idempotency_key\":\"quote.requested:QR-0001\",\"object_ref\":\"QR-0001\",\"payload\":{\"amounts\":{\"currency\":\"EUR\",\"excludes_quote_lines\":false,\"tax_rate\":\"20.00\",\"total_ht\":100,\"total_ttc\":\"120.00\",\"total_tva\":\"20.00\"},\"contact\":{\"email\":\"achats@val-fictif.example\",\"name\":\"Camille Exemple\",\"organisation\":\"Mairie de Val-Fictif\",\"phone\":\"+33 1 00 00 00 00\"},\"delivery\":{\"amount_ht\":\"0.00\",\"amount_tva\":\"0.00\",\"label\":\"Livraison incluse\",\"option\":\"incluse\"},\"lines\":[{\"item_label\":\"Banc d'essai\",\"line_total_ht\":\"100.00\",\"line_tva\":\"20.00\",\"lot\":null,\"public_item_key\":\"PI-00000001R\",\"quantity\":4,\"rate_id\":\"R-1\",\"unit_amount_ht\":\"25.00\",\"variant_axes\":{}}],\"message\":\"Pouvez-vous confirmer le délai ?\",\"number\":\"DEV-2026-000001\",\"privacy_notice\":\"2026-11\"},\"payload_digest\":\"1479e55b57d00eaf1f3e0187a5f82740a5eda748593a7d4fbdc4f8484ff5bf02\"}",
+ "consumed": [],
+ "expected": {
+  "accepted": false,
+  "outcome": "REJECTED",
+  "error_codes": [
+   "EVENT_PAYLOAD_INVALID"
+  ],
+  "rules": [
+   "amount_format"
+  ]
+ }
+}

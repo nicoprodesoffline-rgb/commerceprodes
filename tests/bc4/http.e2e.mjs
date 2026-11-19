@@ -8,7 +8,31 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { DB_URL, KEYRING, ROOT, activate, businessCase, c0events, counts, events, freshness, pollContext, rawSign, resetDb, newPool } from "./helpers.mjs";
+import { createRequire } from "node:module";
+import { datedHeaders } from "../bc2/helpers.mjs";
+import { DB_URL, KEYRING, ROOT, activate, businessCase, c0events, counts, events, freshness, jsonc, pollContext, rawSign, resetDb, newPool } from "./helpers.mjs";
+
+// Cercle 5 : les routes devis et commande reçoivent `{ request: <corps C0>, extras }` (docs/site_events_v2.md) et un événement site_events.v2 ; sans réglages de vente reçus, « la boutique n'est pas prête ».
+const requireBuild = createRequire(import.meta.url);
+const commerce = requireBuild(path.join(ROOT, ".bc4-build", "lib/site-commerce/document.js"));
+const ADDRESS = { name: "Mairie de Val-Fictif", line1: "7 allée Fictive", line2: "", postal_code: "00000", city: "Val-Fictif" };
+const EXTRAS = { quote_request: { commerce_sequence: 1, privacy_notice: "m1" }, order: { commerce_sequence: 1, privacy_notice: "m1", addresses: { delivery: ADDRESS, billing: null }, customer_refs: {}, payment_method: "virement", terms: { accepted: true, cgv_version: "c1" } } };
+/** Corps v2 d'un corps C0 : le C0 reste jugé tel quel, les extras ne portent que ce qu'il ne connaît pas. */
+function wrap(kind, raw) {
+  const text = typeof raw === "string" ? raw : Buffer.from(raw).toString("utf8");
+  return JSON.stringify({ request: JSON.parse(text), extras: EXTRAS[kind] });
+}
+async function installCommerce(pool) {
+  const d = {
+    contract_version: "site_commerce.v1", publication_id: "pub-0001", commerce_sequence: 1, generated_at_utc: "2026-10-20T08:00:00Z", tax_rate: "20.00",
+    delivery_rendez_vous: { label: "Livraison sur rendez-vous", amount_ht: "20.00" },
+    payment: { cheque: { label: "Chèque", instructions: "Texte d'attente." }, virement: { label: "Virement", instructions: "Texte d'attente." }, mandat_administratif: { label: "Mandat", instructions: "Texte d'attente." } },
+    privacy_notice: { version: "m1", text: "Texte d'attente." }, cgv_version: "c1",
+    acknowledgement: { quote: { subject: "S", body: "{numero}" }, order: { subject: "S", body: "{numero}" }, message: { subject: "S", body: "{numero}" } }, sender: null,
+  };
+  const doc = { ...d, payload_sha256: commerce.documentDigest(d) };
+  await pool.query("INSERT INTO site_commerce_active (singleton, commerce_sequence, publication_id, payload_sha256, document_bytes, ack_bytes) VALUES (1, 1, $1, $2, $3, $4)", [doc.publication_id, doc.payload_sha256, Buffer.from(jsonc.canonicalBytes(doc)), Buffer.from("{}")]);
+}
 
 const PORT = (() => {
   const raw = process.env.SITE_TEST_PORT ?? "3351";
@@ -86,7 +110,7 @@ function pollHeaders(cursor, limit, keyId = "c0-test-events-01") {
   };
 }
 
-const ENV = () => ({ SITE_BUSINESS_PERSISTENCE: "postgresql", SITE_DATABASE_URL: DB_URL(), SITE_KEYRING_PATH: KEYRING_PATH, SITE_NOW_UTC: NOW });
+const ENV = () => ({ SITE_BUSINESS_PERSISTENCE: "postgresql", SITE_DATABASE_URL: DB_URL(), SITE_KEYRING_PATH: KEYRING_PATH, SITE_NOW_UTC: NOW, SITE_REQUEST_LIMIT: "1000", SITE_RECEIPT_LIMIT: "1000" });
 
 describe("A — serveur BC4 (SITE_BUSINESS_PERSISTENCE=postgresql) sur prodes_site_bc4_test", () => {
   let server;
@@ -95,6 +119,7 @@ describe("A — serveur BC4 (SITE_BUSINESS_PERSISTENCE=postgresql) sur prodes_si
     await resetDb();
     pool = newPool();
     await activate(pool, "F_SELL_WINDOWS.activate");
+    await installCommerce(pool);
     server = await startServer(ENV());
   });
   after(async () => { await stopServer(server); await pool.end(); });
@@ -102,18 +127,18 @@ describe("A — serveur BC4 (SITE_BUSINESS_PERSISTENCE=postgresql) sur prodes_si
   let created;
   test("POST /api/site/order (F_QUOTE_ORDER.order_valid) → 200 RECEIVED durable, puis rejeu → même reçu", async () => {
     const c = businessCase("F_QUOTE_ORDER.order_valid");
-    const r = await http("POST", "/api/site/order", { body: c.bytes, headers: { "content-type": "application/json" } });
+    const r = await http("POST", "/api/site/order", { body: wrap("order", c.bytes), headers: { "content-type": "application/json" } });
     assert.equal(r.status, 200, r.text);
     assert.equal(r.json.outcome, "RECEIVED");
     assert.equal(r.json.persistence, "POSTGRESQL_SITE_LOCAL");
     assert.equal(r.json.instant_utc, NOW, "instant serveur (SITE_NOW_UTC), jamais client");
     assert.equal(r.headers.get("cache-control"), "no-store");
     created = r.json;
-    const again = await http("POST", "/api/site/order", { body: c.bytes });
+    const again = await http("POST", "/api/site/order", { body: wrap("order", c.bytes) });
     assert.equal(again.json.outcome, "REPLAY_SAME_RECEIPT");
     assert.deepEqual(again.json.receipt, created.receipt);
     assert.equal(again.json.access_token, undefined);
-    const other = await http("POST", "/api/site/order", { body: businessCase("F_QUOTE_ORDER.order_same_key_other_payload").bytes });
+    const other = await http("POST", "/api/site/order", { body: wrap("order", businessCase("F_QUOTE_ORDER.order_same_key_other_payload").bytes) });
     assert.equal(other.status, 409);
     assert.deepEqual(other.json.error_codes, ["DUPLICATE_KEY_DIFFERENT_PAYLOAD"]);
   });
@@ -121,7 +146,7 @@ describe("A — serveur BC4 (SITE_BUSINESS_PERSISTENCE=postgresql) sur prodes_si
   test("CE-T03 HTTP : deux POST simultanés même clé → 1 commande, 1 événement", async () => {
     const o = JSON.parse(Buffer.from(businessCase("F_QUOTE_ORDER.order_valid").bytes).toString("utf8"));
     o.idempotency_key = "order:http:concurrent";
-    const body = JSON.stringify(o);
+    const body = wrap("order", JSON.stringify(o));
     const rs = await Promise.all([http("POST", "/api/site/order", { body }), http("POST", "/api/site/order", { body })]);
     assert.deepEqual(rs.map((r) => r.json.outcome).sort(), ["RECEIVED", "REPLAY_SAME_RECEIPT"]);
     assert.equal(rs[0].json.receipt_ref, rs[1].json.receipt_ref);
@@ -131,24 +156,30 @@ describe("A — serveur BC4 (SITE_BUSINESS_PERSISTENCE=postgresql) sur prodes_si
   });
 
   test("POST /api/site/quote (F_QUOTE_ORDER.quote_unpriced_no_window) → RECEIVED priced:false ; falsifié (order_falsified_amount) → 409", async () => {
-    const q = await http("POST", "/api/site/quote", { body: businessCase("F_QUOTE_ORDER.quote_unpriced_no_window").bytes });
+    const q = await http("POST", "/api/site/quote", { body: wrap("quote_request", businessCase("F_QUOTE_ORDER.quote_unpriced_no_window").bytes) });
     assert.equal(q.status, 200, q.text);
     assert.equal(q.json.receipt.lines[0].priced, false);
-    const f = await http("POST", "/api/site/order", { body: businessCase("F_QUOTE_ORDER.order_falsified_amount").bytes });
+    const f = await http("POST", "/api/site/order", { body: wrap("order", businessCase("F_QUOTE_ORDER.order_falsified_amount").bytes) });
     assert.equal(f.status, 409);
     assert.deepEqual(f.json.error_codes, ["PRICE_CHANGED"]);
   });
 
-  test("GET /api/site/receipt : bon jeton 200 ; absent 401 ; faux 404 = réf inconnue 404 (F_QUOTE_ORDER.lookup_*)", async () => {
-    const ok = await http("GET", `/api/site/receipt?ref=${created.receipt_ref}&access_token=${encodeURIComponent(created.access_token)}`);
-    assert.equal(ok.status, 200);
+  test("POST /api/site/receipt {ref, code} : bon code 200 ; absent 401 ; faux 404 = réf inconnue 404 ; un GET ne sert plus une demande v2 (F_QUOTE_ORDER.lookup_*)", async () => {
+    // Cercle 5 (P03) : le code voyage dans le CORPS, jamais dans l'adresse ; le GET d'avant ne reste que pour les demandes d'avant le cercle (C0 §10.5).
+    const read = (body) => http("POST", "/api/site/receipt", { body: JSON.stringify(body) });
+    const ok = await read({ ref: created.receipt_ref, code: created.access_token });
+    assert.equal(ok.status, 200, ok.text);
     assert.deepEqual(ok.json.receipt, created.receipt);
-    assert.equal((await http("GET", `/api/site/receipt?ref=${created.receipt_ref}`)).status, 401);
-    const wrong = await http("GET", `/api/site/receipt?ref=${created.receipt_ref}&access_token=faux`);
-    const unknown = await http("GET", `/api/site/receipt?ref=ORD-00000000000000000000000000000000&access_token=faux`);
+    assert.equal(ok.json.number, created.number);
+    assert.equal(ok.json.transmission, "recue");
+    assert.equal((await read({ ref: created.receipt_ref })).status, 401);
+    const wrong = await read({ ref: created.receipt_ref, code: "faux" });
+    const unknown = await read({ ref: "ORD-00000000000000000000000000000000", code: "faux" });
     assert.equal(wrong.status, 404);
     assert.equal(unknown.status, 404);
     assert.equal(wrong.text, unknown.text);
+    const old = await http("GET", `/api/site/receipt?ref=${created.receipt_ref}&access_token=${encodeURIComponent(created.access_token)}`);
+    assert.equal(old.status, 404, "le GET ne sert plus une demande v2 (même bon code)");
   });
 
   test("GET /api/site/events + POST /api/site/events/ack : client Factory simulé (c0-test-events-01), re-service sans ACK, scopes", async () => {
@@ -157,17 +188,22 @@ describe("A — serveur BC4 (SITE_BUSINESS_PERSISTENCE=postgresql) sur prodes_si
     assert.equal(p1.json.events.length, 3);
     const consumed = [];
     for (const e of p1.json.events) {
-      const v = c0events.validateEvent(new Uint8Array(Buffer.from(e.event_bytes_b64, "base64")), consumed);
-      assert.equal(v.outcome, "APPLY");
-      consumed.push(JSON.parse(JSON.stringify(v.record)));
+      // Événement v2 : le validateur TypeScript commun arrive avec le lot d'eb ; ici, enveloppe, octets canoniques et empreinte du domaine v2.
+      const bytes = new Uint8Array(Buffer.from(e.event_bytes_b64, "base64"));
+      const event = jsonc.parseBytes(bytes, 262144);
+      assert.equal(event.contract_version, "site_events.v2");
+      assert.ok(jsonc.isCanonical(bytes, event));
+      assert.equal(event.payload_digest, jsonc.digest("prodes.site_events.v2.payload", event.payload));
+      consumed.push(e.event_bytes_b64);
     }
     const p2 = await http("GET", `/api/site/events?cursor=${p1.json.next_cursor}&limit=10`, { headers: pollHeaders(p1.json.next_cursor, 10) });
     assert.equal(p2.json.events.length, 3, "non acquittés → re-servis");
-    for (const e of p2.json.events) assert.equal(c0events.validateEvent(new Uint8Array(Buffer.from(e.event_bytes_b64, "base64")), consumed).outcome, "DUPLICATE_NOOP");
+    for (const e of p2.json.events) assert.ok(consumed.includes(e.event_bytes_b64), "re-servi à l'identique");
     const ackBody = { cursor: p2.json.next_cursor };
     const a = await http("POST", "/api/site/events/ack", {
       body: JSON.stringify(ackBody),
-      headers: { "x-c0-key-id": "c0-test-events-01", "x-c0-signature": rawSign("c0-test-events-01", events.EVENTS_ACK_DOMAIN, ackBody) },
+      // Cercle 4 (4.4) : l'accusé porte aussi l'anti-rejeu daté du transport (en-têtes `x-c0-issued-at`, `x-c0-nonce`, `x-c0-request-signature`).
+      headers: { ...datedHeaders("c0-test-events-01", "POST", "/api/site/events/ack", new TextEncoder().encode(JSON.stringify(ackBody))), "x-c0-signature": rawSign("c0-test-events-01", events.EVENTS_ACK_DOMAIN, ackBody) },
     });
     assert.equal(a.status, 200, a.text);
     assert.equal(a.json.acked.length, 3);
@@ -195,7 +231,7 @@ describe("B — serveur BC4, base coupée (SITE_DATABASE_URL vers une base inexi
   after(async () => stopServer(server));
 
   test("POST /api/site/order → 503 DB_WRITE_FAILED, jamais accepted:true (F_QUOTE_ORDER.order_valid)", async () => {
-    const r = await http("POST", "/api/site/order", { body: businessCase("F_QUOTE_ORDER.order_valid").bytes });
+    const r = await http("POST", "/api/site/order", { body: wrap("order", businessCase("F_QUOTE_ORDER.order_valid").bytes) });
     assert.equal(r.status, 503, r.text);
     assert.equal(r.json.accepted, false);
     assert.deepEqual(r.json.error_codes, ["DB_WRITE_FAILED"]);
@@ -213,5 +249,25 @@ describe("C — configuration invalide", () => {
       assert.equal(r.status, 503);
       assert.equal(r.json.transport_error, "TRANSACTIONS_CONFIG_INVALID");
     }
+  });
+});
+
+describe("D — cercle 5, 5.23 : limite de débit par adresse sur les envois (P04)", () => {
+  let server;
+  before(async () => { server = await startServer({ ...ENV(), SITE_REQUEST_LIMIT: "5" }); });
+  after(async () => stopServer(server));
+
+  test("le sixième envoi en une minute reçoit « trop de demandes, réessayez dans une minute » (429), avant toute lecture du corps", async () => {
+    const statuses = [];
+    for (const route of ["/api/site/quote", "/api/site/order", "/api/site/message", "/api/site/quote", "/api/site/order", "/api/site/message"]) {
+      const r = await http("POST", route, { body: "{pas du json" });
+      statuses.push(r.status);
+      if (statuses.length === 6) {
+        assert.equal(r.json.message, "Trop de demandes, réessayez dans une minute.");
+        assert.ok(Number(r.headers.get("retry-after")) >= 1);
+      }
+    }
+    assert.ok(statuses.slice(0, 5).every((s) => s !== 429), `cinq premiers : ${statuses}`);
+    assert.equal(statuses[5], 429);
   });
 });

@@ -3,7 +3,7 @@ export const PASTILLE_LABEL = "Pastille";
 /** La teinte fine (docs/site_filters_v1.md §5) : mêmes parties que « Pastille », chacune « RAL NNNN » ou le nom de la nuance. Dessine seulement la pastille. */
 export const TEINTE_LABEL = "Teinte";
 
-/** Le reflet (docs/site_filters_v1.md §5 bis) : mêmes parties que « Pastille », chacune « brillant » ou « mat ». Dessine seulement la pastille. */
+/** Le reflet (docs/site_filters_v1.md §5, puce « Reflet ») : mêmes parties que « Pastille », chacune « brillant » ou « mat ». Dessine seulement la pastille. */
 export const REFLET_LABEL = "Reflet";
 export const BRILLANT = "brillant";
 export const MAT = "mat";
