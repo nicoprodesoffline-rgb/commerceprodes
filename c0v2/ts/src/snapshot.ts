@@ -53,7 +53,6 @@ export const MAX_DOCUMENT_SIZE = 30 * 1024 * 1024;
 export const MEDIA_MIME_ALLOWED = v1.MEDIA_MIME_ALLOWED;
 export const MAX_MEDIA_SIZE = v1.MAX_MEDIA_SIZE;
 const MAX_QUANTITY = v1.MAX_QUANTITY;
-const MAX_AXES = 8;
 const MAX_POSITION = 1000000;
 const MAX_DIMENSION = 20000;
 const MAX_DERIVATIVES = 8;
@@ -164,7 +163,6 @@ function shapeFamily(value: Json): void {
   for (const key of list(family["secondary_category_keys"], "family.secondary_category_keys")) need(categoryKeyOk(key), "family.secondary_category_keys");
   need(f.isHex64(family["image_main_sha256"]), "family.image_main_sha256");
   const axes = list(family["axes"], "family.axes");
-  need(axes.length <= MAX_AXES, "family.axes");
   for (const axis of axes) {
     need(f.exactKeys(axis, AXIS_KEYS), "family.axes");
     need(f.matches(f.AXIS_KEY, obj(axis)["axis_key"]) && f.isText(obj(axis)["label"], 100), "family.axes");

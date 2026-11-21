@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const CHECK = join(ROOT, "scripts", "c0", "check.mjs");
 const SYNC = join(ROOT, "scripts", "c0", "sync.mjs");
-const FROZEN = "f1cf9e277bd090a4e7947b39f2e3dd700eea9e42";
+const FROZEN = "728c4b074df6d5ada34b57b5558e3e18a256f729";
 const TARGET = "c0/fixtures/VERDICTS.json";
 
 // Valeurs attendues ÉPINGLÉES (F-02) : elles ne changent que dans un commit de re-sync revu (nouvelle
@@ -20,16 +20,16 @@ const TARGET = "c0/fixtures/VERDICTS.json";
 const PINNED = {
   factory_repo: "nicoprodesoffline-rgb/prodes-data-factory-poc",
   frozen_code_sha: FROZEN,
-  archived_from_sha: "b69c41c7072bb0307d75d8ca15a415fd7ced6659",
-  file_count: 452,
+  archived_from_sha: "728c4b074df6d5ada34b57b5558e3e18a256f729",
+  file_count: 453,
   // Regel du 27/10 (fusion officielle W5+W6) : selectPriceIn (Owner A14) fait partie du code gelé, aucun amendement local.
-  tree_digest: "b2e5505a9501cebaf0269ff44cd1bac70fb25c205f3eb5284a7a9e88712bcabb",
+  tree_digest: "6e4556fd49efe5182bfcf0f5ada5a05768537b84bd8f698c7b82fc942ea010c2",
   contract_version: ["site_snapshot.v1", "site_activation.v1", "site_business.v1", "site_events.v1"],
   trees: {
     "c0/fixtures": "c2bf3496239b3e92e4a45f67ba55237495041208",
-    "c0/python": "f2f0b1180424f9231469971e4f786ec38d8e70b0",
-    "c0/ts/src": "b49a30044ca7a59038f89571c8f33d7669c00e11",
-    "c0/ts/test": "64c20e6a54b307fb403a0f9c52b4aa3350e54f84",
+    "c0/python": "e89061c6e2c6b22aafa81696075695d894d804e4",
+    "c0/ts/src": "250a07e4021833dba905ecc8a05afe527212f3ae",
+    "c0/ts/test": "5db6b7cf51444ce84a412c904df3fa493c8772f6",
   },
 };
 
@@ -112,7 +112,7 @@ test("(b) un drift simulé (octet modifié, fichier ajouté, dist/ ou node_modul
   }
 });
 
-test("(c) C0_SOURCE.json correspond aux valeurs épinglées (gel f1cf9e27…, archive b69c41c7…, trees, tree_digest)", () => {
+test("(c) C0_SOURCE.json correspond aux valeurs épinglées (gel 728c4b07…, archive 728c4b07…, trees, tree_digest)", () => {
   assertPinned(JSON.parse(readFileSync(join(ROOT, "c0", "C0_SOURCE.json"), "utf8")));
 });
 

@@ -2,7 +2,7 @@
 
 Le contrat Factory ↔ SITE **C0 v1** (`site_snapshot.v1`, `site_activation.v1`, `site_business.v1`,
 `site_events.v1`) a **une seule autorité** : le dépôt Factory `nicoprodesoffline-rgb/prodes-data-factory-poc`,
-code gelé au commit `f1cf9e277bd090a4e7947b39f2e3dd700eea9e42` (`C0_FROZEN` v1, regel du 27/10/2026 : v1 de `b88f5cdf` + ajout `selectPriceIn` de l'arbitrage Owner A14, mêmes octets et verdicts). Le dossier `c0/` de
+code gelé au commit `728c4b074df6d5ada34b57b5558e3e18a256f729` (regel du 22/11/2026, cercle 7 ligne 7.9 : plus de maximum du nombre d'axes d'une famille, dans la v1 et la v2 ; précédent gel `f1cf9e277bd090a4e7947b39f2e3dd700eea9e42`, `C0_FROZEN` v1, regel du 27/10/2026 : v1 de `b88f5cdf` + ajout `selectPriceIn` de l'arbitrage Owner A14, mêmes octets et verdicts). Le dossier `c0/` de
 Commerce en est une **copie vendue, épinglée au SHA**, jamais un fork.
 
 ## Pourquoi ce mécanisme
@@ -28,7 +28,7 @@ Contenu vendu : `c0/README.md`, `c0/fixtures/`, `c0/ts/src/`, `c0/ts/test/` et l
 compilation du jumeau (`c0/ts/package.json`, `c0/ts/tsconfig.json`, `c0/ts/package-lock.json`). Le Python et
 les outils de génération restent côté Factory.
 
-**Code gelé vs commit archivé.** `frozen_code_sha` (`f1cf9e27…`) est le code gelé ; `archived_from_sha` est le
+**Code gelé vs commit archivé.** `frozen_code_sha` (`728c4b07…`) est le code gelé ; `archived_from_sha` est le
 commit Factory réellement archivé (actuellement `b69c41c7…`, candidat W5+W6, dont `c0/README.md` porte le statut
 `C0_FROZEN` et le regel). `sync.mjs` refuse (`C0_FROZEN_CODE_MISMATCH`, avant toute écriture) si `c0/python`, `c0/ts/src`,
 `c0/ts/test` ou `c0/fixtures` n'ont pas le même objet tree git aux deux SHA, ou si `c0/ts/package.json`,
