@@ -4,6 +4,10 @@ Statut : `C0_FROZEN` v1 (2026-10-23, code `b88f5cdf`, review indépendante `FREE
 **Regel du 2026-10-27 (fusion officielle W5+W6, GO Owner, issue #43)** : code gelé de référence = `f1cf9e277bd090a4e7947b39f2e3dd700eea9e42`.
 Seul écart avec `b88f5cdf` : l'ajout ciblé `selectPriceIn` dans `c0/ts/src/business.ts` (Owner A14), même calcul ; `c0/python`,
 `c0/ts/test` et `c0/fixtures` sont identiques (mêmes objets tree), versions de contrat inchangées (`site_*.v1`), parité 249 cas.
+**Regel du 2026-11-22 (cercle 7, ligne 7.9, issue #131, mot de l'Owner)** : code gelé de référence = `728c4b074df6d5ada34b57b5558e3e18a256f729`.
+Seul écart avec `f1cf9e27` : le nombre d'axes d'une famille n'est plus limité (la constante de 8 est retirée de `c0/python/c0_contracts/snapshot.py`
+et de `c0/ts/src/snapshot.ts`, ainsi que de `c0v2`) ; les autres contrôles d'un axe restent. `c0/fixtures` est identique (même objet tree), octets,
+verdicts de toutes les fixtures et codes d'erreur inchangés, versions de contrat inchangées (`site_*.v1`) ; un test ajouté de chaque côté couvre 8, 9 et 12 axes.
 Contrat normatif : [`docs/contracts/c0_site_v1.md`](../docs/contracts/c0_site_v1.md) et
 [`docs/contracts/c0_public_identity_v1.md`](../docs/contracts/c0_public_identity_v1.md).
 

@@ -1,7 +1,7 @@
 {
   "factory_repo": "nicoprodesoffline-rgb/prodes-data-factory-poc",
   "frozen_code_sha": "728c4b074df6d5ada34b57b5558e3e18a256f729",
-  "archived_from_sha": "728c4b074df6d5ada34b57b5558e3e18a256f729",
+  "archived_from_sha": "905de38e829031c842d28467659d8227787ea5d5",
   "archive_paths": [
     "c0/README.md",
     "c0/fixtures",
@@ -34,9 +34,9 @@
   ],
   "tree_digest_rule": "sha256 de la concaténation triée (octets UTF-8 du chemin) de \"<chemin>\\t<sha256>\\n\"",
   "file_count": 453,
-  "tree_digest": "6e4556fd49efe5182bfcf0f5ada5a05768537b84bd8f698c7b82fc942ea010c2",
+  "tree_digest": "c6bdab7a16e3d4e7f082320bd66422a44aa8ad33088851e1d9026409283991a1",
   "files": {
-    "c0/README.md": "a7b85096908cf187610bfcc363e3ffd933d3d0d1430eba702c2ee103f961577a",
+    "c0/README.md": "38079f51604cc917ba9cc8bfa223ed3b074938f2fd6475a52fef58306ecc9341",
     "c0/fixtures/EXPECTED_DIGESTS.json": "3ce98725806a88e28c7e5b0193d1e692f70a37aed909414bd2b6a78cb7c749ba",
     "c0/fixtures/VERDICTS.json": "d350e3bd8425fd4c934151743d401efcbc212c8fdd376ad20278114debb00db6",
     "c0/fixtures/cases/C_CANONICAL/astral_key_order.json": "c4e7fea8f3b0c2d7bf59d8bde7e548c9520d97fd539c8af7c43536580ddc9e04",
