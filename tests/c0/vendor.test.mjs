@@ -20,10 +20,10 @@ const TARGET = "c0/fixtures/VERDICTS.json";
 const PINNED = {
   factory_repo: "nicoprodesoffline-rgb/prodes-data-factory-poc",
   frozen_code_sha: FROZEN,
-  archived_from_sha: "ef4746506ca46a536c5f8cf1e7aa36e94097963e",
+  archived_from_sha: "f208bca8113b910cb676724da6ecc04741ab86ab",
   file_count: 453,
   // Regel du 27/10 (fusion officielle W5+W6) : selectPriceIn (Owner A14) fait partie du code gelé, aucun amendement local.
-  tree_digest: "b4892f1da950bebd54de6de21082aef9697619157c4b03cede40744f6bd3cf98",
+  tree_digest: "9d41e869d9c367a60dcabf2ebdfaf415adb81e12e710e00fa7349ca89b4974a7",
   contract_version: ["site_snapshot.v1", "site_activation.v1", "site_business.v1", "site_events.v1"],
   trees: {
     "c0/fixtures": "c2bf3496239b3e92e4a45f67ba55237495041208",
@@ -112,7 +112,7 @@ test("(b) un drift simulé (octet modifié, fichier ajouté, dist/ ou node_modul
   }
 });
 
-test("(c) C0_SOURCE.json correspond aux valeurs épinglées (gel 728c4b07…, archive ef474650…, trees, tree_digest)", () => {
+test("(c) C0_SOURCE.json correspond aux valeurs épinglées (gel 728c4b07…, archive f208bca8…, trees, tree_digest)", () => {
   assertPinned(JSON.parse(readFileSync(join(ROOT, "c0", "C0_SOURCE.json"), "utf8")));
 });
 
