@@ -48,7 +48,6 @@ export const TAX_BASES_V1 = ["HT", "UNQUALIFIED"];
 export const MEDIA_MIME_ALLOWED = ["image/png", "image/jpeg", "image/webp"];
 export const MAX_MEDIA_SIZE = 20 * 1024 * 1024;
 export const MAX_QUANTITY = 1000000;
-const MAX_AXES = 8;
 const MIME_FORMAT = /^(?:[a-z]+\/[a-z0-9.+-]{1,64})$/;
 
 // Typed views used after shape validation (the shape check guarantees these fields).
@@ -186,7 +185,6 @@ function shapeFamily(value: Json): void {
   for (const key of list(family["secondary_category_keys"], "family.secondary_category_keys")) need(categoryKeyOk(key), "family.secondary_category_keys");
   need(f.isHex64(family["image_main_sha256"]), "family.image_main_sha256");
   const axes = list(family["axes"], "family.axes");
-  need(axes.length <= MAX_AXES, "family.axes");
   for (const axis of axes) {
     need(f.exactKeys(axis, AXIS_KEYS), "family.axes");
     need(f.matches(f.AXIS_KEY, obj(axis)["axis_key"]) && f.isText(obj(axis)["label"], 100), "family.axes");
