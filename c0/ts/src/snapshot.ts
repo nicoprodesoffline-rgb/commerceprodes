@@ -8,7 +8,7 @@ import { Json, JsonObject, MalformedPayload, canonicalBytes, digest, isCanonical
 export const CONTRACT_VERSION = "site_snapshot.v1";
 export const SCOPE = "FULL_READY_CATALOG";
 export const DATA_LABELS = ["STAGING_FIXTURE", "PRODUCTION"];
-export const MAX_BYTES = 32 * 1024 * 1024;
+export const MAX_BYTES = 128 * 1024 * 1024;
 export const DOMAIN_PAYLOAD = "prodes.c0.site_snapshot.v1";
 export const DOMAIN_WITHDRAWALS = "prodes.c0.expected_withdrawals.v1";
 export const DOMAIN_SOURCE_COVERAGE = "prodes.c0.source_coverage.v1";

@@ -6,7 +6,7 @@ du SITE sans GO propriétaire). À rejouer à chaque déploiement, résultat con
 ## 1. Frontal et routes machine (DF-0130)
 
 - [ ] Aucun proxy applicatif ni frontal ne tamponne/plafonne le corps de `/api/site/publish/**` et `/api/site/events/**`
-      en dessous de **32 MiB** (STAGE 32 MiB, média 20 MiB, contrôle 256 KiB : plafonds portés par les routes).
+      en dessous de **128 MiB** (STAGE 128 MiB, média 20 MiB, contrôle 256 KiB : plafonds portés par les routes).
       Détail : `docs/SITE_TRANSPORT_STAGING.md`, § « Routes machine hors proxy ».
 - [ ] Corps relayé en flux, sans réécriture, décompression ni cache ; `cache-control: no-store` préservé.
 - [ ] `proxy.ts` : `matcher` exclut toujours `api/site/publish` et `api/site/events` ; `npm run test:storefront`

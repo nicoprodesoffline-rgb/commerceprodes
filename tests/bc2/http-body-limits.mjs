@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Review BC2 F-01 : mémoire du serveur réel stable sous des corps de 100 MiB, refus 401/413 sans journal.
+// Review BC2 F-01 : mémoire du serveur réel stable sous des corps de 200 MiB, refus 401/413 sans journal.
 //   SERVER_PID=<pid> BASE_URL=http://127.0.0.1:3331 SITE_DEV_DATABASE_URL=postgres://…/prodes_site_bc2 node tests/bc2/http-body-limits.mjs
 // RSS du serveur échantillonnée toutes les 20 ms par `ps -o rss=` pendant chaque envoi.
-// Critères : chaque envoi isolé, pic - avant < 64 MiB ; rafale de 4 envois parallèles, pic - avant < 4 x 32 + 64 MiB ;
+// Critères : chaque envoi isolé, pic - avant < 64 MiB ; rafale de 4 envois parallèles, pic - avant < 4 x 128 + 64 MiB ;
 // PAS DE RÉTENTION PROPORTIONNELLE : croissance de la RSS entre la rafale 6 et la rafale 12 < 25 % des octets
 // effectivement envoyés au serveur pendant ces rafales, et RSS finale - initiale < 25 % de tous les octets envoyés ;
 // 0 ligne de journal ajoutée. (Avant correctif, a9dede14 : rétention > 100 % des octets reçus.)
@@ -52,14 +52,14 @@ const c = loadCase("F_SIMPLE_READY.activate_first");
 const signed = { "x-c0-key-id": c.transport.key_id, "x-c0-signature": c.transport.signature };
 const sha = c.media[0].sha256;
 const scenarios = [
-  ["STAGE 100 MiB sans en-têtes", "/api/site/publish/stage", {}, true, 401],
-  ["STAGE 100 MiB sans en-têtes, sans Content-Length", "/api/site/publish/stage", {}, false, 401],
-  ["STAGE 100 MiB signé, Content-Length 100 MiB", "/api/site/publish/stage", signed, true, 413],
-  ["STAGE 100 MiB signé, flux sans Content-Length", "/api/site/publish/stage", signed, false, 413],
-  ["VERIFY_MEDIA 100 MiB signé, flux", "/api/site/publish/verify-media", signed, false, 413],
-  ["ACTIVATE 100 MiB signé, Content-Length", "/api/site/publish/activate", signed, true, 413],
-  ["PUT média 100 MiB signé, flux", `/api/site/publish/media/${sha}`, signed, false, 413],
-  ["PUT média 100 MiB sans en-têtes", `/api/site/publish/media/${sha}`, {}, false, 401],
+  ["STAGE 200 MiB sans en-têtes", "/api/site/publish/stage", {}, true, 401],
+  ["STAGE 200 MiB sans en-têtes, sans Content-Length", "/api/site/publish/stage", {}, false, 401],
+  ["STAGE 200 MiB signé, Content-Length 200 MiB", "/api/site/publish/stage", signed, true, 413],
+  ["STAGE 200 MiB signé, flux sans Content-Length", "/api/site/publish/stage", signed, false, 413],
+  ["VERIFY_MEDIA 200 MiB signé, flux", "/api/site/publish/verify-media", signed, false, 413],
+  ["ACTIVATE 200 MiB signé, Content-Length", "/api/site/publish/activate", signed, true, 413],
+  ["PUT média 200 MiB signé, flux", `/api/site/publish/media/${sha}`, signed, false, 413],
+  ["PUT média 200 MiB sans en-têtes", `/api/site/publish/media/${sha}`, {}, false, 401],
 ];
 
 const db = new pg.Client({ connectionString: DB });
@@ -75,7 +75,7 @@ for (const [label, path, headers, withLength, expected] of scenarios) {
   let peak = before;
   const timer = setInterval(() => { try { peak = Math.max(peak, rssKiB()); } catch {} }, 20);
   const t0 = Date.now();
-  const res = await send(path, headers, 100 * MiB, withLength);
+  const res = await send(path, headers, 200 * MiB, withLength);
   sentSingles += res.sent;
   await new Promise((r) => setTimeout(r, 200));
   clearInterval(timer);
@@ -85,22 +85,22 @@ for (const [label, path, headers, withLength, expected] of scenarios) {
   if (!ok) fails += 1;
   console.log(`${ok ? "PASS" : "FAIL"} ${label} | attendu ${expected} obtenu ${res.status} en ${Date.now() - t0} ms | envoyés ${(res.sent / MiB).toFixed(0)} MiB | rss avant=${before}KiB pic=${peak}KiB (+${growth.toFixed(1)} MiB) | ${res.body.slice(0, 140)}`);
 }
-// Rafales : 12 tours de 4 flux signés de 100 MiB en parallèle (pire cas : 4 corps de 32 MiB vivants à la fois).
+// Rafales : 12 tours de 4 flux signés de 200 MiB en parallèle (pire cas : 4 corps de 128 MiB vivants à la fois).
 const rounds = [];
 const roundSent = [];
 for (let round = 1; round <= 12; round += 1) {
   const before = rssKiB();
   let peak = before;
   const timer = setInterval(() => { try { peak = Math.max(peak, rssKiB()); } catch {} }, 20);
-  const res = await Promise.all([0, 1, 2, 3].map(() => send("/api/site/publish/stage", signed, 100 * MiB, false)));
+  const res = await Promise.all([0, 1, 2, 3].map(() => send("/api/site/publish/stage", signed, 200 * MiB, false)));
   await new Promise((r) => setTimeout(r, 300));
   clearInterval(timer);
   const after = rssKiB();
   rounds.push(after);
   roundSent.push(res.reduce((sum, x) => sum + x.sent, 0));
-  const ok = res.every((x) => x.status === 413) && (peak - before) / 1024 < 4 * 32 + 64;
+  const ok = res.every((x) => x.status === 413) && (peak - before) / 1024 < 4 * 128 + 64;
   if (!ok) fails += 1;
-  console.log(`${ok ? "PASS" : "FAIL"} rafale ${round} : 4 x STAGE 100 MiB signés en parallèle | codes ${res.map((x) => x.status).join(",")} | rss avant=${before}KiB pic=${peak}KiB (+${((peak - before) / 1024).toFixed(1)} MiB) après=${after}KiB`);
+  console.log(`${ok ? "PASS" : "FAIL"} rafale ${round} : 4 x STAGE 200 MiB signés en parallèle | codes ${res.map((x) => x.status).join(",")} | rss avant=${before}KiB pic=${peak}KiB (+${((peak - before) / 1024).toFixed(1)} MiB) après=${after}KiB`);
 }
 // Le tas V8 grandit pendant les ~5 premières rafales puis plafonne (la RSS n'est pas rendue au système) : on mesure
 // le PLATEAU après échauffement (rafales 6 -> 12). Sonde préalable sur 15 rafales : +17 MiB entre 6 et 15.
@@ -116,7 +116,7 @@ const logsAfter = await logCount();
 const sentTotal = (sentSingles + roundSent.reduce((a, b) => a + b, 0)) / MiB;
 const okEnd = retained < 0.25 * sentTotal && logsAfter === logsBefore;
 if (!okEnd) fails += 1;
-console.log(`${okEnd ? "PASS" : "FAIL"} fin | RSS finale ${rssEnd} KiB (retenu +${retained.toFixed(1)} MiB pour ${sentTotal.toFixed(0)} MiB envoyés = ${((100 * retained) / sentTotal).toFixed(1)} % ; ${(scenarios.length + 48) * 100} MiB proposés) | journal ${logsBefore} -> ${logsAfter} lignes`);
+console.log(`${okEnd ? "PASS" : "FAIL"} fin | RSS finale ${rssEnd} KiB (retenu +${retained.toFixed(1)} MiB pour ${sentTotal.toFixed(0)} MiB envoyés = ${((100 * retained) / sentTotal).toFixed(1)} % ; ${(scenarios.length + 48) * 200} MiB proposés) | journal ${logsBefore} -> ${logsAfter} lignes`);
 const checks = scenarios.length + 12 + 1 + 1;
 console.log(`# LIMITES BC2 : ${checks - fails}/${checks} PASS, ${fails} FAIL`);
 await db.end();

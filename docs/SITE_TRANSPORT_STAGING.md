@@ -34,7 +34,7 @@ vérifiée au démarrage : la politique `null` hors staging (ci-dessus), qui arr
 
 | Route | Plafond du corps |
 |---|---|
-| `POST stage` | 33 554 432 octets (32 MiB, plafond C0 du snapshot, §4) |
+| `POST stage` | 134 217 728 octets (128 MiB, plafond C0 du snapshot, §4 ; 32 MiB avant le cercle 9) |
 | `PUT media/{sha256}` | 20 971 520 octets (20 MiB, taille maximale d'un média C0, §8.5) |
 | `POST verify-media`, `POST activate` | 262 144 octets (256 KiB) |
 | `GET status` | corps jamais lu |
@@ -43,7 +43,7 @@ vérifiée au démarrage : la politique `null` hors staging (ci-dessus), qui arr
 ACTIVATE, PUT média) et `413` **n'écrivent aucune ligne** (pas de remplissage du journal append-only par un tiers).
 Les refus rendus par l'évaluation C0 après la porte (y compris `SIGNATURE_INVALID` du STAGE, où le HMAC ne peut être
 calculé qu'après lecture du document) restent journalisés, une ligne bornée par requête. Risque résiduel : le
-`key_id` n'est pas secret ; un tiers qui le connaît peut écrire une ligne par STAGE de ≤ 32 MiB — limitation de débit
+`key_id` n'est pas secret ; un tiers qui le connaît peut écrire une ligne par STAGE de ≤ 128 MiB — limitation de débit
 `DEFERRED_FOR_PROD`.
 
 ## Routes machine hors proxy : aucun tampon de corps intermédiaire (DF-0130, I1 R-02)
@@ -53,8 +53,8 @@ applicatif ni frontal** qui mettrait le corps en mémoire tampon ou le plafonner
 
 | Route | Plafond porté par la route | Exigence pour tout frontal / proxy devant le SITE |
 |---|---|---|
-| `POST /api/site/publish/stage` | 32 MiB (33 554 432 octets) | limite de corps **≥ 32 MiB**, corps relayé en flux |
-| `PUT /api/site/publish/media/{sha256}` | 20 MiB (20 971 520 octets) | limite **≥ 20 MiB** (en pratique la même règle ≥ 32 MiB sur tout `/api/site/publish/**`) |
+| `POST /api/site/publish/stage` | 128 MiB (134 217 728 octets) | limite de corps **≥ 128 MiB**, corps relayé en flux |
+| `PUT /api/site/publish/media/{sha256}` | 20 MiB (20 971 520 octets) | limite **≥ 20 MiB** (en pratique la même règle ≥ 128 MiB sur tout `/api/site/publish/**`) |
 | `POST verify-media`, `POST activate`, `/api/site/events/ack` | 256 KiB / 64 KiB | aucune contrainte supplémentaire |
 
 - Dans l'application : `proxy.ts` exclut ces routes de son `matcher` (sinon Next 16 tamponne et **tronque** le corps
@@ -89,7 +89,7 @@ Une clé inconnue, de scope `activation_ack` ou `site_events.read`, `RETIRED`, u
 
 ### `POST /api/site/publish/stage`
 
-Corps : **octets bruts** du snapshot `site_snapshot.v1` (exactement canoniques, ≤ 32 MiB). Évaluation C0 avec un store
+Corps : **octets bruts** du snapshot `site_snapshot.v1` (exactement canoniques, ≤ 128 MiB). Évaluation C0 avec un store
 média **vide**, l'ACTIVE relue en base, la politique et l'horloge du receiver.
 
 | Étape d'arrêt C0 | Réponse | Persistance |

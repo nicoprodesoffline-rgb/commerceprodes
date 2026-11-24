@@ -43,7 +43,7 @@ export const HEADER_SIGNATURE = "x-c0-signature";
 export const HEADER_OUTCOME = "x-c0-outcome";
 /** Corps de contrôle (verify-media, activate, status) : même plafond que les couches business/events (C0 §4). */
 export const MAX_CONTROL_BYTES = 256 * 1024;
-/** Plafond du corps STAGE = plafond C0 du snapshot (32 MiB, C0 §4). */
+/** Plafond du corps STAGE = plafond C0 du snapshot (128 MiB depuis le cercle 9, 9.6 ; 32 MiB avant, C0 §4). */
 export { MAX_BYTES };
 /** Plafond du corps PUT média : 30 Mio, voir MAX_DOCUMENT_SIZE (c0 v2 : un document PDF ; une image C0 reste à 20 Mio, C0 §8.5). */
 export const MAX_MEDIA_BYTES = Math.max(MAX_MEDIA_SIZE, MAX_DOCUMENT_SIZE);   // v2 : un document PDF peut peser 30 Mio
