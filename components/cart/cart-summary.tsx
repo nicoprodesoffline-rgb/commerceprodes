@@ -27,6 +27,11 @@ export function totalsNote(preview: PreviewJson): string {
   return "Montant indicatif : le devis confirme les conditions.";
 }
 
+/** Cercle 9, 9.8 : le minimum nommé, nombre lu dans le catalogue servi. */
+export function minimumText(minimum: number): string {
+  return `minimum : ${minimum} pièces`;
+}
+
 function LineStatus({ pl }: { pl: PreviewLineJson | undefined }) {
   useEffect(() => {
     if (pl && !pl.accepted) reportCodes("cart-line", pl.error_codes);
@@ -34,9 +39,12 @@ function LineStatus({ pl }: { pl: PreviewLineJson | undefined }) {
   if (!pl || pl.accepted) return null;
   const canonical = Object.values(pl.superseded_by ?? {})[0];
   const quoteOnly = pl.error_codes.length === 1 && pl.error_codes[0] === "QUOTE_ONLY";
+  // Cercle 9, 9.8 et 9-Q2 : seul le minimum est nommé, jamais un multiple.
+  const below = pl.minimum_quantity !== undefined && pl.quantity < pl.minimum_quantity;
+  const messages = pl.error_codes.map((code) => (below && code === "PRICE_WINDOW_UNAVAILABLE" ? minimumText(pl.minimum_quantity!) : codeMessage(code)));
   return (
     <p className={`mt-1 text-xs ${quoteOnly ? "text-ink-2" : "text-signal"}`} data-testid="line-problem" data-codes={pl.error_codes.join(" ")}>
-      {pl.error_codes.map(codeMessage).join(" ")}
+      {messages.join(" ")}
       {canonical && (
         <>
           {" "}

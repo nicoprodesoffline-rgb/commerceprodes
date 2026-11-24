@@ -174,15 +174,15 @@ test("fiche : cartes ordonnées, prix transmis, similaires dédoublonnés et sec
   const section = (html, id) => new RegExp(`<section[^>]*aria-labelledby="${id}"[^>]*>([\\s\\S]*?)</section>`).exec(html)?.[1] ?? "";
   const links = html => [...html.matchAll(/href="\/famille\/([^"]+)"/g)].map(match => match[1]);
   const html = await render();
-  assert.match(section(html, "related-h"), /Produits complémentaires/);
-  assert.match(section(html, "upsell-h"), /Montée en gamme/);
+  assert.match(section(html, "related-h"), /Qui vont avec, ou peuvent aller avec/);
+  assert.match(section(html, "upsell-h"), /Similaires mais autres fournisseurs ou autre gamme de prix/);
   assert.deepEqual(links(section(html, "related-h")), [families[2].slug, families[1].slug, families[3].slug]);
   assert.deepEqual(links(section(html, "upsell-h")), [families[4].slug]);
   assert.deepEqual(links(section(html, "similar-h")), [families[5].slug]);
   for (const f of families.slice(1)) assert.ok(html.includes(`data-price="prix-${f.slug}"`));
   set = validateEnvelope(doc(), refs).set;
   const empty = await render();
-  assert.doesNotMatch(empty, /related-h|upsell-h|Produits complémentaires|Montée en gamme/);
+  assert.doesNotMatch(empty, /related-h|upsell-h|Qui vont avec, ou peuvent aller avec|Similaires mais autres fournisseurs ou autre gamme de prix/);
   assert.deepEqual(links(section(empty, "similar-h")), families.slice(1).map(f => f.slug));
   set = { ...set, merchandising: [relation(a, unknown), relation(a, unknown, "UPSELL")] };
   assert.doesNotMatch(await render(), /related-h|upsell-h/);
