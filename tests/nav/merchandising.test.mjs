@@ -178,12 +178,24 @@ test("fiche : cartes ordonnées, prix transmis, similaires dédoublonnés et sec
   assert.match(section(html, "upsell-h"), /Montée en gamme/);
   assert.deepEqual(links(section(html, "related-h")), [families[2].slug, families[1].slug, families[3].slug]);
   assert.deepEqual(links(section(html, "upsell-h")), [families[4].slug]);
-  assert.deepEqual(links(section(html, "similar-h")), [families[5].slug]);
-  for (const f of families.slice(1)) assert.ok(html.includes(`data-price="prix-${f.slug}"`));
+  assert.equal(section(html, "similar-h"), "", "liste « similaires » validée présente : pas de voisins calculés, la liste validée tient la place");
+  for (const f of families.slice(1, 5)) assert.ok(html.includes(`data-price="prix-${f.slug}"`));
+  assert.ok(!html.includes(`/famille/${families[5].slug}"`), "le voisin de la catégorie n'est pas affiché quand la liste validée existe");
   set = validateEnvelope(doc(), refs).set;
   const empty = await render();
   assert.doesNotMatch(empty, /related-h|upsell-h|Produits complémentaires|Montée en gamme/);
   assert.deepEqual(links(section(empty, "similar-h")), families.slice(1).map(f => f.slug));
+  // Cas inverse : sans relation UPSELL, les voisins reviennent en secours, même avec des complémentaires (qui restent à leur place).
+  set = { ...set, merchandising: [relation(a, c, "COMPLEMENTAIRE")] };
+  const fallback = await render();
+  assert.deepEqual(links(section(fallback, "related-h")), [families[2].slug]);
+  assert.equal(section(fallback, "upsell-h"), "");
+  assert.deepEqual(links(section(fallback, "similar-h")), families.slice(1).filter(f => f !== families[2]).map(f => f.slug));
+  // Liste validée seule : elle s'affiche à sa place, la fiche garde un bloc de suggestions et aucun voisin ne s'y ajoute.
+  set = { ...set, merchandising: [relation(a, e, "UPSELL")] };
+  const only = await render();
+  assert.deepEqual(links(section(only, "upsell-h")), [families[4].slug]);
+  assert.equal(section(only, "similar-h"), "");
   set = { ...set, merchandising: [relation(a, unknown), relation(a, unknown, "UPSELL")] };
   assert.doesNotMatch(await render(), /related-h|upsell-h/);
 });
