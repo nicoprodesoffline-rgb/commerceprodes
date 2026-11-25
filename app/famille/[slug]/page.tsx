@@ -108,8 +108,9 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
   const complementaryCards = cards(relations.complementary);
   const upsellCards = cards(relations.upsell);
   const shown = new Set([...relations.complementary, ...relations.upsell]);
-  // « Produits similaires » : même catégorie, hors familles déjà affichées (ordre du DTO), 8 au plus.
-  const similar = catalog.families.filter((f) => f.slug !== family.slug && !shown.has(f.public_family_key) && f.primary_category_key === family.primary_category_key).slice(0, 8);
+  // « Produits similaires » : voisins de la catégorie, EN SECOURS seulement (Owner, 53e série) : quand la liste « similaires » validée
+  // (relations UPSELL) est vide. Les complémentaires ne comptent pas. Hors familles déjà affichées (ordre du DTO), 8 au plus.
+  const similar = relations.upsell.length > 0 ? [] : catalog.families.filter((f) => f.slug !== family.slug && !shown.has(f.public_family_key) && f.primary_category_key === family.primary_category_key).slice(0, 8);
   const similarCards = similar.map((f) => ({ ...familyCard(f), from: familyPrice(catalog, f, instant) }));
   // Le texte court est sous le prix ; l'onglet « Description » ne reprend pas ce qu'il répète.
   const longText = descriptionRest(family.description_short ?? "", family.description_long ?? "");
