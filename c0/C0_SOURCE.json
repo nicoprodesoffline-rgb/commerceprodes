@@ -1,7 +1,7 @@
 {
   "factory_repo": "nicoprodesoffline-rgb/prodes-data-factory-poc",
-  "frozen_code_sha": "728c4b074df6d5ada34b57b5558e3e18a256f729",
-  "archived_from_sha": "f208bca8113b910cb676724da6ecc04741ab86ab",
+  "frozen_code_sha": "f58f71baed4ec7deb88dea99316155b20863f53b",
+  "archived_from_sha": "182414c80b932b058769b225f16f7dd2b0c0a03e",
   "archive_paths": [
     "c0/README.md",
     "c0/fixtures",
@@ -21,9 +21,9 @@
     ],
     "trees": {
       "c0/fixtures": "c2bf3496239b3e92e4a45f67ba55237495041208",
-      "c0/python": "e89061c6e2c6b22aafa81696075695d894d804e4",
-      "c0/ts/src": "250a07e4021833dba905ecc8a05afe527212f3ae",
-      "c0/ts/test": "5db6b7cf51444ce84a412c904df3fa493c8772f6"
+      "c0/python": "7ae688241d519fd78b7029bc1a5a67ad8a4ffe61",
+      "c0/ts/src": "68c7f59a7613299c1f69e3fd2f979ac9d2e811e8",
+      "c0/ts/test": "165ef502e8af2e4414e68b5ad9380e4288d24d10"
     }
   },
   "contract_version": [
@@ -33,8 +33,8 @@
     "site_events.v1"
   ],
   "tree_digest_rule": "sha256 de la concaténation triée (octets UTF-8 du chemin) de \"<chemin>\\t<sha256>\\n\"",
-  "file_count": 453,
-  "tree_digest": "9d41e869d9c367a60dcabf2ebdfaf415adb81e12e710e00fa7349ca89b4974a7",
+  "file_count": 454,
+  "tree_digest": "e405a13a8a37e627088d6d74bf9c1b68a54a8d2ae158d9b7bb13488bcf06cdae",
   "files": {
     "c0/README.md": "9b02f208e28ad2f188b3ff0cf37fce2b1fa89505accc8c6aafced35a785bfb2c",
     "c0/fixtures/EXPECTED_DIGESTS.json": "3ce98725806a88e28c7e5b0193d1e692f70a37aed909414bd2b6a78cb7c749ba",
@@ -484,9 +484,10 @@
     "c0/ts/src/node_shims.d.ts": "34643cd89fc0d75bc1e88f2c3edae780aeddf51dcf3fc3ebffe25e0fcbc781f0",
     "c0/ts/src/runner.ts": "8fc9848a15761e12a46e1711d8c018e5ba4f266b9acb2024eb448675c00b59a9",
     "c0/ts/src/signing.ts": "39a0be5c776f30085a3dc9e9121c24b200c907775de64e7b49d96c77d58f63ed",
-    "c0/ts/src/snapshot.ts": "2af9f17262ee5ef3692b54b5504cafbf764b62ecdee1580516373a752bb1c1c7",
+    "c0/ts/src/snapshot.ts": "2e7ade27e0be9053aeafa79b5d01c06b514bfa68901559d9c0bc7805075f478c",
     "c0/ts/test/axes.test.ts": "83746aceb2d711c0a023c3024136231cdf6ad842006350cf15fa11374d81e84f",
     "c0/ts/test/parity.test.ts": "d671e87a11422f84a8e66d155eba407b8dc5857c7f3f624003d9fd7523a9d249",
+    "c0/ts/test/snapshot_ceiling.test.ts": "654c02bf5e6dd802b99dad6211b735574dae2a23d03808ee5b0f32fb06ce71ad",
     "c0/ts/test/units.test.ts": "e7a3d8a0b332843060cc7ccb55edaf97e058a0f2d8bbf37224826b2a63b29adc",
     "c0/ts/tsconfig.json": "370e57cd328b15c4f4bb44cae9267951d1758c5145d227460f872fdcf9c2adae"
   }
