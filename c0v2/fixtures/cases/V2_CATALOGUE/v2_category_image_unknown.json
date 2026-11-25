@@ -68,7 +68,7 @@
     },
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "b354bc258ce2f9ce02d630644f796eadaed5c0b20dc2319b73a171cd96d1c4f1"
+      "signature": "66716dd33e9171511558b469cafe2394905ed67bc1e9f41e6d60b4b2ca4ec0a9"
     }
   },
   "notes": "A category image is a declared media, like a family image.",

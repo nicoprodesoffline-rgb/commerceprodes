@@ -1,13 +1,13 @@
 {
   "activated_at_utc": "2026-11-17T06:30:00Z",
-  "active_digest": "e06b943bcd1212d0bfac26ad832e7e95329a41998853689c5dcebe85d9cf8c7d",
+  "active_digest": "ca068b2c1f4bafae78dd633ade9398cba725276cc12b1fcf0967201f42488a3e",
   "catalogue_sequence": 2,
   "contract_version": "site_activation.v1",
   "key_id": "c0-test-ack-01",
   "outcome": "ACTIVATED",
-  "payload_sha256": "32f209d3d4944921bc37b832e6b647bb513a7b8eb3f2a88992b3d3ddff8bb0ff",
+  "payload_sha256": "e502a59efdad41e0928a9013e22d2a0bae557fb9c4c79a93f43bb05edc14653a",
   "projection_id": "PRJ-v2-ready",
   "publication_id": "PUB-v2-ready",
   "scope_key": "prodes.site.public.staging",
-  "signature": "b4b4a4639bfff5e110360b66bd59fe234102705fae772b803c00b6177faee191"
+  "signature": "b8f95fad4856dffafaf7fe2e5627982c06488f944d94ec6211817c336caac104"
 }

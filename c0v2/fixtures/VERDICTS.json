@@ -78,6 +78,32 @@
       "notes": "The private manifest proves the v2 FULL catalogue, as in v1.",
       "outcome": "COVERAGE_PROVEN"
     },
+    "V2_CATALOGUE.v2_delivery_delay_blank": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "family.delivery_delay"
+        ]
+      },
+      "notes": "49e série: the lead time is one text or null, never a blank text (the SITE shows nothing for null).",
+      "outcome": "REJECTED"
+    },
+    "V2_CATALOGUE.v2_delivery_delay_too_long": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "family.delivery_delay"
+        ]
+      },
+      "notes": "The lead time is 120 characters at most, as typed in the Factory.",
+      "outcome": "REJECTED"
+    },
     "V2_CATALOGUE.v2_derivative_missing": {
       "accepted": false,
       "error_codes": [
