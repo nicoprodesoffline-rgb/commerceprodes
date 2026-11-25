@@ -39,3 +39,10 @@ These rules apply to Codex, Claude Code, and any local coding agent working in t
 - Context loading: `docs/agent-ops/CONTEXT_LOADING.md`
 - Ratchet: `docs/agent-ops/HARNESS_RATCHET.md`
 - Security: `docs/agent-ops/SECURITY_AND_ENFORCEMENT.md`
+
+## Rangement (règle de l'Owner, 25/11/2026)
+
+- Emplacement des copies de travail : `.claude/worktrees/`, y compris les copies temporaires (tmp-<rôle>-<objet>), retirées à la clôture.
+- Temporaire : ~/WORK/PRODES/JETABLE/<rôle>/, vidé à la clôture de chaque tâche.
+- À garder : ~/WORK/PRODES/GARDER/<dossier>/, avec un README (quoi, pourquoi, qui, date de fin) et une ligne dans ~/WORK/PRODES/INDEX.md ; ces dossiers se créent le jour où un agent y travaille, sans toucher à ce qui existe.
+- Rien à la racine du Bureau, de ~/WORK ni de ~/WORK/PRODES ; une branche est supprimée à la fusion de sa PR ; le contrôle de rangement se joue à chaque fin de tâche.
