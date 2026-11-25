@@ -18,3 +18,16 @@ test("la fiche affiche la ligne seulement quand elle existe", () => {
   const page = readFileSync(new URL("../../app/famille/[slug]/page.tsx", import.meta.url), "utf8");
   assert.match(page, /\{delivery && <p [^>]*data-testid="delivery-delay">\{delivery\}<\/p>\}/);
 });
+
+test("53e série (Owner, 25/11) : sur le jeu C0 v2 commun, écrit par la Factory, une famille à null n'affiche rien, celle qui a UN délai l'affiche", () => {
+  // Le pack, et la famille vendue par deux fournisseurs aux délais différents, arrivent de la Factory avec `delivery_delay` = null.
+  const doc = JSON.parse(readFileSync(new URL("../../c0v2/fixtures/documents/V2_CATALOGUE/snapshot_v2_ready.json", import.meta.url), "utf8"));
+  const withNull = doc.families.filter((f) => f.delivery_delay === null);
+  const withText = doc.families.filter((f) => typeof f.delivery_delay === "string");
+  assert.ok(withNull.length >= 1 && withText.length >= 1, "le jeu porte les deux cas");
+  for (const f of withNull) assert.equal(deliveryDelayText(family({ delivery_delay: f.delivery_delay })), null, f.public_family_key);
+  for (const f of withText) assert.equal(deliveryDelayText(family({ delivery_delay: f.delivery_delay })), `Délai de livraison : ${f.delivery_delay}`);
+  // Le lecteur du catalogue garde null tel quel (jamais un texte par défaut) : la fiche ne reçoit donc rien à afficher.
+  const reader = readFileSync(new URL("../../lib/site-catalog/catalog.ts", import.meta.url), "utf8");
+  assert.match(reader, /f\["delivery_delay"\] === null\) out\.delivery_delay = f\["delivery_delay"\] as string \| null;/);
+});
