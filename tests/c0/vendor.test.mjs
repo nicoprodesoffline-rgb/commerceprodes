@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const CHECK = join(ROOT, "scripts", "c0", "check.mjs");
 const SYNC = join(ROOT, "scripts", "c0", "sync.mjs");
-const FROZEN = "f58f71baed4ec7deb88dea99316155b20863f53b";  // 49e série (#130) : plafond du snapshot à 128 Mio, v1 et v2
+const FROZEN = "f58f71baed4ec7deb88dea99316155b20863f53b";  // 49e série : plafond du snapshot à 128 Mio, v1 et v2
 const TARGET = "c0/fixtures/VERDICTS.json";
 
 // Valeurs attendues ÉPINGLÉES (F-02) : elles ne changent que dans un commit de re-sync revu (nouvelle

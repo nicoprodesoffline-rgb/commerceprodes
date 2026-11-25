@@ -12,5 +12,5 @@
     "c0v2/ts/tsconfig.json",
     "docs/contracts/c0_site_v2.md"
   ],
-  "note": "Copie sans modification (contrat v2). Remise au SHA du lot 9-Q3 (49e série, PR #173 de la Factory) : la famille porte delivery_delay, un texte ≤ 120 ou null ; jeux d'essai régénérés (39 cas) et test du plafond de 128 Mio (#164) repris. La v1 (c0/) est intacte. Le Python de référence et le générateur restent dans la Factory."
+  "note": "Copie sans modification (contrat v2). Remise au SHA du lot 9-Q3 (49e série) : la famille porte delivery_delay, un texte ≤ 120 ou null ; jeux d'essai régénérés (39 cas) et test du plafond de 128 Mio repris. La v1 (c0/) est intacte. Le Python de référence et le générateur restent dans la Factory."
 }

@@ -2,7 +2,7 @@
 
 Le contrat Factory ↔ SITE **C0 v1** (`site_snapshot.v1`, `site_activation.v1`, `site_business.v1`,
 `site_events.v1`) a **une seule autorité** : le dépôt Factory `nicoprodesoffline-rgb/prodes-data-factory-poc`,
-code gelé au commit `f58f71baed4ec7deb88dea99316155b20863f53b` (plafond du snapshot relevé de 32 à 128 Mio, accord de l'Owner, 49e série, #130, le 25/11/2026 ; précédent gel `728c4b074df6d5ada34b57b5558e3e18a256f729`, regel du 22/11/2026, cercle 7 ligne 7.9 : plus de maximum du nombre d'axes d'une famille, dans la v1 et la v2 ; précédent gel `f1cf9e277bd090a4e7947b39f2e3dd700eea9e42`, `C0_FROZEN` v1, regel du 27/10/2026 : v1 de `b88f5cdf` + ajout `selectPriceIn` de l'arbitrage Owner A14, mêmes octets et verdicts). Le dossier `c0/` de
+code gelé au commit `f58f71baed4ec7deb88dea99316155b20863f53b` (plafond du snapshot relevé de 32 à 128 Mio, accord de l'Owner, 49e série, le 25/11/2026 ; précédent gel `728c4b074df6d5ada34b57b5558e3e18a256f729`, regel du 22/11/2026, cercle 7 ligne 7.9 : plus de maximum du nombre d'axes d'une famille, dans la v1 et la v2 ; précédent gel `f1cf9e277bd090a4e7947b39f2e3dd700eea9e42`, `C0_FROZEN` v1, regel du 27/10/2026 : v1 de `b88f5cdf` + ajout `selectPriceIn` de l'arbitrage Owner A14, mêmes octets et verdicts). Le dossier `c0/` de
 Commerce en est une **copie vendue, épinglée au SHA**, jamais un fork.
 
 ## Pourquoi ce mécanisme
