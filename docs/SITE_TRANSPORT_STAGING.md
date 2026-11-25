@@ -62,7 +62,7 @@ applicatif ni frontal** qui mettrait le corps en mémoire tampon ou le plafonner
   `PAYLOAD_MALFORMED`, au lieu d'un 413). Toute nouvelle route machine signée **doit** rejoindre cette exclusion.
   Non-régression : `tests/http/storefront.test.mjs`, section « 4 — routes machine signées hors proxy navigateur »
   (`npm run test:storefront`).
-- Devant l'application (frontal, CDN, reverse proxy) : limite de corps ≥ 32 MiB sur ces routes, pas de réécriture
+- Devant l'application (frontal, CDN, reverse proxy) : limite de corps ≥ 128 MiB sur ces routes, pas de réécriture
   ni de décompression du corps, pas de cache. Check-list : `docs/DEPLOY_CHECKLIST_SITE.md`.
 - C'est la route qui répond `413 BODY_TOO_LARGE` sans lire le corps ; un 413 d'un frontal (corps HTML, sans
   `transport_error`) est une erreur de déploiement, pas un refus C0.
