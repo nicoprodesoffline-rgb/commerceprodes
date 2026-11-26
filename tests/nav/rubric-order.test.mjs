@@ -61,8 +61,9 @@ test("une promotion qui n'a pas commencé ou qui est finie ne compte pas (instan
   assert.deepEqual(order([fam("b", "B"), fam("futur", "Z", future), fam("fini", "Y", over)]), ["b", "fini", "futur"]);
 });
 
-test("catalogue v1 (aucune famille propre, aucune date) : l'ordre est alphabétique, sans erreur ; départage final par l'adresse", () => {
-  assert.deepEqual(order([fam("c", "Banc"), fam("a", "Banc")]), ["a", "c"]);
+test("catalogue v1 (aucune famille propre, aucune date) : l'ordre est alphabétique, sans erreur ; départage final par la clé publique, jamais par l'adresse", () => {
+  assert.deepEqual(order([fam("a", "Banc", { public_family_key: "PF-2" }), fam("c", "Banc", { public_family_key: "PF-1" })]), ["c", "a"]);
+  assert.deepEqual(order([fam("b", "Banc 10"), fam("a", "Banc 2")]), ["b", "a"], "ordre des lettres, sans ordre numérique : le contrat n'en dit pas");
 });
 
 test("le lecteur garde own_range tel quel (jamais inventé) et la page de rubrique range par orderRubric", () => {
