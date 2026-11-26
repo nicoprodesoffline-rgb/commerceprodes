@@ -1,0 +1,26 @@
+{
+  "case_id": "V2_BLOCKS.paris_day_before_the_utc_day",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_block",
+  "input": {
+    "now_utc": "2026-11-26T23:30:00Z",
+    "section": {
+      "data": {
+        "families": [
+          "PF-00000069V",
+          "PF-0000006AG",
+          "PF-0000006BA",
+          "PF-0000006C6",
+          "PF-0000006DW"
+        ],
+        "rotation": "daily",
+        "shown": 2,
+        "source": "promotions",
+        "title": "Promotions du moment"
+      },
+      "type": "selection"
+    }
+  },
+  "notes": "00:30 in Paris (UTC+1) is already the 27th: the block changes at midnight in Paris, never at 01:00.",
+  "scenario": "V2_BLOCKS"
+}

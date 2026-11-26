@@ -110,7 +110,8 @@ le même canal que le catalogue : envoi, vérification, activation, accusé sign
   announcement:{ text, link|null, starts_at_utc, ends_at_utc|null } | null,
   maintenance:{ active, message|null },            (active ⇒ message)
   redirects:[{ from_path, to_path, status: 301|308 }],
-  pages:[{ key, slug, title, revision, seo_title|null, seo_description|null, canonical|null, sections:[{type, data}],
+  pages:[{ key, slug, title, revision, seo_title|null, seo_description|null, canonical|null,
+           sections:[{type, data, starts_at_utc?, ends_at_utc?}],     (CA-4 : dates facultatives d'un bloc, de tout type)
            nav:{ show_in_bar, order } }],
   relations:[{ source, target, kind: COMPLEMENTAIRE|LIE|UPSELL, order }],
   payload_sha256 }
@@ -128,6 +129,18 @@ Les quatre types v1 gardent leurs clés (une clé absente = non donnée), plus :
 | `text_image` | `title`, **`text`**, **`media_sha`**, `image_alt` (`""` = image décorative) | v1 |
 | `faq` | `title`, **`questions`** : 1 à 100 `{question ≤ 300, answer ≤ 5 000}` | 3.24 |
 | `rich_text` | `title`, **`text`** (≤ 20 000, lignes admises) | 3.24 |
+| `selection` | `title`, **`source`** (`promotions`, `novelties`, `category`, `supplier`, `own_range`), **`families`** (la réserve : 1 à 200 clés de famille du catalogue servi, dans l'ordre des rubriques), **`shown`** (1 à 24), **`rotation`** (`fixed`, `daily`) | CA-4 |
+
+**Bloc « selection » (cercle A, CA-4 ; Owner, 76e série, #130 7201854418 ; GO d'EC du 26/11).**
+- La Factory résout la source en réserve à chaque envoi du contenu. Les promotions sont le prix barré venu du Calculateur, et rien d'autre (cercle 3).
+- Le SITE ne connaît ni les fournisseurs ni la gamme propre : `source` dit seulement d'où vient la réserve.
+- Une réserve vide n'est jamais envoyée (A.3-d1 : la Factory affiche « un bloc de l'accueil à compléter »). Le SITE refuse un bloc vide (`section.families`).
+- La borne de 24 familles montrées est technique et commune aux deux côtés. Elle figure dans « Pas sur la page » des réglages.
+
+**Ce que le SITE dessine** (`select_block`, même résultat en Python et en TypeScript) :
+- **Le jour** est celui de Paris (`paris_day`), selon la règle européenne écrite sans base de fuseaux : UTC+2 du dernier dimanche de mars à 01:00 UTC jusqu'au dernier dimanche d'octobre à 01:00 UTC (exclu), UTC+1 sinon. Un bloc change donc à minuit à Paris, jamais à 1 h du matin.
+- **Une réserve de Y ≤ X familles** est montrée entière, dans son ordre, sans tourner. Sinon, `fixed` montre les X premières. `daily` montre X familles à la suite à partir de la (n × X) mod Y-ième, en boucle, n étant le nombre de jours depuis le 1970-01-01. Sur Y jours, chaque famille est montrée autant de fois que les autres.
+- **Les dates d'un bloc** : il est montré de `starts_at_utc` (inclus) à `ends_at_utc` (exclu), sans nouvel envoi. Un bloc hors de ses dates n'est pas dessiné.
 
 ### 4.2 Étapes et codes
 
@@ -188,7 +201,7 @@ réponse `200 {accepted:true, outcome:"PREVIEW_STORED", path:"/apercu/<preview_i
 
 ## 5. Jeux d'essai
 
-36 cas, 27 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
+64 cas, 39 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
 (rubriques Bancs avec F1 à F3, Tables avec F4 et F5, Corbeilles vide). Les WebP sont des octets fixes écrits une fois avec Pillow ; les
 originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur empreinte, puisqu'ils ne quittent pas la Factory.
 
@@ -198,7 +211,8 @@ originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur e
 | `V2_COEXISTENCE` | V03 (v1 lu par un SITE v2) et premier v2 sur une base v1 |
 | `V2_BUSINESS` | §3.1 : prix d'une variante sur un catalogue v2 (fenêtre de base, promotion à partir de 10) et sur un catalogue v1 |
 | `V2_PREVIEW` | B14 : aperçu accepté, expiré, gardé plus de 30 minutes, référence absente |
-| `V2_CONTENT` | V07–V09 (activé, accusé vérifié, rejeu, séquence ancienne, référence absente), 3.31 (redirection vers un autre hôte ou avec un schéma), S07 (un seul saut), E03, maintenance sans message, clé inconnue |
+| `V2_CONTENT` | V07–V09 (activé, accusé vérifié, rejeu, séquence ancienne, référence absente), 3.31 (redirection vers un autre hôte ou avec un schéma), S07 (un seul saut), E03, maintenance sans message, clé inconnue ; CA-4 : blocs d'accueil acceptés, source, nombre montré (0, 25), rotation, réserve vide ou absente du catalogue, dates d'un bloc |
+| `V2_BLOCKS` | CA-4 : ce que le SITE dessine d'un bloc. Jour de Paris (avant le jour UTC, les deux changements d'heure), rotation quotidienne et retour au début, `fixed`, réserve plus petite que le nombre montré, bloc caché avant son début et dès sa fin |
 
 ## 6. Ce que ce contrat ne prouve pas
 

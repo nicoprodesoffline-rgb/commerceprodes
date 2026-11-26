@@ -1,10 +1,15 @@
-export type Section =
+/** CA-4 : les dates facultatives d'un bloc, de tout type (début inclus, fin exclue, sans nouvel envoi). */
+type Dated = { starts_at_utc?: string; ends_at_utc?: string };
+
+export type Section = Dated & (
   | { type: "hero"; data: { title: string; text?: string; link?: string; linkLabel?: string; imageSha?: string } }
   | { type: "category_grid"; data: { categories: string[]; title?: string } }
   | { type: "product_carousel"; data: { families: string[]; title?: string } }
   | { type: "text_image"; data: { text: string; media_sha: string; title?: string; imageAlt?: string } }
   | { type: "faq"; data: { title?: string; questions: { question: string; answer: string }[] } }
-  | { type: "rich_text"; data: { title?: string; text: string } };
+  | { type: "rich_text"; data: { title?: string; text: string } }
+  | { type: "selection"; data: { title?: string; source: string; families: string[]; shown: number; rotation: "fixed" | "daily" } }
+);
 
 export type EditorialPage = {
   key: string;

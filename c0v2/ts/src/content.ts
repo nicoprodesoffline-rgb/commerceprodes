@@ -29,6 +29,8 @@ const REDIRECT_KEYS = ["from_path", "to_path", "status"];
 const PAGE_KEYS = ["key", "slug", "title", "revision", "seo_title", "seo_description", "canonical", "sections", "nav"];
 const NAV_KEYS = ["show_in_bar", "order"];
 const SECTION_KEYS = ["type", "data"];
+// Cercle A, CA-4 (A-Q2): any block may carry its own dates; shown from starts_at_utc (included) to ends_at_utc (excluded). Absent = no limit.
+const SECTION_DATE_KEYS = ["starts_at_utc", "ends_at_utc"];
 const QUESTION_KEYS = ["question", "answer"];
 const RELATION_KEYS = ["source", "target", "kind", "order"];
 const ACK_KEYS = [
@@ -45,12 +47,20 @@ export const SECTION_DATA: Readonly<Record<string, readonly [readonly string[], 
   text_image: [["title", "text", "media_sha", "image_alt"], ["text", "media_sha"]],
   faq: [["title", "questions"], ["questions"]],
   rich_text: [["title", "text"], ["text"]],
+  // Cercle A, CA-4 (A.3-d2): the Factory resolves the source into families (the reserve, in the order of the rubrics); the SITE shows
+  // shown of them, the same ones every day (fixed) or a new run of them each Paris day (daily, rotationPick).
+  selection: [["title", "source", "families", "shown", "rotation"], ["source", "families", "shown", "rotation"]],
 };
+export const SELECTION_SOURCES = ["promotions", "novelties", "category", "supplier", "own_range"];
+export const ROTATIONS = ["fixed", "daily"];
 export const RELATION_KINDS = ["COMPLEMENTAIRE", "LIE", "UPSELL"];
 export const REDIRECT_STATUSES = [301, 308];
 const MAX_PAGES = 500;
 const MAX_SECTIONS = 30;
 const MAX_REFERENCES = 24;
+// CA-4: a technical bound common to the Factory and the SITE: at most 24 families shown in a block, out of a reserve of at most 200.
+export const MAX_SHOWN = MAX_REFERENCES;
+export const MAX_SELECTION_POOL = 200;
 const MAX_QUESTIONS = 100;
 const MAX_REDIRECTS = 20000;
 const MAX_FOOTER_LINKS = 20;
@@ -135,12 +145,22 @@ function shapeRedirect(value: Json): void {
   need(f.isInt(redirect["status"]) && REDIRECT_STATUSES.includes(redirect["status"]), "redirect.status");
 }
 
-function references(value: Json | undefined, ok: (entry: Json) => boolean): boolean {
-  return Array.isArray(value) && value.length >= 1 && value.length <= MAX_REFERENCES && value.every(ok) && new Set(value).size === value.length;
+function references(value: Json | undefined, ok: (entry: Json) => boolean, maximum: number = MAX_REFERENCES): boolean {
+  return Array.isArray(value) && value.length >= 1 && value.length <= maximum && value.every(ok) && new Set(value).size === value.length;
+}
+
+function sectionKeys(value: Json): boolean {
+  if (!isObject(value)) return false;
+  const keys = Object.keys(value);
+  return SECTION_KEYS.every((key) => keys.includes(key)) && keys.every((key) => SECTION_KEYS.includes(key) || SECTION_DATE_KEYS.includes(key));
 }
 
 function shapeSection(value: Json): void {
-  need(f.exactKeys(value, SECTION_KEYS) && typeof obj(value)["type"] === "string" && has(SECTION_DATA as unknown as JsonObject, obj(value)["type"] as string) && isObject(obj(value)["data"]), "section.keys");
+  need(sectionKeys(value) && typeof obj(value)["type"] === "string" && has(SECTION_DATA as unknown as JsonObject, obj(value)["type"] as string) && isObject(obj(value)["data"]), "section.keys");
+  const starts = obj(value)["starts_at_utc"];
+  const ends = obj(value)["ends_at_utc"];
+  need(!has(obj(value), "starts_at_utc") || f.isUtc(starts), "section.starts_at_utc");
+  need(!has(obj(value), "ends_at_utc") || (f.isUtc(ends) && (starts === undefined || (ends as string) > (starts as string))), "section.ends_at_utc");
   const kind = obj(value)["type"] as string;
   const [allowed, required] = SECTION_DATA[kind] as readonly [readonly string[], readonly string[]];
   const data = obj(obj(value)["data"]);
@@ -159,6 +179,11 @@ function shapeSection(value: Json): void {
     need(f.isText(data["text"], 10000, true), "section.text");
     need(f.isHex64(data["media_sha"]), "section.media_sha");
     need(!has(data, "image_alt") || data["image_alt"] === "" || f.isText(data["image_alt"], 150), "section.image_alt");
+  } else if (kind === "selection") {
+    need(typeof data["source"] === "string" && SELECTION_SOURCES.includes(data["source"]), "section.source");
+    need(references(data["families"], (key) => isKey(key, "family"), MAX_SELECTION_POOL), "section.families");
+    need(f.isCount(data["shown"], 1, MAX_SHOWN), "section.shown");
+    need(typeof data["rotation"] === "string" && ROTATIONS.includes(data["rotation"]), "section.rotation");
   } else if (kind === "faq") {
     const questions = data["questions"];
     need(Array.isArray(questions) && questions.length >= 1 && questions.length <= MAX_QUESTIONS, "section.questions");
@@ -285,6 +310,82 @@ export function semanticFindings(doc: Doc, refs: Refs): [string[], string[]] {
 }
 
 // --- integrity, signature, acknowledgement -----------------------------------------------------------
+
+// --- blocks of a page: dates and rotation (cercle A, CA-4); twin of the Python functions, same integer arithmetic ---------------
+
+const floorDiv = (a: number, b: number): number => Math.floor(a / b);
+
+/** Days since 1970-01-01 of a Gregorian date (H. Hinnant's algorithm). */
+export function daysFromCivil(yearIn: number, month: number, day: number): number {
+  const year = yearIn - (month <= 2 ? 1 : 0);
+  const era = floorDiv(year >= 0 ? year : year - 399, 400);
+  const yearOfEra = year - era * 400;
+  const dayOfYear = floorDiv(153 * (month + (month > 2 ? -3 : 9)) + 2, 5) + day - 1;
+  const dayOfEra = yearOfEra * 365 + floorDiv(yearOfEra, 4) - floorDiv(yearOfEra, 100) + dayOfYear;
+  return era * 146097 + dayOfEra - 719468;
+}
+
+export function civilFromDays(daysIn: number): [number, number, number] {
+  const days = daysIn + 719468;
+  const era = floorDiv(days >= 0 ? days : days - 146096, 146097);
+  const dayOfEra = days - era * 146097;
+  const yearOfEra = floorDiv(dayOfEra - floorDiv(dayOfEra, 1460) + floorDiv(dayOfEra, 36524) - floorDiv(dayOfEra, 146096), 365);
+  const dayOfYear = dayOfEra - (365 * yearOfEra + floorDiv(yearOfEra, 4) - floorDiv(yearOfEra, 100));
+  const shifted = floorDiv(5 * dayOfYear + 2, 153);
+  const day = dayOfYear - floorDiv(153 * shifted + 2, 5) + 1;
+  const month = shifted + (shifted < 10 ? 3 : -9);
+  return [yearOfEra + era * 400 + (month <= 2 ? 1 : 0), month, day];
+}
+
+/** 0 = Monday … 6 = Sunday (1970-01-01 was a Thursday). */
+function weekday(year: number, month: number, day: number): number {
+  return (((daysFromCivil(year, month, day) + 3) % 7) + 7) % 7;
+}
+
+const pad = (value: number, width: number): string => String(value).padStart(width, "0");
+
+function lastSundayUtc1h(year: number, month: number): string {
+  for (let day = 31; day > 24; day -= 1) {
+    if (weekday(year, month, day) === 6) return `${pad(year, 4)}-${pad(month, 2)}-${pad(day, 2)}T01:00:00Z`;
+  }
+  throw new Error("a 31-day month always has a Sunday in its last seven days");
+}
+
+/** The day in Paris (YYYY-MM-DD) of a v1 UTC instant: the European rule, without a time-zone database (same day on every side). */
+export function parisDay(instantUtc: string): string {
+  const year = Number(instantUtc.slice(0, 4));
+  const summer = lastSundayUtc1h(year, 3) <= instantUtc && instantUtc < lastSundayUtc1h(year, 10);
+  const hour = Number(instantUtc.slice(11, 13));
+  const days = daysFromCivil(year, Number(instantUtc.slice(5, 7)), Number(instantUtc.slice(8, 10))) + floorDiv(hour + (summer ? 2 : 1), 24);
+  const [y, m, d] = civilFromDays(days);
+  return `${pad(y, 4)}-${pad(m, 2)}-${pad(d, 2)}`;
+}
+
+/** A block is shown from its start (included) to its end (excluded); a block without dates always. */
+export function sectionLive(section: Doc, instantUtc: string): boolean {
+  const starts = section["starts_at_utc"] as string | undefined;
+  const ends = section["ends_at_utc"] as string | undefined;
+  return (starts === undefined || starts <= instantUtc) && (ends === undefined || instantUtc < ends);
+}
+
+/** The families a selection block shows on a Paris day: Y ≤ X whole; fixed the first X; daily X in a row from (n × X) mod Y, looping. */
+export function rotationPick(families: readonly string[], shown: number, rotation: string, day: string): string[] {
+  if (families.length <= shown || rotation === "fixed") return families.slice(0, shown);
+  const n = daysFromCivil(Number(day.slice(0, 4)), Number(day.slice(5, 7)), Number(day.slice(8, 10)));
+  const start = (((n * shown) % families.length) + families.length) % families.length;
+  return Array.from({ length: shown }, (_, index) => families[(start + index) % families.length] as string);
+}
+
+/** What the SITE draws of one valid block at nowUtc: hidden out of its dates; the families of the day for a selection. */
+export function selectBlock(section: Doc, nowUtc: string): JsonObject {
+  const day = parisDay(nowUtc);
+  if (!sectionLive(section, nowUtc)) return { ...verdict(true, "HIDDEN", []), paris_day: day, families: [] } as unknown as JsonObject;
+  const data = section["data"] as Doc;
+  const families = section["type"] === "selection"
+    ? rotationPick(data["families"] as string[], data["shown"] as number, data["rotation"] as string, day)
+    : [...((data["families"] ?? []) as string[])];
+  return { ...verdict(true, "SHOWN", []), paris_day: day, families } as unknown as JsonObject;
+}
 
 export function payloadSha256(doc: Doc): string {
   const preimage: Record<string, unknown> = {};

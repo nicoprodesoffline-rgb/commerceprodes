@@ -1,0 +1,28 @@
+{
+  "case_id": "V2_BLOCKS.hidden_from_its_end",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_block",
+  "input": {
+    "now_utc": "2026-12-31T23:00:00Z",
+    "section": {
+      "data": {
+        "families": [
+          "PF-00000069V",
+          "PF-0000006AG",
+          "PF-0000006BA",
+          "PF-0000006C6",
+          "PF-0000006DW"
+        ],
+        "rotation": "fixed",
+        "shown": 2,
+        "source": "promotions",
+        "title": "Promotions du moment"
+      },
+      "ends_at_utc": "2026-12-31T23:00:00Z",
+      "starts_at_utc": "2026-11-30T23:00:00Z",
+      "type": "selection"
+    }
+  },
+  "notes": "A-Q2: the end is excluded.",
+  "scenario": "V2_BLOCKS"
+}

@@ -1,0 +1,26 @@
+{
+  "case_id": "V2_BLOCKS.daily_on_a_paris_day",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_block",
+  "input": {
+    "now_utc": "2026-11-26T09:00:00Z",
+    "section": {
+      "data": {
+        "families": [
+          "PF-00000069V",
+          "PF-0000006AG",
+          "PF-0000006BA",
+          "PF-0000006C6",
+          "PF-0000006DW"
+        ],
+        "rotation": "daily",
+        "shown": 2,
+        "source": "promotions",
+        "title": "Promotions du moment"
+      },
+      "type": "selection"
+    }
+  },
+  "notes": "n = 20 783, start (2n) mod 5 = 1: the 2nd and 3rd.",
+  "scenario": "V2_BLOCKS"
+}

@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { PageSections } from "@/components/content/sections";
+import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { catalogForPage } from "@/lib/site-catalog/page";
+import { liveSections } from "@/lib/site-content/blocks";
 import { pageFromV2 } from "@/lib/site-content/v2";
 import { getPool } from "@/lib/site-db/pool";
 import { readPreview } from "@/lib/site-publish/preview-store";
@@ -27,7 +29,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
     <div className="min-w-0" data-testid="page-preview">
       <p role="note" className="mb-4 rounded-[9px] border border-caution bg-white p-3 text-sm text-ink-2" data-testid="preview-banner">Aperçu : cette page n&apos;est pas publiée et disparaît dans 30 minutes au plus.</p>
       <Breadcrumbs items={[{ label: "Accueil", href: "/" }, { label: page.title }]} />
-      {page.sections[0]?.type !== "hero" && <h1 className="mb-6 whitespace-pre-line text-3xl font-semibold [overflow-wrap:anywhere]">{page.title}</h1>}
+      {liveSections(page.sections, serverNowUtc())[0]?.type !== "hero" && <h1 className="mb-6 whitespace-pre-line text-3xl font-semibold [overflow-wrap:anywhere]">{page.title}</h1>}
       <PageSections page={page} catalog={catalog} />
     </div>
   );

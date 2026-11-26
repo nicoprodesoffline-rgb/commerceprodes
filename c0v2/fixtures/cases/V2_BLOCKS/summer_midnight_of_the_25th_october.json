@@ -1,0 +1,26 @@
+{
+  "case_id": "V2_BLOCKS.summer_midnight_of_the_25th_october",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_block",
+  "input": {
+    "now_utc": "2026-10-24T22:00:00Z",
+    "section": {
+      "data": {
+        "families": [
+          "PF-00000069V",
+          "PF-0000006AG",
+          "PF-0000006BA",
+          "PF-0000006C6",
+          "PF-0000006DW"
+        ],
+        "rotation": "daily",
+        "shown": 2,
+        "source": "promotions",
+        "title": "Promotions du moment"
+      },
+      "type": "selection"
+    }
+  },
+  "notes": "Still summer time: midnight is 22:00 UTC.",
+  "scenario": "V2_BLOCKS"
+}

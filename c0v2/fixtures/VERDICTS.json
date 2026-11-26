@@ -1,5 +1,207 @@
 {
   "cases": {
+    "V2_BLOCKS.daily_loops_to_the_first": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000006DW",
+          "PF-00000069V"
+        ],
+        "paris_day": "2026-03-30"
+      },
+      "notes": "n = 20 542, start 4: the last then the first.",
+      "outcome": "SHOWN"
+    },
+    "V2_BLOCKS.daily_on_a_paris_day": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000006AG",
+          "PF-0000006BA"
+        ],
+        "paris_day": "2026-11-26"
+      },
+      "notes": "n = 20 783, start (2n) mod 5 = 1: the 2nd and 3rd.",
+      "outcome": "SHOWN"
+    },
+    "V2_BLOCKS.daily_the_next_day": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000006C6",
+          "PF-0000006DW"
+        ],
+        "paris_day": "2026-11-27"
+      },
+      "notes": "The next day, the next two.",
+      "outcome": "SHOWN"
+    },
+    "V2_BLOCKS.dates_on_another_type_of_block": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000006AG",
+          "PF-0000006C6"
+        ],
+        "paris_day": "2026-11-27"
+      },
+      "notes": "A-Q2: dates on any block; a carousel keeps its families, in their order.",
+      "outcome": "SHOWN"
+    },
+    "V2_BLOCKS.fixed_shows_the_first": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-00000069V",
+          "PF-0000006AG"
+        ],
+        "paris_day": "2026-11-27"
+      },
+      "notes": "« fixed »: the first X of the reserve, every day.",
+      "outcome": "SHOWN"
+    },
+    "V2_BLOCKS.hidden_before_its_start": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [],
+        "paris_day": "2026-11-30"
+      },
+      "notes": "A-Q2: hidden before its start, with no new send.",
+      "outcome": "HIDDEN"
+    },
+    "V2_BLOCKS.hidden_from_its_end": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [],
+        "paris_day": "2027-01-01"
+      },
+      "notes": "A-Q2: the end is excluded.",
+      "outcome": "HIDDEN"
+    },
+    "V2_BLOCKS.paris_day_before_the_utc_day": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000006C6",
+          "PF-0000006DW"
+        ],
+        "paris_day": "2026-11-27"
+      },
+      "notes": "00:30 in Paris (UTC+1) is already the 27th: the block changes at midnight in Paris, never at 01:00.",
+      "outcome": "SHOWN"
+    },
+    "V2_BLOCKS.reserve_not_above_shown_is_shown_whole": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000006BA",
+          "PF-00000069V"
+        ],
+        "paris_day": "2026-11-27"
+      },
+      "notes": "EC (26/11): Y ≤ X, the Y families in their order, without turning.",
+      "outcome": "SHOWN"
+    },
+    "V2_BLOCKS.shown_from_its_start": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-00000069V",
+          "PF-0000006AG"
+        ],
+        "paris_day": "2026-12-01"
+      },
+      "notes": "A-Q2: the start is included.",
+      "outcome": "SHOWN"
+    },
+    "V2_BLOCKS.summer_midnight_of_the_25th_october": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000006BA",
+          "PF-0000006C6"
+        ],
+        "paris_day": "2026-10-25"
+      },
+      "notes": "Still summer time: midnight is 22:00 UTC.",
+      "outcome": "SHOWN"
+    },
+    "V2_BLOCKS.summer_midnight_of_the_30th_march": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000006DW",
+          "PF-00000069V"
+        ],
+        "paris_day": "2026-03-30"
+      },
+      "notes": "Summer time since 01:00 UTC on the 29th: midnight in Paris is 22:00 UTC.",
+      "outcome": "SHOWN"
+    },
+    "V2_BLOCKS.winter_last_second_of_the_25th_october": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000006BA",
+          "PF-0000006C6"
+        ],
+        "paris_day": "2026-10-25"
+      },
+      "notes": "Winter time since 01:00 UTC on the 25th: 23:59:59 in Paris.",
+      "outcome": "SHOWN"
+    },
+    "V2_BLOCKS.winter_last_second_of_the_28th_march": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-00000069V",
+          "PF-0000006AG"
+        ],
+        "paris_day": "2026-03-28"
+      },
+      "notes": "23:59:59 in Paris (UTC+1).",
+      "outcome": "SHOWN"
+    },
+    "V2_BLOCKS.winter_midnight_of_the_26th_october": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000006DW",
+          "PF-00000069V"
+        ],
+        "paris_day": "2026-10-26"
+      },
+      "notes": "Midnight in Paris (UTC+1).",
+      "outcome": "SHOWN"
+    },
+    "V2_BLOCKS.winter_midnight_of_the_29th_march": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000006BA",
+          "PF-0000006C6"
+        ],
+        "paris_day": "2026-03-29"
+      },
+      "notes": "Midnight in Paris, the day of the change.",
+      "outcome": "SHOWN"
+    },
     "V2_BUSINESS.price_of_a_v1_generation": {
       "accepted": true,
       "error_codes": [],
@@ -238,6 +440,32 @@
       "notes": "The first v2 catalogue takes a v1 generation as its base (sequence, digest, explained withdrawals).",
       "outcome": "ACTIVATED"
     },
+    "V2_CONTENT.block_date_not_utc": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.starts_at_utc"
+        ]
+      },
+      "notes": "A-Q2: the dates of a block are UTC instants, as for the announcement.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.block_ends_before_it_starts": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.ends_at_utc"
+        ]
+      },
+      "notes": "A-Q2: a block ends after it starts.",
+      "outcome": "REJECTED"
+    },
     "V2_CONTENT.content_accepted": {
       "accepted": true,
       "error_codes": [],
@@ -320,6 +548,15 @@
       "notes": "An unknown setting is refused with its rule.",
       "outcome": "REJECTED"
     },
+    "V2_CONTENT.content_with_home_blocks": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "CA-4 (A.3-d2, A-Q2): a « selection » block filled by the Factory, daily or fixed, and blocks with their own dates, of any type.",
+      "outcome": "ACTIVATED"
+    },
     "V2_CONTENT.maintenance_without_message": {
       "accepted": false,
       "error_codes": [
@@ -383,6 +620,82 @@
         ]
       },
       "notes": "3.31: no scheme in a redirect target.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.selection_empty_reserve": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.families"
+        ]
+      },
+      "notes": "A.3-d1: a block with an empty reserve is never sent (the Factory says « un bloc de l'accueil à compléter »); the SITE refuses one.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.selection_family_not_served": {
+      "accepted": false,
+      "error_codes": [
+        "REFERENCE_MISSING"
+      ],
+      "expect": {
+        "stage": "semantic"
+      },
+      "notes": "V09 for a block: every family of the reserve is one the SITE serves.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.selection_rotation_unknown": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.rotation"
+        ]
+      },
+      "notes": "CA-4: « fixed » or « daily », nothing else.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.selection_shows_more_than_24": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.shown"
+        ]
+      },
+      "notes": "CA-4: 24 is the technical bound common to the Factory and the SITE (« Pas sur la page » of the settings).",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.selection_shows_none": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.shown"
+        ]
+      },
+      "notes": "CA-4: a block shows 1 to 24 families.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.selection_source_unknown": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.source"
+        ]
+      },
+      "notes": "CA-4: the source is one of the five the Owner retained.",
       "outcome": "REJECTED"
     },
     "V2_PREVIEW.preview_accepted": {

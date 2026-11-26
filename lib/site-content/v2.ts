@@ -5,14 +5,24 @@ import type { EditorialPage, EditorialSet, MerchandisingRelation, Section } from
 type Obj = Record<string, any>;
 const clean = <T extends Obj>(value: T): T => Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined && v !== null)) as T;
 
+/** Les dates d'un bloc (CA-4) passent telles quelles, pour tout type : le tri se fait à l'affichage (`liveSections`), jamais à la réception. */
+function dates(raw: Obj): { starts_at_utc?: string; ends_at_utc?: string } {
+  return clean({ starts_at_utc: raw.starts_at_utc, ends_at_utc: raw.ends_at_utc });
+}
+
 function section(raw: Obj): Section {
+  return { ...dates(raw), ...body(raw) } as Section;
+}
+
+function body(raw: Obj): Section {
   const data: Obj = raw.data ?? {};
   switch (raw.type) {
     case "hero": return { type: "hero", data: clean({ title: data.title, text: data.text, link: data.link, linkLabel: data.link_label, imageSha: data.image_sha256 }) as Extract<Section, { type: "hero" }>["data"] };
     case "text_image": return { type: "text_image", data: clean({ title: data.title, text: data.text, media_sha: data.media_sha, imageAlt: data.image_alt }) as Extract<Section, { type: "text_image" }>["data"] };
     case "faq": return { type: "faq", data: clean({ title: data.title, questions: data.questions }) as Extract<Section, { type: "faq" }>["data"] };
     case "rich_text": return { type: "rich_text", data: clean({ title: data.title, text: data.text }) as Extract<Section, { type: "rich_text" }>["data"] };
-    default: return raw as Section;   // category_grid, product_carousel : mêmes clés qu'en v1
+    case "selection": return { type: "selection", data: clean({ title: data.title, source: data.source, families: data.families, shown: data.shown, rotation: data.rotation }) as Extract<Section, { type: "selection" }>["data"] };
+    default: return { type: raw.type, data } as Section;   // category_grid, product_carousel : mêmes clés qu'en v1
   }
 }
 

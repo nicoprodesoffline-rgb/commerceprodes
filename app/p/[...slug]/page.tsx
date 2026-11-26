@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { PageSections } from "@/components/content/sections";
+import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { catalogForPage } from "@/lib/site-catalog/page";
+import { liveSections } from "@/lib/site-content/blocks";
 import { editorialMetadata } from "@/lib/site-content/metadata";
 import { editorialSlug } from "@/lib/site-content/pages";
 import { editorialPath } from "@/lib/seo/seo";
@@ -31,7 +33,7 @@ export default async function EditorialPage(props: Props) {
   return (
     <div className="min-w-0">
       <Breadcrumbs items={[{ label: "Accueil", href: "/" }, { label: page.title }]} />
-      {page.sections[0]?.type !== "hero" && <h1 className="mb-6 whitespace-pre-line text-3xl font-semibold [overflow-wrap:anywhere]">{page.title}</h1>}
+      {liveSections(page.sections, serverNowUtc())[0]?.type !== "hero" && <h1 className="mb-6 whitespace-pre-line text-3xl font-semibold [overflow-wrap:anywhere]">{page.title}</h1>}
       <PageSections page={page} catalog={catalog} />
     </div>
   );

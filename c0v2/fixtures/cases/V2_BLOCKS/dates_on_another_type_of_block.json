@@ -1,0 +1,20 @@
+{
+  "case_id": "V2_BLOCKS.dates_on_another_type_of_block",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_block",
+  "input": {
+    "now_utc": "2026-11-27T09:00:00Z",
+    "section": {
+      "data": {
+        "families": [
+          "PF-0000006AG",
+          "PF-0000006C6"
+        ]
+      },
+      "ends_at_utc": "2026-12-01T23:00:00Z",
+      "type": "product_carousel"
+    }
+  },
+  "notes": "A-Q2: dates on any block; a carousel keeps its families, in their order.",
+  "scenario": "V2_BLOCKS"
+}
