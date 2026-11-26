@@ -398,6 +398,12 @@
     "V2_PREVIEW.preview_accepted": "7aef753cbd77d4f03b5ea7c9edc41679412edea9351fb7dea6d7f5e0a4698100",
     "V2_PREVIEW.preview_expired": "1dafc689e143c223f85bd9d1b2ce98df4b72bade2418eb8b522434e79c988585",
     "V2_PREVIEW.preview_reference_missing": "c2f422a2b6981c055675baf58a27fa0445465c7359c6028e195a33bf7816ffd1",
-    "V2_PREVIEW.preview_too_long": "1dafc689e143c223f85bd9d1b2ce98df4b72bade2418eb8b522434e79c988585"
+    "V2_PREVIEW.preview_too_long": "1dafc689e143c223f85bd9d1b2ce98df4b72bade2418eb8b522434e79c988585",
+    "V2_RUBRIC.rubric_a_former_novelty_takes_back_its_place": "8bb06f00c556a97629f4d6b53ef93b134d1d2c42a9569902f26ad1f29002f310",
+    "V2_RUBRIC.rubric_empty": "8b5110221fe80b21b7ed482f4d9e377209ed78483a11f15602fb6889a12278fa",
+    "V2_RUBRIC.rubric_hand_first_then_the_rule": "6bf5649651bbbb4eb7bdac2a6c264f0aa60d3536f01a2ab411c932ebfcb7a55d",
+    "V2_RUBRIC.rubric_nothing_placed_nothing_dated": "f826dd786b3f14e0cc48cdedf7789ac8efd11ca4527f9a1c964b86699c497005",
+    "V2_RUBRIC.rubric_own_range_absent_reads_false": "81d4c0b0aa4d9df67de34bbbe64d279c5de62a66deccd1a014e3a5ace6c38906",
+    "V2_RUBRIC.rubric_ties_go_to_the_public_key": "9d1e2caa8a650a9d9e8bf1ac939dcfde83159ec16325e0f247617bf9856f05d7"
   }
 }

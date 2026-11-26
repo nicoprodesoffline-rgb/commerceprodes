@@ -1,0 +1,52 @@
+{
+  "case_id": "V2_RUBRIC.rubric_ties_go_to_the_public_key",
+  "data_label": "STAGING_FIXTURE",
+  "function": "order_rubric",
+  "input": {
+    "category_key": "bancs",
+    "families": [
+      {
+        "category_positions": [],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE Bânc",
+        "own_range": false,
+        "public_family_key": "PF-0000009RW"
+      },
+      {
+        "category_positions": [],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE BANC",
+        "own_range": false,
+        "public_family_key": "PF-0000009QY"
+      },
+      {
+        "category_positions": [
+          {
+            "category_key": "bancs",
+            "position": 3
+          }
+        ],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE banc",
+        "own_range": false,
+        "public_family_key": "PF-0000009EP"
+      },
+      {
+        "category_positions": [
+          {
+            "category_key": "bancs",
+            "position": 3
+          }
+        ],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE Chaise",
+        "own_range": false,
+        "public_family_key": "PF-0000009DX"
+      }
+    ],
+    "novelties": [],
+    "promotions": []
+  },
+  "notes": "Two families at the same place, two names that compare equal without accents nor capitals: the public key decides.",
+  "scenario": "V2_RUBRIC"
+}

@@ -775,6 +775,150 @@
       },
       "notes": "The SITE never keeps a preview more than 30 minutes.",
       "outcome": "REJECTED"
+    },
+    "V2_RUBRIC.rubric_a_former_novelty_takes_back_its_place": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000009NF",
+          "PF-0000009MN",
+          "PF-0000009GJ",
+          "PF-0000009H8",
+          "PF-0000009KS",
+          "PF-0000009P4",
+          "PF-0000009EP",
+          "PF-0000009DX",
+          "PF-0000009FC",
+          "PF-0000009J3"
+        ],
+        "parts": [
+          "hand",
+          "hand",
+          "own_range",
+          "promotions",
+          "novelties",
+          "rest",
+          "rest",
+          "rest",
+          "rest",
+          "rest"
+        ]
+      },
+      "notes": "Owner Q2 (82e série): « Table nouvelle » is no longer a novelty: it takes back its place by its name, among the rest.",
+      "outcome": "ORDERED"
+    },
+    "V2_RUBRIC.rubric_empty": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [],
+        "parts": []
+      },
+      "notes": "A rubric without families: an empty order.",
+      "outcome": "ORDERED"
+    },
+    "V2_RUBRIC.rubric_hand_first_then_the_rule": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000009NF",
+          "PF-0000009MN",
+          "PF-0000009GJ",
+          "PF-0000009H8",
+          "PF-0000009KS",
+          "PF-0000009J3",
+          "PF-0000009P4",
+          "PF-0000009EP",
+          "PF-0000009DX",
+          "PF-0000009FC"
+        ],
+        "parts": [
+          "hand",
+          "hand",
+          "own_range",
+          "promotions",
+          "novelties",
+          "novelties",
+          "rest",
+          "rest",
+          "rest",
+          "rest"
+        ]
+      },
+      "notes": "Owner Q1 (82e série): placed by hand first, by position (a novelty placed by hand and an own range placed by hand stay at their place); then own range, promotions, novelties newest first, the rest by name. A place in another rubric does not count. « Banc 10 » before « Banc 2 » (no numeric order); « Été » sorts as « ete ».",
+      "outcome": "ORDERED"
+    },
+    "V2_RUBRIC.rubric_nothing_placed_nothing_dated": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000009EP",
+          "PF-0000009DX",
+          "PF-0000009FC"
+        ],
+        "parts": [
+          "rest",
+          "rest",
+          "rest"
+        ]
+      },
+      "notes": "No place, no promotion, no novelty: the order of the names alone.",
+      "outcome": "ORDERED"
+    },
+    "V2_RUBRIC.rubric_own_range_absent_reads_false": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000009NF",
+          "PF-0000009MN",
+          "PF-0000009H8",
+          "PF-0000009KS",
+          "PF-0000009J3",
+          "PF-0000009P4",
+          "PF-0000009EP",
+          "PF-0000009DX",
+          "PF-0000009GJ",
+          "PF-0000009FC"
+        ],
+        "parts": [
+          "hand",
+          "hand",
+          "promotions",
+          "novelties",
+          "novelties",
+          "rest",
+          "rest",
+          "rest",
+          "rest",
+          "rest"
+        ]
+      },
+      "notes": "A family without own_range (a Factory from before CA-5) is not of the own range: « banc Atelier » goes back among the rest.",
+      "outcome": "ORDERED"
+    },
+    "V2_RUBRIC.rubric_ties_go_to_the_public_key": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "families": [
+          "PF-0000009DX",
+          "PF-0000009EP",
+          "PF-0000009QY",
+          "PF-0000009RW"
+        ],
+        "parts": [
+          "hand",
+          "hand",
+          "rest",
+          "rest"
+        ]
+      },
+      "notes": "Two families at the same place, two names that compare equal without accents nor capitals: the public key decides.",
+      "outcome": "ORDERED"
     }
   },
   "verdicts_version": "c0v2.verdicts.v1"

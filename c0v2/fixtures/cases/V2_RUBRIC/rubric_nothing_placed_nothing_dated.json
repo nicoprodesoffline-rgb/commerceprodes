@@ -1,0 +1,35 @@
+{
+  "case_id": "V2_RUBRIC.rubric_nothing_placed_nothing_dated",
+  "data_label": "STAGING_FIXTURE",
+  "function": "order_rubric",
+  "input": {
+    "category_key": "bancs",
+    "families": [
+      {
+        "category_positions": [],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE Banc 2",
+        "own_range": false,
+        "public_family_key": "PF-0000009DX"
+      },
+      {
+        "category_positions": [],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE Banc 10",
+        "own_range": false,
+        "public_family_key": "PF-0000009EP"
+      },
+      {
+        "category_positions": [],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE Été banc",
+        "own_range": false,
+        "public_family_key": "PF-0000009FC"
+      }
+    ],
+    "novelties": [],
+    "promotions": []
+  },
+  "notes": "No place, no promotion, no novelty: the order of the names alone.",
+  "scenario": "V2_RUBRIC"
+}
