@@ -352,6 +352,15 @@
       "notes": "Every v2 field is present: an empty list or null, never absent.",
       "outcome": "REJECTED"
     },
+    "V2_CATALOGUE.v2_own_range_absent_reads_false": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "CA-5 (EC, 26/11): a family without own_range (a Factory from before CA-5, or taken back alone) is accepted; absent reads false. Only this key may be absent; every other key stays exact (v2_missing_v2_key).",
+      "outcome": "ACTIVATED"
+    },
     "V2_CATALOGUE.v2_own_range_not_yes_or_no": {
       "accepted": false,
       "error_codes": [
@@ -375,7 +384,7 @@
           "family.own_range"
         ]
       },
-      "notes": "CA-5: own_range is always given; false for a family outside the own range.",
+      "notes": "CA-5: own_range is true or false when it is given (absent reads false: v2_own_range_absent_reads_false); null is refused.",
       "outcome": "REJECTED"
     },
     "V2_CATALOGUE.v2_position_outside_its_categories": {

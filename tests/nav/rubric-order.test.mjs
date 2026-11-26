@@ -79,3 +79,12 @@ test("sur le jeu C0 v2 commun écrit par la Factory, chaque famille porte own_ra
   for (const f of doc.families) assert.equal(typeof f.own_range, "boolean", f.public_family_key);
   assert.ok(doc.families.some((f) => f.own_range === true) && doc.families.some((f) => f.own_range === false), "le jeu porte les deux cas");
 });
+
+test("own_range absent (Factory pas encore à jour) : le jeu commun l'accepte, la famille est rangée comme non gamme propre, jamais refusée ni inventée", () => {
+  const doc = JSON.parse(readFileSync(new URL("../../c0v2/fixtures/documents/V2_CATALOGUE/snapshot_v2_own_range_absent.json", import.meta.url), "utf8"));
+  const absent = doc.families.filter((f) => !("own_range" in f));
+  assert.ok(absent.length >= 1, "le jeu porte une famille sans own_range");
+  for (const f of absent) assert.equal(groupOf(fam(f.slug, f.name, { public_family_key: f.public_family_key }), NOW, new Set()), GROUP_REST);
+  const reader = readFileSync(new URL("../../lib/site-catalog/catalog.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(reader, /out\.own_range = (?!f\["own_range"\])/, "aucune valeur par défaut posée par le lecteur");
+});

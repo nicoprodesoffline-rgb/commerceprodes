@@ -33,6 +33,10 @@
       "canonical_sha256": "e4bb609a91e6fe9e16791a2dfcbe25998a5bf38080ac6c1c62a5db010fb781b9",
       "file_sha256": "e4bb609a91e6fe9e16791a2dfcbe25998a5bf38080ac6c1c62a5db010fb781b9"
     },
+    "documents/V2_CATALOGUE/snapshot_v2_own_range_absent.json": {
+      "canonical_sha256": "654568982e88b99a2ee62996ccd53393e05a1759c2a69d0d0c67121bdf36b21a",
+      "file_sha256": "654568982e88b99a2ee62996ccd53393e05a1759c2a69d0d0c67121bdf36b21a"
+    },
     "documents/V2_CATALOGUE/snapshot_v2_own_range_not_yes_or_no.json": {
       "canonical_sha256": "0bb0d154cc0553012e7cb5c0e6001d6dfa8b986e358d682446401b6d3280e55e",
       "file_sha256": "0bb0d154cc0553012e7cb5c0e6001d6dfa8b986e358d682446401b6d3280e55e"
@@ -202,6 +206,10 @@
       "contract_version": "site_snapshot.v2",
       "payload_sha256": "181f5aa213d7703ac20e2adc3bff0e58931e964a16ec0cc6b8010c502f35daa0"
     },
+    "documents/V2_CATALOGUE/snapshot_v2_own_range_absent.json": {
+      "contract_version": "site_snapshot.v2",
+      "payload_sha256": "e502a59efdad41e0928a9013e22d2a0bae557fb9c4c79a93f43bb05edc14653a"
+    },
     "documents/V2_CATALOGUE/snapshot_v2_own_range_not_yes_or_no.json": {
       "contract_version": "site_snapshot.v2",
       "payload_sha256": "dd256e55b6988fe54f8fea27226e4eb3b6c20b7fe279ea10b736893378ff2aae"
@@ -354,6 +362,7 @@
     "V2_CATALOGUE.v2_derivative_not_webp_png_jpeg": "8abf60938a5ecc132f05ca6d589332cd9ee6731095786d022e4a853272e3a311",
     "V2_CATALOGUE.v2_document_missing": "72f6e4027d2c9c15bbafc81f609efdda7e16c472b11bf4af7b79122b4cde2094",
     "V2_CATALOGUE.v2_missing_v2_key": "fe03a8047b40fb21086ae8a1e949a8eb58ca76457af3cebb7eefb6ce2b400420",
+    "V2_CATALOGUE.v2_own_range_absent_reads_false": "44950f179b13b5a7f9d7aefae7dfbd334123265f6ff02b2e8432cc1a060f70f9",
     "V2_CATALOGUE.v2_own_range_not_yes_or_no": "fc86b786dbba46b14b1db9945c219a4edfde9a8e1a4c7425682a3d05c2fe457a",
     "V2_CATALOGUE.v2_own_range_null": "fc86b786dbba46b14b1db9945c219a4edfde9a8e1a4c7425682a3d05c2fe457a",
     "V2_CATALOGUE.v2_position_outside_its_categories": "979f2056c945cb0854b60cf6340c5a6f8318bb0d77281d041a27ad78d2f9ce7b",

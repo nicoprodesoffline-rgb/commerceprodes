@@ -35,6 +35,10 @@ const FAMILY_KEYS = [
   // Cercle A, CA-5 (Owner A.4-d1): the family belongs to Prodes' own range, yes or no (never the setting that decides it).
   "own_range",
 ];
+// The keys a family may omit (EC, 26/11): an absent own_range reads false (a Factory from before CA-5, or taken back alone). The Factory
+// always sends it. Every other key stays exact.
+const FAMILY_OPTIONAL_KEYS = ["own_range"];
+const FAMILY_KEYS_WITHOUT_OPTIONAL = FAMILY_KEYS.filter((key) => !FAMILY_OPTIONAL_KEYS.includes(key));
 const AXIS_KEYS = ["axis_key", "label"];
 const ITEM_KEYS = ["public_item_key", "status", "variant_axes", "public_media_refs", "public_sell_price_windows", "pack", "characteristics"];
 const WINDOW_KEYS = [
@@ -158,7 +162,7 @@ function shapeItem(value: Json): void {
 }
 
 function shapeFamily(value: Json): void {
-  need(f.exactKeys(value, FAMILY_KEYS), "family.keys");
+  need(f.exactKeys(value, FAMILY_KEYS) || f.exactKeys(value, FAMILY_KEYS_WITHOUT_OPTIONAL), "family.keys");
   const family = obj(value);
   need(isKey(family["public_family_key"], "family"), "family.public_family_key");
   need(slugOk(family["slug"]), "family.slug");
@@ -179,7 +183,7 @@ function shapeFamily(value: Json): void {
   for (const alias of list(family["slug_aliases"], "family.slug_aliases")) need(slugOk(alias), "family.slug_aliases");
   need(f.isUtc(family["first_published_at_utc"]), "family.first_published_at_utc");
   need(optionalText(family["delivery_delay"], MAX_DELIVERY_DELAY), "family.delivery_delay");
-  need(typeof family["own_range"] === "boolean", "family.own_range");
+  need(!("own_range" in family) || typeof family["own_range"] === "boolean", "family.own_range"); // absent reads false; null and a text are refused
   for (const entry of list(family["category_positions"], "family.category_positions")) {
     need(f.exactKeys(entry, POSITION_KEYS), "family.category_positions");
     need(categoryKeyOk(obj(entry)["category_key"]) && f.isCount(obj(entry)["position"], 1, MAX_POSITION), "family.category_positions");
