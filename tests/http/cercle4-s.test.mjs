@@ -202,7 +202,7 @@ test("S08 + S09 — dix pages sans changement : aucune lecture des contenus en b
   assert.equal(redirected.headers.get("location"), "/categorie/bancs");
 });
 
-test("S09 (maintenance) — activée par la route signée : 503 à la requête suivante ; retirée : 200 à la requête suivante ; la santé répond pendant la maintenance", async () => {
+test("S09 (maintenance partielle, CA-2) — le catalogue reste servi avec le message ; devis, commande et message sont fermés ; le calcul du panier, la santé et la publication restent ouverts ; retirée : tout revient", async () => {
   const base = JSON.parse(Buffer.from(read(contentCase.content.$bytes)).toString("utf8"));
   const publish = async (sequence, maintenance) => {
     const doc = { ...base, content_sequence: base.content_sequence + sequence, publication_id: `c4s-maintenance-${sequence}`, maintenance };
@@ -212,14 +212,48 @@ test("S09 (maintenance) — activée par la route signée : 503 à la requête s
     const res = await fetch(`${BASE}/api/site/content/activate`, { method: "POST", body: bytes, headers: { ...Object.fromEntries(headersFor(signed)), ...datedHeaders(signed.key_id, "POST", "/api/site/content/activate", bytes) } });
     assert.equal(res.headers.get("x-c0-outcome"), "ACTIVATED", await res.clone().text());
   };
+  const post = (path) => fetch(`${BASE}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "quote_request" }) });
+  const message = "Les commandes reprennent bientôt, merci.";
   assert.equal((await fetch(`${BASE}/livraison`)).status, 200, "avant : le site répond");
-  await publish(1, { active: true, message: "Retour bientôt, merci." });
-  const down = await fetch(`${BASE}/livraison`);
-  assert.equal(down.status, 503, "requête suivante : maintenance");
-  assert.match(await down.text(), /Retour bientôt, merci\./);
+  assert.ok(!/maintenance-banner/.test(await (await fetch(`${BASE}/livraison`)).text()), "avant : aucun bandeau de maintenance");
+  await publish(1, { active: true, message });
+  // Le catalogue et les pages restent servis, avec le message en bandeau.
+  for (const page of ["/livraison", "/categorie/bancs", "/recherche"]) {
+    const res = await fetch(`${BASE}${page}`);
+    assert.equal(res.status, 200, `${page} : le catalogue reste visible pendant la maintenance`);
+    const html = await res.text();
+    assert.match(html, /data-testid="maintenance-banner"/, `${page} : bandeau de maintenance`);
+    assert.ok(html.includes(message), `${page} : le message de la Factory est affiché`);
+  }
+  // Les demandes sont fermées, avant toute écriture, avec le message.
+  const quotesBefore = await count("site_quote_request");
+  const ordersBefore = await count("site_order");
+  for (const path of ["/api/site/quote", "/api/site/order", "/api/site/message"]) {
+    const res = await post(path);
+    const j = await res.json();
+    assert.equal(res.status, 503, path);
+    assert.equal(j.site_status, "SITE_MAINTENANCE", path);
+    assert.equal(j.message, message, path);
+    assert.equal(res.headers.get("cache-control"), "no-store", path);
+  }
+  assert.equal(await count("site_quote_request"), quotesBefore);
+  assert.equal(await count("site_order"), ordersBefore);
+  // Les pages de demande disent la maintenance et ne portent plus de formulaire d'envoi.
+  for (const page of ["/devis", "/commande", "/contact"]) {
+    const res = await fetch(`${BASE}${page}`);
+    assert.equal(res.status, 200, page);
+    const html = await res.text();
+    assert.match(html, /data-testid="maintenance-closed"/, `${page} : la fermeture est dite sur la page`);
+    assert.ok(!/data-testid="(checkout-flow|message-form)"/.test(html), `${page} : aucun formulaire d'envoi pendant la maintenance`);
+  }
+  // Le calcul du panier, la santé et la publication ne sont pas fermés par la maintenance.
+  const preview = await post("/api/site/cart/preview");
+  assert.notEqual((await preview.json().catch(() => ({}))).site_status, "SITE_MAINTENANCE", "le calcul du panier reste ouvert");
   assert.equal((await fetch(`${BASE}/api/site/health`)).status, 200);
   await publish(2, { active: false, message: null });
   assert.equal((await fetch(`${BASE}/livraison`)).status, 200, "requête suivante : le site est revenu");
+  assert.ok(!/maintenance-banner/.test(await (await fetch(`${BASE}/livraison`)).text()), "après : plus de bandeau");
+  assert.equal((await post("/api/site/quote").then((r) => r.json())).site_status, "ONLINE_REQUEST_CLOSED", "après : les demandes reprennent leur réponse d'avant");
 });
 
 // ---------------------------------------------------------------- 4.15 devis et commandes éteints

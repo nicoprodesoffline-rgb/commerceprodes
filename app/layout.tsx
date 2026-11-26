@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/layout/footer";
 import { CompareBar } from "@/components/site/compare-bar";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { AnnouncementBanner } from "@/components/layout/announcement";
+import { MaintenanceBanner } from "@/components/layout/maintenance-banner";
 import { SiteHeader } from "@/components/layout/site-header";
 import { navigationOf } from "@/components/site/catalog-views";
 import type { MenuCategory } from "@/components/layout/category-menu";
@@ -60,6 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <MediaPolicyProvider showImages={imagesAllowed(catalog?.meta.data_label)}>
           <CartProvider>
             <AnnouncementBanner shop={shop} />
+            <MaintenanceBanner shop={shop} />
             <SiteHeader categories={roots} universe={universe} shop={shop} shopEntries={shopEntries} />
             <main id="contenu" tabIndex={-1} className="mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">
               {children}
