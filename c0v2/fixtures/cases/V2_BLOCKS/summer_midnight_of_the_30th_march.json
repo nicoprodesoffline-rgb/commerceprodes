@@ -1,0 +1,26 @@
+{
+  "case_id": "V2_BLOCKS.summer_midnight_of_the_30th_march",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_block",
+  "input": {
+    "now_utc": "2026-03-29T22:00:00Z",
+    "section": {
+      "data": {
+        "families": [
+          "PF-00000069V",
+          "PF-0000006AG",
+          "PF-0000006BA",
+          "PF-0000006C6",
+          "PF-0000006DW"
+        ],
+        "rotation": "daily",
+        "shown": 2,
+        "source": "promotions",
+        "title": "Promotions du moment"
+      },
+      "type": "selection"
+    }
+  },
+  "notes": "Summer time since 01:00 UTC on the 29th: midnight in Paris is 22:00 UTC.",
+  "scenario": "V2_BLOCKS"
+}

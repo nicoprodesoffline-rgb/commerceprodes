@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { absolute, publicOrigin } from "@/lib/seo/seo";
 import { PageSections } from "@/components/content/sections";
 import { getEditorialSet } from "@/lib/site-content/source";
+import { livePage } from "@/lib/site-content/blocks";
 import { editorialMetadata } from "@/lib/site-content/metadata";
 import { CategoryGrid } from "@/components/home/category-grid";
 import { FamilyGrid } from "@/components/home/family-card";
@@ -20,7 +21,9 @@ export const dynamic = "force-dynamic";
 const HOME_FAMILIES = 12;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const page = (await getEditorialSet())?.pages.find(p => p.slug === "/");
+  const found = (await getEditorialSet())?.pages.find(p => p.slug === "/");
+  // CA-4 : les blocs hors de leurs dates ne sont pas dessinés, tous types confondus, avant même de chercher le bandeau ou la grille.
+  const page = found ? livePage(found, serverNowUtc()) : found;
   // 3.19 (S11) : l'accueil a sa canonique, même sans page éditoriale.
   const canonical = absolute(publicOrigin(process.env.SITE_PUBLIC_ORIGIN), "/");
   const metadata = page ? editorialMetadata({ ...page, canonical: page.canonical || "/" }, process.env.SITE_PUBLIC_ORIGIN) : {};
@@ -43,7 +46,9 @@ function findNode(nodes: NavNode[], match: (n: NavNode) => boolean): NavNode | n
 export default async function HomePage() {
   const catalog = await catalogForPage();
   const shop = await getShopSettings();
-  const page = (await getEditorialSet())?.pages.find(p => p.slug === "/");
+  const found = (await getEditorialSet())?.pages.find(p => p.slug === "/");
+  // CA-4 : les blocs hors de leurs dates ne sont pas dessinés, tous types confondus, avant même de chercher le bandeau ou la grille.
+  const page = found ? livePage(found, serverNowUtc()) : found;
   const nav = navigationOf(catalog);
   const categorySection = page?.sections.find(section => section.type === "category_grid");
   const rootNodes = categorySection ? categorySection.data.categories.flatMap(key => { const node = nav.node(key); return node ? [node] : []; }) : nav.menu;

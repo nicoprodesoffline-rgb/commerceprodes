@@ -1,0 +1,23 @@
+{
+  "case_id": "V2_BLOCKS.reserve_not_above_shown_is_shown_whole",
+  "data_label": "STAGING_FIXTURE",
+  "function": "select_block",
+  "input": {
+    "now_utc": "2026-11-27T09:00:00Z",
+    "section": {
+      "data": {
+        "families": [
+          "PF-0000006BA",
+          "PF-00000069V"
+        ],
+        "rotation": "daily",
+        "shown": 3,
+        "source": "promotions",
+        "title": "Promotions du moment"
+      },
+      "type": "selection"
+    }
+  },
+  "notes": "EC (26/11): Y ≤ X, the Y families in their order, without turning.",
+  "scenario": "V2_BLOCKS"
+}

@@ -8,6 +8,7 @@ import { MediaImage } from "@/components/site/media-image";
 import type { Catalog } from "@/lib/site-catalog/catalog";
 import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
+import { liveSections, selectionFamilies } from "@/lib/site-content/blocks";
 import type { EditorialPage, Section } from "@/lib/site-content/model";
 import { isLocalLink } from "@/lib/site-content/validate";
 
@@ -90,6 +91,24 @@ export function FaqSection({ data }: { data: Data<"faq"> }) {
   );
 }
 
+/** CA-4 : les familles du jour d'un bloc « selection » (jour de Paris, rotation du contrat), à l'instant du serveur. Une famille sortie du catalogue depuis l'envoi est passée, le bloc garde les autres. */
+export function SelectionSection({ section, catalog }: { section: Extract<Section, { type: "selection" }>; catalog: Catalog }) {
+  const now = serverNowUtc();
+  const byKey = new Map(catalog.families.map(f => [f.public_family_key, f]));
+  const families = selectionFamilies(section, now).flatMap(key => { const family = byKey.get(key); return family ? [family] : []; });
+  if (families.length === 0) return null;
+  const cards = families.map(f => ({ key: f.public_family_key, data: familyCard(f), from: familyPrice(catalog, f, now) }));
+  const basis = uniformBasis(cards.map(f => f.from?.basis).filter(b => b !== undefined));
+  return (
+    <section data-testid="section-selection" className="min-w-0">
+      {section.data.title && <h2 className={heading}>{section.data.title}</h2>}
+      <CarouselRow label={section.data.title || "Produits à découvrir"}>
+        {cards.map(card => <FamilyCard key={card.key} data={card.data} from={card.from} showBasis={!basis.uniform} />)}
+      </CarouselRow>
+    </section>
+  );
+}
+
 /** Cercle 3, 3.24 : un texte libre (contact, mentions légales, livraison). */
 export function RichTextSection({ data }: { data: Data<"rich_text"> }) {
   return (
@@ -103,7 +122,7 @@ export function RichTextSection({ data }: { data: Data<"rich_text"> }) {
 export function PageSections({ page, catalog }: { page: EditorialPage; catalog: Catalog }) {
   return (
     <div className="w-full min-w-0 space-y-10">
-      {page.sections.map((section, index) => {
+      {liveSections(page.sections, serverNowUtc()).map((section, index) => {
         switch (section.type) {
           case "hero": return <HeroSection key={index} data={section.data} first={index === 0} />;
           case "category_grid": return <CategoryGridSection key={index} data={section.data} catalog={catalog} />;
@@ -111,6 +130,7 @@ export function PageSections({ page, catalog }: { page: EditorialPage; catalog: 
           case "text_image": return <TextImageSection key={index} data={section.data} />;
           case "faq": return <FaqSection key={index} data={section.data} />;
           case "rich_text": return <RichTextSection key={index} data={section.data} />;
+          case "selection": return <SelectionSection key={index} section={section} catalog={catalog} />;
         }
       })}
     </div>

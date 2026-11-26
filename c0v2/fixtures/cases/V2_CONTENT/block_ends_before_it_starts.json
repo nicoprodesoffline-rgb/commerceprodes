@@ -1,0 +1,32 @@
+{
+  "case_id": "V2_CONTENT.block_ends_before_it_starts",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/V2_CONTENT/ack_content_ready.json"
+      },
+      "content": {
+        "$doc": "documents/V2_CONTENT/content_ready.json"
+      }
+    },
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_block_ends_before_it_starts.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "f8bbc00e370e9b66bb58dffa019bbba51cc24d123d92161f42c66d403864d01a"
+    }
+  },
+  "notes": "A-Q2: a block ends after it starts.",
+  "scenario": "V2_CONTENT"
+}

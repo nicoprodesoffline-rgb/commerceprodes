@@ -1,0 +1,32 @@
+{
+  "case_id": "V2_CONTENT.content_with_home_blocks",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/V2_CONTENT/ack_content_ready.json"
+      },
+      "content": {
+        "$doc": "documents/V2_CONTENT/content_ready.json"
+      }
+    },
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_with_home_blocks.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "2bd9f1ab5fadf69c497a43845552e35fdfb909fdffec42fb89d7b3dc7007d722"
+    }
+  },
+  "notes": "CA-4 (A.3-d2, A-Q2): a « selection » block filled by the Factory, daily or fixed, and blocks with their own dates, of any type.",
+  "scenario": "V2_CONTENT"
+}

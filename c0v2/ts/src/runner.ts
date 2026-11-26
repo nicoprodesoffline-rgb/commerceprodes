@@ -98,6 +98,8 @@ export function runFunction(name: string, data: Data): JsonObject {
       return business.selectPrice(json(data["generation"]), json(data["public_item_key"]), json(data["variant_axes"]), json(data["quantity"]), json(data["instant_utc"])) as unknown as JsonObject;
     case "evaluate_preview":
       return content.evaluatePreview(bytes(data["preview"]), json(data["transport"]), json(data["catalogue"]), data["now_utc"] as string, json(data["keyring"])) as unknown as JsonObject;
+    case "select_block":
+      return content.selectBlock(json(data["section"]) as Doc, data["now_utc"] as string) as unknown as JsonObject;
     case "verify_content_ack":
       return content.verifyAck(json(data["ack"]), json(data["keyring"]), data["content"] as unknown as Doc) as unknown as JsonObject;
     default:
