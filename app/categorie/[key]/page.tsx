@@ -15,6 +15,7 @@ import { listFamilies, parseListingQuery } from "@/lib/site-catalog/listing";
 import { count } from "@/components/site/format";
 import { isPromoNow, novelFamilies } from "@/lib/site-catalog/merchandising";
 import { orderRubric } from "@/lib/site-catalog/rubric-order";
+import { rubricImage } from "@/lib/site-catalog/rubric-image";
 import { getShopSettings } from "@/lib/site-shop/source";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
@@ -61,6 +62,8 @@ export default async function CategoryPage({ params, searchParams }: { params: P
   const shop = await getShopSettings();
   const noveltySlugs = new Set(novelFamilies(catalog.families, now, shop.noveltyDays, shop.noveltyCount).map((f) => f.slug));
   const allFamilies = orderRubric(nav.familySlugs(cat.key).flatMap((slug) => { const f = bySlug.get(slug); return f && slugs.has(slug) ? [f] : []; }), key, now, noveltySlugs);
+  // CA-6 a : l'image choisie dans la Factory, sinon celle de la première famille dans l'ordre de la rubrique (avant les filtres et le tri du visiteur).
+  const image = rubricImage(record?.image_sha256, allFamilies);
   // 4.27 : les filtres se calculent sur toutes les familles listées (sous-arbre) ; OU dans un filtre, ET entre filtres et avec le prix.
   const groups = filtersOf(allFamilies);
   const families = applyFilters(allFamilies, groups, choice);
@@ -84,10 +87,10 @@ export default async function CategoryPage({ params, searchParams }: { params: P
       <Breadcrumbs items={[{ label: "Accueil", href: "/" }, ...categoryCrumbs(catalog, key)]} />
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">{cat.name}</h1>
-        {(record?.intro_text || record?.image_sha256) && (
+        {(record?.intro_text || image) && (
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start" data-testid="category-intro">
-            {record.image_sha256 && <div className="w-full sm:w-64 sm:shrink-0"><MediaImage sha256={record.image_sha256} alt={cat.name} className="aspect-[4/3] w-full rounded-[14px] border border-line" /></div>}
-            {record.intro_text && <p className="max-w-[70ch] whitespace-pre-line text-ink-2 [overflow-wrap:anywhere]">{record.intro_text}</p>}
+            {image && <div className="w-full sm:w-64 sm:shrink-0" data-image-source={image.source}><MediaImage sha256={image.sha256} alt={cat.name} className="aspect-[4/3] w-full rounded-[14px] border border-line" /></div>}
+            {record?.intro_text && <p className="max-w-[70ch] whitespace-pre-line text-ink-2 [overflow-wrap:anywhere]">{record.intro_text}</p>}
           </div>
         )}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

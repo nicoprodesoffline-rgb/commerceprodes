@@ -15,6 +15,9 @@ import { imagesAllowed } from "@/lib/site-catalog/media-policy";
 import { catalogBasis } from "@/lib/site-catalog/basis";
 import { catalogForPage } from "@/lib/site-catalog/page";
 import { getShopSettings } from "@/lib/site-shop/source";
+import { novelFamilies } from "@/lib/site-catalog/merchandising";
+import { orderRubric } from "@/lib/site-catalog/rubric-order";
+import { rubricImage } from "@/lib/site-catalog/rubric-image";
 import type { NavNode } from "@/lib/site-catalog/navigation";
 
 export const dynamic = "force-dynamic";
@@ -52,14 +55,19 @@ export default async function HomePage() {
   const nav = navigationOf(catalog);
   const categorySection = page?.sections.find(section => section.type === "category_grid");
   const rootNodes = categorySection ? categorySection.data.categories.flatMap(key => { const node = nav.node(key); return node ? [node] : []; }) : nav.menu;
+  const now = serverNowUtc();
+  const bySlug = new Map(catalog.families.map((f) => [f.slug, f]));
+  // Les nouveautés ne servent qu'à ranger les familles des rubriques montrées : sans rubrique, rien à calculer.
+  const noveltySlugs = rootNodes.length > 0 ? new Set(novelFamilies(catalog.families, now, shop.noveltyDays, shop.noveltyCount).map((f) => f.slug)) : new Set<string>();
   const roots = rootNodes.filter(n => n.subtreeFamilyCount > 0).map((n) => {
     // Une catégorie racine peut ne porter ses familles que dans ses sous-catégories : le compte et l'image tiennent compte de tout son sous-arbre.
-    const familySlugs = new Set(nav.familySlugs(n.key));
+    // CA-6 a : la même règle que la page de la rubrique (l'image choisie, sinon celle de la première famille dans l'ordre de la rubrique).
+    const familiesInOrder = orderRubric(nav.familySlugs(n.key).flatMap((slug) => { const f = bySlug.get(slug); return f ? [f] : []; }), n.key, now, noveltySlugs);
     return {
       key: n.key,
       name: n.name,
       familyCount: n.subtreeFamilyCount,
-      imageSha: catalog.categories.find((c) => c.category_key === n.key)?.image_sha256 ?? catalog.families.find((f) => familySlugs.has(f.slug) && f.image_main_sha256)?.image_main_sha256 ?? null,
+      imageSha: rubricImage(catalog.categories.find((c) => c.category_key === n.key)?.image_sha256, familiesInOrder)?.sha256 ?? null,
       intro: catalog.categories.find((c) => c.category_key === n.key)?.intro_text ?? null,
       children: n.children.map((s) => ({ key: s.key, name: s.name })),
     };
@@ -67,7 +75,6 @@ export default async function HomePage() {
   const references = catalog.families.reduce((n, f) => n + f.items.length, 0);
   const proIntens = findNode(nav.menu, (n) => /pro[\s-]?intens/i.test(n.name));
   const basis = catalogBasis(catalog.families, catalog.meta.payload_sha256);
-  const now = serverNowUtc();
   const featuredSection = page?.sections.find(section => section.type === "product_carousel");
   const featured = featuredSection ? featuredSection.data.families.flatMap(key => { const family = catalog.families.find(f => f.public_family_key === key); return family ? [family] : []; }) : catalog.families;
   const shown = featured.slice(0, HOME_FAMILIES);
