@@ -96,7 +96,7 @@ function assertCards(html, id, title, families, snapshot) {
 }
 
 function assertNoMerchandising(html) {
-  assert.doesNotMatch(html, /related-h|upsell-h|Produits complémentaires|Montée en gamme/);
+  assert.doesNotMatch(html, /related-h|upsell-h|Qui vont avec, ou peuvent aller avec|Similaires mais autres fournisseurs ou autre gamme de prix/);
 }
 
 test("relations : cartes, catalogue actif, retrait complet et refus atomique", async () => {
@@ -119,8 +119,8 @@ test("relations : cartes, catalogue actif, retrait complet et refus atomique", a
     await withServer(dir, async () => {
       const first = await get(route(source));
       assert.equal(first.status, 200);
-      assertCards(first.html, "related-h", "Produits complémentaires", [linked, complementary], snapshot);
-      assertCards(first.html, "upsell-h", "Montée en gamme", [upsell], snapshot);
+      assertCards(first.html, "related-h", "Qui vont avec, ou peuvent aller avec", [linked, complementary], snapshot);
+      assertCards(first.html, "upsell-h", "Similaires mais autres fournisseurs ou autre gamme de prix", [upsell], snapshot);
       assert.equal(section(first.html, "similar-h"), "", "aucun similaire déjà affiché");
       assert.doesNotMatch(first.html, new RegExp(unknown));
       const other = await get(route(complementary));
@@ -141,14 +141,14 @@ test("relations : cartes, catalogue actif, retrait complet et refus atomique", a
       await publish(dir, 3, [page("Repère courant")], restored);
       const current = await get(route(source));
       assert.equal(current.status, 200);
-      assertCards(current.html, "related-h", "Produits complémentaires", [upsell, complementary], snapshot);
-      assertCards(current.html, "upsell-h", "Montée en gamme", [linked], snapshot);
+      assertCards(current.html, "related-h", "Qui vont avec, ou peuvent aller avec", [upsell, complementary], snapshot);
+      assertCards(current.html, "upsell-h", "Similaires mais autres fournisseurs ou autre gamme de prix", [linked], snapshot);
 
       await publish(dir, 4, [page("Repère refusé"), { ...page("Page refusée"), slug: "/refusee" }], [relation(source.public_family_key, complementary.public_family_key, "LIE", 2)]);
       const retained = await get(route(source));
       assert.equal(retained.status, 200);
-      assertCards(retained.html, "related-h", "Produits complémentaires", [upsell, complementary], snapshot);
-      assertCards(retained.html, "upsell-h", "Montée en gamme", [linked], snapshot);
+      assertCards(retained.html, "related-h", "Qui vont avec, ou peuvent aller avec", [upsell, complementary], snapshot);
+      assertCards(retained.html, "upsell-h", "Similaires mais autres fournisseurs ou autre gamme de prix", [linked], snapshot);
       const editorial = await get("/p/repere");
       assert.equal(editorial.status, 200);
       assert.match(editorial.html, /Repère courant/);
