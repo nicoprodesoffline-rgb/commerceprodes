@@ -5,6 +5,7 @@ import { getShopSettings } from "@/lib/site-shop/source";
 import { PageSections } from "@/components/content/sections";
 import { publishedAt } from "@/components/content/published-page";
 import { catalogForPage } from "@/lib/site-catalog/page";
+import { MaintenanceClosed } from "@/components/layout/maintenance-banner";
 import { MessageForm, type AboutProduct } from "@/components/contact/message-form";
 
 export const metadata: Metadata = { title: "Nous contacter" };
@@ -46,7 +47,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
       <section className="space-y-3 rounded-[14px] border border-line bg-white p-5" aria-labelledby="nous-ecrire-h">
         <h2 id="nous-ecrire-h" className="text-lg font-semibold">Nous écrire</h2>
         <p className="text-ink-2">Une question, un prix, un produit ? Écrivez-nous : nous vous répondons rapidement.</p>
-        <MessageForm product={about} />
+        {shop.maintenance.active ? <MaintenanceClosed message={shop.maintenance.message} /> : <MessageForm product={about} />}
       </section>
       <section className="space-y-3 rounded-[14px] bg-surface p-5" aria-labelledby="devis-contact">
         <h2 id="devis-contact" className="text-lg font-semibold">Un devis pour plusieurs produits ?</h2>
