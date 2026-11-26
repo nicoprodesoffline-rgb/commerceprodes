@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { rubricImage } from "../../lib/site-catalog/rubric-image.ts";
-import { orderRubric } from "../../lib/site-catalog/rubric-order.ts";
+import { orderRubric } from "./rubric-order-loader.mjs";
 
 const NOW = "2026-06-10T10:00:00Z";
 const fam = (slug, name, extra = {}) => ({ public_family_key: `PF-${slug}`, slug, name, primary_category_key: "bancs", secondary_category_keys: [], items: [], ...extra });

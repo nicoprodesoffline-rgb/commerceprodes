@@ -8,6 +8,7 @@ import * as v1snap from "../../../c0/ts/src/snapshot";
 import * as activation from "./activation";
 import * as business from "./business";
 import * as content from "./content";
+import * as rubric from "./rubric";
 import { Doc } from "./snapshot";
 
 export const FIXTURE_MAX_BYTES = 64 * 1024 * 1024;
@@ -100,6 +101,8 @@ export function runFunction(name: string, data: Data): JsonObject {
       return content.evaluatePreview(bytes(data["preview"]), json(data["transport"]), json(data["catalogue"]), data["now_utc"] as string, json(data["keyring"])) as unknown as JsonObject;
     case "select_block":
       return content.selectBlock(json(data["section"]) as Doc, data["now_utc"] as string) as unknown as JsonObject;
+    case "order_rubric":
+      return rubric.orderRubric(json(data["families"]) as unknown as JsonObject[], data["category_key"] as string, json(data["promotions"]) as unknown as string[], json(data["novelties"]) as unknown as string[]) as unknown as JsonObject;
     case "verify_content_ack":
       return content.verifyAck(json(data["ack"]), json(data["keyring"]), data["content"] as unknown as Doc) as unknown as JsonObject;
     default:

@@ -100,28 +100,41 @@ ne lit un média). Mêmes prix, mêmes codes, mêmes résultats ; un catalogue v
   aucune qui nomme ou cite un fournisseur, une marque, une référence, une norme, une garantie ou un prix (règle C03, garde éditoriale) ;
   une caractéristique écartée ne bloque jamais la famille.
 
-### 3.3 Ordre des familles dans une rubrique (cercle A, CA-5 ; Owner A.4-d1 et A.4-d2, 24/11 ; GO d'EC du 26/11)
+### 3.3 Ordre des familles dans une rubrique (cercle A, CA-5 ; Owner A.4-d1 et A.4-d2, 24/11 ; Owner 82e série, 27/11)
 
 Le SITE range les familles d'une page de rubrique **au moment de l'affichage**, à l'instant servi : une promotion qui commence ou une
 nouveauté qui expire change l'ordre sans attendre un nouvel envoi. Cet ordre est celui de la page par défaut (« Pertinence »). Les tris
 que le visiteur choisit (prix, nom), l'ordre de la recherche et celui des univers « Promotions » et « Nouveautés » ne changent pas.
 
-1. **Quatre groupes, dans cet ordre** ; une famille est dans le premier groupe auquel elle appartient :
-   1. la **gamme propre** : `family.own_range = true` (§2) ;
+1. **D'abord les familles rangées à la main dans cette rubrique** (Owner, 82e série : « opérateur first »), par leur `position` dans
+   `category_positions` pour cette rubrique ; à place égale, par `public_family_key`. Une famille rangée à la main reste à sa place,
+   même nouveauté, en promotion ou de la gamme propre. Une place dans une autre rubrique ne compte pas ici.
+2. **Puis les autres, en quatre groupes, dans cet ordre** ; une famille est dans le premier groupe auquel elle appartient :
+   1. la **gamme propre** : `family.own_range = true` (§2 ; absent vaut `false`) ;
    2. les **promotions** : la famille est en promotion à l'instant servi (§3.2) ;
    3. les **nouveautés** : la famille est une nouveauté à l'instant servi, selon la règle de `shop.novelty_days` et `shop.novelty_count`
-      (§4, la même que l'univers « Nouveautés ») ;
+      (§4, la même que l'univers « Nouveautés »), de la plus récente à la plus ancienne (`first_published_at_utc`) ;
    4. **le reste**.
-2. **Dans chaque groupe** : d'abord les familles rangées à la main dans cette rubrique, par leur `position` (`category_positions`), puis
-   les autres. Les nouveautés sans place viennent de la plus récente à la plus ancienne (`first_published_at_utc`). Les autres familles
-   sans place viennent par leur nom (ordre alphabétique français, sans tenir compte des accents ni des majuscules). Dernier départage :
-   `public_family_key`.
-3. **Une famille qui n'est plus une nouveauté** quitte la tête. Elle reprend sa place dans son groupe : sa place à la main, ou sa place
-   alphabétique, jamais le bas de la liste par principe.
+3. **Dans chaque groupe, puis entre nouveautés de même date** : le nom, par sa **clé de nom**, comparée caractère par caractère,
+   sans ordre numérique (« Banc 10 » avant « Banc 2 ») ; dernier départage : `public_family_key`. La clé de nom est la même dans les
+   deux langages, et c'est voulu : un `Intl.Collator("fr")` ne se reproduit pas à l'identique en Python, et la Factory doit montrer
+   l'ordre exact du site. Elle se calcule ainsi, dans cet ordre :
+   1. mettre le nom en minuscules (`str.lower()` en Python, `toLowerCase()` en TypeScript) ;
+   2. le décomposer en forme NFD ;
+   3. retirer chaque marque combinante, c'est-à-dire les caractères de catégorie Unicode `M` (`\p{M}`) ;
+   4. comparer point de code par point de code (pas par unité UTF-16).
 
-*En attente de la réponse de l'Owner sur le rangement à la main (CA-5, question 1)* : le point 2, où le rangement à la main ne joue qu'à
-l'intérieur d'un groupe, est la recommandation de l'équipe. L'autre choix serait que le rangement à la main l'emporte sur les groupes.
-*En attente aussi (question 2)* : le point 3, où l'ancienne nouveauté reprend sa place au lieu de descendre tout en bas.
+   Exemples : « Écran » se range comme « ecran », donc avant « Etagère » (« etagere ») ; « BANC » et « banc » sont égaux, et la clé
+   publique les départage.
+4. **Une famille qui n'est plus une nouveauté** (Owner, 82e série : la reco) quitte son groupe et reprend sa place normale : par son
+   nom dans son groupe, jamais le bas de la liste par principe.
+
+**Une seule règle des deux côtés** : `c0v2/python/c0_contracts_v2/rubric.py` (`order_rubric`) et son jumeau `c0v2/ts/src/rubric.ts`
+(`orderRubric`), sur les jeux d'essai `V2_RUBRIC`. Le SITE l'appelle à l'affichage ; la Factory l'appelle pour montrer à l'opérateur
+l'ordre que le SITE affichera. La forme du catalogue ne change pas : il n'y a pas d'ordre de déploiement.
+
+**Côté Factory**, une famille n'a de `position` dans une rubrique que si l'opérateur l'y a placée lui-même (« Mettre en tête »,
+« Ranger à la main ») ; « Rendre à la règle » la lui retire. Ranger une famille ne range jamais les autres.
 
 ## 4. `site_content.v2`
 
@@ -134,6 +147,7 @@ le même canal que le catalogue : envoi, vérification, activation, accusé sign
          novelty_days:1..365, novelty_count:1..200 },  (nouveautés N04 : au plus novelty_count familles arrivées depuis novelty_days jours ; départ 60 et 24)
   announcement:{ text, link|null, starts_at_utc, ends_at_utc|null } | null,
   maintenance:{ active, message|null },            (active ⇒ message)
+                                                   (CA-2 : « partielle » — le SITE garde le catalogue visible avec le message en bandeau et ferme seulement devis, commande et message ; la forme ne change pas)
   redirects:[{ from_path, to_path, status: 301|308 }],
   pages:[{ key, slug, title, revision, seo_title|null, seo_description|null, canonical|null,
            sections:[{type, data, starts_at_utc?, ends_at_utc?}],     (CA-4 : dates facultatives d'un bloc, de tout type)
@@ -226,7 +240,7 @@ réponse `200 {accepted:true, outcome:"PREVIEW_STORED", path:"/apercu/<preview_i
 
 ## 5. Jeux d'essai
 
-67 cas, 42 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
+73 cas, 42 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
 (rubriques Bancs avec F1 à F3, Tables avec F4 et F5, Corbeilles vide). Les WebP sont des octets fixes écrits une fois avec Pillow ; les
 originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur empreinte, puisqu'ils ne quittent pas la Factory.
 
@@ -238,6 +252,7 @@ originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur e
 | `V2_PREVIEW` | B14 : aperçu accepté, expiré, gardé plus de 30 minutes, référence absente |
 | `V2_CONTENT` | V07–V09 (activé, accusé vérifié, rejeu, séquence ancienne, référence absente), 3.31 (redirection vers un autre hôte ou avec un schéma), S07 (un seul saut), E03, maintenance sans message, clé inconnue ; CA-4 : blocs d'accueil acceptés, source, nombre montré (0, 25), rotation, réserve vide ou absente du catalogue, dates d'un bloc |
 | `V2_BLOCKS` | CA-4 : ce que le SITE dessine d'un bloc. Jour de Paris (avant le jour UTC, les deux changements d'heure), rotation quotidienne et retour au début, `fixed`, réserve plus petite que le nombre montré, bloc caché avant son début et dès sa fin |
+| `V2_RUBRIC` | CA-5 : l'ordre d'une page de rubrique (§3.3). Rangées à la main d'abord, même nouveauté ou gamme propre ; place dans une autre rubrique ignorée ; gamme propre, promotions, nouveautés de la plus récente à la plus ancienne, le reste ; noms sans accents ni majuscules, « Banc 10 » avant « Banc 2 » ; ancienne nouveauté par son nom ; `own_range` absent ; départage par la clé ; rubrique vide |
 
 ## 6. Ce que ce contrat ne prouve pas
 

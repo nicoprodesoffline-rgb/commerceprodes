@@ -1,0 +1,108 @@
+{
+  "case_id": "V2_RUBRIC.rubric_own_range_absent_reads_false",
+  "data_label": "STAGING_FIXTURE",
+  "function": "order_rubric",
+  "input": {
+    "category_key": "bancs",
+    "families": [
+      {
+        "category_positions": [],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE Banc 2",
+        "own_range": false,
+        "public_family_key": "PF-0000009DX"
+      },
+      {
+        "category_positions": [],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE Banc 10",
+        "own_range": false,
+        "public_family_key": "PF-0000009EP"
+      },
+      {
+        "category_positions": [],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE Été banc",
+        "own_range": false,
+        "public_family_key": "PF-0000009FC"
+      },
+      {
+        "category_positions": [],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE banc Atelier",
+        "public_family_key": "PF-0000009GJ"
+      },
+      {
+        "category_positions": [],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE Chaise promo",
+        "own_range": false,
+        "public_family_key": "PF-0000009H8"
+      },
+      {
+        "category_positions": [],
+        "first_published_at_utc": "2026-11-20T09:00:00Z",
+        "name": "STAGING_FIXTURE Table nouvelle",
+        "own_range": false,
+        "public_family_key": "PF-0000009J3"
+      },
+      {
+        "category_positions": [],
+        "first_published_at_utc": "2026-11-25T09:00:00Z",
+        "name": "STAGING_FIXTURE Abri nouveau",
+        "own_range": false,
+        "public_family_key": "PF-0000009KS"
+      },
+      {
+        "category_positions": [
+          {
+            "category_key": "bancs",
+            "position": 2
+          }
+        ],
+        "first_published_at_utc": "2026-11-26T09:00:00Z",
+        "name": "STAGING_FIXTURE Zèbre rangé",
+        "own_range": false,
+        "public_family_key": "PF-0000009MN"
+      },
+      {
+        "category_positions": [
+          {
+            "category_key": "tables",
+            "position": 4
+          },
+          {
+            "category_key": "bancs",
+            "position": 1
+          }
+        ],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE Arbre rangé",
+        "own_range": true,
+        "public_family_key": "PF-0000009NF"
+      },
+      {
+        "category_positions": [
+          {
+            "category_key": "tables",
+            "position": 1
+          }
+        ],
+        "first_published_at_utc": "2026-01-05T08:00:00Z",
+        "name": "STAGING_FIXTURE Ancienne nouveauté",
+        "own_range": false,
+        "public_family_key": "PF-0000009P4"
+      }
+    ],
+    "novelties": [
+      "PF-0000009J3",
+      "PF-0000009KS",
+      "PF-0000009MN"
+    ],
+    "promotions": [
+      "PF-0000009H8"
+    ]
+  },
+  "notes": "A family without own_range (a Factory from before CA-5) is not of the own range: « banc Atelier » goes back among the rest.",
+  "scenario": "V2_RUBRIC"
+}

@@ -1,0 +1,13 @@
+{
+  "case_id": "V2_RUBRIC.rubric_empty",
+  "data_label": "STAGING_FIXTURE",
+  "function": "order_rubric",
+  "input": {
+    "category_key": "bancs",
+    "families": [],
+    "novelties": [],
+    "promotions": []
+  },
+  "notes": "A rubric without families: an empty order.",
+  "scenario": "V2_RUBRIC"
+}
