@@ -24,7 +24,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "7970e54d083216a1cb87ebbf8e027aeed8feedeeb26c1ce443af11bc9812c676"
+      "signature": "f8bbc00e370e9b66bb58dffa019bbba51cc24d123d92161f42c66d403864d01a"
     }
   },
   "notes": "A-Q2: a block ends after it starts.",

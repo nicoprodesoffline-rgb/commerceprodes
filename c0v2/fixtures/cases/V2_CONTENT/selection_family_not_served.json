@@ -24,7 +24,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "e8a7dbc37283445282e9ae7d490f381020afa36cfc75425a4cc1d94aca82b35c"
+      "signature": "2a62904815d04a0edb17f9a0251d74f5ecd6213bae761f5afe3fb828c48f481d"
     }
   },
   "notes": "V09 for a block: every family of the reserve is one the SITE serves.",

@@ -24,7 +24,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "908e9e389598718c4411954dd86b797e8b1b5c084a4262bce0b074daf3179578"
+      "signature": "2c0e113561652121604822813c05b82976e6bd2d250ad2fc2632a14058f57955"
     }
   },
   "notes": "CA-4: 24 is the technical bound common to the Factory and the SITE (« Pas sur la page » of the settings).",

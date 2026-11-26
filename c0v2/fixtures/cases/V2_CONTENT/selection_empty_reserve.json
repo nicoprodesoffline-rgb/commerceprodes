@@ -24,7 +24,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "d696ce80faabe610260f8b2a9502fea93473001f33c4bb4e9b301dfa6a0bde0d"
+      "signature": "dc9992a834fd69b12db57e5163cc0534b51759df7927fcb288d4dd936ae5eb2a"
     }
   },
   "notes": "A.3-d1: a block with an empty reserve is never sent (the Factory says « un bloc de l'accueil à compléter »); the SITE refuses one.",

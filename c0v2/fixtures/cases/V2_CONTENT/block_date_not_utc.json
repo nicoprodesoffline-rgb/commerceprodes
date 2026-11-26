@@ -24,7 +24,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "96525b0cbbb4f71b40ab81275d493205afbda7b035378d651ebf60619c649c40"
+      "signature": "76504d0d26146ab51c7970e9abe37e312edbaa12e4f6c2ed3e4b601842233aed"
     }
   },
   "notes": "A-Q2: the dates of a block are UTC instants, as for the announcement.",
