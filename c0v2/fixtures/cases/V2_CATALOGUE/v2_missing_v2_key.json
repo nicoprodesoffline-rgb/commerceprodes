@@ -68,7 +68,7 @@
     },
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "0991e87e803615162e7f858ae7b087f21e758214d20e02447eb89d9d7b43633d"
+      "signature": "d9f736361018a8a4cc762f3c667665ba9be942f4e330b91b972dcc817462c0a2"
     }
   },
   "notes": "Every v2 field is present: an empty list or null, never absent.",
