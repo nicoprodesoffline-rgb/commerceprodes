@@ -741,7 +741,7 @@ describe("BC3 — recette navigateur (Chromium)", () => {
     for (const [vp, size] of [["desktop", VIEWPORTS.desktop], ["mobile", VIEWPORTS.mobile]]) {
       const page = await newPage(size);
       await page.goto(BASE + "/famille/panneau-paliers");
-      for (const [heading, id] of [["Produits complémentaires", "related-h"], ["Montée en gamme", "upsell-h"], ["Produits similaires", "similar-h"]]) {
+      for (const [heading, id] of [["Qui vont avec, ou peuvent aller avec", "related-h"], ["Similaires mais autres fournisseurs ou autre gamme de prix", "upsell-h"], ["Produits similaires", "similar-h"]]) {
         const sectionOf = page.locator(`section[aria-labelledby="${id}"]`);
         await sectionOf.waitFor();
         assert.equal(await sectionOf.getByRole("heading", { name: heading }).count(), 1, `${heading} (${vp})`);

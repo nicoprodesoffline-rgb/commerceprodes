@@ -18,6 +18,8 @@ export type PreviewLineJson = {
   line_total: string | null;
   /** Cercle 5, 5.7 : le lot de cette ligne (« 10 achetés + 2 offerts »), absent hors lot. */
   lot?: { bought: number; free: number } | null;
+  /** Cercle 9, 9.8 : le minimum de commande (plus petit palier publié), absent quand il vaut 1. */
+  minimum_quantity?: number;
 };
 
 export type PreviewJson = {

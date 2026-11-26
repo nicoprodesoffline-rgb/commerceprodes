@@ -63,11 +63,11 @@ function ProductRow({ items, title, id }: { items: readonly ProductFamilyCard[];
 export function RelatedProducts({ items }: SectionItems<ProductFamilyCard>) {
   const visible = visibleSectionItems(items);
   if (!visible) return null;
-  return <ProductRow items={visible} title="Produits complémentaires" id="related-h" />;
+  return <ProductRow items={visible} title="Qui vont avec, ou peuvent aller avec" id="related-h" />;
 }
 
 export function UpsellProducts({ items }: SectionItems<ProductFamilyCard>) {
   const visible = visibleSectionItems(items);
   if (!visible) return null;
-  return <ProductRow items={visible} title="Montée en gamme" id="upsell-h" />;
+  return <ProductRow items={visible} title="Similaires mais autres fournisseurs ou autre gamme de prix" id="upsell-h" />;
 }
