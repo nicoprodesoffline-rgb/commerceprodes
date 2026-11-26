@@ -68,7 +68,7 @@
     },
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "29b6d9c947134550d72f63bb129f48cf7643b9af610dabc2caa52ac0ade3929f"
+      "signature": "76d894da953add7267828779de707290bdfbf5475cf61f8329cf16fd035e6db8"
     }
   },
   "notes": "V01, I09: a v2 catalogue is activated; the SITE holds the derivatives and the document, never the JPEG and TIFF originals.",

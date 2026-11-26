@@ -68,7 +68,7 @@
     },
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "a31b8e4491352c4092f78b2e76cf8bff56bb14ec60483fd86d325bd7a30106e8"
+      "signature": "41ad01969561530cc0130cabbf9eed7d864b5c6bb84d58f2972e11a5775fe20d"
     }
   },
   "notes": "49e série: the lead time is one text or null, never a blank text (the SITE shows nothing for null).",

@@ -33,7 +33,8 @@ prend une génération v1 active comme base (séquence, empreinte, retraits expl
 
 Même enveloppe, même couverture, même registre d'identité, mêmes comptes qu'en v1. **Chaque champ ajouté est présent dans chaque
 document** (ensemble de clés exact) : `null` ou liste vide tant que sa ligne attend une réponse de l'Owner ; une clé absente ou inconnue
-est un refus `SNAPSHOT_INVALID` avec sa règle (V04).
+est un refus `SNAPSHOT_INVALID` avec sa règle (V04). **Une seule exception** (EC, 26/11) : `family.own_range` peut manquer, et absent
+vaut `false` (cas `v2_own_range_absent_reads_false`). La Factory l'envoie toujours.
 
 | Objet | Champ ajouté | Format | Règle (`detail.rules`) | Ligne |
 |---|---|---|---|---|
@@ -48,6 +49,7 @@ est un refus `SNAPSHOT_INVALID` avec sa règle (V04).
 | Famille | `category_positions` | `[{category_key, position}]`, triée, seulement dans les rubriques de la famille ; liste vide = ordre par défaut du SITE | `family.category_positions` | 3.21 |
 | Famille | `characteristics` | `[{label ≤ 100, value ≤ 500}]`, ≤ 200, libellés uniques, ordre de la Factory | `family.characteristics`, `family.characteristics_unique` | 3.14 |
 | Famille | `delivery_delay` | texte ≤ 120, ou `null` : le délai de livraison du fournisseur de la famille, tel que saisi dans la Factory (écran « Délais de livraison ») ; `null` quand il n'y en a pas UN seul (aucun saisi, un pack, ou des fournisseurs aux délais différents), jamais une valeur par défaut ; le SITE n'affiche rien pour `null` | `family.delivery_delay` | 49e série (25/11) |
+| Famille | `own_range` | `true` ou `false`. La Factory le donne toujours ; **absent, il vaut `false`**, et `null` ou un texte sont refusés. Ainsi un SITE déjà à jour accepte les catalogues d'une Factory d'avant CA-5, et un retour arrière de la Factory seule ne casse rien. Le SITE doit donc être mis à jour **avant la Factory, ou en même temps** : un SITE d'avant cette règle refuse un catalogue qui porte la clé. La famille est de la **gamme propre de Prodes** selon le réglage de l'écran « Relations de catalogue » (son fournisseur, ou son mot dans le nom de la famille ou la désignation d'un de ses produits). Jamais le réglage lui-même : ni le fournisseur, ni le mot. Changer le réglage republie le catalogue | `family.own_range` | CA-5 (Owner A.4-d1, 24/11) |
 | Famille | `documents` | `[{label, kind: TECHNICAL_SHEET\|NOTICE\|OTHER, sha256, mime: application/pdf, size ≤ 30 Mio}]`, triée par empreinte | `family.documents`, `family.documents_order` | 3.15 |
 | Variante | `pack` | `{paid_units, free_units}` (entiers ≥ 1) ou `null` | `item.pack` | 3.20 |
 | Variante | `characteristics` | comme la famille : ce qui diffère d'une variante à l'autre | `item.characteristics`, `item.characteristics_unique` | 3.14 |
@@ -98,6 +100,29 @@ ne lit un média). Mêmes prix, mêmes codes, mêmes résultats ; un catalogue v
   aucune qui nomme ou cite un fournisseur, une marque, une référence, une norme, une garantie ou un prix (règle C03, garde éditoriale) ;
   une caractéristique écartée ne bloque jamais la famille.
 
+### 3.3 Ordre des familles dans une rubrique (cercle A, CA-5 ; Owner A.4-d1 et A.4-d2, 24/11 ; GO d'EC du 26/11)
+
+Le SITE range les familles d'une page de rubrique **au moment de l'affichage**, à l'instant servi : une promotion qui commence ou une
+nouveauté qui expire change l'ordre sans attendre un nouvel envoi. Cet ordre est celui de la page par défaut (« Pertinence »). Les tris
+que le visiteur choisit (prix, nom), l'ordre de la recherche et celui des univers « Promotions » et « Nouveautés » ne changent pas.
+
+1. **Quatre groupes, dans cet ordre** ; une famille est dans le premier groupe auquel elle appartient :
+   1. la **gamme propre** : `family.own_range = true` (§2) ;
+   2. les **promotions** : la famille est en promotion à l'instant servi (§3.2) ;
+   3. les **nouveautés** : la famille est une nouveauté à l'instant servi, selon la règle de `shop.novelty_days` et `shop.novelty_count`
+      (§4, la même que l'univers « Nouveautés ») ;
+   4. **le reste**.
+2. **Dans chaque groupe** : d'abord les familles rangées à la main dans cette rubrique, par leur `position` (`category_positions`), puis
+   les autres. Les nouveautés sans place viennent de la plus récente à la plus ancienne (`first_published_at_utc`). Les autres familles
+   sans place viennent par leur nom (ordre alphabétique français, sans tenir compte des accents ni des majuscules). Dernier départage :
+   `public_family_key`.
+3. **Une famille qui n'est plus une nouveauté** quitte la tête. Elle reprend sa place dans son groupe : sa place à la main, ou sa place
+   alphabétique, jamais le bas de la liste par principe.
+
+*En attente de la réponse de l'Owner sur le rangement à la main (CA-5, question 1)* : le point 2, où le rangement à la main ne joue qu'à
+l'intérieur d'un groupe, est la recommandation de l'équipe. L'autre choix serait que le rangement à la main l'emporte sur les groupes.
+*En attente aussi (question 2)* : le point 3, où l'ancienne nouveauté reprend sa place au lieu de descendre tout en bas.
+
 ## 4. `site_content.v2`
 
 Un seul document porte tout ce que le SITE sert hors du catalogue ; il remplace le dossier partagé `site_content.v1` (V08) et passe par
@@ -133,7 +158,7 @@ Les quatre types v1 gardent leurs clés (une clé absente = non donnée), plus :
 
 **Bloc « selection » (cercle A, CA-4 ; Owner, 76e série, #130 7201854418 ; GO d'EC du 26/11).**
 - La Factory résout la source en réserve à chaque envoi du contenu. Les promotions sont le prix barré venu du Calculateur, et rien d'autre (cercle 3).
-- Le SITE ne connaît ni les fournisseurs ni la gamme propre : `source` dit seulement d'où vient la réserve.
+- Le SITE ne connaît ni les fournisseurs ni le réglage de la gamme propre : `source` dit seulement d'où vient la réserve. Depuis CA-5, il reçoit dans le catalogue un oui ou un non par famille (`family.own_range`, §2), pour l'ordre des rubriques (§3.3), jamais le fournisseur ni le mot qui en décident.
 - Une réserve vide n'est jamais envoyée (A.3-d1 : la Factory affiche « un bloc de l'accueil à compléter »). Le SITE refuse un bloc vide (`section.families`).
 - La borne de 24 familles montrées est technique et commune aux deux côtés. Elle figure dans « Pas sur la page » des réglages.
 
@@ -201,13 +226,13 @@ réponse `200 {accepted:true, outcome:"PREVIEW_STORED", path:"/apercu/<preview_i
 
 ## 5. Jeux d'essai
 
-64 cas, 39 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
+67 cas, 42 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
 (rubriques Bancs avec F1 à F3, Tables avec F4 et F5, Corbeilles vide). Les WebP sont des octets fixes écrits une fois avec Pillow ; les
 originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur empreinte, puisqu'ils ne quittent pas la Factory.
 
 | Scénario | Ce qu'il prouve |
 |---|---|
-| `V2_CATALOGUE` | V01 (v2 activé, dérivés et document servis, originaux absents), rejeu, accusé vérifié par la v1, couverture prouvée, V04 (clé inconnue, clé v2 absente), V05 (SITE resté en v1), domaines séparés, dérivé ou document manquant, règles v2 |
+| `V2_CATALOGUE` | V01 (v2 activé, dérivés et document servis, originaux absents), rejeu, accusé vérifié par la v1, couverture prouvée, V04 (clé inconnue, clé v2 absente), V05 (SITE resté en v1), domaines séparés, dérivé ou document manquant, règles v2 ; CA-5 : `own_range` vrai sur F3, refusé s'il n'est ni vrai ni faux (texte ou `null`), accepté et lu faux s'il est absent |
 | `V2_COEXISTENCE` | V03 (v1 lu par un SITE v2) et premier v2 sur une base v1 |
 | `V2_BUSINESS` | §3.1 : prix d'une variante sur un catalogue v2 (fenêtre de base, promotion à partir de 10) et sur un catalogue v1 |
 | `V2_PREVIEW` | B14 : aperçu accepté, expiré, gardé plus de 30 minutes, référence absente |
@@ -219,3 +244,6 @@ originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur e
 Qu'un SITE réel affiche ces champs (lot V côté SITE, lots B, I, R) ; que la Factory remplisse les champs des lignes en attente de l'Owner
 (3.14, 3.15, 3.20 : présents, vides) ; la qualité visuelle des dérivés (lot I, I18). Les plafonds (≤ 200 caractéristiques, ≤ 50 documents,
 ≤ 20 000 redirections) sont des bornes de lecture stricte, pas des mesures.
+Le jour de Paris des blocs d'accueil (CA-4, `paris_day`) repose sur la règle européenne d'aujourd'hui (passage à l'heure d'été le dernier
+dimanche de mars, retour le dernier dimanche d'octobre, à 01:00 UTC), écrite dans le code des deux côtés sans base de fuseaux : si la
+règle change, il faut la changer dans la Factory et sur le site, avec les jeux d'essai `V2_BLOCKS` (relecture de 8f, PR #222).

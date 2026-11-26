@@ -68,7 +68,7 @@
     },
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "7f25640ab62007455e29e8143608c8b31a0bacb55f1aa50852a972a3f31aa60a"
+      "signature": "db7f84ef4d38aba3a05537201e266cc48e309dc598eeb3231fffa358e863f5cd"
     }
   },
   "notes": "Signature domains are separated: a v1 signature never covers a v2 document.",

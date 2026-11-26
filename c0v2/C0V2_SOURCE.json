@@ -1,7 +1,7 @@
 {
   "factory_repo": "nicoprodesoffline-rgb/prodes-data-factory-poc",
-  "branch": "main",
-  "archived_from_sha": "0b64c6e7912b9010f231b22a506c87914faae84a",
+  "branch": "c9/ca5-ordre-produits",
+  "archived_from_sha": "6fcd01df812c0519402f9a6fa8c319c967d774c2",
   "archive_paths": [
     "c0v2/README.md",
     "c0v2/fixtures",
@@ -12,5 +12,5 @@
     "c0v2/ts/tsconfig.json",
     "docs/contracts/c0_site_v2.md"
   ],
-  "note": "Copie sans modification (contrat v2). Remise au SHA de la Factory qui porte les blocs automatiques de l'accueil (cercle A, CA-4) avec leurs jeux d'essai reformulés : bloc « selection », jour de Paris, dates de début et de fin de tout bloc, 16 cas V2_BLOCKS communs, 9 jeux d'essai de contenu en plus. La v1 (c0/) est intacte. Le Python de référence et le générateur restent dans la Factory."
+  "note": "Copie sans modification (contrat v2), prise sur la tête de la PR 1 de CA-5 de la Factory (family.own_range facultatif à la lecture, absent = faux ; §3.3 de l'ordre des familles) en attendant sa fusion ; à reprendre sur main de la Factory à la fusion. La v1 (c0/) est intacte. Le Python de référence et le générateur restent dans la Factory."
 }
