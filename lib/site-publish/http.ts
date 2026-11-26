@@ -46,6 +46,24 @@ export async function readBoundedBody(request: Request, max: number): Promise<Ui
   if (declared !== null && (!/^[0-9]{1,16}$/.test(declared) || Number(declared) > max)) throw new BodyTooLarge();
   if (request.body === null) return new Uint8Array(0);
   const reader = request.body.getReader();
+  if (declared !== null) {
+    // Taille annoncée (déjà bornée à `max`) : les morceaux sont écrits à leur place dans le tampon final, sans liste
+    // de morceaux ni seconde copie. Un flux plus long que l'annonce est refusé comme trop gros.
+    const size = Number(declared);
+    const out = new Uint8Array(size);
+    let offset = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (offset + value.byteLength > size) {
+        await reader.cancel().catch(() => undefined);
+        throw new BodyTooLarge();
+      }
+      out.set(value, offset);
+      offset += value.byteLength;
+    }
+    return offset === size ? out : out.slice(0, offset);
+  }
   const chunks: Uint8Array[] = [];
   let total = 0;
   for (;;) {

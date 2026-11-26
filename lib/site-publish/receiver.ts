@@ -162,6 +162,33 @@ function tryParse(bytes: Uint8Array, max: number): Json | undefined {
   }
 }
 
+/** Champs de tête que le site lit lui-même (corrélation, environnement, signature, rangement). */
+const SUMMARY_KEYS = ["contract_version", "data_label", "publication_id", "projection_id", "scope_key", "catalogue_sequence", "payload_sha256"];
+
+/**
+ * Ce que le site lit lui-même d'un document : ses champs de tête et la liste des médias qu'il sert. L'arbre complet
+ * est relâché au retour ; seul le contrat garde le sien pendant l'évaluation (deux arbres complets ne vivent plus
+ * ensemble). `undefined` : le document n'est pas un objet lisible, comme `tryParse` le rendait.
+ */
+function summarize(bytes: Uint8Array): JsonObject | undefined {
+  const doc = tryParse(bytes, MAX_BYTES);
+  if (!isObject(doc)) return undefined;
+  const out: JsonObject = {};
+  for (const key of SUMMARY_KEYS) if (key in doc) out[key] = doc[key] as Json;
+  let shas: string[] = [];
+  try {
+    if (Array.isArray(doc["media_refs"])) {
+      shas = doc["contract_version"] === SNAPSHOT_V2
+        ? servedMedia(doc as Record<string, any>).map(([sha]) => sha).filter(isHex64)
+        : doc["media_refs"].map((ref) => (isObject(ref) ? ref["sha256"] : null)).filter(isHex64) as string[];
+    }
+  } catch {
+    shas = []; // forme refusée plus loin par le contrat ; le STAGE n'en a pas besoin
+  }
+  out["media_shas"] = shas;
+  return out;
+}
+
 interface Correlation {
   publication_id: string | null;
   catalogue_sequence: number | null;
@@ -264,6 +291,14 @@ const GENERATION_COLUMNS = `id, publication_id, projection_id, scope_key, catalo
   to_char(verified_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS verified_at,
   to_char(activated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS activated_at`;
 
+/** Les mêmes colonnes sans les octets du document : pour verrouiller une ligne ou rendre son résumé sans la relire. */
+const GENERATION_META_COLUMNS = GENERATION_COLUMNS.replace("snapshot_bytes, ", "");
+
+/** Vue sur le tampon rendu par le pilote, sans copie (les octets d'une génération sont immuables, migration 005). */
+function view(buffer: Buffer): Uint8Array {
+  return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+}
+
 function toGeneration(row: any): GenerationRow {
   return {
     id: toSafeInt(row.id),
@@ -273,7 +308,7 @@ function toGeneration(row: any): GenerationRow {
     catalogue_sequence: toSafeInt(row.catalogue_sequence),
     payload_sha256: row.payload_sha256,
     status: row.status,
-    bytes: new Uint8Array(row.snapshot_bytes),
+    bytes: row.snapshot_bytes === undefined ? new Uint8Array(0) : view(row.snapshot_bytes),
     ackBytes: row.ack_bytes === null ? null : new Uint8Array(row.ack_bytes),
     staged_at: row.staged_at,
     verified_at: row.verified_at,
@@ -285,6 +320,15 @@ function toGeneration(row: any): GenerationRow {
 async function generationByKey(q: Querier, sequence: number, sha: string, lock: boolean): Promise<GenerationRow | null> {
   const { rows } = await q.query(
     `SELECT ${GENERATION_COLUMNS} FROM site_generation WHERE catalogue_sequence = $1 AND payload_sha256 = $2${lock ? " FOR UPDATE" : ""}`,
+    [sequence, sha],
+  );
+  return rows.length === 1 ? toGeneration(rows[0]) : null;
+}
+
+/** Ligne sans ses octets (`bytes` vide) : statut, identité et résumé seulement. */
+async function generationMetaByKey(q: Querier, sequence: number, sha: string, lock: boolean): Promise<GenerationRow | null> {
+  const { rows } = await q.query(
+    `SELECT ${GENERATION_META_COLUMNS} FROM site_generation WHERE catalogue_sequence = $1 AND payload_sha256 = $2${lock ? " FOR UPDATE" : ""}`,
     [sequence, sha],
   );
   return rows.length === 1 ? toGeneration(rows[0]) : null;
@@ -324,10 +368,26 @@ async function loadActive(q: Querier, lockPointer: boolean): Promise<LoadedActiv
     const snapshot = parsed as unknown as Snapshot;
     if (payloadShaOf(snapshot) !== row.payload_sha256 || snapshot.payload_sha256 !== row.payload_sha256) return UNSAFE_ACTIVE;
     const ack = parseBytes(row.ackBytes, MAX_CONTROL_BYTES);
-    return { row, c0: { snapshot, ack }, ackBytes: row.ackBytes };
+    // Le contrat ne lit de l'ACTIVE que sa séquence, son empreinte, son as_of, son registre d'identité et la clé de
+    // chacun de ses produits (c0 activation.ts : identityCodes, holdReason, safetyCodes, REPLAY_ACK). L'intégrité est
+    // vérifiée ci-dessus sur l'arbre complet ; on ne garde ensuite que ces champs, et l'arbre complet est relâché.
+    return { row, c0: { snapshot: activeForContract(snapshot), ack }, ackBytes: row.ackBytes };
   } catch {
     return UNSAFE_ACTIVE;
   }
+}
+
+/** Ce que le contrat lit de l'ACTIVE, et rien d'autre (voir loadActive). Exportée pour le test du même verdict (tests/bc2/27). */
+export function activeForContract(snapshot: Snapshot): Snapshot {
+  const s = snapshot as unknown as Record<string, any>;
+  return {
+    contract_version: s["contract_version"],
+    catalogue_sequence: s["catalogue_sequence"],
+    payload_sha256: s["payload_sha256"],
+    as_of_utc: s["as_of_utc"],
+    identity_registry: s["identity_registry"],
+    families: (s["families"] as Record<string, any>[]).map((f) => ({ items: (f["items"] as Record<string, any>[]).map((i) => ({ public_item_key: i["public_item_key"] })) })),
+  } as unknown as Snapshot;
 }
 
 /** Refus fail-closed quand l'ACTIVE est UNSAFE : CATALOG_UNSAFE (C0 §13 : « génération marquée UNSAFE »). */
@@ -339,24 +399,24 @@ function unsafeActiveResult(): ActivationResult {
  * Authentification avant tout verrou (review F-03) pour VERIFY_MEDIA / ACTIVATE : clé de publication, puis génération
  * connue (404), puis HMAC du contexte C0 §7 de la génération stockée (401). Aucune ligne de journal pour ces refus.
  */
-async function authenticateControl(deps: ReceiverDeps, control: ControlBody, headers: HeaderSource, operation: string): Promise<GenerationRow | ReceiverResponse> {
+type AuthenticatedGeneration = GenerationRow & { doc: Json | undefined };
+
+async function authenticateControl(deps: ReceiverDeps, control: ControlBody, headers: HeaderSource, operation: string): Promise<AuthenticatedGeneration | ReceiverResponse> {
   const gate = transportGate(deps.config, headers, operation);
   if (gate !== null) return gate;
   const row = await generationByKey(deps.pool, control.catalogue_sequence, control.payload_sha256, false);
   if (row === null || row.publication_id !== control.publication_id) return transportError(404, "GENERATION_NOT_STAGED", operation);
-  const doc = tryParse(row.bytes, MAX_BYTES);
+  const doc = summarize(row.bytes);
   const ok = isObject(doc) && verify(deps.config.keyring, headers.get(HEADER_KEY_ID), headers.get(HEADER_SIGNATURE), SCOPE_PUBLISH, snapshotDomain(doc), signatureContext(doc as unknown as Snapshot));
   if (!ok) return json(401, { accepted: false, outcome: "REJECTED", operation, error_codes: ["SIGNATURE_INVALID"], stage: "transport_gate" });
-  return row;
+  return { ...row, doc };
 }
 
 /** Store média de l'évaluation : octets présents en base pour ce que le SITE sert (v2 : dérivés, images sans dérivé et documents ; v1 : les media_refs). */
 async function mediaStoreFor(q: Querier, doc: Json | undefined): Promise<Map<string, Uint8Array>> {
   const store = new Map<string, Uint8Array>();
-  if (!isObject(doc) || !Array.isArray(doc["media_refs"])) return store;
-  const shas = doc["contract_version"] === SNAPSHOT_V2
-    ? servedMedia(doc as Record<string, any>).map(([sha]) => sha).filter(isHex64)
-    : doc["media_refs"].map((ref) => (isObject(ref) ? ref["sha256"] : null)).filter(isHex64);
+  // `doc` est le résumé de `summarize` : la liste des médias servis y est déjà relevée.
+  const shas = isObject(doc) && Array.isArray(doc["media_shas"]) ? (doc["media_shas"] as string[]) : [];
   if (shas.length === 0) return store;
   const { rows } = await q.query("SELECT sha256, bytes FROM site_media WHERE sha256 = ANY($1::char(64)[])", [shas]);
   for (const row of rows) store.set(row.sha256, new Uint8Array(row.bytes));
@@ -400,7 +460,7 @@ function evaluate(deps: ReceiverDeps, bytes: Uint8Array, transport: Json, active
 
 export async function stage(deps: ReceiverDeps, bytes: Uint8Array, headers: HeaderSource): Promise<ReceiverResponse> {
   const transport = transportFromHeaders(headers);
-  const doc = tryParse(bytes, MAX_BYTES);
+  const doc = summarize(bytes);
   const corr = correlate(doc);
   const loaded = await loadActive(deps.pool, false);
   if (loaded === UNSAFE_ACTIVE) {
@@ -428,13 +488,15 @@ export async function stage(deps: ReceiverDeps, bytes: Uint8Array, headers: Head
   const inserted = await deps.pool.query(
     `INSERT INTO site_generation (publication_id, projection_id, scope_key, catalogue_sequence, payload_sha256,
        snapshot_bytes, snapshot_json, transport_json, status, last_result, staged_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, 'STAGED', $9::jsonb, $10)
+     VALUES ($1, $2, $3, $4, $5, $6, convert_from($6, 'UTF8')::jsonb, $7::jsonb, 'STAGED', $8::jsonb, $9)
      ON CONFLICT (catalogue_sequence, payload_sha256) DO NOTHING
      RETURNING id`,
-    [d["publication_id"], d["projection_id"], d["scope_key"], d["catalogue_sequence"], d["payload_sha256"], Buffer.from(bytes), JSON.stringify(d), JSON.stringify(transport), lastResult, now],
+    // La vue jsonb est tirée par la base des octets rangés : le document a passé l'étape canonique, ses octets sont
+    // exactement la sérialisation canonique de l'arbre lu, la vue est donc la même ; aucune copie de plus ici.
+    [d["publication_id"], d["projection_id"], d["scope_key"], d["catalogue_sequence"], d["payload_sha256"], Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength), JSON.stringify(transport), lastResult, now],
   );
   const idempotent = inserted.rows.length === 0;
-  const row = await generationByKey(deps.pool, d["catalogue_sequence"] as number, d["payload_sha256"] as string, false);
+  const row = await generationMetaByKey(deps.pool, d["catalogue_sequence"] as number, d["payload_sha256"] as string, false);
   if (row === null) throw new Error("STAGE : ligne introuvable après insertion");
   await log(deps.pool, { operation: "STAGE", ...corr, outcome: idempotent ? "STAGED_IDEMPOTENT" : "STAGED", stage: result.stage, detail: { ...detail, generation_status: row.status } });
   return json(200, { accepted: true, outcome: "STAGED", operation: "STAGE", idempotent, generation: generationSummary(row) });
@@ -488,7 +550,7 @@ export async function verifyMedia(deps: ReceiverDeps, body: Uint8Array, headers:
   if (!("bytes" in authenticated)) return authenticated;
   const row = authenticated;
   const transport = transportFromHeaders(headers);
-  const doc = tryParse(row.bytes, MAX_BYTES);
+  const doc = authenticated.doc;
   const loaded = await loadActive(deps.pool, false);
   if (loaded === UNSAFE_ACTIVE) {
     const r = unsafeActiveResult();
@@ -522,7 +584,7 @@ export async function verifyMedia(deps: ReceiverDeps, body: Uint8Array, headers:
     "UPDATE site_generation SET status = 'VERIFIED', verified_at = $2, last_result = $3::jsonb WHERE id = $1 AND status = 'STAGED'",
     [row.id, now, lastResult],
   );
-  const after = await generationByKey(deps.pool, row.catalogue_sequence, row.payload_sha256, false);
+  const after = await generationMetaByKey(deps.pool, row.catalogue_sequence, row.payload_sha256, false);
   await log(deps.pool, { operation: "VERIFY_MEDIA", ...corr, outcome: "MEDIA_VERIFIED", stage: result.stage, detail: { ...detail, generation_status: after?.status ?? null } });
   return json(200, { accepted: true, outcome: "MEDIA_VERIFIED", operation: "VERIFY_MEDIA", generation: generationSummary(after ?? row) });
 }
@@ -548,8 +610,8 @@ export async function activate(deps: ReceiverDeps, body: Uint8Array, headers: He
     await client.query(`SET LOCAL lock_timeout = '${LOCK_TIMEOUT}'`);
     // 1. Verrou exclusif du pointeur, puis relecture de l'ACTIVE DANS le verrou.
     const loaded = await loadActive(client, true);
-    const target = await generationByKey(client, control.catalogue_sequence, control.payload_sha256, true);
-    if (target === null || target.publication_id !== control.publication_id) {
+    const target = await generationMetaByKey(client, control.catalogue_sequence, control.payload_sha256, true);
+    if (target === null || target.publication_id !== control.publication_id || target.id !== authenticated.id) {
       await client.query("ROLLBACK");
       return transportError(404, "GENERATION_NOT_STAGED", "ACTIVATE");
     }
@@ -561,11 +623,11 @@ export async function activate(deps: ReceiverDeps, body: Uint8Array, headers: He
       return refusal("ACTIVATE", r);
     }
     const active = loaded;
-    const doc = tryParse(target.bytes, MAX_BYTES);
+    const doc = authenticated.doc;
     const store = await mediaStoreFor(client, doc);
     // 2. Horloge serveur, politique receiver, appel complet de la fonction pure.
     const now = (deps.now ?? serverNowUtc)();
-    const result = applyEnvironment(evaluate(deps, target.bytes, transport, active, store, now), doc, deps.config.env);
+    const result = applyEnvironment(evaluate(deps, authenticated.bytes, transport, active, store, now), doc, deps.config.env);
     const detail = resultDetail(result, transport["key_id"]);
     const corr = corrOf(target);
     const lastResult = JSON.stringify({ operation: "ACTIVATE", at_utc: now, ...publicResult(result) });
