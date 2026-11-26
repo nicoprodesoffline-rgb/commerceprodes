@@ -102,7 +102,7 @@ function DrawerBody({ onClose }: { onClose: () => void }) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <Link href={`/famille/${l.family_slug}?article=${encodeURIComponent(l.public_item_key)}`} onClick={onClose} className="inline-flex min-h-11 items-center font-medium hover:underline">{l.family_name}</Link>
-                      <p className="text-xs text-ink-3">{axesText(l.axes)}</p>
+                      <p className="text-xs text-ink-3 [overflow-wrap:anywhere]">{axesText(l.axes)}</p>
                     </div>
                     <button type="button" onClick={() => remove(i)} aria-label={`Retirer ${l.family_name} du panier`} className="inline-flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[9px] text-ink-3 hover:bg-surface">×</button>
                   </div>
