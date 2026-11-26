@@ -2,7 +2,7 @@
 // le jour de Paris, et la preuve qu'aucun choix n'est gardé d'une requête à l'autre. Les 16 cas V2_BLOCKS communs sont rejoués par `npm run c0v2:test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { load } from "./load-ts.mjs";
 
@@ -130,4 +130,32 @@ test("CA-4 : les blocs « selection » et les dates du document v2 arrivent jusq
     assert.equal(home.sections[i].ends_at_utc, r.ends_at_utc);
     if (r.type === "selection") assert.deepEqual(home.sections[i].data, { title: r.data.title, source: r.data.source, families: r.data.families, shown: r.data.shown, rotation: r.data.rotation });
   });
+});
+
+const walk = (dir) => readdirSync(dir).flatMap((name) => {
+  const full = path.join(dir, name);
+  return statSync(full).isDirectory() ? walk(full) : /\.tsx?$/.test(name) ? [full] : [];
+});
+const ROOT = path.resolve(import.meta.dirname, "../..");
+
+test("CA-4 : toute page qui peut porter des blocs est servie à chaque requête (accueil, /p, aperçu, pages éditables, plan du site)", () => {
+  for (const file of ["app/layout.tsx", "app/page.tsx", "app/p/[...slug]/page.tsx", "app/apercu/[id]/page.tsx", "app/sitemap.ts"]) {
+    const text = readFileSync(path.join(ROOT, file), "utf8");
+    assert.match(text, /export const dynamic = "force-dynamic"/, `${file} doit rester force-dynamic`);
+    assert.doesNotMatch(text, /export const revalidate|unstable_cache|"use cache"|generateStaticParams/, `${file} ne doit pas garder de page`);
+  }
+  // Une page éditable rendue ailleurs (FAQ, mentions légales, livraison…) hérite de la mise en page dynamique ; aucune page de l'application n'est statique.
+  for (const file of walk(path.join(ROOT, "app"))) {
+    assert.doesNotMatch(readFileSync(file, "utf8"), /export const (revalidate|dynamic) = (\d+|"force-static"|false)/, `${file} garde une page`);
+  }
+});
+
+test("CA-4 : aucun lecteur de page.sections ne lit un bloc échu : le premier bloc, la recherche d'un bloc et le rendu passent par le filtre des dates", () => {
+  for (const file of [...walk(path.join(ROOT, "app")), ...walk(path.join(ROOT, "components"))]) {
+    const text = readFileSync(file, "utf8");
+    for (const line of text.split("\n")) {
+      if (/\.sections\[\d\]/.test(line)) assert.match(line, /liveSections\(/, `${path.relative(ROOT, file)} lit un bloc sans filtre : ${line.trim().slice(0, 80)}`);
+      if (/\.sections\.(find|filter|map)\(/.test(line)) assert.match(text, /livePage\(|liveSections\(|PageSections/, `${path.relative(ROOT, file)} lit les blocs sans filtre`);
+    }
+  }
 });
