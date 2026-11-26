@@ -39,6 +39,30 @@ test("dans un groupe : le rangement à la main de CETTE rubrique d'abord, puis l
   assert.deepEqual(order(families), ["m2", "m1", "ailleurs", "a", "b", "e"]);
 });
 
+test("réponse de l'Owner du 27/11 : une famille rangée à la main dans CETTE rubrique passe avant tout, même devant la gamme propre et les promotions", () => {
+  const at = (position) => ({ category_positions: [{ category_key: "bancs", position }] });
+  const families = [
+    fam("propre", "Banc propre", { own_range: true }),
+    fam("promo", "Banc promo", withPromo()),
+    fam("nouveau", "Banc nouveau", { first_published_at_utc: "2026-06-05T00:00:00Z" }),
+    fam("reste-2", "Zèbre", at(2)),
+    fam("reste-1", "Yucca", at(1)),
+    fam("promo-3", "Banc promo placé", withPromo(at(3))),
+    fam("propre-4", "Banc propre placé", { own_range: true, ...at(4) }),
+  ];
+  assert.deepEqual(order(families), ["reste-1", "reste-2", "promo-3", "propre-4", "propre", "promo", "nouveau"]);
+});
+
+test("une place dans une AUTRE rubrique ne compte pas : la famille reste dans son groupe", () => {
+  const families = [fam("reste", "Aaa"), fam("promo", "Zzz", withPromo({ category_positions: [{ category_key: "tables", position: 1 }] }))];
+  assert.deepEqual(order(families), ["promo", "reste"]);
+});
+
+test("une nouveauté placée à la main qui expire garde sa place : la règle ne la range pas", () => {
+  const families = [fam("a", "Armoire"), fam("n", "Zèbre", { first_published_at_utc: "2026-01-01T00:00:00Z", category_positions: [{ category_key: "bancs", position: 1 }] })];
+  assert.deepEqual(order(families), ["n", "a"]);
+});
+
 test("une nouveauté sans place : la plus récente d'abord ; une nouveauté placée à la main passe avant", () => {
   const families = [
     fam("vieille", "A", { first_published_at_utc: "2026-05-01T00:00:00Z" }),
