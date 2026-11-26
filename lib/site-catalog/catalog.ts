@@ -75,6 +75,8 @@ export type Family = {
   first_published_at_utc?: string;
   characteristics?: Characteristic[];
   documents?: FamilyDocument[];
+  /** Délai de livraison du fournisseur (C0 v2 `delivery_delay`, 49e série) : un texte, ou `null` quand la Factory n'en a pas UN seul. */
+  delivery_delay?: string | null;
 };
 
 export type CatalogMeta = {
@@ -116,6 +118,7 @@ function v2Family(f: Record<string, unknown>): Partial<Family> {
   if (typeof f["first_published_at_utc"] === "string") out.first_published_at_utc = f["first_published_at_utc"];   // jamais la date de création : une famille jamais publiée n'est pas une nouveauté (N01, N02)
   if (Array.isArray(f["characteristics"])) out.characteristics = f["characteristics"] as Characteristic[];
   if (Array.isArray(f["documents"])) out.documents = f["documents"] as FamilyDocument[];
+  if (typeof f["delivery_delay"] === "string" || f["delivery_delay"] === null) out.delivery_delay = f["delivery_delay"] as string | null;
   return out;
 }
 

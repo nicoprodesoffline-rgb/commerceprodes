@@ -169,15 +169,17 @@ test("F-01 : lecture bornée — Content-Length au-delà -> 413 sans lecture ; f
     const signed = { "x-c0-key-id": c.transport.key_id, "x-c0-signature": c.transport.signature };
     const logs = await logCount();
     for (const [route, max] of [["STAGE", receiver.MAX_BYTES], ["VERIFY_MEDIA", receiver.MAX_CONTROL_BYTES], ["ACTIVATE", receiver.MAX_CONTROL_BYTES], ["MEDIA_PUT", receiver.MAX_MEDIA_BYTES]]) {
+      // Au-delà du plafond de CETTE route (STAGE : 128 Mio depuis le cercle 9) : un corps fixe de 100 Mio passait sous STAGE.
+      const over = max + 32 * MiB;
       // (a) Content-Length annoncé > plafond : refus immédiat, 0 octet tiré
-      const a = countingStream(100 * MiB);
-      const reqA = new Request("http://local/x", { method: "POST", body: a.stream, duplex: "half", headers: { ...signed, "content-length": String(100 * MiB) } });
+      const a = countingStream(over);
+      const reqA = new Request("http://local/x", { method: "POST", body: a.stream, duplex: "half", headers: { ...signed, "content-length": String(over) } });
       const resA = await http.handleWithBody(route, reqA, max, async () => { throw new Error("non appelé"); });
       assert.equal(resA.status, 413, route);
       assert.equal((await resA.json()).transport_error, "BODY_TOO_LARGE");
       assert.ok(a.state.pulled <= MiB, `${route} (a) : ${a.state.pulled} octets tirés`);
       // (b) flux sans longueur : lecture arrêtée dès le dépassement
-      const b = countingStream(100 * MiB);
+      const b = countingStream(over);
       const reqB = new Request("http://local/x", { method: "POST", body: b.stream, duplex: "half", headers: signed });
       const resB = await http.handleWithBody(route, reqB, max, async () => { throw new Error("non appelé"); });
       assert.equal(resB.status, 413, route);

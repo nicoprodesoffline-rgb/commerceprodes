@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const CHECK = join(ROOT, "scripts", "c0", "check.mjs");
 const SYNC = join(ROOT, "scripts", "c0", "sync.mjs");
-const FROZEN = "728c4b074df6d5ada34b57b5558e3e18a256f729";
+const FROZEN = "f58f71baed4ec7deb88dea99316155b20863f53b";  // 49e série : plafond du snapshot à 128 Mio, v1 et v2
 const TARGET = "c0/fixtures/VERDICTS.json";
 
 // Valeurs attendues ÉPINGLÉES (F-02) : elles ne changent que dans un commit de re-sync revu (nouvelle
@@ -20,16 +20,16 @@ const TARGET = "c0/fixtures/VERDICTS.json";
 const PINNED = {
   factory_repo: "nicoprodesoffline-rgb/prodes-data-factory-poc",
   frozen_code_sha: FROZEN,
-  archived_from_sha: "f208bca8113b910cb676724da6ecc04741ab86ab",
-  file_count: 453,
+  archived_from_sha: "182414c80b932b058769b225f16f7dd2b0c0a03e",
+  file_count: 454,
   // Regel du 27/10 (fusion officielle W5+W6) : selectPriceIn (Owner A14) fait partie du code gelé, aucun amendement local.
-  tree_digest: "9d41e869d9c367a60dcabf2ebdfaf415adb81e12e710e00fa7349ca89b4974a7",
+  tree_digest: "e405a13a8a37e627088d6d74bf9c1b68a54a8d2ae158d9b7bb13488bcf06cdae",
   contract_version: ["site_snapshot.v1", "site_activation.v1", "site_business.v1", "site_events.v1"],
   trees: {
     "c0/fixtures": "c2bf3496239b3e92e4a45f67ba55237495041208",
-    "c0/python": "e89061c6e2c6b22aafa81696075695d894d804e4",
-    "c0/ts/src": "250a07e4021833dba905ecc8a05afe527212f3ae",
-    "c0/ts/test": "5db6b7cf51444ce84a412c904df3fa493c8772f6",
+    "c0/python": "7ae688241d519fd78b7029bc1a5a67ad8a4ffe61",
+    "c0/ts/src": "68c7f59a7613299c1f69e3fd2f979ac9d2e811e8",
+    "c0/ts/test": "165ef502e8af2e4414e68b5ad9380e4288d24d10",
   },
 };
 

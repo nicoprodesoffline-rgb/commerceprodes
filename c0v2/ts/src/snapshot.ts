@@ -30,6 +30,8 @@ const FAMILY_KEYS = [
   "public_family_key", "slug", "name", "description_short", "description_long",
   "primary_category_key", "secondary_category_keys", "image_main_sha256", "axes", "items",
   "seo_title", "seo_description", "slug_aliases", "first_published_at_utc", "category_positions", "characteristics", "documents",
+  // 49e série (Owner, 25/11): the delivery lead time of the family, one text or null.
+  "delivery_delay",
 ];
 const AXIS_KEYS = ["axis_key", "label"];
 const ITEM_KEYS = ["public_item_key", "status", "variant_axes", "public_media_refs", "public_sell_price_windows", "pack", "characteristics"];
@@ -54,6 +56,8 @@ export const MEDIA_MIME_ALLOWED = v1.MEDIA_MIME_ALLOWED;
 export const MAX_MEDIA_SIZE = v1.MAX_MEDIA_SIZE;
 const MAX_QUANTITY = v1.MAX_QUANTITY;
 const MAX_POSITION = 1000000;
+/** The supplier's lead time as typed in the Factory (120 at most), as MAX_DELIVERY_DELAY in the Python reference. */
+const MAX_DELIVERY_DELAY = 120;
 const MAX_DIMENSION = 20000;
 const MAX_DERIVATIVES = 8;
 const MAX_CHARACTERISTICS = 200;
@@ -172,6 +176,7 @@ function shapeFamily(value: Json): void {
   need(optionalText(family["seo_description"], 1000, true), "family.seo_description");
   for (const alias of list(family["slug_aliases"], "family.slug_aliases")) need(slugOk(alias), "family.slug_aliases");
   need(f.isUtc(family["first_published_at_utc"]), "family.first_published_at_utc");
+  need(optionalText(family["delivery_delay"], MAX_DELIVERY_DELAY), "family.delivery_delay");
   for (const entry of list(family["category_positions"], "family.category_positions")) {
     need(f.exactKeys(entry, POSITION_KEYS), "family.category_positions");
     need(categoryKeyOk(obj(entry)["category_key"]) && f.isCount(obj(entry)["position"], 1, MAX_POSITION), "family.category_positions");

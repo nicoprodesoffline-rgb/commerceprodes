@@ -1,7 +1,16 @@
 {
   "factory_repo": "nicoprodesoffline-rgb/prodes-data-factory-poc",
-  "branch": "c3/candidate-b",
-  "archived_from_sha": "728c4b074df6d5ada34b57b5558e3e18a256f729",
-  "archive_paths": ["c0v2/README.md", "c0v2/fixtures", "c0v2/ts/package-lock.json", "c0v2/ts/package.json", "c0v2/ts/src", "c0v2/ts/test", "c0v2/ts/tsconfig.json", "docs/contracts/c0_site_v2.md"],
-  "note": "Copie sans modification (contrat v2, cercle 3). Remise au SHA du cercle 7, ligne 7.9 (plus de maximum du nombre d'axes d'une famille) : seuls src/snapshot.ts et test/axes.test.ts changent. La v1 (c0/) est intacte. Le Python de référence et le générateur restent dans la Factory."
+  "branch": "c9/delai-c0",
+  "archived_from_sha": "f19c74452c0b03c9807ae5d9c23b246f18db4359",
+  "archive_paths": [
+    "c0v2/README.md",
+    "c0v2/fixtures",
+    "c0v2/ts/package-lock.json",
+    "c0v2/ts/package.json",
+    "c0v2/ts/src",
+    "c0v2/ts/test",
+    "c0v2/ts/tsconfig.json",
+    "docs/contracts/c0_site_v2.md"
+  ],
+  "note": "Copie sans modification (contrat v2). Remise au SHA du lot 9-Q3 (49e série) : la famille porte delivery_delay, un texte ≤ 120 ou null ; jeux d'essai régénérés (39 cas) et test du plafond de 128 Mio repris. La v1 (c0/) est intacte. Le Python de référence et le générateur restent dans la Factory."
 }

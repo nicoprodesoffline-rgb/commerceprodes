@@ -1,4 +1,4 @@
-import { documentLinks, isPromoNow } from "@/lib/site-catalog/merchandising";
+import { deliveryDelayText, documentLinks, isPromoNow } from "@/lib/site-catalog/merchandising";
 import { firstByPack } from "@/lib/site-catalog/conditionnement";
 import "@/components/product/product-sheet.css";
 import type { Metadata } from "next";
@@ -113,6 +113,7 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
   const similar = relations.upsell.length > 0 ? [] : catalog.families.filter((f) => f.slug !== family.slug && !shown.has(f.public_family_key) && f.primary_category_key === family.primary_category_key).slice(0, 8);
   const similarCards = similar.map((f) => ({ ...familyCard(f), from: familyPrice(catalog, f, instant) }));
   // Le texte court est sous le prix ; l'onglet « Description » ne reprend pas ce qu'il répète.
+  const delivery = deliveryDelayText(family);
   const longText = descriptionRest(family.description_short ?? "", family.description_long ?? "");
   const crumbs = [{ label: "Accueil", href: "/" }, ...categoryCrumbs(catalog, family.primary_category_key), { label: family.name }];
   // Données structurées (3.19, S11) : Produit (nom, image, prix de la première tranche, devise) et fil d'Ariane ; texte échappé.
@@ -146,6 +147,7 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
           </div>
         )}
       >
+        {delivery && <p className="mt-4 text-sm" data-testid="delivery-delay">{delivery}</p>}
         <div className="product-list-links mt-6 flex flex-wrap gap-x-6 border-t border-line pt-4 print:hidden" data-testid="family-lists">
           <WishlistButton slug={family.slug} name={family.name} />
           <CompareButton slug={family.slug} name={family.name} />

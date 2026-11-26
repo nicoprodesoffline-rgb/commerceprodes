@@ -22,8 +22,8 @@
  * Raison : dès qu'un proxy Next 16 couvre une route, Next met le corps de la requête en mémoire tampon et le TRONQUE
  * à `proxyClientMaxBodySize` (10 MiB par défaut) avant la route ; BC2 lit alors un corps amputé (média légitime de
  * 10–20 MiB → 401 `SIGNATURE_INVALID`, snapshot de 10–32 MiB → 400 `PAYLOAD_MALFORMED`, flux surdimensionné →
- * 400 au lieu de 413). Le plafond de corps de ces routes appartient à BC2/BC4 (lu en flux et borné par eux : 32 MiB
- * STAGE, 20 MiB média, 256 KiB contrôle) ; on ne relève donc PAS `proxyClientMaxBodySize`. Ces routes n'ont besoin
+ * 400 au lieu de 413). Le plafond de corps de ces routes appartient à BC2/BC4 (lu en flux et borné par eux : 128 MiB
+ * STAGE (32 MiB avant le cercle 9), 20 MiB média, 256 KiB contrôle) ; on ne relève donc PAS `proxyClientMaxBodySize`. Ces routes n'ont besoin
  * d'aucun rôle de ce proxy : pas de CSRF (authentification HMAC, aucun cookie), pas de page HTML (donc pas de CSP
  * à nonce) ; les en-têtes de `next.config.ts` (`nosniff`, `X-Frame-Options`, …) s'y appliquent toujours.
  * Toute nouvelle route machine signée DOIT être ajoutée à l'exclusion du `matcher` (test de non-régression :

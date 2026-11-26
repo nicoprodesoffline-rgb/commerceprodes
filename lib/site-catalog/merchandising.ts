@@ -63,6 +63,12 @@ export function documentLinks(family: Family): { label: string; href: string }[]
   return (family.documents ?? []).filter((d: FamilyDocument) => d.mime === "application/pdf").map((d) => ({ label: d.label, href: `/media/${d.sha256}` }));
 }
 
+/** 49e série : la ligne du délai de livraison sur la fiche, ou `null` (rien n'est affiché, jamais de délai par défaut). */
+export function deliveryDelayText(family: Family): string | null {
+  const text = typeof family.delivery_delay === "string" ? family.delivery_delay.trim() : "";
+  return text ? `Délai de livraison : ${text}` : null;
+}
+
 export type UniverseSection = { key: string; name: string; level: number; families: Family[] };
 
 /**

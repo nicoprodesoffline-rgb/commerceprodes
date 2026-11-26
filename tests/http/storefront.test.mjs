@@ -799,9 +799,9 @@ describe("BC3 — boutique sur génération ACTIVE réelle (base SITE, receiver 
       assert.doesNotMatch(logs.join(""), /Request body exceeded/);
     });
 
-    test("4.3 STAGE signé de 40 MiB en flux sans Content-Length → 413 BODY_TOO_LARGE (plafond BC2 32 MiB), pas 400", async () => {
+    test("4.3 STAGE signé de 160 MiB en flux sans Content-Length → 413 BODY_TOO_LARGE (plafond BC2 128 MiB), pas 400", async () => {
       const j = jsonOfSize(1024);
-      const r = await streamWithoutLength("/api/site/publish/stage", j.headers, 40 * MiB);
+      const r = await streamWithoutLength("/api/site/publish/stage", j.headers, 160 * MiB);
       assert.equal(r.status, 413, r.body.slice(0, 200));
       assert.equal(JSON.parse(r.body).transport_error, "BODY_TOO_LARGE");
     });
