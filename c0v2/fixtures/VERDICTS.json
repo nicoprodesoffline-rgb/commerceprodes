@@ -352,6 +352,32 @@
       "notes": "Every v2 field is present: an empty list or null, never absent.",
       "outcome": "REJECTED"
     },
+    "V2_CATALOGUE.v2_own_range_not_yes_or_no": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "family.own_range"
+        ]
+      },
+      "notes": "CA-5: own_range is true or false, never a text (and never the supplier or the word that decides it).",
+      "outcome": "REJECTED"
+    },
+    "V2_CATALOGUE.v2_own_range_null": {
+      "accepted": false,
+      "error_codes": [
+        "SNAPSHOT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "family.own_range"
+        ]
+      },
+      "notes": "CA-5: own_range is always given; false for a family outside the own range.",
+      "outcome": "REJECTED"
+    },
     "V2_CATALOGUE.v2_position_outside_its_categories": {
       "accepted": false,
       "error_codes": [

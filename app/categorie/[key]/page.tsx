@@ -13,7 +13,9 @@ import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { applyFilters, pageFilters as filtersOf, parseFilterChoice } from "@/lib/site-catalog/filters";
 import { listFamilies, parseListingQuery } from "@/lib/site-catalog/listing";
 import { count } from "@/components/site/format";
-import { isPromoNow } from "@/lib/site-catalog/merchandising";
+import { isPromoNow, novelFamilies } from "@/lib/site-catalog/merchandising";
+import { orderRubric } from "@/lib/site-catalog/rubric-order";
+import { getShopSettings } from "@/lib/site-shop/source";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { catalogForPage } from "@/lib/site-catalog/page";
 import { MediaImage } from "@/components/site/media-image";
@@ -53,9 +55,12 @@ export default async function CategoryPage({ params, searchParams }: { params: P
   const slugs = new Set(nav.familySlugs(cat.key));
   // Ordre par défaut = celui que la Factory a donné à la rubrique (cercle 3, 3.21) ; le tri choisi par le visiteur reste possible.
   const bySlug = new Map(catalog.families.map((f) => [f.slug, f]));
-  const allFamilies = nav.familySlugs(cat.key).flatMap((slug) => { const f = bySlug.get(slug); return f && slugs.has(slug) ? [f] : []; });
   const record = catalog.categories.find((c) => c.category_key === key);
   const now = serverNowUtc();
+  // CA-5 : l'ordre par défaut de la rubrique (gamme propre, promotions, nouveautés, le reste ; le rangement à la main joue à l'intérieur de chaque groupe), à l'instant servi.
+  const shop = await getShopSettings();
+  const noveltySlugs = new Set(novelFamilies(catalog.families, now, shop.noveltyDays, shop.noveltyCount).map((f) => f.slug));
+  const allFamilies = orderRubric(nav.familySlugs(cat.key).flatMap((slug) => { const f = bySlug.get(slug); return f && slugs.has(slug) ? [f] : []; }), key, now, noveltySlugs);
   // 4.27 : les filtres se calculent sur toutes les familles listées (sous-arbre) ; OU dans un filtre, ET entre filtres et avec le prix.
   const groups = filtersOf(allFamilies);
   const families = applyFilters(allFamilies, groups, choice);

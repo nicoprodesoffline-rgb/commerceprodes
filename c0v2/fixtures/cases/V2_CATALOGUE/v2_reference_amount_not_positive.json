@@ -68,7 +68,7 @@
     },
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "b9aee1eacd75a93e91eb916588629465843cc5355b2bd235ae798ece7be9746c"
+      "signature": "c433b8a3c693479c331d891ac38e72f964c1a882d5ffd1d44c05a2a2e4b87847"
     }
   },
   "notes": "M01–M03: a struck price is the one the Calculator file gives (F4, a fixed-price lot, in v2_accepted), on any window, never 0.",

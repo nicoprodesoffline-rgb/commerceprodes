@@ -68,7 +68,7 @@
     },
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "497ed0e71fd99b8f346b39702485bf1ec20a31ade87735f7a2ec25854607dd5f"
+      "signature": "a2764bb078f54152a4bb3b2cbfcb41dcad8ee487e203df67fc241ede57b12f2e"
     }
   },
   "notes": "The lead time is 120 characters at most, as typed in the Factory.",

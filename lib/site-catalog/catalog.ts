@@ -77,6 +77,8 @@ export type Family = {
   documents?: FamilyDocument[];
   /** Délai de livraison du fournisseur (C0 v2 `delivery_delay`, 49e série) : un texte, ou `null` quand la Factory n'en a pas UN seul. */
   delivery_delay?: string | null;
+  /** CA-5 (C0 v2 `own_range`) : la famille est de la gamme propre de Prodes, oui ou non ; sert seulement à l'ordre d'une rubrique. Absent (catalogue v1) = non. */
+  own_range?: boolean;
 };
 
 export type CatalogMeta = {
@@ -119,6 +121,7 @@ function v2Family(f: Record<string, unknown>): Partial<Family> {
   if (Array.isArray(f["characteristics"])) out.characteristics = f["characteristics"] as Characteristic[];
   if (Array.isArray(f["documents"])) out.documents = f["documents"] as FamilyDocument[];
   if (typeof f["delivery_delay"] === "string" || f["delivery_delay"] === null) out.delivery_delay = f["delivery_delay"] as string | null;
+  if (typeof f["own_range"] === "boolean") out.own_range = f["own_range"];
   return out;
 }
 

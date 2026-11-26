@@ -32,6 +32,8 @@ const FAMILY_KEYS = [
   "seo_title", "seo_description", "slug_aliases", "first_published_at_utc", "category_positions", "characteristics", "documents",
   // 49e série (Owner, 25/11): the delivery lead time of the family, one text or null.
   "delivery_delay",
+  // Cercle A, CA-5 (Owner A.4-d1): the family belongs to Prodes' own range, yes or no (never the setting that decides it).
+  "own_range",
 ];
 const AXIS_KEYS = ["axis_key", "label"];
 const ITEM_KEYS = ["public_item_key", "status", "variant_axes", "public_media_refs", "public_sell_price_windows", "pack", "characteristics"];
@@ -177,6 +179,7 @@ function shapeFamily(value: Json): void {
   for (const alias of list(family["slug_aliases"], "family.slug_aliases")) need(slugOk(alias), "family.slug_aliases");
   need(f.isUtc(family["first_published_at_utc"]), "family.first_published_at_utc");
   need(optionalText(family["delivery_delay"], MAX_DELIVERY_DELAY), "family.delivery_delay");
+  need(typeof family["own_range"] === "boolean", "family.own_range");
   for (const entry of list(family["category_positions"], "family.category_positions")) {
     need(f.exactKeys(entry, POSITION_KEYS), "family.category_positions");
     need(categoryKeyOk(obj(entry)["category_key"]) && f.isCount(obj(entry)["position"], 1, MAX_POSITION), "family.category_positions");

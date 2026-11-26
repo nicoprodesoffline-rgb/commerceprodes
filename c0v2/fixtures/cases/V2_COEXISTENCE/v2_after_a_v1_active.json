@@ -75,7 +75,7 @@
     },
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "7686644699b1cc7c70a146c8ca0b602c3dadc7b33c917aa1b13ffc8e8479fb5f"
+      "signature": "b584b4a95b27f26eab10ef20e465ba0fc56893005d6870c2f2667097f7bbac8f"
     }
   },
   "notes": "The first v2 catalogue takes a v1 generation as its base (sequence, digest, explained withdrawals).",
