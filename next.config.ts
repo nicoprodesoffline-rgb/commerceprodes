@@ -5,6 +5,8 @@ import type { NextConfig } from "next";
 // par /media/[sha256] depuis la fixture) — réduit aussi la surface GHSA-2464-fhr4-w9xw.
 const config: NextConfig = {
   poweredByHeader: false,
+  // pdfkit lit les métriques Helvetica standard sur disque, depuis son propre paquet.
+  serverExternalPackages: ["pdfkit"],
   images: { unoptimized: true },
   async headers() {
     return [
