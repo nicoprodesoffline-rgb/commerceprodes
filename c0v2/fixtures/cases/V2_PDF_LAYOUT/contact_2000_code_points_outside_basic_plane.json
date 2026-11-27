@@ -17,7 +17,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "a1019795f5993d147d9449dabe565cd2b920c9d09f522f7c23765c604f1a1e24"
+      "signature": "322fbe4c934910a5379a5df30ea9acb1b9df8a7976fce5f1f544b8866ed9c0da"
     }
   },
   "notes": "CA-8b: contact_2000_code_points_outside_basic_plane; fictional PDF layout.",

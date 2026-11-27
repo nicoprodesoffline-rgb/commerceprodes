@@ -1,7 +1,7 @@
 {
   "factory_repo": "nicoprodesoffline-rgb/prodes-data-factory-poc",
-  "branch": "eb/ca8b-gabarit-fiche-pdf (PR 244 de la Factory)",
-  "archived_from_sha": "d01440521a84d079f5721a3d7447c1dd605ff712",
+  "branch": "eb/ca8b-fixtures-reformulees (PR 245 de la Factory, posée sur la PR 244)",
+  "archived_from_sha": "bb806736a44dcf7d553268cdf494fb3eba0bd059",
   "archive_paths": [
     "c0v2/README.md",
     "c0v2/fixtures",
@@ -12,5 +12,5 @@
     "c0v2/ts/tsconfig.json",
     "docs/contracts/c0_site_v2.md"
   ],
-  "note": "Copie sans modification (contrat v2), prise sur la tête de la PR 244 de la Factory (CA-8b : pdf_layout, gabarit de la fiche PDF) en attendant sa fusion ; à reprendre sur main de la Factory à la fusion. La v1 (c0/) est intacte."
+  "note": "Copie sans modification (contrat v2), prise sur la tête de la PR 245 de la Factory (CA-8b : pdf_layout, jeux d'essai reformulés) en attendant la fusion des PR 244 et 245 ; à reprendre sur main de la Factory à leur fusion. La v1 (c0/) est intacte."
 }

@@ -17,7 +17,7 @@
     "now_utc": "2026-11-17T07:00:00Z",
     "transport": {
       "key_id": "c0-test-publish-02",
-      "signature": "22f622f6fbe987c5bc5fdd3789d45745a6cc3539a89199028a57ce9fd002fc17"
+      "signature": "e31873af35a76408d87e7a544dae692fcccae39ed2dd04db538b35e4ade89b09"
     }
   },
   "notes": "CA-8b: contact_2000_characters; fictional PDF layout.",
