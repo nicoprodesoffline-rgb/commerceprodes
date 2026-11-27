@@ -1,7 +1,7 @@
 {
   "factory_repo": "nicoprodesoffline-rgb/prodes-data-factory-poc",
   "branch": "main",
-  "archived_from_sha": "973bc7a0fabc2096daa1634d11defbacd9db25c4",
+  "archived_from_sha": "e873d151a2516e9b4e35490aa5b4fbcc2577eb48",
   "archive_paths": [
     "c0v2/README.md",
     "c0v2/fixtures",
@@ -12,5 +12,5 @@
     "c0v2/ts/tsconfig.json",
     "docs/contracts/c0_site_v2.md"
   ],
-  "note": "Copie sans modification (contrat v2), prise sur main de la Factory après la fusion des PR 244 et 245 (CA-8b : pdf_layout). La v1 (c0/) est intacte."
+  "note": "Copie sans modification (contrat v2), prise sur main de la Factory après la fusion de la PR 246 (retention_days de 0 à 365, 0 = aucune fiche gardée). La v1 (c0/) est intacte."
 }

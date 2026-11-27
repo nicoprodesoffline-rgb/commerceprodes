@@ -9,7 +9,7 @@ export function hooks() {
   return registerHooks({
     resolve(s, c, next) {
       if (s.startsWith('@/')) s = pathToFileURL(path.join(ROOT, s.slice(2))).href;
-      if ((s.startsWith('.') || s.startsWith('file:')) && !path.extname(s)) {
+      if ((s.startsWith('.') || s.startsWith('file:')) && !path.extname(s) && !(c.parentURL || '').includes('/dist/')) {
         try { return next(s + '.ts', c); } catch { return next(s + '.tsx', c); }
       }
       return next(s, c);

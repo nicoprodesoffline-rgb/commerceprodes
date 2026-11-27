@@ -6,6 +6,23 @@ const model = await import('../../lib/site-pdf/model.ts');
 const { buildFamilyPdf } = await import('../../lib/site-pdf/render.ts');
 const { price } = await import('../../components/site/format.ts');
 const retained = (d, shas, truncated) => ({ fingerprint: model.fingerprint(d, shas), source_fingerprint: model.sourceFingerprint(d, truncated), photo_shas: shas });
+test('0 jour : fabrication sans même emprunter une connexion, deux appels restent indépendants', async () => {
+  const { retainedPdf } = await import('../../lib/site-pdf/store.ts');
+  const d = input(); d.layout.retention_days = 0;
+  const pool = {
+    connect: () => { assert.fail('connexion interdite à 0 jour'); },
+    query: () => { assert.fail('requête interdite à 0 jour'); },
+  };
+  let builds = 0;
+  const build = async received => {
+    assert.equal(received, d);
+    return { bytes: Buffer.from('%PDF-' + (++builds)), photoShas: [], skipped: [] };
+  };
+  assert.equal((await retainedPdf(pool, d, build)).toString(), '%PDF-1');
+  assert.equal((await retainedPdf(pool, d, build)).toString(), '%PDF-2');
+  assert.equal(builds, 2);
+});
+
 test('prix du site : espace des milliers conservé, jamais remplacé par un point d’interrogation', () => {
   assert.equal(model.printableText(price('1234.56', 'HT')), '1 234,56 € HT');
 });
