@@ -14,6 +14,12 @@ export async function purgeExpiredPdfs(pool: Pool): Promise<number> {
 
 export async function retainedPdf(pool: Pool, input: PdfInput, build: (input: PdfInput) => Promise<PdfResult> = buildFamilyPdf): Promise<Buffer> {
   // L'empreinte source permet de retrouver les photos finalement retenues sans relire leurs octets ni refabriquer.
+  // Durée 0 : « rien gardé ». Aucune lecture ni écriture en base, aucune connexion empruntée : la fiche est fabriquée et envoyée.
+  if (input.layout.retention_days === 0) {
+    const result = await build(input);
+    for (const skip of result.skipped) console.warn(`[site-pdf] ${skip.code} sha256=${skip.sha256}`);
+    return result.bytes;
+  }
   const source = sourceFingerprint(input, false);
   const truncatedSource = sourceFingerprint(input, true);
   const client = await pool.connect();

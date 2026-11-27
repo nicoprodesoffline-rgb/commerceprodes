@@ -1,7 +1,7 @@
 {
   "factory_repo": "nicoprodesoffline-rgb/prodes-data-factory-poc",
-  "branch": "eb/ca8b-retention-zero (PR 246 de la Factory)",
-  "archived_from_sha": "13e5e476898053a2075d88db0aa819477b00116c",
+  "branch": "main",
+  "archived_from_sha": "e873d151a2516e9b4e35490aa5b4fbcc2577eb48",
   "archive_paths": [
     "c0v2/README.md",
     "c0v2/fixtures",
@@ -12,5 +12,5 @@
     "c0v2/ts/tsconfig.json",
     "docs/contracts/c0_site_v2.md"
   ],
-  "note": "Copie sans modification (contrat v2), prise sur la tête de la PR 246 de la Factory (retention_days de 0 à 365, 0 = aucune fiche gardée) en attendant sa fusion ; à reprendre sur main de la Factory à la fusion. La v1 (c0/) est intacte."
+  "note": "Copie sans modification (contrat v2), prise sur main de la Factory après la fusion de la PR 246 (retention_days de 0 à 365, 0 = aucune fiche gardée). La v1 (c0/) est intacte."
 }
