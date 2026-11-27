@@ -156,7 +156,7 @@ function shapePdfLayout(value: Json | undefined): void {
   need(new Set(blocks).size === blocks.length, "pdf_layout.blocks");
   need(layout["font"] === "Helvetica", "pdf_layout.font");
   need(f.isCount(layout["extra_photos"], 0, 8), "pdf_layout.extra_photos");
-  need(f.isCount(layout["retention_days"], 1, 365), "pdf_layout.retention_days");
+  need(f.isCount(layout["retention_days"], 0, 365), "pdf_layout.retention_days");
   need(optionalText(layout["contact"], 2000, true), "pdf_layout.contact");
 }
 

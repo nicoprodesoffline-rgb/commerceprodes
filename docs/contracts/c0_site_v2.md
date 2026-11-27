@@ -158,7 +158,7 @@ le même canal que le catalogue : envoi, vérification, activation, accusé sign
            nav:{ show_in_bar, order } }],
   relations:[{ source, target, kind: COMPLEMENTAIRE|LIE|UPSELL, order }],
   pdf_layout?:{ blocks:[images|description|caracteristiques|prix|coordonnees], font:"Helvetica",
-                extra_photos:0..8, retention_days:1..365, contact:texte|null } | null,
+                extra_photos:0..8, retention_days:0..365, contact:texte|null } | null,
   payload_sha256 }
 ```
 
@@ -171,7 +171,7 @@ Quand `pdf_layout` est un objet, ses cinq clés sont obligatoires et aucune autr
 | `blocks` | Liste **ordonnée** des seuls blocs **affichés**, de 0 à 5, chacun au plus une fois : `images`, `description`, `caracteristiques`, `prix`, `coordonnees`. Liste vide admise ; ni tri ni ajout implicite. Le nom de la famille reste toujours en titre, hors de cette liste. | `pdf_layout.blocks` |
 | `font` | Une seule valeur, `"Helvetica"` (casse exacte). | `pdf_layout.font` |
 | `extra_photos` | Entier de 0 à 8 : photos **en plus de la principale**. Les booléens et textes sont refusés. | `pdf_layout.extra_photos` |
-| `retention_days` | Entier de 1 à 365 ; booléens et textes refusés. | `pdf_layout.retention_days` |
+| `retention_days` | Entier de 0 à 365 ; 0 = aucune fiche gardée, chaque demande la fabrique ; booléens et textes refusés. | `pdf_layout.retention_days` |
 | `contact` | Texte non blanc de 2 000 points de code Unicode au plus, lignes admises, sans caractères de contrôle (règle texte commune), ou `null`. Texte littéral, jamais HTML à interpréter. Coordonnées vides côté Factory → `null`. | `pdf_layout.contact` |
 
 La forme est vérifiée après les champs existants, dans l'ordre : clés, blocs, police, photos, conservation, coordonnées.
