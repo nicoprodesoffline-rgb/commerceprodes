@@ -1,0 +1,10 @@
+{
+  "case_id": "V2_RICHTEXT.a_link_in_a_sentence",
+  "data_label": "STAGING_FIXTURE",
+  "function": "parse_rich_text",
+  "input": {
+    "text": "Voir nos [conditions de vente](/conditions-generales-de-vente) avant de commander."
+  },
+  "notes": "A link is a segment between two text segments.",
+  "scenario": "V2_RICHTEXT"
+}

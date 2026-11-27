@@ -1,0 +1,32 @@
+{
+  "case_id": "V2_CONTENT.rich_text_too_many_links",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/V2_CONTENT/ack_content_ready.json"
+      },
+      "content": {
+        "$doc": "documents/V2_CONTENT/content_ready.json"
+      }
+    },
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_rich_text_too_many_links.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "ff4cddcc3c7b7496b88e05041cc812825ca46bfbb8149c1ca864906fe7cd160f"
+    }
+  },
+  "notes": "CA-3: at most 50 links in one text.",
+  "scenario": "V2_CONTENT"
+}

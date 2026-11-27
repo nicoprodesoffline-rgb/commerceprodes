@@ -1,0 +1,32 @@
+{
+  "case_id": "V2_CONTENT.rich_text_link_label_blank",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/V2_CONTENT/ack_content_ready.json"
+      },
+      "content": {
+        "$doc": "documents/V2_CONTENT/content_ready.json"
+      }
+    },
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_rich_text_link_label_blank.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "f029aa2edbcc9aa628c8c417e71d02f99f15b44e456634736d8e597b86de8fe8"
+    }
+  },
+  "notes": "CA-3: a link has a label.",
+  "scenario": "V2_CONTENT"
+}

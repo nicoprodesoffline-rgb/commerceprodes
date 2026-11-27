@@ -1,0 +1,10 @@
+{
+  "case_id": "V2_RICHTEXT.crlf_line_ends_make_paragraphs",
+  "data_label": "STAGING_FIXTURE",
+  "function": "parse_rich_text",
+  "input": {
+    "text": "Un.\r\n\r\nDeux [x](/a)\r\nsuite."
+  },
+  "notes": "A textarea sent by a browser has CRLF line ends: read as LF, same paragraphs.",
+  "scenario": "V2_RICHTEXT"
+}

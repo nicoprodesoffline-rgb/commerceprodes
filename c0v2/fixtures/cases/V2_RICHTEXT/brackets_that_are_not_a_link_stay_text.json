@@ -1,0 +1,10 @@
+{
+  "case_id": "V2_RICHTEXT.brackets_that_are_not_a_link_stay_text",
+  "data_label": "STAGING_FIXTURE",
+  "function": "parse_rich_text",
+  "input": {
+    "text": "Voir [1] et [a] (b) et [c](d e)."
+  },
+  "notes": "Only « [label](address) » with no space in the address is a link; everything else is text.",
+  "scenario": "V2_RICHTEXT"
+}

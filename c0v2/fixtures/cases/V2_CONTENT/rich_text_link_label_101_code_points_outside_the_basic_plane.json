@@ -1,0 +1,32 @@
+{
+  "case_id": "V2_CONTENT.rich_text_link_label_101_code_points_outside_the_basic_plane",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/V2_CONTENT/ack_content_ready.json"
+      },
+      "content": {
+        "$doc": "documents/V2_CONTENT/content_ready.json"
+      }
+    },
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_rich_text_link_label_101_code_points_outside_the_basic_plane.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "c8b548fda99bc060be83ee41c17022b4f52f8677001a0172ed0e67ef6968ff19"
+    }
+  },
+  "notes": "CA-3: 101 code points, counted as Python and TypeScript both do.",
+  "scenario": "V2_CONTENT"
+}

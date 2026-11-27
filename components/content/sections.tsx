@@ -10,6 +10,7 @@ import { serverNowUtc } from "@/lib/site-catalog/clock";
 import { familyPrice } from "@/lib/site-catalog/listing-price";
 import { liveSections, selectionFamilies } from "@/lib/site-content/blocks";
 import type { EditorialPage, Section } from "@/lib/site-content/model";
+import { richTextParagraphs } from "@/lib/site-content/rich-text";
 import { isLocalLink } from "@/lib/site-content/validate";
 
 type Data<T extends Section["type"]> = Extract<Section, { type: T }>["data"];
@@ -109,12 +110,18 @@ export function SelectionSection({ section, catalog }: { section: Extract<Sectio
   );
 }
 
-/** Cercle 3, 3.24 : un texte libre (contact, mentions légales, livraison). */
+/** Cercle 3, 3.24 : un texte libre (contact, mentions légales, livraison) : paragraphes et liens vers les pages du site (CA-3), lus par le contrat. */
 export function RichTextSection({ data }: { data: Data<"rich_text"> }) {
   return (
     <section data-testid="section-rich-text" className="min-w-0">
       {data.title && <h2 className={heading}>{data.title}</h2>}
-      <p className="max-w-[70ch] whitespace-pre-line text-ink-2 [overflow-wrap:anywhere]">{data.text}</p>
+      {richTextParagraphs(data.text).map((paragraph, index) => (
+        <p key={index} className="mt-3 max-w-[70ch] whitespace-pre-line text-ink-2 first:mt-0 [overflow-wrap:anywhere]">
+          {paragraph.map((segment, at) => segment.kind === "link"
+            ? <Link key={at} href={segment.href} className="underline underline-offset-2 hover:text-ink">{segment.label}</Link>
+            : <span key={at}>{segment.text}</span>)}
+        </p>
+      ))}
     </section>
   );
 }

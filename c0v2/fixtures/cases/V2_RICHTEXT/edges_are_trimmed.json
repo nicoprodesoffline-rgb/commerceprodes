@@ -1,0 +1,10 @@
+{
+  "case_id": "V2_RICHTEXT.edges_are_trimmed",
+  "data_label": "STAGING_FIXTURE",
+  "function": "parse_rich_text",
+  "input": {
+    "text": "\n\n  Début.  \n\n"
+  },
+  "notes": "Blank lines and spaces at the edges of the text and of a paragraph are dropped.",
+  "scenario": "V2_RICHTEXT"
+}

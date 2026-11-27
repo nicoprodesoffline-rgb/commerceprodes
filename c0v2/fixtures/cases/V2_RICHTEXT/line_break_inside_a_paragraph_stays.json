@@ -1,0 +1,10 @@
+{
+  "case_id": "V2_RICHTEXT.line_break_inside_a_paragraph_stays",
+  "data_label": "STAGING_FIXTURE",
+  "function": "parse_rich_text",
+  "input": {
+    "text": "Ligne un.\nLigne deux."
+  },
+  "notes": "A single line break is kept inside its paragraph, as before CA-3.",
+  "scenario": "V2_RICHTEXT"
+}

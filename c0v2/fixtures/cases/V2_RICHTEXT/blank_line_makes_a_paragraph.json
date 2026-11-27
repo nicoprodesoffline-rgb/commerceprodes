@@ -1,0 +1,10 @@
+{
+  "case_id": "V2_RICHTEXT.blank_line_makes_a_paragraph",
+  "data_label": "STAGING_FIXTURE",
+  "function": "parse_rich_text",
+  "input": {
+    "text": "Un.\n\nDeux.\n \n\nTrois."
+  },
+  "notes": "A blank line (spaces and tabs allowed on it), or several, separates paragraphs.",
+  "scenario": "V2_RICHTEXT"
+}
