@@ -1,0 +1,10 @@
+{
+  "case_id": "V2_RICHTEXT.html_is_text",
+  "data_label": "STAGING_FIXTURE",
+  "function": "parse_rich_text",
+  "input": {
+    "text": "<b>Gras</b> [x](/a)"
+  },
+  "notes": "No HTML: a tag is text the SITE escapes.",
+  "scenario": "V2_RICHTEXT"
+}

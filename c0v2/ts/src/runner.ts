@@ -101,6 +101,8 @@ export function runFunction(name: string, data: Data): JsonObject {
       return content.evaluatePreview(bytes(data["preview"]), json(data["transport"]), json(data["catalogue"]), data["now_utc"] as string, json(data["keyring"])) as unknown as JsonObject;
     case "select_block":
       return content.selectBlock(json(data["section"]) as Doc, data["now_utc"] as string) as unknown as JsonObject;
+    case "parse_rich_text":
+      return content.parseRichText(data["text"] as string);
     case "order_rubric":
       return rubric.orderRubric(json(data["families"]) as unknown as JsonObject[], data["category_key"] as string, json(data["promotions"]) as unknown as string[], json(data["novelties"]) as unknown as string[]) as unknown as JsonObject;
     case "verify_content_ack":

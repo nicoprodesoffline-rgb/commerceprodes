@@ -1,0 +1,10 @@
+{
+  "case_id": "V2_RICHTEXT.label_of_100_code_points_outside_the_basic_plane",
+  "data_label": "STAGING_FIXTURE",
+  "function": "parse_rich_text",
+  "input": {
+    "text": "[😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀](/a)"
+  },
+  "notes": "A label is measured in code points, not UTF-16 units: 100 are accepted.",
+  "scenario": "V2_RICHTEXT"
+}

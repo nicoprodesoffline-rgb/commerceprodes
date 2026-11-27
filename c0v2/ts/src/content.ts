@@ -69,6 +69,12 @@ const MAX_NOVELTY_COUNT = 200; // 3.20 (N04): how many new families at most, 24 
 const MAX_NAV_ORDER = 1000000;
 
 export const PAGE_PATH = /^(?:\/(?:[a-z0-9_-]+(?:\/[a-z0-9_-]+)*)?)$/;
+// Cercle A, CA-3 (A.6-d1): twin of the Python rules. A blank line makes a paragraph; [label](/address) is a link to a page of the SITE; nothing else is marked up.
+export const RICH_LINK = /\[([^\[\]\r\n]*)\]\(([^() \t\r\n]*)\)/g;
+const RICH_PARAGRAPH_BREAK = /\n[ \t]*(?:\n[ \t]*)+/;
+const RICH_EDGE = /^[ \t\r\n]+|[ \t\r\n]+$/g;
+export const MAX_RICH_LINK_LABEL = 100;
+export const MAX_RICH_LINKS = 50;
 export const LOCAL_PATH = /^(?:\/(?![/\\])[A-Za-z0-9._~!$&'()*+,;=@%/?-]{0,499})$/;
 
 class Bad extends Error {
@@ -92,6 +98,41 @@ function obj(value: Json | undefined): JsonObject {
 
 function optionalText(value: Json | undefined, maximum: number, multiline = false): boolean {
   return value === null || f.isText(value, maximum, multiline);
+}
+
+function richLinkOk(label: string, address: string): boolean {
+  const length = f.codePointLength(label.replace(RICH_EDGE, ""));
+  return length > 0 && length <= MAX_RICH_LINK_LABEL && isLocalPath(address);
+}
+
+/** Every [label](address) of a rich text has a non-blank label of at most 100 characters and a local address; at most 50 links. */
+export function richTextLinksOk(text: string): boolean {
+  const found = Array.from(text.matchAll(RICH_LINK));
+  return found.length <= MAX_RICH_LINKS && found.every((m) => richLinkOk(m[1] as string, m[2] as string));
+}
+
+export type RichSegment = { text: string } | { label: string; path: string };
+
+/** What the SITE draws of one valid rich text: paragraphs, each a list of segments (text, or a link). A line break inside a paragraph stays in the text. */
+export function parseRichText(text: string): JsonObject {
+  const paragraphs: RichSegment[][] = [];
+  text = text.replace(/\r\n?/g, "\n"); // a browser sends a textarea with CRLF line ends
+  for (const raw of text.replace(RICH_EDGE, "").split(RICH_PARAGRAPH_BREAK)) {
+    const block = raw.replace(RICH_EDGE, "");
+    if (block === "") continue;
+    const segments: RichSegment[] = [];
+    let at = 0;
+    for (const m of block.matchAll(RICH_LINK)) {
+      if (!richLinkOk(m[1] as string, m[2] as string)) continue;
+      const start = m.index as number;
+      if (start > at) segments.push({ text: block.slice(at, start) });
+      segments.push({ label: m[1] as string, path: m[2] as string });
+      at = start + m[0].length;
+    }
+    if (at < block.length) segments.push({ text: block.slice(at) });
+    paragraphs.push(segments);
+  }
+  return { ...verdict(true, "PARSED", []), paragraphs } as unknown as JsonObject;
 }
 
 export function isLocalPath(value: unknown): value is string {
@@ -191,7 +232,7 @@ function shapeSection(value: Json): void {
       need(f.exactKeys(entry, QUESTION_KEYS) && f.isText(obj(entry)["question"], 300) && f.isText(obj(entry)["answer"], 5000, true), "section.questions");
     }
   } else {
-    need(f.isText(data["text"], 20000, true), "section.text");
+    need(f.isText(data["text"], 20000, true) && richTextLinksOk(data["text"] as string), "section.text");
   }
 }
 

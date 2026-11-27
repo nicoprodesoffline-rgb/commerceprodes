@@ -167,8 +167,16 @@ Les quatre types v1 gardent leurs clés (une clé absente = non donnée), plus :
 | `product_carousel` | `title`, **`families`** (1 à 24 clés de famille du catalogue servi) | v1 |
 | `text_image` | `title`, **`text`**, **`media_sha`**, `image_alt` (`""` = image décorative) | v1 |
 | `faq` | `title`, **`questions`** : 1 à 100 `{question ≤ 300, answer ≤ 5 000}` | 3.24 |
-| `rich_text` | `title`, **`text`** (≤ 20 000, lignes admises) | 3.24 |
+| `rich_text` | `title`, **`text`** (≤ 20 000, lignes admises ; paragraphes et liens, voir ci-dessous) | 3.24, CA-3 |
 | `selection` | `title`, **`source`** (`promotions`, `novelties`, `category`, `supplier`, `own_range`), **`families`** (la réserve : 1 à 200 clés de famille du catalogue servi, dans l'ordre des rubriques), **`shown`** (1 à 24), **`rotation`** (`fixed`, `daily`) | CA-4 |
+
+**Texte libre : paragraphes et liens (cercle A, CA-3 ; Owner A.6-d1, 24/11 ; GO d'EC du 26/11).** Le champ `text` du bloc `rich_text` garde sa
+forme ; seule sa lecture change, et rien d'autre n'est mis en forme (ni gras, ni liste, ni titre, ni HTML).
+- Une **ligne vide** (des espaces et des tabulations y sont admis), ou plusieurs, sépare deux **paragraphes**. Un retour à la ligne seul reste un retour à la ligne dans son paragraphe, comme avant CA-3. Les lignes vides et les espaces aux bords du texte et d'un paragraphe sont ignorés.
+- `[libellé](/adresse)` est un **lien vers une page du SITE** : un libellé non vide de 100 caractères au plus (sans `[`, `]` ni retour à la ligne), une adresse locale (la même règle que les liens du pied de page et les redirections : elle commence par `/`, jamais `//`, jamais de schéma), sans espace ni parenthèse. 50 liens au plus dans un texte.
+- Une écriture `[…](…)` dont l'adresse n'est pas locale, ou dont le libellé est vide ou trop long, **refuse le contenu** (`CONTENT_INVALID`, règle `section.text`). Tout autre crochet ou parenthèse est du texte. Un texte sans cette écriture se lit exactement comme avant.
+- Le contrat ne vérifie pas que la page existe (il ne connaît pas le catalogue) : la Factory le dit à l'opérateur à l'enregistrement, le SITE montre le lien tel quel. Le SITE n'écrit jamais de HTML à partir du texte.
+- Les deux jumeaux (`parse_rich_text` en Python, `parseRichText` en TypeScript) rendent les mêmes paragraphes et segments (`{text}` ou `{label, path}`), joués par `V2_RICHTEXT`.
 
 **Bloc « selection » (cercle A, CA-4 ; Owner, 76e série, #130 7201854418 ; GO d'EC du 26/11).**
 - La Factory résout la source en réserve à chaque envoi du contenu. Les promotions sont le prix barré venu du Calculateur, et rien d'autre (cercle 3).
@@ -240,7 +248,7 @@ réponse `200 {accepted:true, outcome:"PREVIEW_STORED", path:"/apercu/<preview_i
 
 ## 5. Jeux d'essai
 
-73 cas, 42 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
+93 cas, 51 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
 (rubriques Bancs avec F1 à F3, Tables avec F4 et F5, Corbeilles vide). Les WebP sont des octets fixes écrits une fois avec Pillow ; les
 originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur empreinte, puisqu'ils ne quittent pas la Factory.
 
@@ -251,6 +259,7 @@ originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur e
 | `V2_BUSINESS` | §3.1 : prix d'une variante sur un catalogue v2 (fenêtre de base, promotion à partir de 10) et sur un catalogue v1 |
 | `V2_PREVIEW` | B14 : aperçu accepté, expiré, gardé plus de 30 minutes, référence absente |
 | `V2_CONTENT` | V07–V09 (activé, accusé vérifié, rejeu, séquence ancienne, référence absente), 3.31 (redirection vers un autre hôte ou avec un schéma), S07 (un seul saut), E03, maintenance sans message, clé inconnue ; CA-4 : blocs d'accueil acceptés, source, nombre montré (0, 25), rotation, réserve vide ou absente du catalogue, dates d'un bloc |
+| `V2_RICHTEXT` | CA-3 : ce que le SITE dessine d'un texte libre : paragraphes, retour à la ligne gardé, lien local, crochets qui ne sont pas un lien, HTML tapé resté du texte |
 | `V2_BLOCKS` | CA-4 : ce que le SITE dessine d'un bloc. Jour de Paris (avant le jour UTC, les deux changements d'heure), rotation quotidienne et retour au début, `fixed`, réserve plus petite que le nombre montré, bloc caché avant son début et dès sa fin |
 | `V2_RUBRIC` | CA-5 : l'ordre d'une page de rubrique (§3.3). Rangées à la main d'abord, même nouveauté ou gamme propre ; place dans une autre rubrique ignorée ; gamme propre, promotions, nouveautés de la plus récente à la plus ancienne, le reste ; noms sans accents ni majuscules, « Banc 10 » avant « Banc 2 » ; ancienne nouveauté par son nom ; `own_range` absent ; départage par la clé ; rubrique vide |
 

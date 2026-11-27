@@ -1,0 +1,32 @@
+{
+  "case_id": "V2_CONTENT.content_with_rich_text_links",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": {
+      "ack": {
+        "$doc": "documents/V2_CONTENT/ack_content_ready.json"
+      },
+      "content": {
+        "$doc": "documents/V2_CONTENT/content_ready.json"
+      }
+    },
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_CONTENT/content_with_rich_text_links.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "0bd06c77253a21da956a0a815a5fbc90bd26587637d21f058e3a6bbe9c60c293"
+    }
+  },
+  "notes": "CA-3 (A.6-d1): paragraphs and links to pages of the SITE in a free text; nothing else is marked up.",
+  "scenario": "V2_CONTENT"
+}

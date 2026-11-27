@@ -1,0 +1,10 @@
+{
+  "case_id": "V2_RICHTEXT.a_link_with_a_query",
+  "data_label": "STAGING_FIXTURE",
+  "function": "parse_rich_text",
+  "input": {
+    "text": "[Bancs par nom](/categorie/bancs?tri=nom)"
+  },
+  "notes": "The address may carry a query: a local path, as for a redirect.",
+  "scenario": "V2_RICHTEXT"
+}

@@ -592,6 +592,15 @@
       "notes": "CA-4 (A.3-d2, A-Q2): a « selection » block filled by the Factory, daily or fixed, and blocks with their own dates, of any type.",
       "outcome": "ACTIVATED"
     },
+    "V2_CONTENT.content_with_rich_text_links": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "CA-3 (A.6-d1): paragraphs and links to pages of the SITE in a free text; nothing else is marked up.",
+      "outcome": "ACTIVATED"
+    },
     "V2_CONTENT.maintenance_without_message": {
       "accepted": false,
       "error_codes": [
@@ -655,6 +664,110 @@
         ]
       },
       "notes": "3.31: no scheme in a redirect target.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.rich_text_link_address_empty": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.text"
+        ]
+      },
+      "notes": "CA-3: a link has an address.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.rich_text_link_label_101_code_points_outside_the_basic_plane": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.text"
+        ]
+      },
+      "notes": "CA-3: 101 code points, counted as Python and TypeScript both do.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.rich_text_link_label_blank": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.text"
+        ]
+      },
+      "notes": "CA-3: a link has a label.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.rich_text_link_label_too_long": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.text"
+        ]
+      },
+      "notes": "CA-3: a label is at most 100 characters.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.rich_text_link_protocol_relative": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.text"
+        ]
+      },
+      "notes": "CA-3: « // » would leave the SITE.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.rich_text_link_script": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.text"
+        ]
+      },
+      "notes": "CA-3: no scheme in an address.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.rich_text_link_to_another_host": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.text"
+        ]
+      },
+      "notes": "CA-3: a link leads inside the SITE only.",
+      "outcome": "REJECTED"
+    },
+    "V2_CONTENT.rich_text_too_many_links": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "section.text"
+        ]
+      },
+      "notes": "CA-3: at most 50 links in one text.",
       "outcome": "REJECTED"
     },
     "V2_CONTENT.selection_empty_reserve": {
@@ -775,6 +888,214 @@
       },
       "notes": "The SITE never keeps a preview more than 30 minutes.",
       "outcome": "REJECTED"
+    },
+    "V2_RICHTEXT.a_link_in_a_sentence": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "paragraphs": [
+          [
+            {
+              "text": "Voir nos "
+            },
+            {
+              "label": "conditions de vente",
+              "path": "/conditions-generales-de-vente"
+            },
+            {
+              "text": " avant de commander."
+            }
+          ]
+        ]
+      },
+      "notes": "A link is a segment between two text segments.",
+      "outcome": "PARSED"
+    },
+    "V2_RICHTEXT.a_link_with_a_query": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "paragraphs": [
+          [
+            {
+              "label": "Bancs par nom",
+              "path": "/categorie/bancs?tri=nom"
+            }
+          ]
+        ]
+      },
+      "notes": "The address may carry a query: a local path, as for a redirect.",
+      "outcome": "PARSED"
+    },
+    "V2_RICHTEXT.blank_line_makes_a_paragraph": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "paragraphs": [
+          [
+            {
+              "text": "Un."
+            }
+          ],
+          [
+            {
+              "text": "Deux."
+            }
+          ],
+          [
+            {
+              "text": "Trois."
+            }
+          ]
+        ]
+      },
+      "notes": "A blank line (spaces and tabs allowed on it), or several, separates paragraphs.",
+      "outcome": "PARSED"
+    },
+    "V2_RICHTEXT.brackets_that_are_not_a_link_stay_text": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "paragraphs": [
+          [
+            {
+              "text": "Voir [1] et [a] (b) et [c](d e)."
+            }
+          ]
+        ]
+      },
+      "notes": "Only « [label](address) » with no space in the address is a link; everything else is text.",
+      "outcome": "PARSED"
+    },
+    "V2_RICHTEXT.crlf_line_ends_make_paragraphs": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "paragraphs": [
+          [
+            {
+              "text": "Un."
+            }
+          ],
+          [
+            {
+              "text": "Deux "
+            },
+            {
+              "label": "x",
+              "path": "/a"
+            },
+            {
+              "text": "\nsuite."
+            }
+          ]
+        ]
+      },
+      "notes": "A textarea sent by a browser has CRLF line ends: read as LF, same paragraphs.",
+      "outcome": "PARSED"
+    },
+    "V2_RICHTEXT.edges_are_trimmed": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "paragraphs": [
+          [
+            {
+              "text": "Début."
+            }
+          ]
+        ]
+      },
+      "notes": "Blank lines and spaces at the edges of the text and of a paragraph are dropped.",
+      "outcome": "PARSED"
+    },
+    "V2_RICHTEXT.html_is_text": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "paragraphs": [
+          [
+            {
+              "text": "<b>Gras</b> "
+            },
+            {
+              "label": "x",
+              "path": "/a"
+            }
+          ]
+        ]
+      },
+      "notes": "No HTML: a tag is text the SITE escapes.",
+      "outcome": "PARSED"
+    },
+    "V2_RICHTEXT.label_of_100_code_points_outside_the_basic_plane": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "paragraphs": [
+          [
+            {
+              "label": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+              "path": "/a"
+            }
+          ]
+        ]
+      },
+      "notes": "A label is measured in code points, not UTF-16 units: 100 are accepted.",
+      "outcome": "PARSED"
+    },
+    "V2_RICHTEXT.line_break_inside_a_paragraph_stays": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "paragraphs": [
+          [
+            {
+              "text": "Ligne un.\nLigne deux."
+            }
+          ]
+        ]
+      },
+      "notes": "A single line break is kept inside its paragraph, as before CA-3.",
+      "outcome": "PARSED"
+    },
+    "V2_RICHTEXT.plain_text_is_one_paragraph": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "paragraphs": [
+          [
+            {
+              "text": "Livraison sous 5 jours."
+            }
+          ]
+        ]
+      },
+      "notes": "A text without a blank line is one paragraph.",
+      "outcome": "PARSED"
+    },
+    "V2_RICHTEXT.two_links_one_paragraph": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "paragraphs": [
+          [
+            {
+              "label": "Livraison",
+              "path": "/livraison"
+            },
+            {
+              "text": " et "
+            },
+            {
+              "label": "contact",
+              "path": "/contact"
+            }
+          ]
+        ]
+      },
+      "notes": "Two links, one paragraph.",
+      "outcome": "PARSED"
     },
     "V2_RUBRIC.rubric_a_former_novelty_takes_back_its_place": {
       "accepted": true,
