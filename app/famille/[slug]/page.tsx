@@ -1,3 +1,6 @@
+import { PdfDownload } from "@/components/product/pdf-download";
+import { getActiveContentV2 } from "@/lib/site-content/v2-source";
+import { pdfLayoutFromContent } from "@/lib/site-pdf/model";
 import { deliveryDelayText, documentLinks, isPromoNow } from "@/lib/site-catalog/merchandising";
 import { firstByPack } from "@/lib/site-catalog/conditionnement";
 import "@/components/product/product-sheet.css";
@@ -62,6 +65,7 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
     if (moved) permanentRedirect(familyPath(moved.slug));
     notFound();
   }
+  const pdfLayout = pdfLayoutFromContent(await getActiveContentV2());
   const instant = serverNowUtc();
   const labels = new Map(family.axes.map((a) => [a.axis_key, a.label]));
   const items = family.items.map((i) => ({
@@ -149,6 +153,7 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
       >
         {delivery && <p className="mt-4 text-sm" data-testid="delivery-delay">{delivery}</p>}
         <div className="product-list-links mt-6 flex flex-wrap gap-x-6 border-t border-line pt-4 print:hidden" data-testid="family-lists">
+          <PdfDownload familyKey={family.public_family_key} layout={pdfLayout} />
           <WishlistButton slug={family.slug} name={family.name} />
           <CompareButton slug={family.slug} name={family.name} />
         </div>

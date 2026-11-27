@@ -1,0 +1,25 @@
+{
+  "case_id": "V2_PDF_LAYOUT.retention_days_null",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_PDF_LAYOUT/content_retention_days_null.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "c660cf9cf678d9d6a6b804a05e35bc003a69128e29bedeccb897dd050c6bff67"
+    }
+  },
+  "notes": "CA-8b: retention_days_null; fictional PDF layout.",
+  "scenario": "V2_PDF_LAYOUT"
+}

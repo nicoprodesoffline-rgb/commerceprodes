@@ -167,6 +167,7 @@ test("fiche : cartes ordonnées, prix transmis, similaires dédoublonnés et sec
     "@/lib/site-catalog/page": { catalogForPage: async () => catalog },
     "@/lib/site-catalog/view": { priceRows: () => [], selectorAxes: () => [] },
     "@/lib/site-content/source": { getEditorialSet: async () => set },
+    "@/lib/site-content/v2-source": { getActiveContentV2: async () => null },
     "@/lib/site-content/merchandising": { relatedFamilies },
   };
   const Page = load("app/famille/[slug]/page.tsx", stubs).default;

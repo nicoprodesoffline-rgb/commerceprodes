@@ -29,6 +29,10 @@ Un SITE qui lit la v2 lit aussi la v1 : un document `site_snapshot.v1` passe par
 refuse un document v2 à l'étape `version`, code `SCHEMA_UNSUPPORTED`, sans changer le catalogue servi (V05). Le premier catalogue v2
 prend une génération v1 active comme base (séquence, empreinte, retraits expliqués), cas `v2_after_a_v1_active`.
 
+CA-8b conserve `site_content.v2` et ses domaines : le §1 distingue les versions et domaines, sans imposer de nouvelle version pour
+une clé facultative. Les documents antérieurs restent valides (absence de `pdf_layout` admise). Cela ne rend pas les anciens
+lecteurs capables de lire une clé nouvelle : l'ordre de mise en service décrit au §4 est obligatoire.
+
 ## 2. `site_snapshot.v2`
 
 Même enveloppe, même couverture, même registre d'identité, mêmes comptes qu'en v1. **Chaque champ ajouté est présent dans chaque
@@ -153,8 +157,34 @@ le même canal que le catalogue : envoi, vérification, activation, accusé sign
            sections:[{type, data, starts_at_utc?, ends_at_utc?}],     (CA-4 : dates facultatives d'un bloc, de tout type)
            nav:{ show_in_bar, order } }],
   relations:[{ source, target, kind: COMPLEMENTAIRE|LIE|UPSELL, order }],
+  pdf_layout?:{ blocks:[images|description|caracteristiques|prix|coordonnees], font:"Helvetica",
+                extra_photos:0..8, retention_days:1..365, contact:texte|null } | null,
   payload_sha256 }
 ```
+
+**Gabarit de fiche PDF (CA-8b).** `pdf_layout` est facultatif : absent ou `null`, le SITE ne propose pas de fiche PDF.
+Toutes les autres clés de l'enveloppe restent obligatoires ; une clé inconnue reste refusée (`envelope.keys`).
+Quand `pdf_layout` est un objet, ses cinq clés sont obligatoires et aucune autre n'est admise (`pdf_layout.keys`).
+
+| Champ | Format | Règle (`CONTENT_INVALID`, `detail.rules`) |
+|---|---|---|
+| `blocks` | Liste **ordonnée** des seuls blocs **affichés**, de 0 à 5, chacun au plus une fois : `images`, `description`, `caracteristiques`, `prix`, `coordonnees`. Liste vide admise ; ni tri ni ajout implicite. Le nom de la famille reste toujours en titre, hors de cette liste. | `pdf_layout.blocks` |
+| `font` | Une seule valeur, `"Helvetica"` (casse exacte). | `pdf_layout.font` |
+| `extra_photos` | Entier de 0 à 8 : photos **en plus de la principale**. Les booléens et textes sont refusés. | `pdf_layout.extra_photos` |
+| `retention_days` | Entier de 1 à 365 ; booléens et textes refusés. | `pdf_layout.retention_days` |
+| `contact` | Texte non blanc de 2 000 points de code Unicode au plus, lignes admises, sans caractères de contrôle (règle texte commune), ou `null`. Texte littéral, jamais HTML à interpréter. Coordonnées vides côté Factory → `null`. | `pdf_layout.contact` |
+
+La forme est vérifiée après les champs existants, dans l'ordre : clés, blocs, police, photos, conservation, coordonnées.
+Tout écart refuse le contenu à l'étape `shape` avec `CONTENT_INVALID` et la première règle en échec. Le gabarit entier, y compris
+l'ordre des blocs, entre dans `payload_sha256` et donc dans la signature et l'accusé, comme les autres champs (§4.2).
+
+**Compatibilité et branchement différé.** Le lecteur TypeScript d'avant CA-8b refuse toute clé inconnue au niveau du document :
+`c0v2/ts/src/content.ts:257` à la base `53425d64` appelle `f.exactKeys(value, ENVELOPE_KEYS)` (`envelope.keys`). Envoyer la nouvelle
+clé avant la mise à jour du SITE ferait donc refuser tout le contenu. Cette livraison prépare les validateurs jumeaux et
+`site_content/fiche_pdf_settings.py:build_pdf_layout`, fonction pure à partir de l'instantané `current()` des réglages `fiche_pdf.*` :
+elle filtre les blocs masqués dans l'ordre réglé, fixe Helvetica, convertit les coordonnées vides en `null` et refuse une valeur
+hors contrat sans la tronquer. Elle **n'est pas branchée** dans `site_content/channel.py:build_document` ; un test maintient cette
+absence. Le branchement viendra après la PR du SITE de c2. Aucun PDF n'est envoyé par ce contrat.
 
 ### 4.1 Sections
 
@@ -248,7 +278,7 @@ réponse `200 {accepted:true, outcome:"PREVIEW_STORED", path:"/apercu/<preview_i
 
 ## 5. Jeux d'essai
 
-93 cas, 51 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
+142 cas, 100 documents, 8 médias ; tout est fictif et étiqueté `STAGING_FIXTURE` ; le catalogue est celui des attendus du cercle 3
 (rubriques Bancs avec F1 à F3, Tables avec F4 et F5, Corbeilles vide). Les WebP sont des octets fixes écrits une fois avec Pillow ; les
 originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur empreinte, puisqu'ils ne quittent pas la Factory.
 
@@ -260,6 +290,7 @@ originaux JPEG et TIFF ne sont décrits que par leur type, leur taille et leur e
 | `V2_PREVIEW` | B14 : aperçu accepté, expiré, gardé plus de 30 minutes, référence absente |
 | `V2_CONTENT` | V07–V09 (activé, accusé vérifié, rejeu, séquence ancienne, référence absente), 3.31 (redirection vers un autre hôte ou avec un schéma), S07 (un seul saut), E03, maintenance sans message, clé inconnue ; CA-4 : blocs d'accueil acceptés, source, nombre montré (0, 25), rotation, réserve vide ou absente du catalogue, dates d'un bloc |
 | `V2_RICHTEXT` | CA-3 : ce que le SITE dessine d'un texte libre : paragraphes, retour à la ligne gardé, lien local, crochets qui ne sont pas un lien, HTML tapé resté du texte |
+| `V2_PDF_LAYOUT` | CA-8b : 49 cas (8 acceptés, 41 refusés) : absence, `null`, ordre, sous-ensemble et liste vide, bornes photos/jours, coordonnées multilignes et 2 000 points de code (dont hors plan de base), clés absentes/inconnues, types et valeurs refusés, gabarit couvert par hachage et signature. Les deux runners existants jouent `evaluate_content` sans nouvelle fonction de routage. |
 | `V2_BLOCKS` | CA-4 : ce que le SITE dessine d'un bloc. Jour de Paris (avant le jour UTC, les deux changements d'heure), rotation quotidienne et retour au début, `fixed`, réserve plus petite que le nombre montré, bloc caché avant son début et dès sa fin |
 | `V2_RUBRIC` | CA-5 : l'ordre d'une page de rubrique (§3.3). Rangées à la main d'abord, même nouveauté ou gamme propre ; place dans une autre rubrique ignorée ; gamme propre, promotions, nouveautés de la plus récente à la plus ancienne, le reste ; noms sans accents ni majuscules, « Banc 10 » avant « Banc 2 » ; ancienne nouveauté par son nom ; `own_range` absent ; départage par la clé ; rubrique vide |
 

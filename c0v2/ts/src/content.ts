@@ -38,6 +38,8 @@ const ACK_KEYS = [
   "activated_at_utc", "key_id", "signature",
 ];
 const TRANSPORT_KEYS = ["key_id", "signature"];
+const PDF_LAYOUT_KEYS = ["blocks", "font", "extra_photos", "retention_days", "contact"];
+const PDF_BLOCKS = ["images", "description", "caracteristiques", "prix", "coordonnees"];
 
 /** Section types: [keys data may carry, keys it must carry]. */
 export const SECTION_DATA: Readonly<Record<string, readonly [readonly string[], readonly string[]]>> = {
@@ -144,6 +146,29 @@ function has(data: JsonObject, key: string): boolean {
 }
 
 // --- shape --------------------------------------------------------------------------------------
+
+function shapePdfLayout(value: Json | undefined): void {
+  if (value === null || value === undefined) return;
+  need(f.exactKeys(value, PDF_LAYOUT_KEYS), "pdf_layout.keys");
+  const layout = obj(value);
+  const blocks = list(layout["blocks"], "pdf_layout.blocks", PDF_BLOCKS.length);
+  need(blocks.every((block) => typeof block === "string" && PDF_BLOCKS.includes(block)), "pdf_layout.blocks");
+  need(new Set(blocks).size === blocks.length, "pdf_layout.blocks");
+  need(layout["font"] === "Helvetica", "pdf_layout.font");
+  need(f.isCount(layout["extra_photos"], 0, 8), "pdf_layout.extra_photos");
+  need(f.isCount(layout["retention_days"], 1, 365), "pdf_layout.retention_days");
+  need(optionalText(layout["contact"], 2000, true), "pdf_layout.contact");
+}
+
+export function pdfLayoutProblem(value: Json): string | null {
+  try {
+    shapePdfLayout(value);
+  } catch (error) {
+    if (error instanceof Bad) return error.rule;
+    throw error;
+  }
+  return null;
+}
 
 function shapeShop(value: Json | undefined): void {
   need(f.exactKeys(value, SHOP_KEYS), "shop.keys");
@@ -254,7 +279,8 @@ function shapePage(value: Json): void {
 }
 
 function shape(value: Json): void {
-  need(f.exactKeys(value, ENVELOPE_KEYS), "envelope.keys");
+  need(isObject(value) && ENVELOPE_KEYS.every((key) => has(value, key)) &&
+    Object.keys(value).every((key) => ENVELOPE_KEYS.includes(key) || key === "pdf_layout"), "envelope.keys");
   const doc = obj(value);
   need(f.isToken(doc["publication_id"]), "envelope.publication_id");
   need(f.isCount(doc["content_sequence"], 1), "envelope.content_sequence");
@@ -273,6 +299,7 @@ function shape(value: Json): void {
     need(typeof r["kind"] === "string" && RELATION_KINDS.includes(r["kind"]), "relation.kind");
     need(f.isCount(r["order"], 1), "relation.order");
   }
+  shapePdfLayout(doc["pdf_layout"]);
 }
 
 export function shapeProblem(doc: Json): string | null {
