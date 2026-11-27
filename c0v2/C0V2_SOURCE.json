@@ -1,7 +1,7 @@
 {
   "factory_repo": "nicoprodesoffline-rgb/prodes-data-factory-poc",
-  "branch": "main",
-  "archived_from_sha": "f2551d2b4ef67d22cd4ece61789211b21b2d83cb",
+  "branch": "eb/ca8b-gabarit-fiche-pdf (PR 244 de la Factory)",
+  "archived_from_sha": "d01440521a84d079f5721a3d7447c1dd605ff712",
   "archive_paths": [
     "c0v2/README.md",
     "c0v2/fixtures",
@@ -12,5 +12,5 @@
     "c0v2/ts/tsconfig.json",
     "docs/contracts/c0_site_v2.md"
   ],
-  "note": "Copie sans modification (contrat v2), prise sur main de la Factory après la fusion de la PR du texte libre (CA-3 : paragraphes et liens locaux, parse_rich_text) ; ordre des familles d'une rubrique (CA-5, V2_RUBRIC) déjà inclus. La v1 (c0/) est intacte. Le Python de référence et le générateur restent dans la Factory."
+  "note": "Copie sans modification (contrat v2), prise sur la tête de la PR 244 de la Factory (CA-8b : pdf_layout, gabarit de la fiche PDF) en attendant sa fusion ; à reprendre sur main de la Factory à la fusion. La v1 (c0/) est intacte."
 }

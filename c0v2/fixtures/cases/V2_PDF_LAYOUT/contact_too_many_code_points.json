@@ -1,0 +1,25 @@
+{
+  "case_id": "V2_PDF_LAYOUT.contact_too_many_code_points",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_PDF_LAYOUT/content_contact_too_many_code_points.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "bae1b18d25f9db614dcb7e553bed6dfd6da75252fbba1604ba39731bfd2a3c52"
+    }
+  },
+  "notes": "CA-8b: contact_too_many_code_points; fictional PDF layout.",
+  "scenario": "V2_PDF_LAYOUT"
+}

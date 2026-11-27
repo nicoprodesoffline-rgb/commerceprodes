@@ -1,0 +1,25 @@
+{
+  "case_id": "V2_PDF_LAYOUT.missing_extra_photos",
+  "data_label": "STAGING_FIXTURE",
+  "function": "evaluate_content",
+  "input": {
+    "ack_key_id": "c0-test-ack-01",
+    "active": null,
+    "catalogue": {
+      "$doc": "documents/V2_CATALOGUE/snapshot_v2_ready.json"
+    },
+    "content": {
+      "$bytes": "documents/V2_PDF_LAYOUT/content_missing_extra_photos.json"
+    },
+    "keyring": {
+      "$doc": "keys/test_keyring.json"
+    },
+    "now_utc": "2026-11-17T07:00:00Z",
+    "transport": {
+      "key_id": "c0-test-publish-02",
+      "signature": "dd1124ca71d000f4391b69ba2773f3d4c315a1c4bd49a1879c521c9d1edf06bf"
+    }
+  },
+  "notes": "CA-8b: missing_extra_photos; fictional PDF layout.",
+  "scenario": "V2_PDF_LAYOUT"
+}

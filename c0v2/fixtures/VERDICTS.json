@@ -846,6 +846,646 @@
       "notes": "CA-4: the source is one of the five the Owner retained.",
       "outcome": "REJECTED"
     },
+    "V2_PDF_LAYOUT.absent": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "CA-8b: absent; fictional PDF layout.",
+      "outcome": "ACTIVATED"
+    },
+    "V2_PDF_LAYOUT.all_blocks": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "CA-8b: all_blocks; fictional PDF layout.",
+      "outcome": "ACTIVATED"
+    },
+    "V2_PDF_LAYOUT.blocks_duplicate": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.blocks"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: blocks_duplicate; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.blocks_null": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.blocks"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: blocks_null; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.blocks_null_entry": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.blocks"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: blocks_null_entry; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.blocks_object_entry": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.blocks"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: blocks_object_entry; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.blocks_text": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.blocks"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: blocks_text; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.blocks_too_many": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.blocks"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: blocks_too_many; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.blocks_unknown": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.blocks"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: blocks_unknown; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.changed_blocks_without_resigning": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {
+        "stage": "signature"
+      },
+      "notes": "CA-8b: changed_blocks_without_resigning; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.changed_layout_without_resigning": {
+      "accepted": false,
+      "error_codes": [
+        "SIGNATURE_INVALID"
+      ],
+      "expect": {
+        "stage": "signature"
+      },
+      "notes": "CA-8b: changed_layout_without_resigning; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.contact_2000_characters": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "CA-8b: contact_2000_characters; fictional PDF layout.",
+      "outcome": "ACTIVATED"
+    },
+    "V2_PDF_LAYOUT.contact_2000_code_points_outside_basic_plane": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "CA-8b: contact_2000_code_points_outside_basic_plane; fictional PDF layout.",
+      "outcome": "ACTIVATED"
+    },
+    "V2_PDF_LAYOUT.contact_blank": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.contact"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: contact_blank; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.contact_boolean": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.contact"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: contact_boolean; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.contact_control": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.contact"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: contact_control; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.contact_empty": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.contact"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: contact_empty; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.contact_integer": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.contact"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: contact_integer; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.contact_too_long": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.contact"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: contact_too_long; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.contact_too_many_code_points": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.contact"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: contact_too_many_code_points; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.empty_blocks_minimum_counts": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "CA-8b: empty_blocks_minimum_counts; fictional PDF layout.",
+      "outcome": "ACTIVATED"
+    },
+    "V2_PDF_LAYOUT.extra_photos_above": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.extra_photos"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: extra_photos_above; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.extra_photos_below": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.extra_photos"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: extra_photos_below; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.extra_photos_boolean": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.extra_photos"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: extra_photos_boolean; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.extra_photos_null": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.extra_photos"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: extra_photos_null; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.extra_photos_text": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.extra_photos"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: extra_photos_text; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.font_null": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.font"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: font_null; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.font_other": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.font"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: font_other; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.font_wrong_case": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.font"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: font_wrong_case; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.maximum_counts_multiline_contact": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "CA-8b: maximum_counts_multiline_contact; fictional PDF layout.",
+      "outcome": "ACTIVATED"
+    },
+    "V2_PDF_LAYOUT.missing_blocks": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.keys"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: missing_blocks; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.missing_contact": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.keys"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: missing_contact; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.missing_extra_photos": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.keys"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: missing_extra_photos; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.missing_font": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.keys"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: missing_font; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.missing_required_envelope_key": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "envelope.keys"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: missing_required_envelope_key; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.missing_retention_days": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.keys"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: missing_retention_days; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.null": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "CA-8b: null; fictional PDF layout.",
+      "outcome": "ACTIVATED"
+    },
+    "V2_PDF_LAYOUT.object_boolean": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.keys"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: object_boolean; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.object_integer": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.keys"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: object_integer; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.object_list": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.keys"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: object_list; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.object_text": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.keys"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: object_text; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.ordered_subset": {
+      "accepted": true,
+      "error_codes": [],
+      "expect": {
+        "stage": "activated"
+      },
+      "notes": "CA-8b: ordered_subset; fictional PDF layout.",
+      "outcome": "ACTIVATED"
+    },
+    "V2_PDF_LAYOUT.retention_days_above": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.retention_days"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: retention_days_above; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.retention_days_below": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.retention_days"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: retention_days_below; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.retention_days_boolean": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.retention_days"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: retention_days_boolean; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.retention_days_null": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.retention_days"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: retention_days_null; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.retention_days_text": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.retention_days"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: retention_days_text; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.unknown_envelope_key": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "envelope.keys"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: unknown_envelope_key; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
+    "V2_PDF_LAYOUT.unknown_key": {
+      "accepted": false,
+      "error_codes": [
+        "CONTENT_INVALID"
+      ],
+      "expect": {
+        "detail.rules": [
+          "pdf_layout.keys"
+        ],
+        "stage": "shape"
+      },
+      "notes": "CA-8b: unknown_key; fictional PDF layout.",
+      "outcome": "REJECTED"
+    },
     "V2_PREVIEW.preview_accepted": {
       "accepted": true,
       "error_codes": [],
