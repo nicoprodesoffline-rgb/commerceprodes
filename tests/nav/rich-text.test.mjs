@@ -40,5 +40,6 @@ test("l'affichage passe par des liens du site et n'injecte aucun HTML", () => {
   const rich = section.slice(section.indexOf("export function RichTextSection"), section.indexOf("export function PageSections"));
   assert.match(rich, /richTextParagraphs\(/);
   assert.match(rich, /<Link /);
+  assert.deepEqual(rich.match(/href=\{?[^ >]*/g), ["href={segment.href}"], "la seule destination d'un lien est celle que le contrat a lue, jamais une adresse écrite dans le composant");
   assert.doesNotMatch(rich, /dangerouslySetInnerHTML|<a /);
 });
