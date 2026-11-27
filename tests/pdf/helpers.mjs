@@ -5,7 +5,6 @@ import path from 'node:path';
 import ts from 'typescript';
 import { deflateSync } from 'node:zlib';
 export const ROOT = path.resolve(import.meta.dirname, '../..');
-export const SCRATCH = '/Users/nico/WORK/PRODES/JETABLE/c2/pdf-releve';
 export function hooks() {
   return registerHooks({
     resolve(s, c, next) {
