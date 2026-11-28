@@ -512,7 +512,7 @@ async function submitMessage(deps: RequestDeps, client: PoolClient, base: Base, 
   );
   await client.query(
     `INSERT INTO site_outbox_event (event_id, event_type, event_version, contract_version, created_at_utc, object_ref, idempotency_key, catalogue_sequence, payload, payload_digest, event_bytes, status)
-     VALUES ($1, 'message.received', 1, 'site_events.v2', $2, $3, $4, NULL, $5::jsonb, $6, $7, 'PENDING')`,
+     VALUES ($1, /* type */ 'message.received', /* version */ 1, 'site_events.v2', $2, $3, $4, NULL, $5::jsonb, $6, $7, 'PENDING')`,
     [eventId, nowUtc, ref, event.event["idempotency_key"], JSON.stringify(event.event["payload"]), event.event["payload_digest"], Buffer.from(event.bytes)],
   );
   // 5.17 (B2) : l'accusé au client, fabriqué dans la même transaction (mode « gardés » : rangé, rien ne sort).
