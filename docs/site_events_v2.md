@@ -122,7 +122,7 @@ Domaines de signature : `prodes.site.transport.requests_erase.v1`, `prodes.site.
 - **Accusé au client** (ligne 5.17, décision B2 : il part du site) : voir §7.
 - **Anti-abus** (ligne 5.23) : limite de débit par adresse sur devis, commande, demande libre et reçu (le sixième envoi en une minute reçoit « trop de demandes, réessayez dans une minute », attendu P04) ; champ piège invisible : réponse d'apparence normale, rien d'enregistré, rien d'émis (attendu Q04).
 
-## 7. E-mails : mode « gardés » seul actif
+## 7. E-mails : modes « gardés » et « fichier » (aucun n'envoie)
 
 - **Qui envoie quoi** :
   - l'accusé au client part du site (B2) ;
@@ -137,6 +137,14 @@ Domaines de signature : `prodes.site.transport.requests_erase.v1`, `prodes.site.
   - dans la Factory, le protocole SMTP de Django, sans librairie nouvelle ;
   - dans le site, aucune librairie d'envoi dans ce mandat : l'interface du transport, la lecture des réglages du serveur et le mode « gardés » ; un mode « smtp » demandé refuse de démarrer (« non livré ») jusqu'au paquet B ;
   - les accès d'envoi sont des réglages du serveur, jamais une valeur dans Git.
+
+### 7.1 Mode « fichier » (B-3, cercle B)
+
+- `SITE_ACK_MAIL_MODE=fichier` : l'accusé est écrit en `.eml` (MIME, UTF-8) dans `SITE_ACK_MAIL_DIR` (dossier absolu et privé, jamais sous `public/` ni `.next/`, obligatoire dans ce mode), un fichier par demande, écriture atomique. **Rien ne sort** : aucun socket, aucun service d'envoi. L'état se lit « écrit dans le fichier d'essai » (`ecrit_fichier`), jamais « envoyé ».
+- **Le PDF** déposé par la Factory (route 5.2) est joint si le dépôt arrive avant l'échéance `SITE_ACK_PDF_WAIT_MINUTES` (0 à 120, **15 par défaut**) ; sinon, ou si la valeur est 0, le message part avec le lien privé seul, **une seule fois** : un dépôt tardif n'écrit pas de second fichier. Les demandes libres n'attendent pas de PDF.
+- **Le tour de la file** n'a pas d'ordonnanceur propre : chaque relevé réussi de la Factory (`GET /api/site/events`) lance un tour en mode « fichier ». Une erreur d'écriture suit la reprise de la file (1, 5, 30 min, puis chaque heure pendant 48 h).
+- **Démarrage refusé, nommé** : une valeur inconnue de `SITE_ACK_MAIL_MODE` (message `SITE_ACK_MAIL_MODE inconnu "<valeur>"`), un dossier absent ou public, ou une attente hors de 0 à 120 refusent le démarrage du serveur au lieu de refuser chaque demande en silence.
+- L'expéditeur est celui du document `site_commerce` reçu (`sender`) ; sans lui, une adresse d'essai en `exemple.invalid`. Pas de `Reply-To` : le contrat actuel ne donne pas de boîte par type.
 
 ## 8. Jeu d'essai commun (`docs/contracts/site_events_v2/`)
 
