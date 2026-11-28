@@ -4,7 +4,7 @@
  */
 import { readBoundedBytes } from "@/lib/site-business/http";
 import { logRefusal, type BusinessRoute } from "@/lib/site-business/refusal-log";
-import { serverNowUtc } from "@/lib/site-catalog/clock";
+import { clockConfig, serverNowUtc } from "@/lib/site-catalog/clock";
 import { SiteDbConfigError, getPool } from "@/lib/site-db/pool";
 import { MAX_BYTES as EVENTS_MAX_BYTES } from "@/c0/ts/src/events";
 import { requestLimitRefusal } from "../site-ratelimit/requests";
@@ -73,7 +73,8 @@ export async function submitHttp(kind: RequestKind, req: Request): Promise<Respo
   return guarded(async () => {
     const pool = getPool();
     const bytes = await readBoundedBytes(req);
-    return submitRequest({ pool, now: serverNowUtc }, kind, bytes);
+    const forced = clockConfig().forced;
+    return submitRequest({ pool, now: serverNowUtc, metricsNow: forced === null ? undefined : () => new Date(forced) }, kind, bytes);
   }, kind === "quote_request" ? "/api/site/quote" : kind === "order" ? "/api/site/order" : "/api/site/message");
 }
 

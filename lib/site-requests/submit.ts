@@ -8,6 +8,7 @@
  * → objet, lignes figées, événement v2 → COMMIT → réponse. Montants : calculés ici, jamais ceux du navigateur ; un TTC affiché différent est refusé (`PRICE_CHANGED`, attendu M05).
  */
 import type { Pool, PoolClient } from "pg";
+import { countQuoteSubmit } from "../site-metrics/store";
 import { Generation, MAX_BYTES, selectPrice, validateOrderSubmit, validateQuoteRequest, type BusinessResult } from "../../c0/ts/src/business";
 import { isHex64, isToken } from "../../c0/ts/src/formats";
 import { canonicalBytes, digest, isObject, parseBytes, type Json, type JsonObject } from "../../c0/ts/src/jsonc";
@@ -29,6 +30,8 @@ export interface RequestDeps {
   pool: Pool;
   /** Instant serveur au format C0 (`YYYY-MM-DDTHH:MM:SSZ`). Jamais une valeur du client. */
   now: () => string;
+  /** Horloge de comptage injectée pour les tests/démos ; absente = instant SQL de l’écriture. */
+  metricsNow?: () => Date;
   hooks?: { afterValidate?: (client: PoolClient) => Promise<void>; beforeCommit?: (client: PoolClient) => Promise<void> };
 }
 
@@ -294,6 +297,20 @@ export async function submitRequest(deps: RequestDeps, kind: RequestKind, bytes:
       const tokenSha = access.sha256;
       if (kind === "order") await insertOrder(client, request, fullReceipt, eventLines, ref, tokenSha, nowUtc, numbered, doc, read, delivery, amounts, fingerprint);
       else await insertQuote(client, generation, request, fullReceipt, eventLines, ref, tokenSha, nowUtc, numbered, doc, read, delivery, amounts, fingerprint, base2.message);
+      if (kind === "quote_request") {
+        // Le comptage facultatif ne doit ni annuler le devis, ni le retenir derrière un verrou.
+        await client.query("SAVEPOINT quote_metrics");
+        try {
+          await client.query("SET LOCAL lock_timeout = '100ms'; SET LOCAL statement_timeout = '300ms'");
+          await countQuoteSubmit(client, eventLines.map((line) => line.public_item_key), deps.metricsNow);
+        } catch (error) {
+          await client.query("ROLLBACK TO SAVEPOINT quote_metrics");
+          console.warn(`[site-metrics] quote_submit code=${errorReason(error)}`);
+        } finally {
+          await client.query("RELEASE SAVEPOINT quote_metrics");
+          await client.query(`SET LOCAL lock_timeout = '${LOCK_TIMEOUT}'; SET LOCAL statement_timeout = '${STATEMENT_TIMEOUT}'`);
+        }
+      }
       await client.query(
         `INSERT INTO site_outbox_event (event_id, event_type, event_version, contract_version, created_at_utc, object_ref, idempotency_key, catalogue_sequence, payload, payload_digest, event_bytes, status)
          VALUES ($1, $2, 1, 'site_events.v2', $3, $4, $5, $6, $7::jsonb, $8, $9, 'PENDING')`,
@@ -495,7 +512,7 @@ async function submitMessage(deps: RequestDeps, client: PoolClient, base: Base, 
   );
   await client.query(
     `INSERT INTO site_outbox_event (event_id, event_type, event_version, contract_version, created_at_utc, object_ref, idempotency_key, catalogue_sequence, payload, payload_digest, event_bytes, status)
-     VALUES ($1, 'message.received', 1, 'site_events.v2', $2, $3, $4, NULL, $5::jsonb, $6, $7, 'PENDING')`,
+     VALUES ($1, /* type */ 'message.received', /* version */ 1, 'site_events.v2', $2, $3, $4, NULL, $5::jsonb, $6, $7, 'PENDING')`,
     [eventId, nowUtc, ref, event.event["idempotency_key"], JSON.stringify(event.event["payload"]), event.event["payload_digest"], Buffer.from(event.bytes)],
   );
   // 5.17 (B2) : l'accusé au client, fabriqué dans la même transaction (mode « gardés » : rangé, rien ne sort).

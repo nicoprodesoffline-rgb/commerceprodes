@@ -16,7 +16,8 @@ export const SCOPE_ERASE = "site_requests.erase";
 export const SCOPE_DOCUMENTS = "site_requests.documents";
 export const SCOPE_SET_ASIDE = "site_events.set_aside";
 export const SCOPE_MAIL_STATUS = "site_requests.mail_status";
-export const ROUTE_SCOPES = [SCOPE_ERASE, SCOPE_DOCUMENTS, SCOPE_SET_ASIDE, SCOPE_MAIL_STATUS] as const;
+export const SCOPE_METRICS_READ = "site_metrics.read";
+export const ROUTE_SCOPES = [SCOPE_ERASE, SCOPE_DOCUMENTS, SCOPE_SET_ASIDE, SCOPE_MAIL_STATUS, SCOPE_METRICS_READ] as const;
 export type RouteScope = (typeof ROUTE_SCOPES)[number];
 
 /** Domaine de signature de chaque portée (contrat §5). */
@@ -25,6 +26,7 @@ export const ROUTE_DOMAINS: Record<RouteScope, string> = {
   [SCOPE_DOCUMENTS]: "prodes.site.transport.requests_document.v1",
   [SCOPE_SET_ASIDE]: "prodes.site.transport.events_set_aside.v1",
   [SCOPE_MAIL_STATUS]: "prodes.site.transport.requests_mail_status.v1",
+  [SCOPE_METRICS_READ]: "prodes.site.transport.metrics_read.v1",
 };
 
 export const KEYRING_ENV = "SITE_REQUESTS_KEYRING_PATH";
@@ -62,7 +64,7 @@ export function parseRouteKeyring(bytes: Uint8Array): RouteKeyring {
 
 /** Le trousseau du serveur, relu à chaque requête (une rotation ne demande pas de redémarrage). Absent : erreur de configuration (503). */
 export function loadRouteKeyring(env: Record<string, string | undefined> = process.env): RouteKeyring {
-  const file = env["SITE_REQUESTS_KEYRING_PATH"];
+  const file = env["PRODES_SITE_REQUESTS_KEYRING_PATH"] || env["SITE_REQUESTS_KEYRING_PATH"];
   if (file === undefined || file === "") throw new RequestsKeyringError(`${KEYRING_ENV} n'est pas réglé`);
   let bytes: Uint8Array;
   try {

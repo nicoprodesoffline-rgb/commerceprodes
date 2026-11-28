@@ -11,6 +11,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { AxisDisplay } from "@/components/site/format";
+import { emitMetric } from "@/lib/site-metrics/browser";
 
 export type DraftLine = {
   public_item_key: string;
@@ -112,6 +113,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const add = useCallback((line: DraftLine, sequence: number, opts?: { announce?: boolean; opener?: HTMLElement | null }) => {
+    emitMetric(line.public_item_key, "add_to_cart");
     setLines((prev) => {
       const id = lineIdentity(line);
       const i = prev.findIndex((l) => lineIdentity(l) === id);

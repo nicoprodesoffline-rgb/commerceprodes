@@ -22,6 +22,7 @@ import { checkAddress, checkCustomerRefs, checkPaymentMethod, PAYMENT_METHODS, t
 import { DELIVERY_APPOINTMENT, DELIVERY_INCLUDED, type DeliveryOption } from "@/lib/site-requests/amounts";
 import { ResultPanel } from "@/components/checkout/result-panel";
 import { RECONFIRM, Submitter, type Outcome } from "@/components/checkout/submit";
+import { useOpeningMetrics } from "@/components/site/use-opening-metrics";
 
 export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
   const { ready: cartReady, ackSequence, acknowledge, clear } = useCart();
@@ -61,6 +62,7 @@ export function CheckoutFlow({ mode }: { mode: "quote" | "order" }) {
   // Empreinte de ce qui est confirmé : toute variation de l'aperçu (prix, lignes, génération) annule la confirmation.
   const fingerprint = useMemo(() => (preview ? JSON.stringify([preview.catalogue_sequence, preview.total_amount, ready?.sequence ?? null, option, preview.lines.map((l) => [l.public_item_key, l.quantity, l.selection?.rate_id, l.selection?.unit_amount])]) : null), [preview, ready, option]);
   const needsReview = stale || requiresReview || commerce.needsReconfirm;
+  useOpeningMetrics("quote_start", lines.map((line) => line.public_item_key), mode === "quote" && cartReady && state.kind === "ready" && commerce.state.kind === "ready");
   const confirmed = confirmedFor !== null && confirmedFor === fingerprint;
   // Envoi refusé par le contrôle de saisie : le résumé des erreurs reçoit le focus APRÈS son rendu.
   useEffect(() => {

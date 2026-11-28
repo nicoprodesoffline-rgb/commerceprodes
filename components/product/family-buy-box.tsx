@@ -16,6 +16,7 @@ import { shortRef } from "@/lib/site-catalog/short-ref";
 import { PriceGrid, type PriceGridRow } from "@/components/product/price-grid";
 import { VariantSelector, type SelectorAxis } from "@/components/product/variant-selector";
 import { previewCart } from "@/components/site/api";
+import { useOpeningMetrics } from "@/components/site/use-opening-metrics";
 import { codeMessage, codesMessage, reportCodes } from "@/components/site/codes";
 import { axesText, basisLabel, money, price, type AxisDisplay } from "@/components/site/format";
 import type { PreviewLineJson } from "@/lib/site-business/client-types";
@@ -80,6 +81,7 @@ export function FamilyBuyBox({
   const { add, lines } = useCart();
   const router = useRouter();
   const [selectedKey, setSelectedKey] = useState(initialKey ?? items[0]?.public_item_key ?? "");
+  useOpeningMetrics("views", [selectedKey]);
   const [qtyRaw, setQtyRaw] = useState(() => String(minimumQuantity(items.find((i) => i.public_item_key === selectedKey)?.rows ?? [])));
   const [quote, setQuote] = useState<Quote>({ state: "idle" });
   const [busy, setBusy] = useState(false);
