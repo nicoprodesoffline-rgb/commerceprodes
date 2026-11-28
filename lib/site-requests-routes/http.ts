@@ -18,7 +18,7 @@ function respond(status: number, value: unknown): Response {
   return new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 }
 
-async function signed(req: Request, response: Response): Promise<Response> {
+export async function signed(req: Request, response: Response): Promise<Response> {
   const ackKeyId = process.env["SITE_ACK_KEY_ID"];
   if (!ackKeyId) return response;
   let keyring: Json;
