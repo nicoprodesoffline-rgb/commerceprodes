@@ -25,6 +25,36 @@ test('atomic counters isolated per product/event; midnight receipt only; distinc
   const r=(await pool.query('SELECT day::text,public_item_key,views,add_to_cart,quote_start,quote_submit FROM site_product_metrics_daily ORDER BY day,public_item_key')).rows;
   assert.deepEqual(r,[{day:'2026-11-26',public_item_key:'a',views:40,add_to_cart:1,quote_start:0,quote_submit:1},{day:'2026-11-26',public_item_key:'b',views:0,add_to_cart:0,quote_start:1,quote_submit:1},{day:'2026-11-27',public_item_key:'a',views:1,add_to_cart:0,quote_start:0,quote_submit:0}]);
 });
+test('concurrent quote counts with reversed products both succeed below the 100ms lock timeout',async(t)=>{
+  await clear();
+  // Keep each row lock briefly so the two statements overlap, even on a fast database.
+  await pool.query("CREATE FUNCTION metrics_overlap() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_sleep(0.02); RETURN NEW; END $$");
+  try {
+    await pool.query('CREATE TRIGGER metrics_overlap BEFORE INSERT ON site_product_metrics_daily FOR EACH ROW EXECUTE FUNCTION metrics_overlap()');
+    let arrived=0,release;const gate=new Promise(resolve=>{release=resolve;});
+    const results=await Promise.allSettled([['PI-B','PI-A','PI-B'],['PI-A','PI-B']].map(async keys=>{
+      const client=await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query("SET LOCAL lock_timeout = '100ms'; SET LOCAL statement_timeout = '300ms'");
+        if(++arrived===2) release();
+        await gate;
+        const started=performance.now();
+        await store().countQuoteSubmit(client,keys,()=>new Date(NOW));
+        const elapsed=performance.now()-started;
+        await client.query('COMMIT');
+        return elapsed;
+      } catch(error) {await client.query('ROLLBACK');throw error;}
+      finally {client.release();}
+    }));
+    assert.deepEqual(results.map(result=>result.status),['fulfilled','fulfilled'],JSON.stringify(results));
+    t.diagnostic(`2 quote counts, lock_timeout=100ms, statement durations: ${results.map(result=>result.value.toFixed(2)+'ms').join(', ')}`);
+    assert.deepEqual((await pool.query('SELECT public_item_key,quote_submit FROM site_product_metrics_daily ORDER BY public_item_key')).rows,[{public_item_key:'PI-A',quote_submit:2},{public_item_key:'PI-B',quote_submit:2}]);
+  } finally {
+    await pool.query('DROP TRIGGER IF EXISTS metrics_overlap ON site_product_metrics_daily');
+    await pool.query('DROP FUNCTION metrics_overlap()');
+  }
+});
 test('read inclusive closed days, exact lexical sort; removed keys omitted and logged without value; future depuis empty',async()=>{
   await clear();await pool.query("INSERT INTO site_product_metrics_daily(day,public_item_key,views) VALUES ('2026-11-24','a',1),('2026-11-25','b',1),('2026-11-25','a',2),('2026-11-26','a',3),('2026-11-27','a',4),('2026-11-25','removed-example',5)");
   const warnings=[];const out=await store().readBatch(pool,'2026-11-25',new Date('2026-11-27T12:00:00Z'),new Set(['a','b']),n=>warnings.push(n));

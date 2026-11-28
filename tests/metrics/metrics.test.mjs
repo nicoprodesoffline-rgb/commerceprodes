@@ -9,6 +9,18 @@ function metrics() {
   return load('lib/site-metrics/core.ts');
 }
 const now = new Date('2026-11-27T12:00:00Z');
+test('quote keys are distinct and sorted before one SQL statement acquires locks in key order', async () => {
+  const { countQuoteSubmit } = load('lib/site-metrics/store.ts');
+  const calls = []; let reads = 0;
+  const db = { async query(sql, params) { calls.push({ sql, params }); } };
+  const keys = ['PI-B', 'PI-A', 'PI-B'];
+  await countQuoteSubmit(db, keys, () => { reads++; return now; });
+  assert.equal(calls.length, 1);
+  assert.equal(reads, 1);
+  assert.deepEqual(calls[0].params, [now.toISOString(), ['PI-A', 'PI-B']]);
+  assert.match(calls[0].sql, /FROM unnest\(\$2::text\[\]\) AS product\(key\)\s+ORDER BY key(?: COLLATE "C")?\s+ON CONFLICT/);
+  assert.deepEqual(keys, ['PI-B', 'PI-A', 'PI-B']);
+});
 const fixtures = 'tests/fixtures/seams/product_metrics_daily_v2/';
 const manifest = JSON.parse(read(fixtures + 'VERDICTS.json'));
 for (const c of manifest.cases) test(`contract oracle: ${c.name}`, () => {

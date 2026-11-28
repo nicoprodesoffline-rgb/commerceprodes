@@ -9,8 +9,9 @@ async function incrementKeys(db: Database, keys: readonly string[], metric: Metr
     `INSERT INTO site_product_metrics_daily (day, public_item_key, ${metric})
      SELECT (COALESCE($1::timestamptz, statement_timestamp()) AT TIME ZONE 'Europe/Paris')::date, key, 1
      FROM unnest($2::text[]) AS product(key)
+     ORDER BY key COLLATE "C"
      ON CONFLICT (day, public_item_key) DO UPDATE SET ${metric} = site_product_metrics_daily.${metric} + 1`,
-    [instant, [...new Set(keys)]],
+    [instant, [...new Set(keys)].sort((a, b) => a < b ? -1 : a > b ? 1 : 0)],
   );
 }
 export async function increment(db: Database, key: string, metric: Metric, now?: () => Date): Promise<void> {
