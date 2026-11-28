@@ -18,7 +18,18 @@ test("B3 configuration : fichier, garde par défaut, attente entière 0…120 (1
   assert.equal(ack.ackMailConfig({}).mode, "garde");
   assert.equal(ack.ackMailConfig(env).pdfWaitMinutes, 15);
   for (const n of ["0", "1", "120"]) assert.equal(ack.ackMailConfig({ ...env, SITE_ACK_PDF_WAIT_MINUTES: n }).pdfWaitMinutes, Number(n));
-  for (const n of ["-1", "121", "1.5", "quinze", "", " 1"]) assert.throws(() => ack.ackMailConfig({ ...env, SITE_ACK_PDF_WAIT_MINUTES: n }), /SITE_ACK_PDF_WAIT_MINUTES/);
+  for (const n of ["-1", "121", "1.5", "quinze", " 1"]) assert.throws(() => ack.ackMailConfig({ ...env, SITE_ACK_PDF_WAIT_MINUTES: n }), /SITE_ACK_PDF_WAIT_MINUTES/);
+});
+
+test("B3 garde : attente et dossier ignorés même invalides", () => {
+  for (const mode of [undefined, "", "garde"]) {
+    assert.deepEqual(ack.ackMailConfig({ SITE_ACK_MAIL_MODE: mode, SITE_ACK_PDF_WAIT_MINUTES: "invalide", SITE_ACK_MAIL_DIR: "relatif" }),
+      { mode: "garde", directory: null, pdfWaitMinutes: 15 });
+  }
+});
+
+test("B3 fichier : attente vide égale au défaut de 15 minutes", () => {
+  assert.equal(ack.ackMailConfig({ ...env, SITE_ACK_PDF_WAIT_MINUTES: "" }).pdfWaitMinutes, 15);
 });
 
 test("B3 démarrage refusé nommé : mode inconnu et dossier manquant ; instrumentation branchée", async () => {
@@ -38,6 +49,26 @@ test("B3 dossier non public : chemins directs, normalisés et liens symboliques 
   await fs.mkdir(join(root, "public"));
   await fs.symlink(join(root, "public"), join(root, "alias"));
   assert.throws(() => ack.ackMailConfig({ ...env, SITE_ACK_MAIL_DIR: join(root, "alias", "accuses") }), /SITE_ACK_MAIL_DIR/);
+});
+
+test("B3 dossier réel : public et .next aliasés vers des dossiers sans segment public", async () => {
+  const cwd = process.cwd();
+  const site = join(root, "site");
+  await fs.mkdir(site);
+  for (const [name, target] of [["public", "assets"], [".next", "build"]]) {
+    await fs.mkdir(join(root, target));
+    await fs.symlink(join(root, target), join(site, name));
+  }
+  process.chdir(site);
+  try {
+    for (const target of ["assets", "build"]) {
+      for (const dir of [join(root, target), join(root, target, "absent", "accuses"), root]) {
+        assert.throws(() => ack.ackMailConfig({ ...env, SITE_ACK_MAIL_DIR: dir }), /SITE_ACK_MAIL_DIR/);
+      }
+    }
+    const sibling = join(root, "assets-private");
+    assert.equal(ack.ackMailConfig({ ...env, SITE_ACK_MAIL_DIR: sibling }).directory, sibling);
+  } finally { process.chdir(cwd); }
 });
 
 const input = () => ({ directory: root, number: "DEV-2026-000001", createdAt: new Date("2026-11-28T10:00:00.123Z"), to: "client@exemple.invalid", from: { name: "Boutique Exemple", address: "site@exemple.invalid" }, replyTo: "devis@exemple.invalid", subject: "Demande é reçue", text: "Client Exemple\nBanc Exemple\n/recu#ref=QR-exemple&code=code-exemple\nBoutique Exemple", pdf: null });
@@ -108,3 +139,96 @@ test("B3 écriture atomique : rien de partiel visible ; rejeu identique, renomma
   try { await assert.rejects(ack.writeAcknowledgementFile({ ...data, number: "DEV-2026-000004" }), /renommage interrompu/); } finally { fs.rename = rename; }
   assert.ok(!(await fs.readdir(root)).some((s) => s.endsWith(".tmp") || s.startsWith("DEV-2026-000004")));
 });
+
+async function fileMode(fn) {
+  const saved = Object.fromEntries(Object.keys(env).map((key) => [key, process.env[key]]));
+  const wait = process.env.SITE_ACK_PDF_WAIT_MINUTES;
+  Object.assign(process.env, env, { SITE_ACK_PDF_WAIT_MINUTES: "15" });
+  try { await fn(); } finally {
+    for (const [key, value] of Object.entries({ ...saved, SITE_ACK_PDF_WAIT_MINUTES: wait })) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+  }
+}
+
+test("B3 journal : connexion rendue avant tout nouvel emprunt au pool", async () => fileMode(async () => {
+  let borrowed = false, selected = false, logged = false;
+  const data = input();
+  const pool = {
+    connect: async () => {
+      assert.equal(borrowed, false);
+      borrowed = true;
+      return {
+        query: async (sql) => {
+          if (!sql.startsWith("SELECT")) return { rows: [] };
+          if (selected) return { rows: [] };
+          selected = true;
+          return { rows: [{ id: "1", object_ref: "QR-unit", number: "DEV-2026-000005", recipient: data.to,
+            subject: data.subject, body: data.text, attempts: 0, first_attempt_at: null, created_at: data.createdAt,
+            sender: data.from, pdf: null, wait_zero: true }] };
+        },
+        release: () => { borrowed = false; },
+      };
+    },
+    query: async () => { logged = !borrowed; return { rows: [] }; },
+  };
+  assert.equal((await ack.drainFileAcknowledgements(pool, data.createdAt)).written, 1);
+  assert.equal(logged, true, "journal écrit après release, même avec une seule connexion disponible");
+}));
+
+function blockedPool() {
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  let connections = 0;
+  const pool = { connect: async () => {
+    connections++;
+    await gate;
+    return { query: async () => ({ rows: [] }), release: () => {} };
+  } };
+  return { pool, release, connections: () => connections };
+}
+
+test("B3 un seul tour par processus : neuf appels suivants retournent immédiatement", async () => fileMode(async () => {
+  const blocked = blockedPool();
+  const first = ack.drainFileAcknowledgements(blocked.pool);
+  let completed = 0;
+  const others = Array.from({ length: 9 }, () => ack.drainFileAcknowledgements(blocked.pool).then((result) => {
+    completed++;
+    assert.deepEqual(result, { written: 0, retried: 0, abandoned: 0 });
+  }));
+  try {
+    await new Promise(setImmediate);
+    assert.equal(completed, 9);
+    assert.equal(blocked.connections(), 1);
+  } finally { blocked.release(); await Promise.all([first, ...others]); }
+  assert.deepEqual(await ack.drainFileAcknowledgements(blocked.pool), { written: 0, retried: 0, abandoned: 0 });
+}));
+
+test("B3 verrou libéré même si la connexion échoue", async () => fileMode(async () => {
+  await assert.rejects(ack.drainFileAcknowledgements({ connect: async () => { throw new Error("connexion indisponible"); } }), /connexion indisponible/);
+  const blocked = blockedPool();
+  blocked.release();
+  await ack.drainFileAcknowledgements(blocked.pool);
+  assert.equal(blocked.connections(), 1);
+}));
+
+test("B3 pollHttp : dix relevés réussis déclenchent au plus un tour actif", async () => fileMode(async () => {
+  // L'adaptateur Next est exclu du build BC4 : transpilation en mémoire, transport et pool isolés.
+  const ts = require("typescript");
+  const source = await fs.readFile(new URL("../../lib/site-transactions/http.ts", import.meta.url), "utf8");
+  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
+  const blocked = blockedPool();
+  const exports = {};
+  const dependencies = {
+    "../site-ack-mail/file-queue": ack,
+    "@/lib/site-db/pool": { getPool: () => blocked.pool },
+    "./config": { loadEventsKeyring: () => ({}) },
+    "./events": { pollEvents: async () => ({ status: 200, body: Buffer.from("{}"), headers: {} }) },
+  };
+  new Function("require", "exports", compiled.outputText)((id) => dependencies[id] ?? {}, exports);
+  try {
+    const responses = await Promise.all(Array.from({ length: 10 }, () => exports.pollHttp(new Request("http://exemple.invalid/events"))));
+    assert.ok(responses.every((response) => response.status === 200));
+    assert.equal(blocked.connections(), 1);
+  } finally { blocked.release(); await new Promise(setImmediate); }
+}));

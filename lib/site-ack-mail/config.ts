@@ -14,22 +14,16 @@ export function ackMailMode(env: Record<string, string | undefined> = process.en
   throw new AckMailConfigError(`SITE_ACK_MAIL_MODE inconnu ${JSON.stringify(raw)} ; doit être absente ou « garde », ou « fichier »`);
 }
 
-/** Chemin absolu privé, y compris derrière un lien symbolique et pour un dossier encore absent. */
-export function privateAckDirectory(raw: string | undefined): string {
-  if (!raw || !isAbsolute(raw)) throw new AckMailConfigError("SITE_ACK_MAIL_DIR obligatoire en mode fichier : chemin absolu privé attendu");
-  const path = resolve(raw);
-  const publicPath = (s: string): boolean => s.split(sep).some((part) => part === "public" || part === ".next");
-  if (publicPath(path)) throw new AckMailConfigError("SITE_ACK_MAIL_DIR interdit sous public/ ou .next/");
+/** Résout aussi un dossier absent à partir de son premier ancêtre existant. */
+function realDirectoryPath(path: string): string {
   let parent = path;
   const missing: string[] = [];
   for (;;) {
     try {
       const real = realpathSync(parent);
       if (!statSync(real).isDirectory()) throw new Error("not a directory");
-      if (publicPath(join(real, ...missing))) throw new AckMailConfigError("SITE_ACK_MAIL_DIR interdit sous public/ ou .next/ (lien symbolique)");
-      return path;
+      return join(real, ...missing);
     } catch (error) {
-      if (error instanceof AckMailConfigError) throw error;
       if ((error as NodeJS.ErrnoException).code !== "ENOENT" || dirname(parent) === parent) {
         throw new AckMailConfigError("SITE_ACK_MAIL_DIR illisible ou invalide");
       }
@@ -39,13 +33,32 @@ export function privateAckDirectory(raw: string | undefined): string {
   }
 }
 
+/** Chemin absolu privé, y compris derrière un lien symbolique et pour un dossier encore absent. */
+export function privateAckDirectory(raw: string | undefined): string {
+  if (!raw || !isAbsolute(raw)) throw new AckMailConfigError("SITE_ACK_MAIL_DIR obligatoire en mode fichier : chemin absolu privé attendu");
+  const path = resolve(raw);
+  const publicPath = (s: string): boolean => s.split(sep).some((part) => part === "public" || part === ".next");
+  if (publicPath(path)) throw new AckMailConfigError("SITE_ACK_MAIL_DIR interdit sous public/ ou .next/");
+  const real = realDirectoryPath(path);
+  if (publicPath(real)) throw new AckMailConfigError("SITE_ACK_MAIL_DIR interdit sous public/ ou .next/ (lien symbolique)");
+  const contains = (parent: string, child: string): boolean => child === parent || child.startsWith(parent.endsWith(sep) ? parent : parent + sep);
+  for (const name of ["public", ".next"]) {
+    const exposed = realDirectoryPath(resolve(process.cwd(), name));
+    if (contains(exposed, real) || contains(real, exposed)) {
+      throw new AckMailConfigError("SITE_ACK_MAIL_DIR recoupe public/ ou .next/ (chemins réels)");
+    }
+  }
+  return path;
+}
+
 export type AckMailConfig = { mode: AckMode; directory: string | null; pdfWaitMinutes: number };
 export function ackMailConfig(env: Record<string, string | undefined> = process.env): AckMailConfig {
   const mode = ackMailMode(env);
+  if (mode !== "fichier") return { mode, directory: null, pdfWaitMinutes: 15 };
   const raw = env["SITE_ACK_PDF_WAIT_MINUTES"];
-  const wait = raw === undefined ? 15 : /^(0|[1-9][0-9]{0,2})$/.test(raw) ? Number(raw) : NaN;
+  const wait = raw === undefined || raw === "" ? 15 : /^(0|[1-9][0-9]{0,2})$/.test(raw) ? Number(raw) : NaN;
   if (!Number.isInteger(wait) || wait > 120) throw new AckMailConfigError("SITE_ACK_PDF_WAIT_MINUTES doit être un entier de 0 à 120");
-  return { mode, directory: mode === "fichier" ? privateAckDirectory(env["SITE_ACK_MAIL_DIR"]) : null, pdfWaitMinutes: wait };
+  return { mode, directory: privateAckDirectory(env["SITE_ACK_MAIL_DIR"]), pdfWaitMinutes: wait };
 }
 
 /** Même arrêt explicite que la politique de démarrage du receiver ; aucun accès SMTP. */

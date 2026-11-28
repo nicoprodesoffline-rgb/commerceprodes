@@ -145,3 +145,41 @@ test("B3 effacement avant écriture : aucun fichier, aucune reprise", async () =
   assert.deepEqual(await names(q.number), []);
   assert.equal((await row(q.receipt_ref)).state, "sans_reponse");
 });
+
+test("B3 PDF déposé après 16 min, échéance 15 min, premier tour après 17 min : lien seul", async () => {
+  const q = await quote("late-first-turn");
+  const m = await row(q.receipt_ref);
+  await deposit(q.receipt_ref);
+  await pool.query("UPDATE site_quote_request SET document_deposited_at = $2 WHERE quote_ref = $1", [q.receipt_ref, new Date(m.created_at.getTime() + 16 * 60_000)]);
+  assert.equal((await ack.drainFileAcknowledgements(pool, new Date(m.created_at.getTime() + 17 * 60_000))).written, 1);
+  const decoded = parts(await message(q));
+  assert.equal(decoded.pdf, null);
+  assert.ok(decoded.text.includes(`/recu#ref=${q.receipt_ref}`));
+});
+
+test("B3 PDF déposé exactement à l'échéance : pièce jointe conservée", async () => {
+  const q = await quote("deadline");
+  const m = await row(q.receipt_ref);
+  await deposit(q.receipt_ref);
+  await pool.query("UPDATE site_quote_request SET document_deposited_at = $2 WHERE quote_ref = $1", [q.receipt_ref, m.pdf_wait_until]);
+  await ack.drainFileAcknowledgements(pool, new Date(m.pdf_wait_until.getTime() + 60_000));
+  assert.deepEqual(parts(await message(q)).pdf, pdf);
+});
+
+for (const retried of [false, true]) {
+  test(`B3 délai de 48 h dépassé avant ${retried ? "reprise" : "premier essai"} : sans réponse et aucun fichier`, async () => {
+    const q = await quote(`expired-${retried}`);
+    const m = await row(q.receipt_ref);
+    const first = new Date(m.created_at.getTime() + 60_000);
+    if (retried) await pool.query("UPDATE site_ack_mail SET attempts = 1, first_attempt_at = $2 WHERE object_ref = $1", [q.receipt_ref, first]);
+    const now = new Date((retried ? first : m.created_at).getTime() + 48 * 60 * 60_000 + 1);
+    const result = await ack.drainFileAcknowledgements(pool, now);
+    assert.equal(result.abandoned, 1);
+    assert.equal(result.written, 0);
+    assert.deepEqual(await names(q.number), []);
+    const expired = await row(q.receipt_ref);
+    assert.equal(expired.state, "sans_reponse");
+    assert.equal(expired.next_attempt_at, null);
+    assert.equal(expired.attempts, retried ? 1 : 0);
+  });
+}
