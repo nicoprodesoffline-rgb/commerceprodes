@@ -1,13 +1,13 @@
 /**
  * Cercle 5, ligne 5.17 (décision B2 : l'accusé au client part du site ; docs/site_events_v2.md §7) : la file de l'accusé.
  *
- * - Fabriqué DANS la transaction de la demande (`enqueueAcknowledgement`), tout de suite, sans pièce jointe : numéro, récapitulatif et lien
+ * - Fabriqué DANS la transaction de la demande (`enqueueAcknowledgement`) : numéro, récapitulatif et lien
  *   privé vers le reçu (`/recu#ref=…&code=…` : ni la référence ni le code ne voyagent dans une adresse envoyée au serveur, attendu P03).
  * - Textes : ceux de la boutique (`site_commerce.v1`, objet et corps par type, marques {numero}, {recapitulatif}, {lien_recu}).
  * - Un envoi par demande, jamais deux (une ligne par référence) ; états « gardé », « à envoyer », « envoyé », « refusé », « sans réponse » ;
  *   tentatives à 1, 5 et 30 minutes après le premier essai, puis toutes les heures pendant 48 h, puis « sans réponse » (attendus T03, T04).
  * - Mode « gardés » (`SITE_ACK_MAIL_MODE` absent ou `garde`) : le message est fabriqué, rangé, lisible, et RIEN NE SORT ; c'est le seul mode
- *   actif livré. Le mode `smtp` refuse de démarrer (« non livré ») : le service d'envoi est décidé au paquet B. Les accès d'envoi seront des
+ *   historique. Le mode « fichier » écrit un .eml local (file.ts, file-queue.ts), avec le PDF déposé dans le délai. Le mode `smtp` refuse de démarrer. Les accès d'envoi seront des
  *   variables du serveur, jamais une valeur dans Git.
  * Aucune coordonnée dans les journaux (P05) : on journalise la référence, le numéro et l'état, jamais le destinataire ni le corps.
  */
@@ -17,22 +17,14 @@ import { fillMarks, type CommerceDocument } from "../site-commerce/document";
 import { readActiveCommerce } from "../site-commerce/store";
 import { appendLog } from "../site-transactions/common";
 
-export type AckMode = "garde" | "smtp";
+import { ackMailConfig, ackMailMode, AckMailConfigError, type AckMode } from "./config";
+export { ackMailConfig, ackMailMode, AckMailConfigError, enforceAckMailStartup } from "./config";
+export { writeAcknowledgementFile } from "./file";
+export { drainFileAcknowledgements } from "./file-queue";
+export type { AckMode } from "./config";
 export type AckEventType = "quote.requested" | "order.received" | "message.received";
-export type AckState = "garde" | "a_envoyer" | "envoye" | "refuse" | "sans_reponse";
-export const ACK_STATE_LABELS: Record<AckState, string> = { garde: "gardé", a_envoyer: "à envoyer", envoye: "envoyé", refuse: "refusé", sans_reponse: "sans réponse" };
-
-export class AckMailConfigError extends Error {
-  readonly code = "ACK_MAIL_CONFIG_INVALID";
-}
-
-/** Le mode de la file : absent ou `garde` -> « gardés » ; `smtp` -> refusé, non livré dans ce mandat ; autre valeur -> erreur. */
-export function ackMailMode(env: Record<string, string | undefined> = process.env): AckMode {
-  const raw = env["SITE_ACK_MAIL_MODE"];
-  if (raw === undefined || raw === "" || raw === "garde") return "garde";
-  if (raw === "smtp") throw new AckMailConfigError("SITE_ACK_MAIL_MODE=smtp : l'envoi réel n'est pas livré (paquet B) ; seul le mode « garde » est actif");
-  throw new AckMailConfigError(`SITE_ACK_MAIL_MODE doit être absente ou « garde » (reçu : ${JSON.stringify(raw)})`);
-}
+export type AckState = "garde" | "a_envoyer" | "ecrit_fichier" | "envoye" | "refuse" | "sans_reponse";
+export const ACK_STATE_LABELS: Record<AckState, string> = { garde: "gardé", a_envoyer: "à envoyer", ecrit_fichier: "écrit dans le fichier d'essai", envoye: "envoyé", refuse: "refusé", sans_reponse: "sans réponse" };
 
 export type SmtpSettings = { host: string; port: number; security: "starttls" | "tls"; user: string | null; passwordFile: string | null };
 
@@ -132,9 +124,14 @@ export async function enqueueAcknowledgement(client: PoolClient | Pool, input: E
   const { subject, body } = renderAcknowledgement(stored.document, input.eventType, input.payload, input.objectRef, input.accessToken);
   const state: AckState = mode === "garde" ? "garde" : "a_envoyer";
   const { rowCount } = await client.query(
-    `INSERT INTO site_ack_mail (object_ref, event_type, number, mode, state, recipient, subject, body, next_attempt_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CASE WHEN $5 = 'a_envoyer' THEN now() ELSE NULL END) ON CONFLICT (object_ref) DO NOTHING`,
-    [input.objectRef, input.eventType, str(input.payload["number"]), mode, state, email, subject, body],
+    `INSERT INTO site_ack_mail (object_ref, event_type, number, mode, state, recipient, subject, body, next_attempt_at, pdf_wait_until, sender)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
+       CASE WHEN $5 = 'a_envoyer' THEN date_trunc('milliseconds', now() + $9 * interval '1 minute') ELSE NULL END,
+       CASE WHEN $4 = 'fichier' THEN date_trunc('milliseconds', now() + $9 * interval '1 minute') ELSE NULL END, $10::jsonb)
+     ON CONFLICT (object_ref) DO NOTHING`,
+    [input.objectRef, input.eventType, str(input.payload["number"]), mode, state, email, subject, body,
+      mode === "fichier" && input.eventType !== "message.received" ? ackMailConfig().pdfWaitMinutes : 0,
+      stored.document.sender === null ? null : JSON.stringify(stored.document.sender)],
   );
   return rowCount === 1 ? state : null;
 }
@@ -151,7 +148,7 @@ export async function drainAcknowledgements(pool: Pool, transport: MailTransport
       await client.query("BEGIN");
       const { rows } = await client.query<{ id: string; object_ref: string; recipient: string; subject: string; body: string; attempts: number; first_attempt_at: Date | null }>(
         `SELECT id::text, object_ref, recipient, subject, body, attempts, first_attempt_at FROM site_ack_mail
-          WHERE state = 'a_envoyer' AND next_attempt_at <= $1 ORDER BY next_attempt_at, id LIMIT 1 FOR UPDATE SKIP LOCKED`,
+          WHERE mode = 'smtp' AND state = 'a_envoyer' AND next_attempt_at <= $1 ORDER BY next_attempt_at, id LIMIT 1 FOR UPDATE SKIP LOCKED`,
         [now.toISOString()],
       );
       const row = rows[0];

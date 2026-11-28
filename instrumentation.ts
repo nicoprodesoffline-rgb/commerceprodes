@@ -3,12 +3,14 @@
  * est ignoré en production et signale une configuration d'horloge invalide (les requêtes
  * répondront alors 503 `CONFIG_INVALID`).
  * DF-0090 : `SITE_WITHDRAWAL_HOLD_POLICY.max_withdrawals_without_release = null` hors `SITE_ENV=staging`
- * refuse le démarrage (processus arrêté, code 1, message `DÉMARRAGE REFUSÉ`).
+ * refuse le démarrage : le processus s'arrête avec le code 1 et le message `DÉMARRAGE REFUSÉ`.
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   const { enforceStartupPolicy } = await import("@/lib/site-publish/config");
   if (!enforceStartupPolicy()) return;
+  const { enforceAckMailStartup } = await import("@/lib/site-ack-mail/config");
+  if (!enforceAckMailStartup()) return;
   const { originWarning } = await import("@/lib/seo/seo");
   const origin = originWarning(process.env.SITE_PUBLIC_ORIGIN);
   if (origin !== null) console.warn(`[site-seo] AVERTISSEMENT : ${origin}`);

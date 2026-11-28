@@ -2,6 +2,7 @@
  * Adaptateur Next.js (runtime Node) des routes BC4. Configuration et pool relus à chaque requête :
  * configuration invalide → 503 explicite, rien n'est écrit. Les décisions appartiennent au C0 (via business/receipt/events).
  */
+import { drainFileAcknowledgements } from "../site-ack-mail/file-queue";
 import { readBoundedBytes } from "@/lib/site-business/http";
 import { logRefusal, type BusinessRoute } from "@/lib/site-business/refusal-log";
 import { clockConfig, serverNowUtc } from "@/lib/site-catalog/clock";
@@ -96,7 +97,12 @@ export async function receiptDocumentHttp(req: Request): Promise<Response> {
 }
 
 export async function pollHttp(req: Request): Promise<Response> {
-  return guarded(async () => pollEvents({ pool: getPool(), keyring: loadEventsKeyring() }, req.headers, new URL(req.url).searchParams));
+  const response = await guarded(async () => pollEvents({ pool: getPool(), keyring: loadEventsKeyring() }, req.headers, new URL(req.url).searchParams));
+  // B-3 : le relevé régulier de la Factory sert de tour à la file de l'accusé en mode « fichier » (aucun ordonnanceur propre au site) ; sans effet dans les autres modes.
+  if (response.status === 200 && process.env["SITE_ACK_MAIL_MODE"] === "fichier") {
+    void drainFileAcknowledgements(getPool()).catch(() => console.error("[site-ack-mail] FILE_TURN_FAILED"));
+  }
+  return response;
 }
 
 export async function ackHttp(req: Request): Promise<Response> {
